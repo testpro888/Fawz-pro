@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Fawz Pro | Bookbuilding Obligasi</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script>
+    const SUPABASE_URL = 'https://yhmrfluehibfapvtxcfi.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlobXJmbHVlaGliZmFwdnR4Y2ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNjEzODUsImV4cCI6MjA5NDczNzM4NX0.se_H4n_eLsf81d_1GH5sqsPCpX89MHewlPuuNkY6qcU';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    window._supabase = supabase;
+    window.addEventListener('DOMContentLoaded', () => { loadAll(); });
+  </script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --navy: #0d0d2b; --purple: #1e1252; --gold: #f5a623; --gold-light: #ffc857;
+      --bg: #f4f5fb; --white: #fff; --border: #e0e0ef; --text: #1a1a3a; --gray: #888;
+      --nav-h: 68px;
+    }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); min-height: 100vh; padding-top: var(--nav-h); color: var(--text); }
+
+    
+    /* NAVBAR — style dari navbar.html */
+
+    /* ── PAGE ── */
+    .page-container { max-width: 1400px; margin: 0 auto; padding: 36px 28px; }
+    .page-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 32px; flex-wrap: wrap; gap: 16px; }
+    .page-title { font-family: 'Inter', sans-serif; font-size: 2rem; font-weight: 900; color: var(--navy); line-height: 1.1; }
+    .page-subtitle { font-size: .88rem; color: var(--gray); margin-top: 4px; }
+    .title-underline { width: 48px; height: 3px; background: linear-gradient(90deg,var(--gold),var(--gold-light)); border-radius: 2px; margin-top: 8px; }
+
+    .btn { display: inline-flex; align-items: center; gap: 7px; padding: 11px 20px; border-radius: 10px; font-family: 'Inter',sans-serif; font-size: .875rem; font-weight: 600; cursor: pointer; transition: all .2s; border: none; white-space: nowrap; }
+    .btn-primary { background: linear-gradient(135deg,var(--gold),#e8931a); color: #fff; box-shadow: 0 4px 14px rgba(245,166,35,.35); }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(245,166,35,.45); }
+    .btn-outline { background: #fff; color: var(--navy); border: 1.5px solid var(--border); }
+    .btn-outline:hover { border-color: var(--gold); color: var(--gold); background: #fffbf3; }
+    .btn-danger { background: linear-gradient(135deg,#e74c3c,#c0392b); color: #fff; box-shadow: 0 4px 14px rgba(231,76,60,.3); }
+    .btn-danger:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(231,76,60,.4); }
+    .btn-sm { padding: 8px 16px; font-size: .82rem; }
+    .btn-ghost { background: none; color: var(--gray); border: none; padding: 6px 10px; }
+    .btn-ghost:hover { color: #e74c3c; background: #fff0f0; border-radius: 8px; }
+    .btn-order { background: linear-gradient(135deg,#1e7e4e,#27ae60); color:#fff; box-shadow:0 4px 14px rgba(39,174,96,.3); }
+    .btn-order:hover { transform:translateY(-2px); box-shadow:0 8px 22px rgba(39,174,96,.4); }
+
+    /* ── SECTION LABEL ── */
+    .section-label { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: var(--gold); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+    .section-label::after { content: ''; flex: 1; height: 1px; background: linear-gradient(90deg,#ffd96044,transparent); }
+
+    /* ── RECOMMENDATION CARDS ── */
+    .rec-section { margin-bottom: 36px; }
+    .rec-cards-row { display: flex; gap: 20px; flex-wrap: wrap; }
+
+    .rec-card {
+      flex: 1; min-width: 280px; max-width: 340px;
+      background: linear-gradient(135deg, #0d0d2b 0%, #1e1252 100%);
+      border-radius: 20px; padding: 24px 22px;
+      box-shadow: 0 8px 32px rgba(13,13,43,.22), 0 0 0 1px rgba(245,166,35,.15);
+      position: relative; overflow: hidden; color: #fff;
+    }
+    .rec-card::before {
+      content: ''; position: absolute; top: -40px; right: -40px;
+      width: 130px; height: 130px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(245,166,35,.18) 0%, transparent 70%);
+    }
+    .rec-card-badge { font-size: .68rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; padding: 3px 10px; border-radius: 20px; background: rgba(245,166,35,.2); color: var(--gold-light); border: 1px solid rgba(245,166,35,.3); display: inline-block; margin-bottom: 12px; }
+    .rec-card-seri { font-family: 'Inter', sans-serif; font-size: 1.5rem; font-weight: 900; letter-spacing: 1px; color: #fff; margin-bottom: 4px; }
+    .rec-card-category { font-size: .75rem; color: rgba(255,255,255,.5); margin-bottom: 16px; }
+    .rec-card-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px; margin-bottom: 16px; }
+    .rc-stat-label { font-size: .65rem; text-transform: uppercase; letter-spacing: .8px; color: rgba(255,255,255,.45); margin-bottom: 2px; }
+    .rc-stat-value { font-size: .92rem; font-weight: 700; color: #fff; }
+    .rc-stat-value.yield { color: var(--gold-light); }
+    .rc-stat-value.jual { color: #7bed9f; }
+    .rc-stat-value.beli { color: #74b9ff; }
+    .rec-card-footer { border-top: 1px solid rgba(255,255,255,.1); padding-top: 12px; display: flex; align-items: center; justify-content: space-between; }
+    .rc-tgl { font-size: .72rem; color: rgba(255,255,255,.4); }
+    .btn-rc-remove { background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.12); color: rgba(255,255,255,.5); border-radius: 8px; padding: 5px 10px; font-size: .75rem; cursor: pointer; transition: all .2s; }
+    .btn-rc-remove:hover { background: rgba(231,76,60,.25); border-color: #e74c3c55; color: #ff6b6b; }
+
+    /* ── ADD CARD BUTTON ── */
+    .add-rec-card {
+      flex: 1; min-width: 200px; max-width: 240px;
+      border: 2px dashed #c9cadf; border-radius: 20px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 10px; padding: 32px 20px; cursor: pointer;
+      transition: all .2s; background: #fff; color: #bbb;
+    }
+    .add-rec-card:hover { border-color: var(--gold); color: var(--gold); background: #fffbf3; box-shadow: 0 4px 20px rgba(245,166,35,.12); }
+    .add-rec-icon { width: 44px; height: 44px; border-radius: 50%; border: 2px dashed currentColor; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; font-weight: 300; transition: all .2s; }
+    .add-rec-card:hover .add-rec-icon { background: rgba(245,166,35,.1); }
+    .add-rec-label { font-size: .82rem; font-weight: 600; text-align: center; }
+
+    /* ── TAB NAV ── */
+    .tab-nav { display: flex; gap: 6px; margin-bottom: 24px; flex-wrap: wrap; }
+    .tab-btn { padding: 10px 20px; border-radius: 10px; font-family: 'Inter',sans-serif; font-size: .85rem; font-weight: 600; cursor: pointer; border: 1.5px solid var(--border); background: #fff; color: var(--gray); transition: all .2s; }
+    .tab-btn:hover { border-color: var(--gold); color: var(--gold); }
+    .tab-btn.active { background: linear-gradient(135deg,var(--gold),#e8931a); color: #fff; border-color: transparent; box-shadow: 0 4px 14px rgba(245,166,35,.35); }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ── TABLE ── */
+    .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; }
+    .table-card { background: #fff; border-radius: 16px; box-shadow: 0 2px 12px rgba(0,0,0,.06); overflow: hidden; margin-bottom: 32px; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: .875rem; }
+    thead { background: #fafafa; border-bottom: 2px solid #f0f0f5; }
+    thead th { padding: 13px 14px; text-align: left; font-size: .7rem; font-weight: 700; color: #aaa; text-transform: uppercase; letter-spacing: 1px; white-space: nowrap; }
+    tbody tr { border-bottom: 1px solid #f5f5fa; transition: background .15s; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: #fffbf3; }
+    tbody td { padding: 12px 14px; color: var(--text); vertical-align: middle; }
+    .mono { font-family: 'Courier New',monospace; font-size: .82rem; }
+    .empty-state { text-align: center; padding: 48px 20px; color: #bbb; }
+    .empty-icon { font-size: 2.2rem; margin-bottom: 10px; }
+    .table-footer { padding: 12px 18px; display: flex; align-items: center; justify-content: space-between; border-top: 1px solid #f0f0f5; font-size: .82rem; color: var(--gray); }
+    .pagination { display: flex; gap: 4px; }
+    .pg-btn { width: 30px; height: 30px; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: .8rem; cursor: pointer; border: 1.5px solid var(--border); background: #fff; color: var(--text); transition: all .15s; }
+    .pg-btn.active { background: var(--gold); border-color: var(--gold); color: #fff; font-weight: 700; }
+    .pg-btn:hover:not(.active) { border-color: var(--gold); }
+
+    /* Comment cell */
+    .comment-cell { min-width: 200px; max-width: 280px; }
+    .comment-box {
+      width: 100%; padding: 7px 10px; border: 1.5px solid var(--border);
+      border-radius: 8px; font-family: 'Inter',sans-serif; font-size: .8rem;
+      color: var(--text); resize: none; line-height: 1.5; transition: border .2s;
+      background: #fafafa; min-height: 54px;
+    }
+    .comment-box:focus { outline: none; border-color: var(--gold); background: #fff; box-shadow: 0 0 0 3px rgba(245,166,35,.08); }
+    .comment-box:disabled { cursor: not-allowed; opacity: .55; }
+    .comment-meta { font-size: .68rem; color: #aaa; margin-top: 3px; }
+    .btn-save-comment { font-size: .72rem; padding: 4px 10px; margin-top: 4px; }
+
+    .action-btns { display: flex; gap: 5px; }
+    .btn-icon { width: 30px; height: 30px; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: .82rem; cursor: pointer; border: 1.5px solid var(--border); background: #fff; transition: all .15s; }
+    .btn-icon:hover { border-color: var(--gold); background: #fffbf3; }
+    .btn-icon.del:hover { border-color: #ffcccc; background: #fff0f0; }
+
+    .badge-idr { background: #e8f8f0; color: #27ae60; font-size: .7rem; font-weight: 700; padding: 2px 10px; border-radius: 20px; }
+    .badge-usd { background: #e8f0ff; color: #2d4abf; font-size: .7rem; font-weight: 700; padding: 2px 10px; border-radius: 20px; }
+    .badge-rec { background: rgba(245,166,35,.15); color: #b37a00; font-size: .68rem; font-weight: 700; padding: 2px 8px; border-radius: 20px; border: 1px solid rgba(245,166,35,.3); }
+
+    /* Search */
+    .search-wrap { position: relative; }
+    .search-wrap input { width: 220px; padding: 9px 14px 9px 36px; border: 1.5px solid var(--border); border-radius: 10px; font-family: 'Inter',sans-serif; font-size: .875rem; color: var(--text); outline: none; transition: border .2s; }
+    .search-wrap input:focus { border-color: var(--gold); }
+    .search-icon { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: #aaa; }
+
+    /* MODAL */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(13,13,43,.55); backdrop-filter: blur(4px); z-index: 2000; align-items: center; justify-content: center; }
+    .modal-overlay.open { display: flex; }
+    .modal { background: #fff; border-radius: 20px; padding: 32px; width: 700px; max-width: 96vw; max-height: 92vh; overflow-y: auto; box-shadow: 0 24px 80px rgba(0,0,0,.2); animation: slideUp .25s ease; }
+    @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+    .modal-title { font-family: 'Inter', sans-serif; font-size: 1.3rem; font-weight: 700; color: var(--navy); }
+    .modal-close { width: 32px; height: 32px; border-radius: 8px; border: 1.5px solid var(--border); background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1rem; color: var(--gray); transition: all .15s; }
+    .modal-close:hover { border-color: #ffcccc; color: #e74c3c; background: #fff0f0; }
+    .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; padding-top: 18px; border-top: 1px solid #f0f0f5; }
+
+    /* Picker */
+    .picker-filters { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+    .picker-filter-btn { padding: 7px 16px; border-radius: 8px; border: 1.5px solid var(--border); background: #fff; font-size: .82rem; font-weight: 600; cursor: pointer; color: var(--gray); transition: all .15s; }
+    .picker-filter-btn.active { background: var(--gold); color: #fff; border-color: var(--gold); }
+    .picker-search { width: 100%; padding: 9px 14px; border: 1.5px solid var(--border); border-radius: 10px; font-family: 'Inter',sans-serif; font-size: .875rem; margin-bottom: 14px; outline: none; transition: border .2s; }
+    .picker-search:focus { border-color: var(--gold); }
+    .picker-list { max-height: 340px; overflow-y: auto; border: 1.5px solid var(--border); border-radius: 12px; }
+    .picker-item { display: flex; align-items: center; gap: 14px; padding: 12px 16px; border-bottom: 1px solid #f5f5fa; cursor: pointer; transition: background .15s; }
+    .picker-item:last-child { border-bottom: none; }
+    .picker-item:hover { background: #fffbf3; }
+    .picker-item.selected { background: #fff8ec; }
+    .pi-seri { font-weight: 700; font-size: .9rem; color: var(--navy); min-width: 100px; font-family: 'Courier New',monospace; }
+    .pi-info { flex: 1; display: flex; gap: 16px; flex-wrap: wrap; }
+    .pi-stat { font-size: .78rem; color: var(--gray); }
+    .pi-stat strong { color: var(--text); font-weight: 600; }
+    .pi-check { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: .75rem; flex-shrink: 0; }
+    .picker-item.selected .pi-check { background: var(--gold); border-color: var(--gold); color: #fff; }
+    .picker-type { font-size: .65rem; font-weight: 700; padding: 2px 7px; border-radius: 10px; flex-shrink: 0; }
+    .picker-empty { text-align: center; padding: 32px; color: #bbb; font-size: .88rem; }
+
+    /* Form */
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .form-group { display: flex; flex-direction: column; gap: 5px; }
+    .form-group.full { grid-column: 1 / -1; }
+    .form-label { font-size: .72rem; font-weight: 700; color: #666; text-transform: uppercase; letter-spacing: .5px; }
+    .req { color: #e74c3c; margin-left: 2px; }
+    .form-input, .form-select, .form-textarea { padding: 10px 13px; border: 1.5px solid var(--border); border-radius: 10px; font-family: 'Inter',sans-serif; font-size: .88rem; color: var(--text); outline: none; transition: border .2s, box-shadow .2s; background: #fff; }
+    .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(245,166,35,.1); }
+    .form-textarea { resize: vertical; min-height: 70px; }
+
+    /* toast */
+    .toast-container { position: fixed; bottom: 28px; right: 28px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+    .toast { padding: 14px 20px; border-radius: 12px; font-size: .875rem; font-weight: 500; box-shadow: 0 6px 24px rgba(0,0,0,.15); animation: toastIn .3s ease; max-width: 320px; }
+    @keyframes toastIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+    .toast-success { background: #f0fff8; border: 1px solid #a8e6c1; color: #1e7e4e; }
+    .toast-error { background: #fff0f0; border: 1px solid #ffcccc; color: #c0392b; }
+    .toast-info { background: #f0f4ff; border: 1px solid #c5d3ff; color: #2d4abf; }
+
+    @media (max-width: 768px) { .form-grid { grid-template-columns: 1fr; } .nav-menu { display: none; } .rec-cards-row { flex-direction: column; } }
+
+    /* ── REC CARD COMMENT ── */
+    .rec-card-wrapper { display: flex; flex-direction: column; flex: 1; min-width: 280px; max-width: 340px; }
+    .rec-card-comment { background: #fffbf0; border-left: 3px solid var(--gold); border-radius: 0 0 12px 12px; padding: 10px 14px 12px; margin-top: -4px; }
+    .rec-card-comment .cmt-label { font-size: .62rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--gold); margin-bottom: 4px; }
+    .rec-card-comment textarea { width: 100%; border: none; background: transparent; font-family: 'Inter', sans-serif; font-size: .78rem; color: #555; resize: none; outline: none; line-height: 1.55; min-height: 44px; }
+    .rec-card-comment textarea:disabled { cursor: default; }
+    .rec-card-comment textarea::placeholder { color: #ccc; }
+    .rec-card-comment .cmt-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 4px; }
+    .rec-card-comment .cmt-by { font-size: .65rem; color: #bbb; }
+    .btn-save-cmt { font-size: .68rem; padding: 3px 10px; border-radius: 6px; background: var(--gold); color: #fff; border: none; cursor: pointer; font-family: 'Inter',sans-serif; font-weight: 600; display: none; transition: opacity .2s; }
+    .btn-save-cmt:hover { opacity: .85; }
+
+    /* ── OTHER OBLIGASI TABLE ── */
+    .other-section { margin-top: 8px; }
+    .other-section .section-label { margin-bottom: 16px; }
+    .other-table-card { background: #fff; border-radius: 16px; box-shadow: 0 2px 12px rgba(0,0,0,.06); overflow: hidden; }
+    .other-table-wrap { overflow-x: auto; }
+    .other-table { width: 100%; border-collapse: collapse; font-size: .855rem; }
+    .other-table thead { background: #fafafa; border-bottom: 2px solid #f0f0f5; }
+    .other-table thead th { padding: 11px 14px; text-align: left; font-size: .65rem; font-weight: 700; color: #aaa; text-transform: uppercase; letter-spacing: 1px; white-space: nowrap; font-family: 'Inter', sans-serif; }
+    .other-table tbody tr.main-row { border-bottom: 1px solid #f5f5fa; transition: background .15s; cursor: pointer; }
+    .other-table tbody tr.main-row:hover { background: #fffbf3; }
+    .other-table tbody td { padding: 11px 14px; vertical-align: middle; font-family: 'Inter', sans-serif; }
+    .other-table tbody tr.comment-row td { padding: 0; border-bottom: 1px solid #f0f0f5; }
+    .other-table tbody tr.comment-row { display: none; }
+    .other-table tbody tr.comment-row.open { display: table-row; }
+    .cmt-expand { background: #fffbf2; border-left: 3px solid var(--gold); padding: 10px 18px 12px; }
+    .cmt-expand .cmt-label { font-size: .62rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--gold); margin-bottom: 5px; }
+    .cmt-expand textarea { width: 100%; border: 1.5px solid #f0e8cc; border-radius: 8px; background: #fff; font-family: 'Inter',sans-serif; font-size: .8rem; color: #444; resize: none; outline: none; line-height: 1.55; min-height: 48px; padding: 7px 10px; transition: border .2s; }
+    .cmt-expand textarea:focus { border-color: var(--gold); }
+    .cmt-expand textarea:disabled { cursor: default; border-color: transparent; background: transparent; padding: 0; }
+    .cmt-expand .cmt-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 6px; }
+    .cmt-expand .cmt-by { font-size: .65rem; color: #bbb; }
+    .toggle-icon { font-size: .7rem; color: #bbb; transition: transform .2s; }
+    .main-row.open .toggle-icon { transform: rotate(180deg); }
+    .ot-seri { font-weight: 600; font-size: .88rem; color: var(--navy); }
+    .ot-issuer { font-size: .72rem; color: var(--gray); margin-top: 1px; }
+    .ot-yield { color: var(--gold); font-weight: 600; }
+    .ot-price-jual { color: #27ae60; font-weight: 600; }
+    .ot-price-beli { color: #2980b9; font-weight: 600; }
+  </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<div id="navbar-placeholder"></div>
+<script src="navbar.js"></script>
+
+
+
+
+<!-- PAGE -->
+<div class="page-container">
+
+  <!-- Header -->
+  <div class="page-header">
+    <div>
+      <div class="page-title">Bookbuilding Obligasi</div>
+      <div class="page-subtitle">Pemasaran obligasi rekomendasi | data dari Pasar Sekunder</div>
+      <div class="title-underline"></div>
+    </div>
+    <div>
+      <a class="btn btn-outline" href="obligasi-order.html">📋 Lihat Semua Order</a>
+    </div>
+  </div>
+
+  <!-- REKOMENDASI SECTION -->
+  <div class="rec-section">
+    <div class="section-label">Obligasi Rekomendasi</div>
+    <div class="rec-cards-row" id="recCardsRow">
+      <div class="add-rec-card" id="addRecCardBtn" onclick="openPickerModal()">
+        <div class="add-rec-icon">+</div>
+        <div class="add-rec-label">Tambah Obligasi<br/>Rekomendasi</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PILIHAN OBLIGASI LAIN -->
+  <div class="other-section">
+    <div class="section-label">Pilihan Obligasi Lainnya</div>
+    <div class="other-table-card">
+      <div class="other-table-wrap">
+        <table class="other-table">
+          <thead>
+            <tr>
+              <th>Seri</th>
+              <th>Tipe</th>
+              <th>Kupon</th>
+              <th>Yield</th>
+              <th>Harga Jual</th>
+              <th>Harga Beli</th>
+              <th>Jatuh Tempo</th>
+              <th>Update</th>
+              <th>Order</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="otherObligasiBody">
+            <tr><td colspan="9" class="empty-state" style="padding:40px;color:#bbb;font-size:.85rem;">Memuat data...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /page-container -->
+
+<!-- MODAL: PICKER (pilih dari pasar sekunder) -->
+<div class="modal-overlay" id="pickerModal" onclick="closeModal('pickerModal',event)">
+  <div class="modal" style="width:760px;">
+    <div class="modal-header">
+      <div class="modal-title" id="pickerModalTitle">Pilih Obligasi Rekomendasi</div>
+      <button class="modal-close" onclick="closeModal('pickerModal')">✕</button>
+    </div>
+    <div class="picker-filters" id="pickerFilters">
+      <button class="picker-filter-btn active" onclick="pickerFilter('all',this)">Semua</button>
+      <button class="picker-filter-btn" onclick="pickerFilter('gov-idr',this)">Pemerintah IDR</button>
+      <button class="picker-filter-btn" onclick="pickerFilter('gov-usd',this)">Pemerintah USD</button>
+      <button class="picker-filter-btn" onclick="pickerFilter('korp-idr',this)">Korporasi IDR</button>
+      <button class="picker-filter-btn" onclick="pickerFilter('korp-usd',this)">Korporasi USD</button>
+    </div>
+    <input class="picker-search" id="pickerSearch" placeholder="Cari seri obligasi..." oninput="renderPickerList()"/>
+    <div class="picker-list" id="pickerList"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('pickerModal')">Batal</button>
+      <button class="btn btn-primary" id="pickerConfirmBtn" onclick="confirmPickerSelection()" disabled>Tambahkan Rekomendasi</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+  // ===== CONSTANTS =====
+  const CATEGORIES = ['gov-idr','gov-usd','korp-idr','korp-usd'];
+  const COL_PS = { 'gov-idr':'obligasi_gov_idr','gov-usd':'obligasi_gov_usd','korp-idr':'obligasi_korp_idr','korp-usd':'obligasi_korp_usd' };
+  const COL_REC = 'bb_recommendations';
+  const CAT_LABEL = { 'gov-idr':'Pemerintah IDR','gov-usd':'Pemerintah USD','korp-idr':'Korporasi IDR','korp-usd':'Korporasi USD' };
+  const CAT_SHORT = { 'gov-idr':'Gov IDR','gov-usd':'Gov USD','korp-idr':'Korp IDR','korp-usd':'Korp USD' };
+  const ROLE_LABELS = { head_account:'Head Account',admin:'Admin',sales:'Sales',treasury:'Treasury' };
+
+  // ===== STATE =====
+  let psData  = { 'gov-idr':[],'gov-usd':[],'korp-idr':[],'korp-usd':[] };
+  let recItems = [];
+  let curUser = null;
+  let pickerCat = 'all';
+  let pickerSelected = null;
+
+  // ===== AUTH — navbar UI dihandle navbar.html =====
+  function initAuth() {
+    const raw = sessionStorage.getItem('fawz_user');
+    if (!raw) { window.location.href = 'login.html'; return; }
+    curUser = JSON.parse(raw);
+  }
+  // ===== LOAD ALL =====
+  async function loadAll() {
+    // Load pasar sekunder (all 4 categories)
+    for (const cat of CATEGORIES) {
+      try {
+        const { data, error } = await window._supabase.from(COL_PS[cat]).select('*').order('seri', { ascending: true });
+        if (error) throw error;
+        psData[cat] = (data || []).map(d => ({ ...d, category: cat }));
+      } catch(e) { psData[cat] = []; }
+    }
+
+    // Load recommendations
+    try {
+      const { data, error } = await window._supabase.from(COL_REC).select('*').order('addedAt', { ascending: true });
+      if (error) throw error;
+      recItems = data || [];
+    } catch(e) { recItems = []; }
+    renderRecCards();
+  }
+
+  // ===== RECOMMENDATION CARDS =====
+  function renderRecCards() {
+    const row = document.getElementById('recCardsRow');
+    row.querySelectorAll('.rec-card-wrapper').forEach(c => c.remove());
+    const addBtn = document.getElementById('addRecCardBtn');
+
+    recItems.forEach(item => {
+      const wrapper = buildRecCardWrapper(item);
+      row.insertBefore(wrapper, addBtn);
+    });
+
+    // Hide add button if 3+ recommendations already
+    addBtn.style.display = recItems.length >= 3 ? 'none' : '';
+
+    // Render the "other" table with non-recommended items
+    renderOtherTable();
+  }
+
+  function buildRecCardWrapper(item) {
+    const card = buildRecCard(item);
+    const canEdit = canManageRec();
+    const wrapper = document.createElement('div');
+    wrapper.className = 'rec-card-wrapper';
+    wrapper.dataset.id = item.id;
+
+    const cmtDiv = document.createElement('div');
+    cmtDiv.className = 'rec-card-comment';
+    const savedCmt = item.comment || '';
+    const savedBy = item.commentBy ? `Diedit oleh ${item.commentBy}` : '';
+    cmtDiv.innerHTML = `
+      <div class="cmt-label">Komentar Analis</div>
+      <textarea id="rcmt-${item.id}" placeholder="Tambahkan komentar rekomendasi..." ${canEdit?'':'disabled'}
+        oninput="onRcmtInput('${item.id}')">${esc(savedCmt)}</textarea>
+      <div class="cmt-footer">
+        <span class="cmt-by" id="rcmt-by-${item.id}">${esc(savedBy)}</span>
+        ${canEdit ? `<button class="btn-save-cmt" id="rcmt-btn-${item.id}" onclick="saveRecComment('${item.id}')">Simpan</button>` : ''}
+      </div>`;
+
+    wrapper.appendChild(card);
+    wrapper.appendChild(cmtDiv);
+    return wrapper;
+  }
+
+  function buildRecCard(item) {
+    const isUsd = item.category && item.category.endsWith('usd');
+    const el = document.createElement('div');
+    el.className = 'rec-card';
+    el.dataset.id = item.id;
+    el.innerHTML = `
+      <div class="rec-card-badge">${CAT_SHORT[item.category]||item.category}</div>
+      <div class="rec-card-seri">${esc(item.seri||'—')}</div>
+      <div class="rec-card-category">${CAT_LABEL[item.category]||''}</div>
+      <div class="rec-card-stats">
+        <div>
+          <div class="rc-stat-label">Kupon</div>
+          <div class="rc-stat-value">${item.kupon!=null?Number(item.kupon).toFixed(3)+'%':'—'}</div>
+        </div>
+        <div>
+          <div class="rc-stat-label">Yield</div>
+          <div class="rc-stat-value yield">${item.yield!=null?Number(item.yield).toFixed(4)+'%':'—'}</div>
+        </div>
+        <div>
+          <div class="rc-stat-label">Harga Jual</div>
+          <div class="rc-stat-value jual">${fmtHarga(item.hargaJual, !isUsd)}</div>
+        </div>
+        <div>
+          <div class="rc-stat-label">Harga Beli</div>
+          <div class="rc-stat-value beli">${fmtHarga(item.hargaBeli, !isUsd)}</div>
+        </div>
+        <div>
+          <div class="rc-stat-label">Jatuh Tempo</div>
+          <div class="rc-stat-value" style="font-size:.8rem;">${fmtDate(item.jatuhTempo)}</div>
+        </div>
+      </div>
+      <div class="rec-card-footer">
+        <div class="rc-tgl">Update: ${fmtDate(item.tanggalUpdate)}</div>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <button class="btn btn-sm btn-order" onclick="event.stopPropagation();goOrder('${esc(item.seri||'')}','${esc(item.category||'')}')">🛒 Order</button>
+          ${canManageRec() ? `<button class="btn-rc-remove" onclick="removeRecommendation('${item.id}')">× Hapus</button>` : ''}
+        </div>
+      </div>
+    `;
+    return el;
+  }
+
+  function canManageRec() {
+    return curUser && ['head_account','treasury','admin'].includes(curUser.role);
+  }
+
+  function onRcmtInput(id) {
+    const btn = document.getElementById(`rcmt-btn-${id}`);
+    if (btn) btn.style.display = 'inline-block';
+  }
+
+  async function saveRecComment(id) {
+    const ta = document.getElementById(`rcmt-${id}`);
+    const btn = document.getElementById(`rcmt-btn-${id}`);
+    const byEl = document.getElementById(`rcmt-by-${id}`);
+    if (!ta) return;
+    const val = ta.value.trim();
+    btn.textContent = 'Menyimpan...'; btn.disabled = true;
+    try {
+      const { error } = await window._supabase.from(COL_REC).update({ comment: val, commentBy: curUser?.name||'', commentAt: new Date().toISOString() }).eq('id', id);
+      if (error) throw error;
+      const rec = recItems.find(r => r.id === id);
+      if (rec) { rec.comment = val; rec.commentBy = curUser?.name||''; }
+      byEl.textContent = `Diedit oleh ${curUser?.name||''}`;
+      btn.style.display = 'none';
+      showToast('Komentar tersimpan', 'success');
+    } catch(e) { showToast('Gagal menyimpan komentar', 'error'); }
+    finally { btn.textContent = 'Simpan'; btn.disabled = false; }
+  }
+
+  // ===== OTHER OBLIGASI TABLE =====
+  function renderOtherTable() {
+    const recIds = new Set(recItems.map(r => r.psId || r.id));
+    const canEdit = canManageRec();
+    let allItems = [];
+    CATEGORIES.forEach(cat => {
+      psData[cat].forEach(item => {
+        if (!recIds.has(item.id)) allItems.push({ ...item, category: cat });
+      });
+    });
+    allItems.sort((a,b) => (a.seri||'').localeCompare(b.seri||''));
+
+    const tbody = document.getElementById('otherObligasiBody');
+    if (!allItems.length) {
+      tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:40px;color:#bbb;font-size:.85rem;">Semua obligasi sudah menjadi rekomendasi</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = allItems.map((item, idx) => {
+      const isUsd = item.category.endsWith('usd');
+      const catShort = CAT_SHORT[item.category] || item.category;
+      const isGov = item.category.startsWith('gov');
+      const badgeCls = isUsd ? 'badge-usd' : (isGov ? 'badge-idr' : 'badge-idr');
+      const cmt = item.otherComment || '';
+      const cmtBy = item.otherCommentBy ? `Diedit oleh ${item.otherCommentBy}` : '';
+      return `
+        <tr class="main-row" id="otr-${idx}" onclick="toggleOtherRow(${idx})">
+          <td><div class="ot-seri">${esc(item.seri||'—')}</div><div class="ot-issuer">${esc(CAT_LABEL[item.category]||'')}</div></td>
+          <td><span class="${badgeCls}">${catShort}</span></td>
+          <td>${item.kupon!=null?Number(item.kupon).toFixed(3)+'%':'—'}</td>
+          <td class="ot-yield">${item.yield!=null?Number(item.yield).toFixed(4)+'%':'—'}</td>
+          <td class="ot-price-jual">${fmtHarga(item.hargaJual,!isUsd)}</td>
+          <td class="ot-price-beli">${fmtHarga(item.hargaBeli,!isUsd)}</td>
+          <td style="font-size:.8rem;color:var(--gray)">${fmtDate(item.jatuhTempo)}</td>
+          <td style="font-size:.75rem;color:#bbb">${fmtDate(item.tanggalUpdate)}</td>
+          <td onclick="event.stopPropagation()">
+            <button class="btn btn-sm btn-order" onclick="goOrder('${esc(item.seri||'')}','${esc(item.category||'')}')">🛒 Order</button>
+          </td>
+          <td style="text-align:center"><span class="toggle-icon" id="otr-icon-${idx}">&#9660;</span></td>
+        </tr>
+        <tr class="comment-row" id="ocmt-${idx}">
+          <td colspan="10">
+            <div class="cmt-expand">
+              <div class="cmt-label">Komentar Analis</div>
+              <textarea id="ocmt-ta-${idx}" placeholder="Tambahkan catatan untuk obligasi ini..." ${canEdit?'':'disabled'}
+                oninput="onOcmtInput(${idx},'${esc(item.id)}','${esc(item.category)}')">${esc(cmt)}</textarea>
+              <div class="cmt-footer">
+                <span class="cmt-by" id="ocmt-by-${idx}">${esc(cmtBy)}</span>
+                ${canEdit ? `<button class="btn-save-cmt" id="ocmt-btn-${idx}" style="display:none" onclick="saveOtherComment(${idx},'${esc(item.id)}','${esc(item.category)}')">Simpan</button>` : ''}
+              </div>
+            </div>
+          </td>
+        </tr>`;
+    }).join('');
+  }
+
+  function toggleOtherRow(idx) {
+    const row = document.getElementById(`otr-${idx}`);
+    const cmtRow = document.getElementById(`ocmt-${idx}`);
+    const icon = document.getElementById(`otr-icon-${idx}`);
+    const isOpen = cmtRow.classList.contains('open');
+    cmtRow.classList.toggle('open', !isOpen);
+    row.classList.toggle('open', !isOpen);
+    if (icon) icon.style.transform = isOpen ? '' : 'rotate(180deg)';
+  }
+
+  function onOcmtInput(idx, itemId, cat) {
+    const btn = document.getElementById(`ocmt-btn-${idx}`);
+    if (btn) btn.style.display = 'inline-block';
+  }
+
+  async function saveOtherComment(idx, itemId, cat) {
+    const ta = document.getElementById(`ocmt-ta-${idx}`);
+    const btn = document.getElementById(`ocmt-btn-${idx}`);
+    const byEl = document.getElementById(`ocmt-by-${idx}`);
+    if (!ta) return;
+    const val = ta.value.trim();
+    btn.textContent = 'Menyimpan...'; btn.disabled = true;
+    try {
+      const colName = COL_PS[cat];
+      const { error } = await window._supabase.from(colName).update({ otherComment: val, otherCommentBy: curUser?.name||'' }).eq('id', itemId);
+      if (error) throw error;
+      const arr = psData[cat];
+      const found = arr && arr.find(r => r.id === itemId);
+      if (found) { found.otherComment = val; found.otherCommentBy = curUser?.name||''; }
+      byEl.textContent = `Diedit oleh ${curUser?.name||''}`;
+      btn.style.display = 'none';
+      showToast('Komentar tersimpan', 'success');
+    } catch(e) { showToast('Gagal menyimpan komentar', 'error'); }
+    finally { btn.textContent = 'Simpan'; btn.disabled = false; }
+  }
+
+  // ===== PICKER MODAL (for recommendations) =====
+  function openPickerModal() {
+    if (!canManageRec()) { showToast('Hanya Treasury/Head Account yang bisa menambah rekomendasi', 'error'); return; }
+    pickerSelected = null;
+    pickerCat = 'all';
+    document.getElementById('pickerSearch').value = '';
+    document.getElementById('pickerConfirmBtn').disabled = true;
+    document.querySelectorAll('#pickerFilters .picker-filter-btn').forEach((b,i) => b.classList.toggle('active', i===0));
+    renderPickerList();
+    document.getElementById('pickerModal').classList.add('open');
+  }
+
+  function pickerFilter(cat, btn) {
+    pickerCat = cat;
+    document.querySelectorAll('#pickerFilters .picker-filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderPickerList();
+  }
+
+  function renderPickerList() {
+    const q = document.getElementById('pickerSearch').value.toLowerCase();
+    const existingIds = new Set(recItems.map(r => r.psId || r.id));
+
+    let items = [];
+    const cats = pickerCat === 'all' ? CATEGORIES : [pickerCat];
+    cats.forEach(cat => {
+      psData[cat].forEach(item => items.push({ ...item, category: cat }));
+    });
+    if (q) items = items.filter(i => (i.seri||'').toLowerCase().includes(q));
+    items.sort((a,b) => (a.seri||'').localeCompare(b.seri||''));
+
+    const list = document.getElementById('pickerList');
+    if (!items.length) { list.innerHTML = `<div class="picker-empty">Tidak ada data ditemukan</div>`; return; }
+
+    list.innerHTML = items.map(item => {
+      const isUsd = item.category.endsWith('usd');
+      const alreadyAdded = existingIds.has(item.id);
+      const isSelected = pickerSelected && pickerSelected.id === item.id;
+      return `<div class="picker-item${isSelected?' selected':''}${alreadyAdded?' already':''}"
+        data-id="${item.id}" data-cat="${item.category}"
+        style="${alreadyAdded?'opacity:.4;cursor:not-allowed;':''}"
+        ${alreadyAdded?'title="Sudah ditambahkan"':''}>
+        <div class="pi-seri">${esc(item.seri||'')}</div>
+        <div class="pi-info">
+          <span class="pi-stat"><strong>${item.kupon!=null?Number(item.kupon).toFixed(3)+'%':'—'}</strong> Kupon</span>
+          <span class="pi-stat"><strong>${fmtHarga(item.hargaJual,!isUsd)}</strong> Jual</span>
+          <span class="pi-stat"><strong>${item.yield!=null?Number(item.yield).toFixed(4)+'%':'—'}</strong> Yield</span>
+          <span class="pi-stat">${fmtDate(item.jatuhTempo)}</span>
+        </div>
+        <span class="picker-type ${isUsd?'badge-usd':'badge-idr'}">${CAT_SHORT[item.category]}</span>
+        <div class="pi-check">${isSelected?'✓':alreadyAdded?'✓':''}</div>
+      </div>`;
+    }).join('');
+  }
+
+  // Event delegation for picker list clicks
+  document.getElementById('pickerList').addEventListener('click', function(e) {
+    const item = e.target.closest('.picker-item');
+    if (!item || item.classList.contains('already')) return;
+    const id = item.dataset.id;
+    const cat = item.dataset.cat;
+    const found = psData[cat] && psData[cat].find(r => r.id === id);
+    if (!found) return;
+    pickerSelected = { ...found, category: cat };
+    document.getElementById('pickerConfirmBtn').disabled = false;
+    renderPickerList();
+  });
+
+  async function confirmPickerSelection() {
+    if (!pickerSelected) return;
+    const btn = document.getElementById('pickerConfirmBtn');
+    btn.textContent = 'Menambahkan...'; btn.disabled = true;
+    try {
+      const recData = { ...pickerSelected, psId: pickerSelected.id, addedBy: curUser?.name||'', addedAt: new Date().toISOString() };
+      delete recData.id;
+      const { data: newRow, error } = await window._supabase.from(COL_REC).insert(recData).select().single();
+      if (error) throw error;
+      recItems.push(newRow);
+      renderRecCards();
+      closeModal('pickerModal');
+      showToast(`${pickerSelected.seri} ditambahkan sebagai rekomendasi`, 'success');
+    } catch(e) { console.error(e); showToast('Gagal menambahkan rekomendasi', 'error'); }
+    finally { btn.textContent = 'Tambahkan Rekomendasi'; btn.disabled = false; }
+  }
+
+  async function removeRecommendation(id) {
+    if (!confirm('Hapus dari rekomendasi?')) return;
+    try {
+      const { error } = await window._supabase.from(COL_REC).delete().eq('id', id);
+      if (error) throw error;
+      recItems = recItems.filter(r => r.id !== id);
+      renderRecCards();
+      renderOtherTable();
+      showToast('Rekomendasi dihapus', 'success');
+    } catch(e) { showToast('Gagal menghapus', 'error'); }
+  }
+
+  // ===== MODAL HELPERS =====
+  function closeModal(id, e) {
+    if (!e || e.target===document.getElementById(id))
+      document.getElementById(id).classList.remove('open');
+  }
+
+  // ===== UTILS =====
+  function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function fmtDate(d) { if (!d) return '—'; try { return new Date(d).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}); } catch { return d; } }
+  function fmtHarga(val, idr) { if (val==null) return '—'; const n=Number(val); return idr?n.toLocaleString('id-ID',{minimumFractionDigits:2,maximumFractionDigits:4}):n.toFixed(4); }
+  function showToast(msg, type='info') {
+    const t=document.createElement('div'); t.className=`toast toast-${type}`; t.textContent=msg;
+    document.getElementById('toastContainer').appendChild(t);
+    setTimeout(()=>t.remove(),3500);
+  }
+
+  // ===== NAVIGATE TO ORDER PAGE =====
+  function goOrder(seri, category) {
+    const params = new URLSearchParams({ seri, category, autoOrder: '1' });
+    window.location.href = `obligasi-order.html?${params.toString()}`;
+  }
+
+  // ===== BOOT =====
+  initAuth();
+</script>
+</body>
+</html>

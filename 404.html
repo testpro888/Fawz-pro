@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Halaman Tidak Ditemukan</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy: #0d0d2b;
+      --navy-mid: #1a0e4a;
+      --gold: #f5a623;
+      --gold-light: #ffc857;
+      --bg: #f4f5fb;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--navy);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Background orbs */
+    .bg-orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      pointer-events: none;
+    }
+    .bg-orb-1 {
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, rgba(245,166,35,0.12) 0%, transparent 70%);
+      top: -100px; left: -100px;
+      animation: drift 8s ease-in-out infinite alternate;
+    }
+    .bg-orb-2 {
+      width: 400px; height: 400px;
+      background: radial-gradient(circle, rgba(61,31,138,0.3) 0%, transparent 70%);
+      bottom: -80px; right: -80px;
+      animation: drift 10s ease-in-out infinite alternate-reverse;
+    }
+    .bg-orb-3 {
+      width: 300px; height: 300px;
+      background: radial-gradient(circle, rgba(245,166,35,0.07) 0%, transparent 70%);
+      top: 50%; left: 50%; transform: translate(-50%, -50%);
+      animation: pulse-orb 6s ease-in-out infinite;
+    }
+    @keyframes drift { from { transform: translate(0,0); } to { transform: translate(30px, 20px); } }
+    @keyframes pulse-orb { 0%,100% { opacity:0.5; transform: translate(-50%,-50%) scale(1); } 50% { opacity:1; transform: translate(-50%,-50%) scale(1.2); } }
+
+    /* Grid lines */
+    .grid-bg {
+      position: absolute; inset: 0;
+      background-image:
+        linear-gradient(rgba(245,166,35,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(245,166,35,0.04) 1px, transparent 1px);
+      background-size: 60px 60px;
+      pointer-events: none;
+    }
+
+    /* Main content */
+    .container {
+      position: relative; z-index: 1;
+      text-align: center;
+      padding: 40px 24px;
+      max-width: 560px;
+      width: 100%;
+    }
+
+    /* Logo */
+    .brand {
+      display: flex; align-items: center; justify-content: center;
+      gap: 10px; margin-bottom: 48px;
+      text-decoration: none;
+      opacity: 0;
+      animation: fadeUp 0.5s 0.1s ease forwards;
+    }
+    .brand img {
+      height: 32px;
+      filter: drop-shadow(0 0 8px rgba(245,166,35,0.5));
+    }
+    .brand-badge {
+      background: linear-gradient(135deg, var(--gold), var(--gold-light));
+      color: #fff; font-size: 0.55rem; font-weight: 700;
+      padding: 2px 6px; border-radius: 4px; letter-spacing: 1px;
+    }
+
+    /* 404 number */
+    .error-number {
+      font-size: clamp(7rem, 22vw, 10rem);
+      font-weight: 900;
+      line-height: 1;
+      letter-spacing: -4px;
+      background: linear-gradient(135deg, #fff 20%, rgba(255,255,255,0.25) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      position: relative;
+      display: inline-block;
+      margin-bottom: 4px;
+      opacity: 0;
+      animation: fadeUp 0.6s 0.2s ease forwards;
+    }
+    .error-number::after {
+      content: '404';
+      position: absolute; inset: 0;
+      background: linear-gradient(135deg, var(--gold), var(--gold-light));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      opacity: 0.15;
+      transform: translate(3px, 3px);
+      z-index: -1;
+    }
+
+    /* Gold divider */
+    .divider {
+      width: 56px; height: 3px;
+      background: linear-gradient(90deg, var(--gold), var(--gold-light));
+      border-radius: 2px;
+      margin: 0 auto 24px;
+      opacity: 0;
+      animation: fadeUp 0.5s 0.35s ease forwards;
+    }
+
+    .error-title {
+      font-size: 1.3rem; font-weight: 700;
+      color: #fff; margin-bottom: 12px;
+      opacity: 0;
+      animation: fadeUp 0.5s 0.4s ease forwards;
+    }
+
+    .error-desc {
+      font-size: 0.88rem; color: rgba(255,255,255,0.45);
+      line-height: 1.7; margin-bottom: 40px;
+      opacity: 0;
+      animation: fadeUp 0.5s 0.5s ease forwards;
+    }
+
+    /* CTA Button */
+    .btn-home {
+      display: inline-flex; align-items: center; gap: 10px;
+      padding: 14px 32px; border-radius: 12px; border: none;
+      background: linear-gradient(135deg, var(--gold), #e8931a);
+      color: #fff; font-family: 'Inter', sans-serif;
+      font-size: 0.9rem; font-weight: 700;
+      cursor: pointer; text-decoration: none;
+      box-shadow: 0 8px 28px rgba(245,166,35,0.4);
+      transition: transform 0.2s, box-shadow 0.2s;
+      opacity: 0;
+      animation: fadeUp 0.5s 0.6s ease forwards;
+    }
+    .btn-home:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 14px 36px rgba(245,166,35,0.5);
+    }
+    .btn-home svg { width: 16px; height: 16px; fill: currentColor; flex-shrink: 0; }
+
+    /* Countdown */
+    .auto-redirect {
+      margin-top: 20px; font-size: 0.75rem;
+      color: rgba(255,255,255,0.3);
+      opacity: 0;
+      animation: fadeUp 0.5s 0.7s ease forwards;
+    }
+    .auto-redirect span { color: var(--gold); font-weight: 600; }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 480px) {
+      .error-number { letter-spacing: -2px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="grid-bg"></div>
+  <div class="bg-orb bg-orb-1"></div>
+  <div class="bg-orb bg-orb-2"></div>
+  <div class="bg-orb bg-orb-3"></div>
+
+  <div class="container">
+
+    <a class="brand" href="dashboard.html">
+      <img src="assets/logo/fawzpro.png" alt="FAWZ Pro"
+        onerror="this.style.display='none'"/>
+    </a>
+
+    <div class="error-number">404</div>
+    <div class="divider"></div>
+
+    <div class="error-title">Halaman Tidak Ditemukan</div>
+    <div class="error-desc">
+      Halaman yang kamu cari tidak tersedia atau telah dipindahkan.<br>
+      Kembali ke dashboard untuk melanjutkan aktivitas.
+    </div>
+
+    <a class="btn-home" href="dashboard.html">
+      <svg viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+        <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7A1 1 0 003 11h1v6a1 1 0 001 1h4v-4h2v4h4a1 1 0 001-1v-6h1a1 1 0 00.707-1.707l-7-7z"/>
+      </svg>
+      Kembali ke Dashboard
+    </a>
+
+    <div class="auto-redirect">
+      Diarahkan otomatis dalam <span id="countdown">10</span> detik
+    </div>
+
+  </div>
+
+  <script>
+    // Auto redirect countdown
+    let seconds = 10;
+    const el = document.getElementById('countdown');
+    const timer = setInterval(() => {
+      seconds--;
+      if (el) el.textContent = seconds;
+      if (seconds <= 0) {
+        clearInterval(timer);
+        window.location.href = 'dashboard.html';
+      }
+    }, 1000);
+  </script>
+
+</body>
+</html>

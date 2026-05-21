@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Fawz Pro | Sales Tracker</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script>
+    const SUPABASE_URL = 'https://yhmrfluehibfapvtxcfi.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlobXJmbHVlaGliZmFwdnR4Y2ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNjEzODUsImV4cCI6MjA5NDczNzM4NX0.se_H4n_eLsf81d_1GH5sqsPCpX89MHewlPuuNkY6qcU';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    window._supabase = supabase;
+    window.addEventListener('DOMContentLoaded', () => boot());
+  </script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --navy: #0d0d2b; --gold: #f5a623; --gold-light: #ffc857;
+      --bg: #f4f5fb; --nav-h: 68px; --table-header: #1a1a5e;
+    }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); min-height: 100vh; padding-top: var(--nav-h); }
+
+    @keyframes fadeUp { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+    .page-container { max-width: 1280px; margin: 0 auto; padding: 36px 32px; }
+
+    .page-header {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      margin-bottom: 24px; flex-wrap: wrap; gap: 12px;
+      animation: fadeUp 0.4s ease both;
+    }
+    .page-title { font-size: 1.5rem; font-weight: 700; color: var(--navy); }
+    .page-subtitle { font-size: 0.8rem; color: #999; margin-top: 2px; }
+    .title-underline { width: 40px; height: 3px; background: linear-gradient(90deg, var(--gold), var(--gold-light)); border-radius: 2px; margin-top: 8px; }
+
+    /* Tabs */
+    .tabs {
+      display: flex; gap: 4px; margin-bottom: 24px;
+      background: #fff; border-radius: 12px; padding: 6px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      width: fit-content;
+      animation: fadeUp 0.4s 0.03s ease both;
+    }
+    .tab-btn {
+      padding: 9px 22px; border-radius: 8px; border: none;
+      font-family: 'Inter', sans-serif; font-size: 0.82rem; font-weight: 500;
+      cursor: pointer; transition: all 0.2s; color: #888; background: transparent;
+      display: flex; align-items: center; gap: 7px;
+    }
+    .tab-btn.active {
+      background: var(--navy); color: #fff; font-weight: 600;
+    }
+    .tab-btn:not(.active):hover { background: #f0f0f8; color: var(--navy); }
+    .tab-badge {
+      font-size: 0.68rem; font-weight: 700; padding: 1px 7px;
+      border-radius: 10px; background: rgba(255,255,255,0.2);
+    }
+    .tab-btn:not(.active) .tab-badge { background: #eef0ff; color: var(--navy); }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* Summary Cards */
+    .summary-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;
+      margin-bottom: 24px; animation: fadeUp 0.4s 0.05s ease both;
+    }
+    .sum-card {
+      background: linear-gradient(135deg, #1a1a5e, #0d0d2b);
+      border-radius: 16px; padding: 22px 24px; color: #fff;
+      position: relative; overflow: hidden; transition: transform 0.2s;
+    }
+    .sum-card:hover { transform: translateY(-3px); }
+    .sum-card::before {
+      content: ''; position: absolute; width: 120px; height: 120px;
+      border-radius: 50%; background: rgba(255,255,255,0.05); right: -25px; top: -25px;
+    }
+    .sum-card-label { font-size: 0.7rem; font-weight: 600; color: rgba(255,255,255,0.55); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+    .sum-card-line { width: 100%; height: 2px; background: rgba(255,255,255,0.15); border-radius: 2px; margin-bottom: 14px; }
+    .sum-card-line-fill { height: 100%; border-radius: 2px; background: linear-gradient(90deg, var(--gold), var(--gold-light)); }
+    .sum-card-value { font-size: 2rem; font-weight: 700; line-height: 1; position: relative; z-index: 1; }
+
+    /* Summary Klik */
+    .summary-grid-clicks {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
+      margin-bottom: 24px; animation: fadeUp 0.4s 0.05s ease both;
+    }
+    .sum-card-maybank { background: linear-gradient(135deg, #877300, #b3b000); }
+    .sum-card-trimegah { background: linear-gradient(135deg, #0c007a, #0c16a5); }
+    .sum-card-total-klik { background: linear-gradient(135deg, #1a1a5e, #0d0d2b); }
+
+    /* Filter */
+    .filter-bar {
+      background: #fff; border-radius: 14px; padding: 14px 20px;
+      display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px;
+      animation: fadeUp 0.4s 0.1s ease both;
+    }
+    .filter-bar input[type="text"],
+    .filter-bar input[type="date"],
+    .filter-bar select {
+      height: 36px; border: 1px solid #e0e0ee; border-radius: 8px;
+      padding: 0 12px; font-family: 'Inter', sans-serif; font-size: 0.8rem;
+      color: var(--navy); background: #fafafa; outline: none; transition: border-color 0.2s;
+    }
+    .filter-bar input:focus, .filter-bar select:focus { border-color: var(--gold); }
+    .filter-bar input[type="text"] { min-width: 200px; }
+    .filter-label { font-size: 0.72rem; color: #888; font-weight: 500; white-space: nowrap; }
+    .filter-spacer { flex: 1; }
+    .btn-reset {
+      height: 36px; padding: 0 14px; border-radius: 8px;
+      border: 1px solid #e0e0ee; background: #fff; color: #888;
+      font-family: 'Inter', sans-serif; font-size: 0.8rem; cursor: pointer;
+    }
+    .btn-reset:hover { border-color: #bbb; color: var(--navy); }
+    .btn-export {
+      height: 36px; padding: 0 14px; border-radius: 8px;
+      border: 1px solid #e0e0ee; background: #fff; color: var(--navy);
+      font-family: 'Inter', sans-serif; font-size: 0.78rem; font-weight: 500;
+      cursor: pointer; display: flex; align-items: center; gap: 6px;
+    }
+    .btn-export:hover { background: #f5f5ff; }
+    .btn-delete {
+      height: 28px; padding: 0 10px; border-radius: 6px;
+      border: 1px solid #fcc; background: #fff5f5; color: #e03e3e;
+      font-family: 'Inter', sans-serif; font-size: 0.72rem; font-weight: 500;
+      cursor: pointer; transition: all 0.15s;
+    }
+    .btn-delete:hover { background: #e03e3e; color: #fff; border-color: #e03e3e; }
+
+    /* Table */
+    .table-wrapper {
+      background: #fff; border-radius: 16px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06); overflow: hidden;
+      animation: fadeUp 0.4s 0.15s ease both;
+    }
+    .table-toolbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 20px; border-bottom: 1px solid #f0f0f8;
+    }
+    .table-info { font-size: 0.8rem; color: #888; }
+    .table-info span { font-weight: 600; color: var(--navy); }
+
+    table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+    thead tr { background: var(--table-header); }
+    thead th { padding: 13px 16px; text-align: left; font-weight: 600; color: #fff; font-size: 0.76rem; letter-spacing: 0.3px; white-space: nowrap; }
+    tbody tr { border-bottom: 1px solid #f5f5fc; transition: background 0.15s; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: #f9f9ff; }
+    tbody td { padding: 12px 16px; color: #333; vertical-align: middle; }
+
+    .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; }
+    .badge-visited { background: #e8f5e9; color: #2e7d32; }
+    .badge-maybank { background: #e8f0ff; color: #b49300; }
+    .badge-trimegah { background: #fff0f0; color: #b30000; }
+
+    .referral-tag {
+      display: inline-block; padding: 2px 10px; border-radius: 6px;
+      font-size: 0.72rem; font-weight: 600; background: #eef0ff; color: #3d1f8a; letter-spacing: 0.5px;
+    }
+
+    .empty-state { text-align: center; padding: 60px 20px; color: #bbb; }
+    .empty-icon { font-size: 2.5rem; margin-bottom: 12px; }
+
+    .skeleton {
+      height: 14px;
+      background: linear-gradient(90deg, #f0f0f8 25%, #e8e8f5 50%, #f0f0f8 75%);
+      background-size: 200% 100%; border-radius: 4px; animation: shimmer 1.4s infinite;
+    }
+
+    .pagination { display: flex; align-items: center; justify-content: flex-end; gap: 6px; padding: 12px 20px; border-top: 1px solid #f0f0f8; }
+    .page-btn {
+      min-width: 32px; height: 32px; border-radius: 8px; border: 1px solid #e0e0ee;
+      background: #fff; color: var(--navy); font-family: 'Inter', sans-serif;
+      font-size: 0.78rem; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    }
+    .page-btn:hover { background: #f0f0ff; }
+    .page-btn.active { background: var(--navy); color: #fff; border-color: var(--navy); font-weight: 600; }
+    .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    @media (max-width: 900px) { .summary-grid { grid-template-columns: repeat(2, 1fr); } .summary-grid-clicks { grid-template-columns: 1fr; } .page-container { padding: 24px 16px; } }
+    @media (max-width: 600px) { .summary-grid { grid-template-columns: 1fr 1fr; } }
+  </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<div id="navbar-placeholder"></div>
+<script src="navbar.js"></script>
+
+<!-- PAGE -->
+<div class="page-container">
+
+  <div class="page-header">
+    <div>
+      <div class="page-title">Sales Tracker</div>
+      <div class="page-subtitle">Data pengunjung & klik link referral</div>
+      <div class="title-underline"></div>
+    </div>
+    <button class="btn-export" onclick="currentTab==='leads'?exportLeadsCSV():exportClicksCSV()">⬇ Export CSV</button>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab-btn active" id="tab-leads" onclick="switchTab('leads')">
+      📋 Data Leads <span class="tab-badge" id="badge-leads">0</span>
+    </button>
+    <button class="tab-btn" id="tab-clicks" onclick="switchTab('clicks')">
+      🖱️ Akun Sekuritas <span class="tab-badge" id="badge-clicks">0</span>
+    </button>
+  </div>
+
+  <!-- ===== TAB: LEADS ===== -->
+  <div class="tab-panel active" id="panel-leads">
+    <div class="summary-grid">
+      <div class="sum-card">
+        <div class="sum-card-label">Total Leads</div>
+        <div class="sum-card-line"><div class="sum-card-line-fill" style="width:100%"></div></div>
+        <div class="sum-card-value" id="statTotal">—</div>
+      </div>
+      <div class="sum-card">
+        <div class="sum-card-label">Bulan Ini</div>
+        <div class="sum-card-line"><div class="sum-card-line-fill" style="width:60%"></div></div>
+        <div class="sum-card-value" id="statMonth">—</div>
+      </div>
+      <div class="sum-card">
+        <div class="sum-card-label">Bulan Lalu</div>
+        <div class="sum-card-line"><div class="sum-card-line-fill" style="width:40%"></div></div>
+        <div class="sum-card-value" id="statLastMonth">—</div>
+      </div>
+      <div class="sum-card">
+        <div class="sum-card-label">Kode Referral Aktif</div>
+        <div class="sum-card-line"><div class="sum-card-line-fill" style="width:30%"></div></div>
+        <div class="sum-card-value" id="statReferrals">—</div>
+      </div>
+    </div>
+
+    <div class="filter-bar">
+      <span class="filter-label">Cari:</span>
+      <input type="text" id="filterSearch" placeholder="Nama / Email / Referral..." oninput="applyFilter()"/>
+      <span class="filter-label">Referral:</span>
+      <select id="filterReferral" onchange="applyFilter()">
+        <option value="">Semua</option>
+      </select>
+      <span class="filter-label">Dari:</span>
+      <input type="date" id="filterFrom" onchange="applyFilter()"/>
+      <span class="filter-label">s/d</span>
+      <input type="date" id="filterTo" onchange="applyFilter()"/>
+      <div class="filter-spacer"></div>
+      <button class="btn-reset" onclick="resetFilter()">Reset</button>
+    </div>
+
+    <div class="table-wrapper">
+      <div class="table-toolbar">
+        <div class="table-info">Menampilkan <span id="rowCount">0</span> data</div>
+      </div>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Nama</th>
+              <th>Email</th>
+              <th>Kode Referral</th>
+              <th>Tanggal</th>
+              <th>Waktu</th>
+              <th>Status</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody">
+            <tr><td colspan="8" style="padding:0;">
+              <div style="padding:14px 16px;display:flex;flex-direction:column;gap:10px;">
+                <div class="skeleton"></div><div class="skeleton" style="width:90%"></div>
+                <div class="skeleton" style="width:95%"></div><div class="skeleton" style="width:80%"></div>
+              </div>
+            </td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="pagination" id="pagination"></div>
+    </div>
+  </div>
+
+  <!-- ===== TAB: KLIK LINK ===== -->
+  <div class="tab-panel" id="panel-clicks">
+    <div class="summary-grid-clicks">
+      <div class="sum-card sum-card-total-klik">
+        <div class="sum-card-label">Total Klik</div>
+        <div class="sum-card-line"><div class="sum-card-line-fill" style="width:100%"></div></div>
+        <div class="sum-card-value" id="statTotalKlik">—</div>
+      </div>
+      <div class="sum-card sum-card-maybank">
+        <div class="sum-card-label">🏦 Maybank Sekuritas</div>
+        <div class="sum-card-line"><div class="sum-card-line-fill" style="width:100%"></div></div>
+        <div class="sum-card-value" id="statMaybank">—</div>
+      </div>
+      <div class="sum-card sum-card-trimegah">
+        <div class="sum-card-label">🏦 Trimegah Sekuritas</div>
+        <div class="sum-card-line"><div class="sum-card-line-fill" style="width:100%"></div></div>
+        <div class="sum-card-value" id="statTrimegah">—</div>
+      </div>
+    </div>
+
+    <div class="filter-bar">
+      <span class="filter-label">Cari:</span>
+      <input type="text" id="filterClickSearch" placeholder="Nama / Email..." oninput="applyClickFilter()"/>
+      <span class="filter-label">Link:</span>
+      <select id="filterClickLink" onchange="applyClickFilter()">
+        <option value="">Semua</option>
+        <option value="Maybank Sekuritas">Maybank Sekuritas</option>
+        <option value="Trimegah Sekuritas">Trimegah Sekuritas</option>
+      </select>
+      <span class="filter-label">Dari:</span>
+      <input type="date" id="filterClickFrom" onchange="applyClickFilter()"/>
+      <span class="filter-label">s/d</span>
+      <input type="date" id="filterClickTo" onchange="applyClickFilter()"/>
+      <div class="filter-spacer"></div>
+      <button class="btn-reset" onclick="resetClickFilter()">Reset</button>
+    </div>
+
+    <div class="table-wrapper">
+      <div class="table-toolbar">
+        <div class="table-info">Menampilkan <span id="clickRowCount">0</span> klik</div>
+      </div>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Nama</th>
+              <th>Email</th>
+              <th>Referral</th>
+              <th>Sekuritas</th>
+              <th>Tanggal</th>
+              <th>Waktu</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="clickTableBody">
+            <tr><td colspan="8" style="padding:0;">
+              <div style="padding:14px 16px;display:flex;flex-direction:column;gap:10px;">
+                <div class="skeleton"></div><div class="skeleton" style="width:90%"></div>
+                <div class="skeleton" style="width:85%"></div>
+              </div>
+            </td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="pagination" id="clickPagination"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const ROWS_PER_PAGE = 15;
+  let currentPage = 1;
+  let filteredRows = [];
+  let currentClickPage = 1;
+  let filteredClicks = [];
+  let currentTab = 'leads';
+
+  // ===== TAB SWITCH =====
+  function switchTab(tab) {
+    currentTab = tab;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('tab-' + tab).classList.add('active');
+    document.getElementById('panel-' + tab).classList.add('active');
+  }
+  window.switchTab = switchTab;
+
+  // ===== DATE HELPERS =====
+  function toDate(val) {
+    if (!val) return null;
+    if (val.toDate) return val.toDate();
+    if (val.seconds) return new Date(val.seconds * 1000);
+    return new Date(val);
+  }
+  function formatDate(val) {
+    const d = toDate(val);
+    if (!d || isNaN(d)) return '—';
+    return d.toLocaleDateString('id-ID', { day:'2-digit', month:'short', year:'numeric' });
+  }
+  function formatTime(val) {
+    const d = toDate(val);
+    if (!d || isNaN(d)) return '—';
+    return d.toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit' });
+  }
+
+  // ===== LEADS =====
+  function populateReferralFilter(rows) {
+    const codes = [...new Set(rows.map(r => (r.referral||'').toUpperCase()).filter(Boolean))].sort();
+    const sel = document.getElementById('filterReferral');
+    codes.forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; sel.appendChild(o); });
+  }
+
+  function renderTable(rows) {
+    filteredRows = rows;
+    currentPage = 1;
+    renderPage();
+    renderPagination();
+    document.getElementById('rowCount').textContent = rows.length.toLocaleString('id-ID');
+    document.getElementById('badge-leads').textContent = rows.length;
+  }
+
+  function renderPage() {
+    const start = (currentPage - 1) * ROWS_PER_PAGE;
+    const slice = filteredRows.slice(start, start + ROWS_PER_PAGE);
+    const tbody = document.getElementById('tableBody');
+    if (!slice.length) {
+      tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="empty-icon">📋</div><div style="font-size:.9rem;color:#999;font-weight:600;">Belum ada data</div></div></td></tr>`;
+      return;
+    }
+    tbody.innerHTML = slice.map((r, i) => {
+      const no = (currentPage - 1) * ROWS_PER_PAGE + i + 1;
+      return `<tr>
+        <td style="color:#bbb;font-size:.75rem;">${no}</td>
+        <td><strong>${r.nama||r.name||'—'}</strong></td>
+        <td style="color:#555;">${r.email||'—'}</td>
+        <td><span class="referral-tag">${(r.referral||'—').toUpperCase()}</span></td>
+        <td>${formatDate(r.createdAt)}</td>
+        <td style="color:#888;">${formatTime(r.createdAt)}</td>
+        <td><span class="badge badge-visited">Visited</span></td>
+        <td><button class="btn-delete" onclick="deleteRow('${r.id}')">Hapus</button></td>
+      </tr>`;
+    }).join('');
+  }
+
+  function renderPagination() {
+    const total = Math.ceil(filteredRows.length / ROWS_PER_PAGE);
+    const pag = document.getElementById('pagination');
+    if (total <= 1) { pag.innerHTML = ''; return; }
+    let html = `<button class="page-btn" ${currentPage===1?'disabled':''} onclick="goPage(${currentPage-1})">‹</button>`;
+    for (let i = 1; i <= total; i++) {
+      if (i===1||i===total||Math.abs(i-currentPage)<=1) html += `<button class="page-btn ${i===currentPage?'active':''}" onclick="goPage(${i})">${i}</button>`;
+      else if (Math.abs(i-currentPage)===2) html += `<button class="page-btn" disabled style="border:none">…</button>`;
+    }
+    html += `<button class="page-btn" ${currentPage===total?'disabled':''} onclick="goPage(${currentPage+1})">›</button>`;
+    pag.innerHTML = html;
+  }
+
+  function goPage(n) { currentPage = n; renderPage(); renderPagination(); }
+
+  function renderSummary(rows) {
+    const now = new Date();
+    const thisM = now.getMonth(), thisY = now.getFullYear();
+    const lastM = thisM===0?11:thisM-1, lastY = thisM===0?thisY-1:thisY;
+    let thisMonth=0, lastMonth=0;
+    const refCodes = new Set();
+    rows.forEach(r => {
+      const d = toDate(r.createdAt);
+      if (d) {
+        if (d.getMonth()===thisM && d.getFullYear()===thisY) thisMonth++;
+        if (d.getMonth()===lastM && d.getFullYear()===lastY) lastMonth++;
+      }
+      if (r.referral) refCodes.add(r.referral.toUpperCase());
+    });
+    document.getElementById('statTotal').textContent     = rows.length.toLocaleString('id-ID');
+    document.getElementById('statMonth').textContent     = thisMonth.toLocaleString('id-ID');
+    document.getElementById('statLastMonth').textContent = lastMonth.toLocaleString('id-ID');
+    document.getElementById('statReferrals').textContent = refCodes.size.toLocaleString('id-ID');
+  }
+
+  function applyFilter() {
+    if (!window._allRows) return;
+    const search   = document.getElementById('filterSearch').value.toLowerCase();
+    const referral = document.getElementById('filterReferral').value.toUpperCase();
+    const from     = document.getElementById('filterFrom').value;
+    const to       = document.getElementById('filterTo').value;
+    const result   = window._allRows.filter(r => {
+      const matchSearch  = !search   || (r.nama||'').toLowerCase().includes(search) || (r.email||'').toLowerCase().includes(search) || (r.referral||'').toLowerCase().includes(search);
+      const matchRef     = !referral || (r.referral||'').toUpperCase()===referral;
+      const d = toDate(r.createdAt);
+      const matchFrom    = !from || (d && d >= new Date(from));
+      const matchTo      = !to   || (d && d <= new Date(to+'T23:59:59'));
+      return matchSearch && matchRef && matchFrom && matchTo;
+    });
+    renderTable(result);
+    renderSummary(result);
+  }
+
+  function resetFilter() {
+    ['filterSearch','filterFrom','filterTo'].forEach(id => document.getElementById(id).value='');
+    document.getElementById('filterReferral').value='';
+    if (window._allRows) { renderTable(window._allRows); renderSummary(window._allRows); }
+  }
+
+  function exportLeadsCSV() {
+    const rows = filteredRows.length ? filteredRows : (window._allRows||[]);
+    if (!rows.length) { alert('Tidak ada data.'); return; }
+    const header = ['No','Nama','Email','Kode Referral','Tanggal','Waktu','Status'];
+    const csv = [header.join(','), ...rows.map((r,i) => [
+      i+1, `"${(r.nama||'').replace(/"/g,'""')}"`, r.email||'', r.referral||'',
+      formatDate(r.createdAt), formatTime(r.createdAt), 'Visited'
+    ].join(','))].join('\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+    a.download = `leads_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+  }
+
+  // ===== LINK CLICKS =====
+  function renderClickSummary(rows) {
+    const maybank  = rows.filter(r => (r.link||'').includes('Maybank')).length;
+    const trimegah = rows.filter(r => (r.link||'').includes('Trimegah')).length;
+    document.getElementById('statTotalKlik').textContent = rows.length.toLocaleString('id-ID');
+    document.getElementById('statMaybank').textContent   = maybank.toLocaleString('id-ID');
+    document.getElementById('statTrimegah').textContent  = trimegah.toLocaleString('id-ID');
+    document.getElementById('badge-clicks').textContent  = rows.length;
+  }
+
+  function renderClickTable(rows) {
+    filteredClicks = rows;
+    currentClickPage = 1;
+    renderClickPage();
+    renderClickPagination();
+    document.getElementById('clickRowCount').textContent = rows.length.toLocaleString('id-ID');
+  }
+
+  function renderClickPage() {
+    const start = (currentClickPage - 1) * ROWS_PER_PAGE;
+    const slice = filteredClicks.slice(start, start + ROWS_PER_PAGE);
+    const tbody = document.getElementById('clickTableBody');
+    if (!slice.length) {
+      tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="empty-icon">🖱️</div><div style="font-size:.9rem;color:#999;font-weight:600;">Belum ada klik tercatat</div></div></td></tr>`;
+      return;
+    }
+    tbody.innerHTML = slice.map((r, i) => {
+      const no = (currentClickPage - 1) * ROWS_PER_PAGE + i + 1;
+      const isMaybank = (r.link||'').includes('Maybank');
+      const badgeClass = isMaybank ? 'badge-maybank' : 'badge-trimegah';
+      const icon = isMaybank ? '🏦' : '📈';
+      return `<tr>
+        <td style="color:#bbb;font-size:.75rem;">${no}</td>
+        <td><strong>${r.nama||'—'}</strong></td>
+        <td style="color:#555;">${r.email||'—'}</td>
+        <td><span class="referral-tag">${(r.referral||'—').toUpperCase()}</span></td>
+        <td><span class="badge ${badgeClass}">${icon} ${r.link||'—'}</span></td>
+        <td>${formatDate(r.clickedAt)}</td>
+        <td style="color:#888;">${formatTime(r.clickedAt)}</td>
+        <td><button class="btn-delete" onclick="deleteClick('${r.id}')">Hapus</button></td>
+      </tr>`;
+    }).join('');
+  }
+
+  function renderClickPagination() {
+    const total = Math.ceil(filteredClicks.length / ROWS_PER_PAGE);
+    const pag = document.getElementById('clickPagination');
+    if (total <= 1) { pag.innerHTML = ''; return; }
+    let html = `<button class="page-btn" ${currentClickPage===1?'disabled':''} onclick="goClickPage(${currentClickPage-1})">‹</button>`;
+    for (let i = 1; i <= total; i++) {
+      if (i===1||i===total||Math.abs(i-currentClickPage)<=1) html += `<button class="page-btn ${i===currentClickPage?'active':''}" onclick="goClickPage(${i})">${i}</button>`;
+      else if (Math.abs(i-currentClickPage)===2) html += `<button class="page-btn" disabled style="border:none">…</button>`;
+    }
+    html += `<button class="page-btn" ${currentClickPage===total?'disabled':''} onclick="goClickPage(${currentClickPage+1})">›</button>`;
+    pag.innerHTML = html;
+  }
+
+  function goClickPage(n) { currentClickPage = n; renderClickPage(); renderClickPagination(); }
+
+  function applyClickFilter() {
+    if (!window._allClicks) return;
+    const search = document.getElementById('filterClickSearch').value.toLowerCase();
+    const link   = document.getElementById('filterClickLink').value;
+    const from   = document.getElementById('filterClickFrom').value;
+    const to     = document.getElementById('filterClickTo').value;
+    const result = window._allClicks.filter(r => {
+      const matchSearch = !search || (r.nama||'').toLowerCase().includes(search) || (r.email||'').toLowerCase().includes(search);
+      const matchLink   = !link   || (r.link||'').includes(link);
+      const d = toDate(r.clickedAt);
+      const matchFrom   = !from || (d && d >= new Date(from));
+      const matchTo     = !to   || (d && d <= new Date(to+'T23:59:59'));
+      return matchSearch && matchLink && matchFrom && matchTo;
+    });
+    renderClickTable(result);
+    renderClickSummary(result);
+  }
+
+  function resetClickFilter() {
+    ['filterClickSearch','filterClickFrom','filterClickTo'].forEach(id => document.getElementById(id).value='');
+    document.getElementById('filterClickLink').value='';
+    if (window._allClicks) { renderClickTable(window._allClicks); renderClickSummary(window._allClicks); }
+  }
+
+  function exportClicksCSV() {
+    const rows = filteredClicks.length ? filteredClicks : (window._allClicks||[]);
+    if (!rows.length) { alert('Tidak ada data.'); return; }
+    const header = ['No','Nama','Email','Referral','Link Diklik','Tanggal','Waktu'];
+    const csv = [header.join(','), ...rows.map((r,i) => [
+      i+1, `"${(r.nama||'').replace(/"/g,'""')}"`, r.email||'', r.referral||'',
+      r.link||'', formatDate(r.clickedAt), formatTime(r.clickedAt)
+    ].join(','))].join('\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+    a.download = `link_clicks_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+  }
+
+  // ===== BOOT =====
+  async function boot() {
+    // ── AUTH + ROLE GUARD ──
+    const _gr = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember');
+    if (!_gr) { window.location.replace('login.html'); return; }
+    const _gu = JSON.parse(_gr);
+    if (!['head_account', 'admin'].includes(_gu.role)) { window.location.replace('dashboard.html'); return; }
+
+    try {
+      // Load leads
+      const { data: rows, error: leadsErr } = await window._supabase
+        .from('leads')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (leadsErr) throw leadsErr;
+      window._allRows = rows || [];
+      populateReferralFilter(window._allRows);
+      renderTable(window._allRows);
+      renderSummary(window._allRows);
+
+      // Load link_clicks
+      const { data: clicks, error: clicksErr } = await window._supabase
+        .from('link_clicks')
+        .select('*')
+        .order('clicked_at', { ascending: false });
+      if (clicksErr) throw clicksErr;
+      window._allClicks = clicks || [];
+      renderClickTable(window._allClicks);
+      renderClickSummary(window._allClicks);
+
+    } catch(e) {
+      console.error('Supabase error:', e);
+      document.getElementById('tableBody').innerHTML =
+        `<tr><td colspan="8" style="text-align:center;padding:32px;color:#e03e3e;">Gagal memuat data: ${e.message}</td></tr>`;
+    }
+  }
+
+  async function deleteRow(id) {
+    if (!confirm('Hapus data ini?')) return;
+    try {
+      await window._supabase.from('leads').delete().eq('id', id);
+      window._allRows = window._allRows.filter(r => r.id !== id);
+      filteredRows    = filteredRows.filter(r => r.id !== id);
+      renderPage(); renderPagination(); renderSummary(window._allRows);
+      document.getElementById('rowCount').textContent = filteredRows.length.toLocaleString('id-ID');
+    } catch(e) { alert('Gagal menghapus: ' + e.message); }
+  }
+
+  async function deleteClick(id) {
+    if (!confirm('Hapus data klik ini?')) return;
+    try {
+      await window._supabase.from('link_clicks').delete().eq('id', id);
+      window._allClicks = window._allClicks.filter(r => r.id !== id);
+      filteredClicks    = filteredClicks.filter(r => r.id !== id);
+      renderClickPage(); renderClickPagination(); renderClickSummary(window._allClicks);
+      document.getElementById('clickRowCount').textContent = filteredClicks.length.toLocaleString('id-ID');
+      document.getElementById('badge-clicks').textContent  = window._allClicks.length;
+    } catch(e) { alert('Gagal menghapus: ' + e.message); }
+  }
+
+  window.goPage         = goPage;
+  window.goClickPage    = goClickPage;
+  window.applyFilter    = applyFilter;
+  window.resetFilter    = resetFilter;
+  window.applyClickFilter  = applyClickFilter;
+  window.resetClickFilter  = resetClickFilter;
+  window.exportLeadsCSV    = exportLeadsCSV;
+  window.exportClicksCSV   = exportClicksCSV;
+  window.deleteRow         = deleteRow;
+  window.deleteClick       = deleteClick;
+  window.boot           = boot;
+</script>
+</body>
+</html>

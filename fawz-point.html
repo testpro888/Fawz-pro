@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Fawz Pro | Fawz Point</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script>
+    const SUPABASE_URL = 'https://yhmrfluehibfapvtxcfi.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlobXJmbHVlaGliZmFwdnR4Y2ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNjEzODUsImV4cCI6MjA5NDczNzM4NX0.se_H4n_eLsf81d_1GH5sqsPCpX89MHewlPuuNkY6qcU';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  </script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --navy: #0d0d2b; --gold: #f5a623; --gold-light: #ffc857;
+      --bg: #f4f5fb; --white: #fff; --border: #e0e0ef; --text: #1a1a3a; --gray: #888;
+      --nav-h: 68px; --green: #27ae60; --purple: #7c3aed;
+    }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); min-height: 100vh; padding-top: var(--nav-h); color: var(--text); }
+
+    @keyframes fadeUp { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
+
+    .page-container { max-width: 1200px; margin: 0 auto; padding: 36px 28px; }
+    .page-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 28px; flex-wrap: wrap; gap: 16px; animation: fadeUp 0.4s ease both; }
+    .page-title { font-size: 2rem; font-weight: 900; color: var(--navy); }
+    .page-subtitle { font-size: 0.88rem; color: var(--gray); margin-top: 4px; }
+    .title-underline { width: 48px; height: 3px; background: linear-gradient(90deg, var(--gold), var(--gold-light)); border-radius: 2px; margin-top: 8px; }
+
+    /* Info Banner */
+    .info-banner {
+      background: linear-gradient(135deg, var(--navy), #1e1252);
+      border-radius: 16px; padding: 24px 32px; margin-bottom: 28px;
+      display: flex; align-items: center; gap: 20px; flex-wrap: wrap;
+      animation: fadeUp 0.4s 0.05s ease both;
+    }
+    .info-icon { font-size: 2.5rem; }
+    .info-text h3 { color: #fff; font-size: 1.1rem; font-weight: 700; margin-bottom: 4px; }
+    .info-text p { color: rgba(255,255,255,0.6); font-size: 0.82rem; line-height: 1.5; }
+    .info-highlight { color: var(--gold); font-weight: 700; }
+
+    /* Filter */
+    .filter-bar { background: #fff; border-radius: 14px; padding: 14px 18px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 18px; animation: fadeUp 0.4s 0.08s ease both; }
+    .filter-bar input, .filter-bar select { height: 36px; border: 1px solid var(--border); border-radius: 8px; padding: 0 12px; font-family: 'Inter', sans-serif; font-size: 0.8rem; color: var(--text); outline: none; }
+    .filter-bar input:focus { border-color: var(--gold); }
+    .filter-spacer { flex: 1; }
+
+    /* Leaderboard */
+    .leaderboard { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; animation: fadeUp 0.4s 0.12s ease both; }
+    .point-card {
+      background: #fff; border-radius: 16px; padding: 22px 24px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      display: flex; align-items: center; gap: 16px;
+      transition: transform 0.2s, box-shadow 0.2s;
+      position: relative; overflow: hidden;
+    }
+    .point-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.1); }
+    .point-card.top-1 { border: 2px solid var(--gold); }
+    .point-card.top-2 { border: 2px solid #c0c0c0; }
+    .point-card.top-3 { border: 2px solid #cd7f32; }
+
+    .rank-badge {
+      width: 42px; height: 42px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem; font-weight: 700; flex-shrink: 0;
+    }
+    .rank-1 { background: linear-gradient(135deg, var(--gold), #e8931a); color: #fff; }
+    .rank-2 { background: linear-gradient(135deg, #c0c0c0, #a0a0a0); color: #fff; }
+    .rank-3 { background: linear-gradient(135deg, #cd7f32, #a0622a); color: #fff; }
+    .rank-default { background: #f0f0f5; color: var(--navy); }
+
+    .point-info { flex: 1; }
+    .point-name { font-weight: 700; color: var(--navy); font-size: 0.95rem; margin-bottom: 4px; }
+    .point-client-id { font-size: 0.72rem; color: var(--gray); }
+    .point-detail { font-size: 0.78rem; color: var(--gray); margin-top: 6px; }
+
+    .point-value {
+      text-align: right; flex-shrink: 0;
+    }
+    .point-number { font-size: 1.6rem; font-weight: 800; color: var(--purple); line-height: 1; }
+    .point-label { font-size: 0.68rem; color: var(--gray); text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
+    .point-volume { font-size: 0.72rem; color: var(--gray); margin-top: 4px; }
+
+    /* Summary */
+    .summary-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; animation: fadeUp 0.4s 0.1s ease both; }
+    .summary-box { background: #fff; border-radius: 14px; padding: 20px 24px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); text-align: center; }
+    .summary-val { font-size: 2rem; font-weight: 800; color: var(--purple); }
+    .summary-label { font-size: 0.72rem; color: var(--gray); text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
+
+    .empty-state { text-align: center; padding: 60px 20px; color: #bbb; font-size: 0.9rem; }
+
+    @media (max-width: 768px) {
+      .leaderboard { grid-template-columns: 1fr; }
+      .summary-row { grid-template-columns: 1fr; }
+      .page-container { padding: 24px 16px; }
+    }
+  </style>
+
+  <script>
+    (function() {
+      const raw = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember');
+      if (!raw) { window.location.replace('login.html'); return; }
+      sessionStorage.setItem('fawz_user', raw);
+    })();
+  </script>
+</head>
+<body>
+
+<div id="navbar-placeholder"></div>
+<script src="navbar.js"></script>
+
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <div class="page-title">🏆 Fawz Point</div>
+      <div class="page-subtitle">Leaderboard nasabah berdasarkan volume transaksi saham</div>
+      <div class="title-underline"></div>
+    </div>
+    <div>
+      <input type="month" id="filterMonth" onchange="loadPoints()" style="height:38px;border:1px solid var(--border);border-radius:8px;padding:0 12px;font-family:'Inter',sans-serif;font-size:0.82rem;"/>
+    </div>
+  </div>
+
+  <!-- Info Banner -->
+  <div class="info-banner">
+    <div class="info-icon">⭐</div>
+    <div class="info-text">
+      <h3>Sistem Fawz Point</h3>
+      <p>Setiap <span class="info-highlight">Rp 10.000.000</span> volume transaksi saham = <span class="info-highlight">1 Point</span>. Point dihitung otomatis dari data transaksi saham bulanan.</p>
+    </div>
+  </div>
+
+  <!-- Summary -->
+  <div class="summary-row">
+    <div class="summary-box">
+      <div class="summary-val" id="sumTotalPoints">0</div>
+      <div class="summary-label">Total Point Bulan Ini</div>
+    </div>
+    <div class="summary-box">
+      <div class="summary-val" id="sumTotalVolume">Rp 0</div>
+      <div class="summary-label">Total Volume</div>
+    </div>
+    <div class="summary-box">
+      <div class="summary-val" id="sumNasabah">0</div>
+      <div class="summary-label">Nasabah Aktif</div>
+    </div>
+  </div>
+
+  <!-- Filter -->
+  <div class="filter-bar">
+    <input type="text" id="searchInput" placeholder="🔍 Cari nama nasabah..." oninput="renderLeaderboard()"/>
+    <div class="filter-spacer"></div>
+    <span style="font-size:0.78rem;color:var(--gray);">Rumus: Volume ÷ Rp 10.000.000 = Point</span>
+  </div>
+
+  <!-- Leaderboard -->
+  <div class="leaderboard" id="leaderboard">
+    <div class="empty-state">⏳ Memuat data...</div>
+  </div>
+</div>
+
+<script>
+  const POINT_DIVISOR = 10000000; // Rp 10jt = 1 point
+  let pointsData = [];
+
+  async function initPage() {
+    const now = new Date();
+    document.getElementById('filterMonth').value = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+    await loadPoints();
+  }
+
+  async function loadPoints() {
+    const month = document.getElementById('filterMonth').value;
+    if (!month) return;
+
+    try {
+      const startDate = month + '-01';
+      const [year, mon] = month.split('-').map(Number);
+      const endDate = year + '-' + String(mon).padStart(2,'0') + '-31';
+
+      const { data, error } = await supabase
+        .from('saham_transaksi')
+        .select('client_id, client_name, volume')
+        .gte('tanggal', startDate)
+        .lte('tanggal', endDate);
+
+      if (error) throw error;
+
+      // Aggregate per client
+      const map = {};
+      (data || []).forEach(r => {
+        const key = r.client_id || 'unknown';
+        if (!map[key]) map[key] = { client_id: key, client_name: r.client_name || '—', volume: 0 };
+        map[key].volume += parseFloat(r.volume) || 0;
+      });
+
+      pointsData = Object.values(map).map(d => ({
+        ...d,
+        points: Math.floor(d.volume / POINT_DIVISOR)
+      })).sort((a, b) => b.points - a.points || b.volume - a.volume);
+
+      renderSummary();
+      renderLeaderboard();
+    } catch(e) {
+      console.error('Load points error:', e);
+      document.getElementById('leaderboard').innerHTML = '<div class="empty-state">❌ Gagal memuat data</div>';
+    }
+  }
+
+  function renderSummary() {
+    const totalVol = pointsData.reduce((s, d) => s + d.volume, 0);
+    const totalPts = pointsData.reduce((s, d) => s + d.points, 0);
+    document.getElementById('sumTotalPoints').textContent = totalPts.toLocaleString('id-ID');
+    document.getElementById('sumTotalVolume').textContent = formatRp(totalVol);
+    document.getElementById('sumNasabah').textContent = pointsData.length;
+  }
+
+  function renderLeaderboard() {
+    const search = (document.getElementById('searchInput').value || '').toLowerCase();
+    let filtered = pointsData;
+    if (search) {
+      filtered = pointsData.filter(d =>
+        d.client_name.toLowerCase().includes(search) ||
+        d.client_id.toLowerCase().includes(search)
+      );
+    }
+
+    const container = document.getElementById('leaderboard');
+    if (!filtered.length) {
+      container.innerHTML = '<div class="empty-state">📭 Belum ada data point untuk periode ini</div>';
+      return;
+    }
+
+    container.innerHTML = filtered.map((d, i) => {
+      const rank = i + 1;
+      const rankClass = rank === 1 ? 'rank-1' : rank === 2 ? 'rank-2' : rank === 3 ? 'rank-3' : 'rank-default';
+      const cardClass = rank <= 3 ? `top-${rank}` : '';
+      return `
+        <div class="point-card ${cardClass}">
+          <div class="rank-badge ${rankClass}">${rank <= 3 ? ['🥇','🥈','🥉'][rank-1] : rank}</div>
+          <div class="point-info">
+            <div class="point-name">${d.client_name}</div>
+            <div class="point-client-id">${d.client_id}</div>
+            <div class="point-detail">Volume: ${formatRp(d.volume)}</div>
+          </div>
+          <div class="point-value">
+            <div class="point-number">${d.points.toLocaleString('id-ID')}</div>
+            <div class="point-label">Point</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function formatRp(n) {
+    return 'Rp ' + (n || 0).toLocaleString('id-ID');
+  }
+
+  window.addEventListener('DOMContentLoaded', initPage);
+</script>
+</body>
+</html>

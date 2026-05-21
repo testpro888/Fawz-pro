@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Fawz Pro | Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+
+  <!-- Supabase SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script>
+    const SUPABASE_URL = 'https://yhmrfluehibfapvtxcfi.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlobXJmbHVlaGliZmFwdnR4Y2ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNjEzODUsImV4cCI6MjA5NDczNzM4NX0.se_H4n_eLsf81d_1GH5sqsPCpX89MHewlPuuNkY6qcU';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    async function loadStats() {
+      try {
+        const { count, error } = await supabase
+          .from('customers')
+          .select('*', { count: 'exact', head: true })
+          .eq('client_status', 'Aktif');
+        const el = document.getElementById('sumCustomerAktif');
+        if (el && !error) el.textContent = (count || 0).toLocaleString('id-ID');
+      } catch(e) { console.error('Gagal load stats:', e); }
+    }
+
+    async function loadObligasiCount() {
+      try {
+        const { count, error } = await supabase
+          .from('obligasi_products')
+          .select('*', { count: 'exact', head: true });
+        const el = document.getElementById('statObligasi');
+        if (el && !error) el.textContent = (count || 0).toLocaleString('id-ID');
+      } catch(e) { console.error('Gagal load obligasi count:', e); }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      loadStats();
+      loadObligasiCount();
+    });
+  </script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      /* Notion Design Tokens */
+      --primary:          #5645d4;
+      --primary-pressed:  #4534b3;
+      --on-primary:       #ffffff;
+      --brand-navy:       #0a1530;
+      --brand-navy-mid:   #1a2a52;
+      --ink-deep:         #000000;
+      --ink:              #1a1a1a;
+      --charcoal:         #37352f;
+      --slate:            #5d5b54;
+      --steel:            #787671;
+      --stone:            #a4a097;
+      --muted:            #bbb8b1;
+      --canvas:           #ffffff;
+      --surface:          #f6f5f4;
+      --surface-soft:     #fafaf9;
+      --hairline:         #e5e3df;
+      --hairline-soft:    #ede9e4;
+      --hairline-strong:  #c8c4be;
+      --on-dark:          #ffffff;
+      --on-dark-muted:    #a4a097;
+      /* Card tints */
+      --tint-peach:       #ffe8d4;
+      --tint-rose:        #fde0ec;
+      --tint-mint:        #d9f3e1;
+      --tint-lavender:    #e6e0f5;
+      --tint-sky:         #dcecfa;
+      --tint-yellow:      #fef7d6;
+      --tint-yellow-bold: #f9e79f;
+      /* Brand accents */
+      --brand-orange:     #dd5b00;
+      --brand-orange-deep:#793400;
+      --brand-green:      #1aae39;
+      --brand-purple:     #7b3ff2;
+      --brand-purple-800: #391c57;
+      /* Spacing */
+      --nav-h: 68px;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--surface);
+      min-height: 100vh;
+      padding-top: var(--nav-h);
+      color: var(--ink);
+    }
+
+    .dash-container { max-width: 1200px; margin: 0 auto; padding: 40px 32px; }
+
+    @keyframes fadeUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+
+    /* ── GREETING ── */
+    .greeting-section {
+      background: var(--brand-navy);
+      border-radius: 12px;
+      padding: 32px 36px;
+      display: flex;
+      align-items: stretch;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 24px;
+      animation: fadeUp 0.45s ease both;
+      position: relative;
+      overflow: hidden;
+    }
+    /* decorative dots */
+    .greeting-section::before {
+      content: '';
+      position: absolute;
+      width: 220px; height: 220px;
+      border-radius: 50%;
+      background: rgba(86,69,212,0.18);
+      right: -60px; top: -60px;
+      pointer-events: none;
+    }
+    .greeting-section::after {
+      content: '';
+      position: absolute;
+      width: 120px; height: 120px;
+      border-radius: 50%;
+      background: rgba(86,69,212,0.10);
+      right: 100px; bottom: -40px;
+      pointer-events: none;
+    }
+    .greeting-left { display: flex; flex-direction: column; justify-content: center; position: relative; z-index:1; }
+    .greeting-time {
+      font-size: 11px; font-weight: 600; color: var(--on-dark-muted);
+      text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;
+    }
+    .greeting-name {
+      font-size: 28px; font-weight: 700; color: var(--on-dark); line-height: 1.2; letter-spacing: -0.5px;
+    }
+    .greeting-name span { color: #a78bfa; }
+    .greeting-sub {
+      font-size: 14px; color: var(--on-dark-muted); margin-top: 8px; font-weight: 400; line-height: 1.5;
+    }
+    .greeting-date-box {
+      background: var(--brand-navy-mid);
+      border-radius: 8px;
+      padding: 16px 24px;
+      text-align: right;
+      min-width: 160px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      border: 1px solid rgba(255,255,255,0.08);
+      position: relative;
+      z-index: 1;
+    }
+    .greeting-date-day  { font-size: 11px; font-weight: 600; color: var(--on-dark-muted); text-transform: uppercase; letter-spacing: 1px; }
+    .greeting-date-full { font-size: 14px; font-weight: 600; color: var(--on-dark); margin-top: 4px; }
+    .greeting-date-time { font-size: 22px; font-weight: 700; color: var(--on-dark); margin-top: 4px; letter-spacing: 1px; }
+
+    /* ── STATS GRID ── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .stat-card {
+      border-radius: 12px;
+      padding: 28px 28px;
+      color: var(--charcoal);
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      animation: fadeUp 0.45s ease both;
+      border: 1px solid transparent;
+    }
+    .stat-card:hover { transform: translateY(-3px); box-shadow: 0 8px 32px rgba(0,0,0,0.10); }
+    .stat-card:nth-child(1) { animation-delay: 0.08s; }
+    .stat-card:nth-child(2) { animation-delay: 0.14s; }
+    .stat-card:nth-child(3) { animation-delay: 0.20s; }
+    .stat-card:nth-child(4) { animation-delay: 0.26s; }
+
+    /* Pastel card tints from DESIGN.md */
+    .stat-card.obligasi  { background: var(--tint-lavender); border-color: #d0c8f0; }
+    .stat-card.reksadana { background: var(--tint-mint);     border-color: #b5e8c3; }
+    .stat-card.saham     { background: var(--tint-peach);    border-color: #f5ccaa; }
+    .stat-card.waran     { background: var(--tint-rose);     border-color: #f2b8d8; }
+
+    .card-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px; }
+    .card-title  { font-size: 13px; font-weight: 600; color: var(--slate); margin-bottom: 6px; letter-spacing: 0.2px; }
+    .card-divider { width: 24px; height: 2px; border-radius: 2px; margin-top: 2px; }
+
+    .stat-card.obligasi  .card-divider { background: var(--primary); }
+    .stat-card.reksadana .card-divider { background: var(--brand-green); }
+    .stat-card.saham     .card-divider { background: var(--brand-orange); }
+    .stat-card.waran     .card-divider { background: #e879b8; }
+
+    .card-arrow {
+      width: 30px; height: 30px;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px;
+      background: rgba(0,0,0,0.06);
+      color: var(--slate);
+      transition: background 0.2s, transform 0.2s;
+      flex-shrink: 0;
+    }
+    .stat-card:hover .card-arrow { background: rgba(0,0,0,0.10); transform: translateX(2px); }
+
+    .card-body   { position: relative; z-index: 1; }
+    .card-number { font-size: 40px; font-weight: 700; line-height: 1; color: var(--ink-deep); margin-bottom: 2px; letter-spacing: -1px; }
+    .card-unit   { font-size: 14px; font-weight: 400; color: var(--slate); margin-left: 4px; }
+    .card-trend  { font-size: 13px; color: var(--steel); margin-top: 10px; font-weight: 500; }
+
+    /* ── SUMMARY BAR ── */
+    .summary-bar {
+      background: var(--canvas);
+      border-radius: 12px;
+      padding: 20px 28px;
+      display: flex;
+      gap: 0;
+      border: 1px solid var(--hairline);
+      margin-bottom: 32px;
+      animation: fadeUp 0.45s 0.32s ease both;
+    }
+    .summary-item { flex: 1; text-align: center; padding: 8px 16px; border-right: 1px solid var(--hairline-soft); }
+    .summary-item:last-child { border-right: none; }
+    .sum-label {
+      font-size: 11px; color: var(--stone); font-weight: 600;
+      text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;
+    }
+    .sum-value { font-size: 20px; font-weight: 700; color: var(--ink-deep); letter-spacing: -0.5px; }
+    .sum-badge {
+      display: inline-block; font-size: 12px; font-weight: 600;
+      padding: 2px 10px; border-radius: 9999px; margin-top: 4px;
+    }
+    .badge-up      { background: var(--tint-mint);     color: var(--brand-green); }
+    .badge-neutral { background: var(--tint-lavender); color: var(--brand-purple-800); }
+
+    /* ── SECTION TITLE ── */
+    .section-title {
+      font-size: 18px; font-weight: 600; color: var(--ink-deep);
+      margin-bottom: 16px; letter-spacing: -0.3px;
+    }
+
+    /* ── QUICK ACTIONS ── */
+    .quick-actions {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      animation: fadeUp 0.45s 0.38s ease both;
+    }
+    .qa-card {
+      background: var(--canvas);
+      border-radius: 12px;
+      padding: 20px 16px;
+      text-align: center;
+      cursor: pointer;
+      text-decoration: none;
+      color: inherit;
+      transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+      border: 1px solid var(--hairline);
+    }
+    .qa-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.07);
+      border-color: var(--hairline-strong);
+    }
+    .qa-icon  { font-size: 1.7rem; margin-bottom: 10px; display: block; }
+    .qa-label { font-size: 13px; font-weight: 500; color: var(--slate); line-height: 1.4; }
+
+    /* ── WA FLOATING ── */
+    .wa-float {
+      position: fixed; bottom: 28px; right: 28px; z-index: 999;
+      display: flex; align-items: center; gap: 10px;
+      background: var(--canvas);
+      border-radius: 8px;
+      padding: 12px 18px 12px 16px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+      border: 1px solid var(--hairline);
+      cursor: pointer; text-decoration: none;
+      transition: transform 0.2s, box-shadow 0.2s;
+      animation: fadeUp 0.5s 0.5s ease both;
+    }
+    .wa-float:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(0,0,0,0.15); }
+    .wa-info { line-height: 1.35; }
+    .wa-title { font-size: 13px; font-weight: 600; color: var(--ink); }
+    .wa-num   { font-size: 12px; color: var(--steel); }
+    .wa-icon  { width: 36px; height: 36px; background: #25D366; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 768px) {
+      .stats-grid { grid-template-columns: 1fr; }
+      .quick-actions { grid-template-columns: repeat(2, 1fr); }
+      .summary-bar { flex-wrap: wrap; gap: 8px; }
+      .summary-item { border-right: none; border-bottom: 1px solid var(--hairline-soft); }
+      .dash-container { padding: 20px 16px; }
+      .greeting-section { padding: 24px 20px; }
+      .greeting-name { font-size: 22px; }
+    }
+    @media (max-width: 480px) {
+      .quick-actions { grid-template-columns: repeat(2, 1fr); }
+      .card-number { font-size: 32px; }
+    }
+  </style>
+
+  <!-- Auth Guard -->
+  <script>
+    (function() {
+      const raw = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember');
+      if (!raw) { window.location.replace('login.html'); }
+      else { sessionStorage.setItem('fawz_user', raw); }
+    })();
+  </script>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<div id="navbar-placeholder"></div>
+<script src="navbar.js"></script>
+
+<!-- DASHBOARD -->
+<div class="dash-container">
+
+  <!-- Greeting -->
+  <div class="greeting-section">
+    <div class="greeting-left">
+      <div class="greeting-time" id="greetingTime">Selamat Pagi</div>
+      <div class="greeting-name">Halo, <span id="greetingName">—</span>!</div>
+      <div class="greeting-sub" id="greetingSub">Semoga harimu produktif dan menyenangkan.</div>
+    </div>
+    <div class="greeting-date-box">
+      <div class="greeting-date-day" id="greetingDay">—</div>
+      <div class="greeting-date-full" id="greetingDateFull">—</div>
+      <div class="greeting-date-time" id="greetingClock">—</div>
+    </div>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="stats-grid">
+    <div class="stat-card obligasi" onclick="window.location.href='obligasi-pasar-sekunder.html'">
+      <div class="card-header">
+        <div><div class="card-title">Total Obligasi</div><div class="card-divider"></div></div>
+        <div class="card-arrow">▶</div>
+      </div>
+      <div class="card-body">
+        <div class="card-number"><span id="statObligasi">—</span><span class="card-unit">Seri</span></div>
+        <div class="card-trend">Lihat detail obligasi →</div>
+      </div>
+    </div>
+
+    <div class="stat-card reksadana" onclick="window.location.href='reksadana-data.html'">
+      <div class="card-header">
+        <div><div class="card-title">Total Reksadana</div><div class="card-divider"></div></div>
+        <div class="card-arrow">▶</div>
+      </div>
+      <div class="card-body">
+        <div class="card-number">0<span class="card-unit">Unit</span></div>
+        <div class="card-trend">Lihat detail reksadana →</div>
+      </div>
+    </div>
+
+    <div class="stat-card saham" onclick="window.location.href='saham.html'">
+      <div class="card-header">
+        <div><div class="card-title">Total Saham</div><div class="card-divider"></div></div>
+        <div class="card-arrow">▶</div>
+      </div>
+      <div class="card-body">
+        <div class="card-number">0<span class="card-unit">Unit</span></div>
+        <div class="card-trend">Lihat detail saham →</div>
+      </div>
+    </div>
+
+    <div class="stat-card waran" onclick="window.location.href='revenue-data.html'">
+      <div class="card-header">
+        <div><div class="card-title">Total Waran Terstruktur</div><div class="card-divider"></div></div>
+        <div class="card-arrow">▶</div>
+      </div>
+      <div class="card-body">
+        <div class="card-number">0<span class="card-unit">Unit</span></div>
+        <div class="card-trend">Lihat detail waran →</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Summary Bar -->
+  <div class="summary-bar">
+    <div class="summary-item">
+      <div class="sum-label">Customer Aktif</div>
+      <div class="sum-value" id="sumCustomerAktif">—</div>
+      <div><span class="sum-badge badge-up">Aktif</span></div>
+    </div>
+    <div class="summary-item">
+      <div class="sum-label">Transaksi Bulan Ini</div>
+      <div class="sum-value">Rp 0</div>
+      <div><span class="sum-badge badge-neutral">0 Transaksi</span></div>
+    </div>
+    <div class="summary-item">
+      <div class="sum-label">Total Revenue</div>
+      <div class="sum-value">Rp 0</div>
+      <div><span class="sum-badge badge-up">—</span></div>
+    </div>
+    <div class="summary-item">
+      <div class="sum-label">Komisi Terbayar</div>
+      <div class="sum-value">Rp 0</div>
+      <div><span class="sum-badge badge-neutral">—</span></div>
+    </div>
+  </div>
+
+  <!-- Quick Actions -->
+  <div class="section-title">Menu Cepat</div>
+  <div class="quick-actions">
+    <a class="qa-card qa-restricted" href="customer.html"><span class="qa-icon">👤</span><div class="qa-label">Data Customer</div></a>
+    <a class="qa-card" href="sales-transaction.html"><span class="qa-icon">💳</span><div class="qa-label">Laporan Transaksi</div></a>
+    <a class="qa-card" href="obligasi-bookbuilding.html"><span class="qa-icon">📖</span><div class="qa-label">Obligasi Bookbuilding</div></a>
+    <a class="qa-card" href="reksadana-order.html"><span class="qa-icon">🛒</span><div class="qa-label">Order Reksadana</div></a>
+    <a class="qa-card" href="saham.html"><span class="qa-icon">📉</span><div class="qa-label">Data Saham</div></a>
+    <a class="qa-card qa-restricted" href="revenue-data.html"><span class="qa-icon">💵</span><div class="qa-label">Data Revenue</div></a>
+    <a class="qa-card qa-restricted" href="sales-commission.html"><span class="qa-icon">🏆</span><div class="qa-label">Komisi Sales</div></a>
+    <a class="qa-card qa-restricted" href="log-commission.html"><span class="qa-icon">📝</span><div class="qa-label">Log Komisi</div></a>
+  </div>
+
+</div>
+
+<!-- WA Float -->
+<a class="wa-float" href="https://wa.me/628116361598" target="_blank">
+  <div class="wa-info">
+    <div class="wa-title">Contact Person (Admin)</div>
+    <div class="wa-num">+62 811-6361-598</div>
+  </div>
+  <div class="wa-icon"><img src="assets/logo/wa.png" alt="WhatsApp" style="width:22px;height:22px;object-fit:contain;"></div>
+</a>
+
+<script>
+  (function () {
+    function getUser() {
+      try {
+        const raw = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember');
+        if (!raw) return {};
+        return JSON.parse(raw);
+      } catch (e) { return {}; }
+    }
+
+    function getUserName() {
+      const u = getUser();
+      return u.name || u.displayName || u.nama || u.email || 'User';
+    }
+
+    function getUserRole() {
+      const u = getUser();
+      return (u.role || u.userRole || u.jabatan || u.tipe || '').toLowerCase();
+    }
+
+    function applyRoleRestrictions() {
+      const role = getUserRole();
+      if (role === 'sales') {
+        document.querySelectorAll('.qa-restricted').forEach(el => { el.style.display = 'none'; });
+      }
+    }
+
+    function getGreeting(hour) {
+      if (hour >= 4  && hour < 11) return { text: 'Selamat Pagi',  sub: 'Mulai hari dengan semangat dan fokus.' };
+      if (hour >= 11 && hour < 15) return { text: 'Selamat Siang', sub: 'Tetap produktif di tengah hari.' };
+      if (hour >= 15 && hour < 19) return { text: 'Selamat Sore',  sub: 'Tinjau progress harimu sebelum selesai.' };
+      return                              { text: 'Selamat Malam',  sub: 'Istirahat yang cukup untuk esok hari.' };
+    }
+
+    const DAYS   = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+    const MONTHS = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+    const pad = n => String(n).padStart(2, '0');
+
+    function updateClock() {
+      const now  = new Date();
+      const hour = now.getHours();
+      const g    = getGreeting(hour);
+      document.getElementById('greetingTime').textContent     = g.text;
+      document.getElementById('greetingName').textContent     = getUserName();
+      document.getElementById('greetingSub').textContent      = g.sub;
+      document.getElementById('greetingDay').textContent      = DAYS[now.getDay()];
+      document.getElementById('greetingDateFull').textContent = now.getDate() + ' ' + MONTHS[now.getMonth()] + ' ' + now.getFullYear();
+      document.getElementById('greetingClock').textContent    = pad(hour) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds());
+    }
+
+    applyRoleRestrictions();
+    updateClock();
+    setInterval(updateClock, 1000);
+  })();
+</script>
+
+</body>
+</html>

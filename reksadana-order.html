@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Fawz Pro | Order Reksadana</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script>
+    const SUPABASE_URL = 'https://yhmrfluehibfapvtxcfi.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlobXJmbHVlaGliZmFwdnR4Y2ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNjEzODUsImV4cCI6MjA5NDczNzM4NX0.se_H4n_eLsf81d_1GH5sqsPCpX89MHewlPuuNkY6qcU';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    window._supabase = supabase;
+    window.addEventListener('DOMContentLoaded', () => { initPage(); });
+  </script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --navy: #0d0d2b; --purple: #1e1252; --gold: #f5a623; --gold-light: #ffc857;
+      --bg: #f4f5fb; --white: #fff; --border: #e0e0ef; --text: #1a1a3a; --gray: #888;
+      --nav-h: 68px;
+      --success: #27ae60; --danger: #e74c3c; --warning: #f39c12; --info: #2980b9;
+      --pasar-uang: #1a7a3c; --pendapatan-tetap: #1e4d8a;
+      --campuran: #7a4a1a; --saham: #8a1f1f; --index: #1a5a7a; --syariah: #3a6b2e;
+    }
+    body { font-family: 'Poppins', sans-serif; background: var(--bg); min-height: 100vh; padding-top: var(--nav-h); color: var(--text); }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
+
+    /* ── PAGE ── */
+    .page-container { max-width: 1300px; margin: 0 auto; padding: 36px 28px; }
+
+    /* ── HEADER ── */
+    .page-header { margin-bottom: 28px; }
+    .back-link { display:inline-flex; align-items:center; gap:6px; color:var(--gray); font-size:.82rem; font-weight:500; text-decoration:none; margin-bottom:14px; transition:color .2s; }
+    .back-link:hover { color:var(--navy); }
+    .back-link svg { transition:transform .2s; }
+    .back-link:hover svg { transform:translateX(-3px); }
+    .page-title { font-family:'Playfair Display',serif; font-size:2rem; font-weight:900; color:var(--navy); }
+    .page-subtitle { font-size:.88rem; color:var(--gray); margin-top:4px; }
+    .title-underline { width:48px; height:3px; background:linear-gradient(90deg,var(--gold),var(--gold-light)); border-radius:2px; margin-top:8px; }
+
+    /* ── STEP INDICATOR ── */
+    .steps-wrap { display:flex; align-items:center; gap:0; margin-bottom:28px; }
+    .step { display:flex; align-items:center; gap:10px; }
+    .step-num { width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:.8rem; font-weight:700; flex-shrink:0; transition:all .3s; }
+    .step-num.active { background:var(--gold); color:#fff; box-shadow:0 4px 12px rgba(245,166,35,.4); }
+    .step-num.done { background:var(--success); color:#fff; }
+    .step-num.idle { background:#e8e8f0; color:#aaa; }
+    .step-label { font-size:.8rem; font-weight:600; color:var(--text); }
+    .step-label.idle { color:#ccc; }
+    .step-line { flex:1; height:2px; background:#e8e8f0; margin:0 12px; min-width:40px; }
+    .step-line.done { background:var(--success); }
+
+    /* ── STEP 1: PRODUCT PICKER ── */
+    .picker-filter { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:18px; align-items:center; }
+    .picker-search { position:relative; flex:1; min-width:200px; }
+    .picker-search input { width:100%; padding:10px 14px 10px 38px; border:1.5px solid var(--border); border-radius:12px; font-family:'Poppins',sans-serif; font-size:.875rem; outline:none; transition:border .2s; background:#fff; }
+    .picker-search input:focus { border-color:var(--gold); box-shadow:0 0 0 3px rgba(245,166,35,.1); }
+    .picker-search-icon { position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#aaa; }
+    .picker-cat-tabs { display:flex; gap:5px; flex-wrap:wrap; }
+    .cat-tab { padding:7px 14px; border-radius:20px; border:1.5px solid var(--border); background:#fff; font-size:.78rem; font-weight:600; color:var(--gray); cursor:pointer; transition:all .2s; }
+    .cat-tab.active { background:var(--navy); color:#fff; border-color:var(--navy); }
+    .cat-tab:hover:not(.active) { border-color:var(--gold); color:var(--gold); }
+
+    .products-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:20px; }
+    @media (max-width:1100px) { .products-grid { grid-template-columns:repeat(2,1fr); } }
+    @media (max-width:640px)  { .products-grid { grid-template-columns:1fr; } }
+
+    .prod-card {
+      background:#fff; border-radius:14px; overflow:hidden;
+      border:2px solid transparent; cursor:pointer;
+      box-shadow:0 2px 10px rgba(0,0,0,.05);
+      transition:all .22s; animation:fadeUp .35s ease both;
+    }
+    .prod-card:hover { transform:translateY(-3px); box-shadow:0 10px 28px rgba(0,0,0,.1); border-color:rgba(245,166,35,.35); }
+    .prod-card.selected { border-color:var(--gold); box-shadow:0 0 0 3px rgba(245,166,35,.15), 0 8px 24px rgba(0,0,0,.08); }
+    .prod-card-stripe { height:5px; }
+    .prod-card-stripe.pasar-uang    { background:linear-gradient(90deg,var(--pasar-uang),#27ae60); }
+    .prod-card-stripe.pendapatan-tetap { background:linear-gradient(90deg,var(--pendapatan-tetap),#3498db); }
+    .prod-card-stripe.campuran      { background:linear-gradient(90deg,var(--campuran),#e67e22); }
+    .prod-card-stripe.saham         { background:linear-gradient(90deg,var(--saham),#e74c3c); }
+    .prod-card-stripe.index         { background:linear-gradient(90deg,var(--index),#16a085); }
+    .prod-card-stripe.syariah       { background:linear-gradient(90deg,var(--syariah),#8bc34a); }
+
+    .prod-card-body { padding:14px 16px; }
+    .prod-cat-badge { display:inline-block; font-size:.62rem; font-weight:700; text-transform:uppercase; letter-spacing:.7px; padding:2px 8px; border-radius:20px; margin-bottom:8px; }
+    .cat-pasar-uang    { background:#e8f8f0; color:var(--pasar-uang); border:1px solid rgba(26,122,60,.2); }
+    .cat-pendapatan-tetap { background:#e8f0ff; color:var(--pendapatan-tetap); border:1px solid rgba(30,77,138,.2); }
+    .cat-campuran      { background:#fff3e8; color:var(--campuran); border:1px solid rgba(122,74,26,.2); }
+    .cat-saham         { background:#fff0f0; color:var(--saham); border:1px solid rgba(138,31,31,.2); }
+    .cat-index         { background:#e8f8ff; color:var(--index); border:1px solid rgba(26,90,122,.2); }
+    .cat-syariah       { background:#eef8e8; color:var(--syariah); border:1px solid rgba(58,107,46,.2); }
+
+    .prod-name { font-family:'Playfair Display',serif; font-size:.95rem; font-weight:700; color:var(--navy); line-height:1.3; margin-bottom:3px; }
+    .prod-mi { font-size:.75rem; color:var(--gray); margin-bottom:10px; }
+    .prod-metrics { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+    .prod-metric-label { font-size:.62rem; text-transform:uppercase; letter-spacing:.4px; color:#bbb; font-weight:600; }
+    .prod-metric-value { font-size:.88rem; font-weight:700; color:var(--text); }
+    .prod-metric-value.gold { color:var(--gold); }
+    .prod-metric-value.green { color:var(--success); }
+    .prod-metric-value.red { color:var(--danger); }
+
+    .prod-select-indicator { display:flex; align-items:center; justify-content:center; padding:10px; border-top:1px solid #f5f5fa; margin-top:10px; gap:6px; font-size:.78rem; font-weight:600; color:#ccc; transition:all .2s; }
+    .prod-card.selected .prod-select-indicator { color:var(--gold); }
+
+    /* ── STEP 2: ORDER FORM ── */
+    .order-layout { display:grid; grid-template-columns:1fr 360px; gap:24px; align-items:start; }
+    @media (max-width:900px) { .order-layout { grid-template-columns:1fr; } }
+
+    .card { background:#fff; border-radius:16px; box-shadow:0 2px 12px rgba(0,0,0,.06); }
+    .card-header { padding:20px 24px; border-bottom:1px solid #f0f0f5; }
+    .card-title { font-family:'Playfair Display',serif; font-size:1.1rem; font-weight:700; color:var(--navy); }
+    .card-subtitle { font-size:.75rem; color:var(--gray); margin-top:2px; }
+    .card-body { padding:24px; }
+
+    /* Selected product banner */
+    .selected-prod-banner {
+      background:linear-gradient(135deg,var(--navy),var(--purple));
+      border-radius:14px; padding:18px 20px; margin-bottom:20px;
+      display:flex; gap:16px; align-items:center; flex-wrap:wrap;
+      position:relative; overflow:hidden;
+    }
+    .selected-prod-banner::before { content:''; position:absolute; top:-30px; right:-30px; width:120px; height:120px; border-radius:50%; background:radial-gradient(circle,rgba(245,166,35,.15),transparent 70%); }
+    .spb-name { font-family:'Playfair Display',serif; font-size:1.1rem; font-weight:700; color:#fff; }
+    .spb-mi { font-size:.78rem; color:rgba(255,255,255,.5); margin-top:2px; }
+    .spb-stat { text-align:center; }
+    .spb-stat-label { font-size:.62rem; text-transform:uppercase; letter-spacing:.6px; color:rgba(255,255,255,.4); margin-bottom:3px; }
+    .spb-stat-value { font-size:1rem; font-weight:700; color:#fff; }
+    .spb-stat-value.gold { color:var(--gold-light); }
+    .spb-divider { width:1px; height:48px; background:rgba(255,255,255,.1); flex-shrink:0; }
+    .spb-change-btn { margin-left:auto; padding:6px 14px; border-radius:8px; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.2); color:rgba(255,255,255,.7); font-size:.75rem; font-weight:600; cursor:pointer; transition:all .2s; font-family:'Poppins',sans-serif; white-space:nowrap; }
+    .spb-change-btn:hover { background:rgba(255,255,255,.18); color:#fff; }
+
+    /* Buyer rows */
+    .buyer-rows { display:flex; flex-direction:column; gap:12px; margin-bottom:10px; }
+    .buyer-row { background:#fafafa; border:1.5px solid var(--border); border-radius:12px; padding:16px 14px 12px; position:relative; }
+    .buyer-row-label { position:absolute; top:-9px; left:14px; font-size:.62rem; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#bbb; background:#fafafa; padding:0 4px; }
+    .buyer-row-grid { display:grid; grid-template-columns:1fr 1fr auto; gap:10px; align-items:end; }
+    @media (max-width:540px) { .buyer-row-grid { grid-template-columns:1fr; } }
+
+    .form-group { display:flex; flex-direction:column; gap:5px; }
+    .form-label { font-size:.7rem; font-weight:700; color:#666; text-transform:uppercase; letter-spacing:.5px; }
+    .req { color:var(--danger); margin-left:2px; }
+    .form-input, .form-select, .form-textarea { padding:10px 13px; border:1.5px solid var(--border); border-radius:10px; font-family:'Poppins',sans-serif; font-size:.875rem; color:var(--text); outline:none; transition:border .2s,box-shadow .2s; background:#fff; }
+    .form-input:focus, .form-select:focus { border-color:var(--gold); box-shadow:0 0 0 3px rgba(245,166,35,.1); }
+    .form-input.error { border-color:var(--danger); }
+    .form-textarea { resize:vertical; min-height:80px; }
+    .input-pfx-wrap { position:relative; }
+    .input-pfx { position:absolute; left:12px; top:50%; transform:translateY(-50%); font-size:.82rem; font-weight:600; color:#bbb; pointer-events:none; }
+    .input-pfx-wrap .form-input { padding-left:38px; }
+    .nom-hint { font-size:.72rem; color:var(--gold); font-weight:600; margin-top:3px; min-height:16px; }
+
+    .btn-remove-buyer { width:36px; height:36px; border-radius:9px; border:1.5px solid #ffcccc; background:#fff0f0; color:var(--danger); cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:1rem; transition:all .15s; flex-shrink:0; align-self:flex-end; }
+    .btn-remove-buyer:hover { background:#ffe0e0; }
+
+    .btn-add-buyer { display:flex; align-items:center; justify-content:center; gap:6px; width:100%; padding:10px; border-radius:10px; border:1.5px dashed rgba(245,166,35,.4); background:rgba(245,166,35,.05); color:var(--gold); font-size:.82rem; font-weight:600; cursor:pointer; transition:all .2s; font-family:'Poppins',sans-serif; margin-bottom:4px; }
+    .btn-add-buyer:hover { background:rgba(245,166,35,.12); border-color:var(--gold); }
+
+    /* Unit calculator */
+    .unit-calc { background:#fffbf0; border:1px solid rgba(245,166,35,.25); border-radius:10px; padding:12px 14px; margin-top:14px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; }
+    .unit-calc-label { font-size:.75rem; color:var(--gold); font-weight:600; }
+    .unit-calc-value { font-size:.95rem; font-weight:700; color:var(--navy); }
+
+    /* Buttons */
+    .btn { display:inline-flex; align-items:center; gap:7px; padding:13px 22px; border-radius:10px; font-family:'Poppins',sans-serif; font-size:.9rem; font-weight:700; cursor:pointer; transition:all .2s; border:none; }
+    .btn-primary { background:linear-gradient(135deg,var(--gold),#e8931a); color:#fff; box-shadow:0 4px 14px rgba(245,166,35,.35); width:100%; justify-content:center; }
+    .btn-primary:hover { transform:translateY(-2px); box-shadow:0 8px 22px rgba(245,166,35,.45); }
+    .btn-primary:disabled { opacity:.6; cursor:not-allowed; transform:none; }
+    .btn-outline { background:#fff; color:var(--navy); border:1.5px solid var(--border); padding:10px 18px; font-size:.875rem; }
+    .btn-outline:hover { border-color:var(--gold); color:var(--gold); }
+
+    /* Summary sidebar */
+    .summary-card { background:#fff; border-radius:16px; box-shadow:0 2px 12px rgba(0,0,0,.06); position:sticky; top:84px; }
+    .total-box { background:linear-gradient(135deg,var(--navy),var(--purple)); border-radius:12px; padding:16px; margin-bottom:16px; }
+    .total-label { font-size:.68rem; text-transform:uppercase; letter-spacing:.8px; color:rgba(255,255,255,.4); margin-bottom:8px; }
+    .total-buyers-list { display:flex; flex-direction:column; gap:5px; margin-bottom:10px; max-height:180px; overflow-y:auto; }
+    .tbl-item { display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,.07); border-radius:8px; padding:7px 10px; }
+    .tbl-name { font-size:.8rem; color:rgba(255,255,255,.85); font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:55%; }
+    .tbl-nom { font-size:.8rem; color:var(--gold-light); font-weight:700; }
+    .total-grand { display:flex; justify-content:space-between; border-top:1px solid rgba(255,255,255,.1); padding-top:10px; margin-top:4px; }
+    .total-grand-label { font-size:.72rem; color:rgba(255,255,255,.5); }
+    .total-grand-value { font-size:1.05rem; font-weight:700; color:#fff; }
+
+    .sum-row { display:flex; justify-content:space-between; padding:9px 0; border-bottom:1px solid #f5f5fa; font-size:.82rem; }
+    .sum-row:last-child { border-bottom:none; }
+    .sum-key { color:var(--gray); }
+    .sum-val { font-weight:600; text-align:right; max-width:55%; }
+    .sum-val.gold { color:var(--gold); font-size:.9rem; }
+    .sum-val.green { color:var(--success); }
+
+    /* Orders history */
+    .orders-section { margin-top:32px; }
+    .section-label { font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:1.2px; color:var(--gold); margin-bottom:14px; display:flex; align-items:center; gap:8px; }
+    .section-label::after { content:''; flex:1; height:1px; background:linear-gradient(90deg,#ffd96044,transparent); }
+
+    .orders-table-card { background:#fff; border-radius:16px; box-shadow:0 2px 12px rgba(0,0,0,.06); overflow:hidden; }
+    table { width:100%; border-collapse:collapse; font-size:.875rem; }
+    thead { background:linear-gradient(135deg,var(--navy),var(--purple)); }
+    thead th { padding:12px 14px; text-align:left; font-size:.68rem; font-weight:700; color:rgba(255,255,255,.65); text-transform:uppercase; letter-spacing:1px; white-space:nowrap; }
+    tbody tr { border-bottom:1px solid #f5f5fa; transition:background .15s; }
+    tbody tr:last-child { border-bottom:none; }
+    tbody tr:hover { background:#fffbf3; }
+    tbody td { padding:11px 14px; vertical-align:middle; }
+
+    .status-badge { font-size:.68rem; font-weight:700; padding:3px 10px; border-radius:20px; display:inline-block; }
+    .status-pending    { background:#fff8e8; color:#b37a00; border:1px solid rgba(245,166,35,.3); }
+    .status-confirmed  { background:#e8f8f0; color:var(--success); border:1px solid rgba(39,174,96,.25); }
+    .status-cancelled  { background:#fff0f0; color:var(--danger); border:1px solid rgba(231,76,60,.2); }
+
+    .buyer-chips { display:flex; flex-wrap:wrap; gap:3px; }
+    .buyer-chip { font-size:.7rem; font-weight:600; padding:2px 8px; border-radius:12px; background:#f0f4ff; color:#2d4abf; }
+
+    .action-btns { display:flex; gap:5px; }
+    .btn-icon { width:30px; height:30px; border-radius:7px; display:flex; align-items:center; justify-content:center; font-size:.8rem; cursor:pointer; border:1.5px solid var(--border); background:#fff; transition:all .15s; }
+    .btn-icon:hover { border-color:var(--gold); background:#fffbf3; }
+    .btn-icon.del:hover { border-color:#ffcccc; background:#fff0f0; }
+
+    .empty-state { text-align:center; padding:48px 20px; color:#bbb; }
+    .empty-icon { font-size:2.2rem; margin-bottom:10px; }
+
+    /* Modal */
+    .modal-overlay { display:none; position:fixed; inset:0; background:rgba(13,13,43,.55); backdrop-filter:blur(4px); z-index:2000; align-items:center; justify-content:center; }
+    .modal-overlay.open { display:flex; }
+    .modal { background:#fff; border-radius:20px; padding:30px; width:560px; max-width:96vw; max-height:92vh; overflow-y:auto; box-shadow:0 24px 80px rgba(0,0,0,.2); animation:slideUp .25s ease; }
+    @keyframes slideUp { from { transform:translateY(18px);opacity:0; } to { transform:translateY(0);opacity:1; } }
+    .modal-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; }
+    .modal-title { font-family:'Playfair Display',serif; font-size:1.3rem; font-weight:700; color:var(--navy); }
+    .modal-close { width:30px; height:30px; border-radius:7px; border:1.5px solid var(--border); background:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:.9rem; color:var(--gray); transition:all .15s; }
+    .modal-close:hover { border-color:#ffcccc; color:var(--danger); background:#fff0f0; }
+    .modal-footer { display:flex; gap:10px; justify-content:flex-end; margin-top:18px; padding-top:16px; border-top:1px solid #f0f0f5; }
+    .modal-btn { padding:9px 18px; border-radius:9px; font-family:'Poppins',sans-serif; font-size:.875rem; font-weight:600; cursor:pointer; transition:all .2s; border:none; }
+    .modal-btn-outline { background:#fff; color:var(--navy); border:1.5px solid var(--border); }
+    .modal-btn-outline:hover { border-color:var(--navy); }
+    .modal-btn-success { background:linear-gradient(135deg,var(--success),#1e7e4e); color:#fff; }
+    .modal-btn-danger { background:linear-gradient(135deg,var(--danger),#c0392b); color:#fff; }
+
+    .detail-buyer-list { display:flex; flex-direction:column; gap:8px; margin-top:8px; }
+    .dbi { display:flex; justify-content:space-between; align-items:center; background:#fafafa; border-radius:10px; padding:10px 14px; border:1.5px solid #f0f0f5; }
+    .dbi-name { font-weight:600; font-size:.88rem; }
+    .dbi-unit { font-size:.72rem; color:var(--gray); }
+    .dbi-nom { font-weight:700; font-size:.9rem; color:var(--navy); }
+
+    /* Toast */
+    .toast-container { position:fixed; bottom:28px; right:28px; z-index:9999; display:flex; flex-direction:column; gap:10px; }
+    .toast { padding:14px 20px; border-radius:12px; font-size:.875rem; font-weight:500; box-shadow:0 6px 24px rgba(0,0,0,.15); animation:toastIn .3s ease; max-width:320px; }
+    @keyframes toastIn { from { opacity:0; transform:translateX(20px); } to { opacity:1; transform:translateX(0); } }
+    .toast-success { background:#f0fff8; border:1px solid #a8e6c1; color:#1e7e4e; }
+    .toast-error   { background:#fff0f0; border:1px solid #ffcccc; color:#c0392b; }
+    .toast-info    { background:#f0f4ff; border:1px solid #c5d3ff; color:#2d4abf; }
+
+    /* Loading skeleton */
+    .skeleton { background:linear-gradient(90deg,#f0f0f5 25%,#e8e8f0 50%,#f0f0f5 75%); background-size:200% 100%; animation:shimmer 1.4s infinite; border-radius:8px; }
+    @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+  </style>
+</head>
+<body>
+<div id="navbar-placeholder"></div>
+<script src="navbar.js"></script>
+
+<div class="page-container">
+
+  <!-- Header -->
+  <div class="page-header">
+    <a href="reksadana-data.html" class="back-link">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      Kembali ke Data Reksadana
+    </a>
+    <div class="page-title">Order Reksadana</div>
+    <div class="page-subtitle">Pilih produk, masukkan pembeli & nominal pembelian</div>
+    <div class="title-underline"></div>
+  </div>
+
+  <!-- Step Indicator -->
+  <div class="steps-wrap" id="stepsWrap">
+    <div class="step">
+      <div class="step-num active" id="step1num">1</div>
+      <div class="step-label" id="step1lbl">Pilih Produk</div>
+    </div>
+    <div class="step-line" id="line12"></div>
+    <div class="step">
+      <div class="step-num idle" id="step2num">2</div>
+      <div class="step-label idle" id="step2lbl">Isi Order</div>
+    </div>
+    <div class="step-line" id="line23"></div>
+    <div class="step">
+      <div class="step-num idle" id="step3num">3</div>
+      <div class="step-label idle" id="step3lbl">Selesai</div>
+    </div>
+  </div>
+
+  <!-- STEP 1: PRODUCT PICKER -->
+  <div id="step1Section">
+    <!-- Filter -->
+    <div class="picker-filter">
+      <div class="picker-search">
+        <span class="picker-search-icon">🔍</span>
+        <input type="text" id="prodSearch" placeholder="Cari nama produk atau manajer investasi..." oninput="filterProducts()"/>
+      </div>
+    </div>
+    <div class="picker-cat-tabs" id="catTabs"></div>
+    <br/>
+    <div class="products-grid" id="productsGrid">
+      <!-- skeleton loading -->
+      <div style="height:180px" class="skeleton"></div>
+      <div style="height:180px" class="skeleton"></div>
+      <div style="height:180px" class="skeleton"></div>
+      <div style="height:180px" class="skeleton"></div>
+      <div style="height:180px" class="skeleton"></div>
+      <div style="height:180px" class="skeleton"></div>
+    </div>
+    <div style="display:flex;justify-content:flex-end;margin-top:4px">
+      <button class="btn btn-primary" id="btnProceed" onclick="goToStep2()" disabled style="width:auto;padding:12px 28px;opacity:.5">
+        Lanjut ke Form Order →
+      </button>
+    </div>
+  </div>
+
+  <!-- STEP 2: ORDER FORM -->
+  <div id="step2Section" style="display:none">
+    <div class="order-layout">
+      <!-- LEFT: Form -->
+      <div>
+        <!-- Selected product -->
+        <div class="selected-prod-banner" id="selectedBanner"></div>
+
+        <!-- Data Pembeli -->
+        <div class="card" style="margin-bottom:20px">
+          <div class="card-header">
+            <div class="card-title">Data Pembeli</div>
+            <div class="card-subtitle">Tambahkan satu atau lebih pembeli dalam satu order</div>
+          </div>
+          <div class="card-body">
+            <div class="buyer-rows" id="buyerRows"></div>
+            <button class="btn-add-buyer" onclick="addBuyerRow()">+ Tambah Pembeli</button>
+
+            <!-- unit calc -->
+            <div class="unit-calc" id="unitCalc" style="display:none">
+              <div>
+                <div class="unit-calc-label">Estimasi Total Unit</div>
+                <div style="font-size:.75rem;color:var(--gray);margin-top:2px">Total nominal ÷ NAB/Unit</div>
+              </div>
+              <div class="unit-calc-value" id="unitCalcValue">— Unit</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Catatan -->
+        <div class="card">
+          <div class="card-body">
+            <div class="form-group">
+              <label class="form-label">Keterangan / Catatan</label>
+              <textarea class="form-textarea" id="fNotes" placeholder="Catatan tambahan (opsional)..."></textarea>
+            </div>
+            <br/>
+            <button class="btn btn-primary" id="submitBtn" onclick="submitOrder()">🛒 Kirim Order</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: Summary -->
+      <div>
+        <div class="summary-card">
+          <div class="card-header">
+            <div class="card-title">Ringkasan Order</div>
+            <div class="card-subtitle">Live preview</div>
+          </div>
+          <div class="card-body">
+            <div class="total-box">
+              <div class="total-label">Daftar Pembeli</div>
+              <div class="total-buyers-list" id="summaryBuyers">
+                <div style="text-align:center;color:rgba(255,255,255,.25);font-size:.8rem;padding:6px">Belum ada pembeli</div>
+              </div>
+              <div class="total-grand">
+                <span class="total-grand-label">Total Nominal</span>
+                <span class="total-grand-value" id="summaryTotal">Rp 0</span>
+              </div>
+            </div>
+            <div id="summaryRows"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Orders History -->
+  <div class="orders-section" id="ordersSection" style="display:none">
+    <div class="section-label">Riwayat Order Produk Ini</div>
+    <div class="orders-table-card" style="overflow-x:auto">
+      <table>
+        <thead>
+          <tr>
+            <th>Tgl Order</th>
+            <th>Produk</th>
+            <th>Pembeli</th>
+            <th>Total Nominal</th>
+            <th>Est. Unit</th>
+            <th>Sales</th>
+            <th>Status</th>
+            <th>Catatan</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="ordersBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div><!-- /page-container -->
+
+<!-- Detail Modal -->
+<div class="modal-overlay" id="detailModal" onclick="closeDetailModal(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="detailModalTitle">Detail Order</div>
+      <button class="modal-close" onclick="document.getElementById('detailModal').classList.remove('open')">✕</button>
+    </div>
+    <div id="detailModalBody"></div>
+    <div class="modal-footer" id="detailModalFooter"></div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+  const COL_REKS  = 'reksadana';
+  const COL_ORDER = 'reksadana_orders';
+  const CAT_KEYS  = { 'Pasar Uang':'pasar-uang','Pendapatan Tetap':'pendapatan-tetap','Campuran':'campuran','Saham':'saham','Index':'index','Syariah':'syariah' };
+
+  let curUser = null;
+  let allProducts = [];
+  let filteredProducts = [];
+  let selectedProduct = null;
+  let activeCategory = '';
+  let buyerCount = 0;
+  let ordersData = [];
+
+  // ===== INIT =====
+  function initPage() {
+    const raw = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember');
+    if (!raw) { window.location.href = 'login.html'; return; }
+    sessionStorage.setItem('fawz_user', raw);
+    curUser = JSON.parse(raw);
+    loadProducts();
+  }
+
+  // ===== LOAD PRODUCTS =====
+  async function loadProducts() {
+    try {
+      const { data, error } = await window._supabase.from(COL_REKS).select('*').order('nama', { ascending: true });
+      if (error) throw error;
+      allProducts = data || [];
+      buildCatTabs();
+      filterProducts();
+    } catch(e) {
+      console.error(e);
+      document.getElementById('productsGrid').innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:48px;color:#e74c3c">⚠️ Gagal memuat produk reksadana</div>`;
+    }
+  }
+
+  function buildCatTabs() {
+    const cats = ['','Pasar Uang','Pendapatan Tetap','Campuran','Saham','Index','Syariah'];
+    const labels = {'':'Semua','Pasar Uang':'Pasar Uang','Pendapatan Tetap':'Pend. Tetap','Campuran':'Campuran','Saham':'Saham','Index':'Index','Syariah':'Syariah'};
+    document.getElementById('catTabs').innerHTML = cats.map(cat => {
+      const cnt = cat ? allProducts.filter(p => p.kategori === cat).length : allProducts.length;
+      if (!cnt && cat) return '';
+      return `<button class="cat-tab ${activeCategory===cat?'active':''}" onclick="setCategory('${cat}')">${labels[cat]} (${cnt})</button>`;
+    }).join('');
+  }
+
+  function setCategory(cat) {
+    activeCategory = cat;
+    buildCatTabs();
+    filterProducts();
+  }
+
+  function filterProducts() {
+    const q = document.getElementById('prodSearch').value.toLowerCase();
+    filteredProducts = allProducts.filter(p => {
+      const mq = !q || [p.nama, p.mi, p.kategori].some(f => (f||'').toLowerCase().includes(q));
+      const mc = !activeCategory || p.kategori === activeCategory;
+      return mq && mc;
+    });
+    renderProductGrid();
+  }
+
+  function renderProductGrid() {
+    const grid = document.getElementById('productsGrid');
+    if (!filteredProducts.length) {
+      grid.innerHTML = `<div style="grid-column:1/-1"><div class="empty-state"><div class="empty-icon">📊</div><div>Tidak ada produk ditemukan</div></div></div>`;
+      return;
+    }
+    grid.innerHTML = filteredProducts.map((p, i) => {
+      const catKey = CAT_KEYS[p.kategori] || 'saham';
+      const r1y = parseFloat(p.return1Y);
+      const sel = selectedProduct?.id === p.id;
+      return `
+      <div class="prod-card ${sel?'selected':''}" onclick="selectProduct('${p.id}')" style="animation-delay:${i*.04}s">
+        <div class="prod-card-stripe ${catKey}"></div>
+        <div class="prod-card-body">
+          <span class="prod-cat-badge cat-${catKey}">${esc(p.kategori||'—')}</span>
+          <div class="prod-name">${esc(p.nama||'—')}</div>
+          <div class="prod-mi">${esc(p.mi||'—')}</div>
+          <div class="prod-metrics">
+            <div>
+              <div class="prod-metric-label">NAB/Unit</div>
+              <div class="prod-metric-value gold">${p.nab ? 'Rp '+fmtNum(p.nab,2) : '—'}</div>
+            </div>
+            <div>
+              <div class="prod-metric-label">Return 1Y</div>
+              <div class="prod-metric-value ${isNaN(r1y)?'':(r1y>=0?'green':'red')}">${isNaN(r1y)?'—':(r1y>=0?'+':'')+r1y.toFixed(2)+'%'}</div>
+            </div>
+            <div>
+              <div class="prod-metric-label">Min. Inv</div>
+              <div class="prod-metric-value">${p.minInvestasi ? fmtRupiah(p.minInvestasi) : '—'}</div>
+            </div>
+            <div>
+              <div class="prod-metric-label">Sub Fee</div>
+              <div class="prod-metric-value">${p.subFee != null ? p.subFee+'%' : '—'}</div>
+            </div>
+          </div>
+        </div>
+        <div class="prod-select-indicator">
+          ${sel ? '✓ Dipilih' : '○ Pilih Produk Ini'}
+        </div>
+      </div>`;
+    }).join('');
+
+    const btn = document.getElementById('btnProceed');
+    btn.disabled = !selectedProduct;
+    btn.style.opacity = selectedProduct ? '1' : '.5';
+  }
+
+  function selectProduct(id) {
+    selectedProduct = allProducts.find(p => p.id === id) || null;
+    renderProductGrid();
+    const btn = document.getElementById('btnProceed');
+    btn.disabled = !selectedProduct;
+    btn.style.opacity = selectedProduct ? '1' : '.5';
+  }
+
+  // ===== STEP NAVIGATION =====
+  function goToStep2() {
+    if (!selectedProduct) return;
+    // Update steps
+    document.getElementById('step1num').className = 'step-num done';
+    document.getElementById('step1num').textContent = '✓';
+    document.getElementById('line12').className = 'step-line done';
+    document.getElementById('step2num').className = 'step-num active';
+    document.getElementById('step2lbl').className = 'step-label';
+
+    // Show/hide sections
+    document.getElementById('step1Section').style.display = 'none';
+    document.getElementById('step2Section').style.display = '';
+    document.getElementById('ordersSection').style.display = '';
+
+    // Render banner
+    renderSelectedBanner();
+    // Reset buyer rows
+    document.getElementById('buyerRows').innerHTML = '';
+    buyerCount = 0;
+    addBuyerRow();
+    // Load orders history
+    loadOrders();
+    // Scroll to top
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+
+  function goBackToStep1() {
+    document.getElementById('step1num').className = 'step-num active';
+    document.getElementById('step1num').textContent = '1';
+    document.getElementById('line12').className = 'step-line';
+    document.getElementById('step2num').className = 'step-num idle';
+    document.getElementById('step2lbl').className = 'step-label idle';
+    document.getElementById('step1Section').style.display = '';
+    document.getElementById('step2Section').style.display = 'none';
+    document.getElementById('ordersSection').style.display = 'none';
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+
+  function renderSelectedBanner() {
+    const p = selectedProduct;
+    const catKey = CAT_KEYS[p.kategori] || 'saham';
+    const r1y = parseFloat(p.return1Y);
+    document.getElementById('selectedBanner').innerHTML = `
+      <div>
+        <span class="prod-cat-badge cat-${catKey}" style="margin-bottom:6px">${esc(p.kategori)}</span>
+        <div class="spb-name">${esc(p.nama)}</div>
+        <div class="spb-mi">${esc(p.mi||'')}</div>
+      </div>
+      <div class="spb-divider"></div>
+      <div class="spb-stat">
+        <div class="spb-stat-label">NAB/Unit</div>
+        <div class="spb-stat-value gold">${p.nab ? 'Rp '+fmtNum(p.nab,2) : '—'}</div>
+      </div>
+      <div class="spb-divider"></div>
+      <div class="spb-stat">
+        <div class="spb-stat-label">Return 1Y</div>
+        <div class="spb-stat-value">${isNaN(r1y)?'—':(r1y>=0?'+':'')+r1y.toFixed(2)+'%'}</div>
+      </div>
+      <div class="spb-divider"></div>
+      <div class="spb-stat">
+        <div class="spb-stat-label">Min. Inv</div>
+        <div class="spb-stat-value">${p.minInvestasi ? fmtRupiah(p.minInvestasi) : '—'}</div>
+      </div>
+      <button class="spb-change-btn" onclick="goBackToStep1()">⟵ Ganti Produk</button>
+    `;
+    updateSummaryRows();
+  }
+
+  // ===== BUYER ROWS =====
+  function addBuyerRow() {
+    buyerCount++;
+    const idx = buyerCount;
+    const row = document.createElement('div');
+    row.className = 'buyer-row';
+    row.id = `br-${idx}`;
+    row.innerHTML = `
+      <div class="buyer-row-label">Pembeli #${idx}</div>
+      <div class="buyer-row-grid">
+        <div class="form-group">
+          <label class="form-label">Nama Pembeli <span class="req">*</span></label>
+          <input class="form-input" id="bname-${idx}" placeholder="Nama nasabah..." oninput="updateSummary()"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Nominal (Rp) <span class="req">*</span></label>
+          <div class="input-pfx-wrap">
+            <span class="input-pfx">Rp</span>
+            <input class="form-input" id="bnom-${idx}" type="text" inputmode="numeric"
+              placeholder="100.000.000" oninput="formatNomInput(this); updateSummary()"/>
+          </div>
+          <div class="nom-hint" id="bnomhint-${idx}"></div>
+        </div>
+        ${idx > 1 ? `<button class="btn-remove-buyer" onclick="removeBuyerRow(${idx})" title="Hapus">×</button>` : '<div></div>'}
+      </div>`;
+    document.getElementById('buyerRows').appendChild(row);
+    updateSummary();
+  }
+
+  function removeBuyerRow(idx) {
+    const el = document.getElementById(`br-${idx}`);
+    if (el) el.remove();
+    updateSummary();
+  }
+
+  function formatNomInput(el) {
+    const raw = el.value.replace(/\D/g,'');
+    if (!raw) { el.value=''; el.dataset.raw='0'; return; }
+    const n = parseInt(raw);
+    el.value = n.toLocaleString('id-ID');
+    el.dataset.raw = raw;
+    const hintId = el.id.replace('bnom-','bnomhint-');
+    const hint = document.getElementById(hintId);
+    if (hint) hint.textContent = n ? fmtRupiahLong(n) : '';
+  }
+
+  // ===== LIVE SUMMARY =====
+  function updateSummary() {
+    const buyers = getFilledBuyers();
+    const total = buyers.reduce((s,b) => s+b.nominal, 0);
+
+    // buyers list in total-box
+    const el = document.getElementById('summaryBuyers');
+    if (!buyers.length) {
+      el.innerHTML = `<div style="text-align:center;color:rgba(255,255,255,.25);font-size:.8rem;padding:6px">Belum ada pembeli</div>`;
+    } else {
+      el.innerHTML = buyers.map(b => `
+        <div class="tbl-item">
+          <span class="tbl-name">${esc(b.name)}</span>
+          <span class="tbl-nom">${fmtRupiah(b.nominal)}</span>
+        </div>`).join('');
+    }
+    document.getElementById('summaryTotal').textContent = fmtRupiahLong(total);
+
+    // Unit calc
+    const nab = selectedProduct?.nab;
+    const unitCalc = document.getElementById('unitCalc');
+    if (nab && total > 0) {
+      unitCalc.style.display = 'flex';
+      document.getElementById('unitCalcValue').textContent = fmtNum(total / nab, 4) + ' Unit';
+    } else {
+      unitCalc.style.display = 'none';
+    }
+
+    updateSummaryRows();
+  }
+
+  function updateSummaryRows() {
+    const p = selectedProduct;
+    if (!p) return;
+    const buyers = getFilledBuyers();
+    const total = buyers.reduce((s,b) => s+b.nominal, 0);
+    const catKey = CAT_KEYS[p.kategori] || 'saham';
+    const r1y = parseFloat(p.return1Y);
+
+    document.getElementById('summaryRows').innerHTML = `
+      <div class="sum-row"><span class="sum-key">Produk</span><span class="sum-val" style="font-size:.82rem;color:var(--navy);font-weight:700">${esc(p.nama)}</span></div>
+      <div class="sum-row"><span class="sum-key">Kategori</span><span class="sum-val">${esc(p.kategori)}</span></div>
+      <div class="sum-row"><span class="sum-key">NAB/Unit</span><span class="sum-val gold">${p.nab ? 'Rp '+fmtNum(p.nab,2) : '—'}</span></div>
+      <div class="sum-row"><span class="sum-key">Return 1Y</span><span class="sum-val ${isNaN(r1y)?'':(r1y>=0?'green':'')}">${isNaN(r1y)?'—':(r1y>=0?'+':'')+r1y.toFixed(2)+'%'}</span></div>
+      <div class="sum-row"><span class="sum-key">Jumlah Pembeli</span><span class="sum-val" style="color:var(--success)">${buyers.length} pembeli</span></div>
+      <div class="sum-row"><span class="sum-key">Dikirim oleh</span><span class="sum-val">${esc(curUser?.name||curUser?.email||'—')}</span></div>
+    `;
+  }
+
+  function getFilledBuyers() {
+    const rows = document.querySelectorAll('.buyer-row');
+    const buyers = [];
+    rows.forEach(row => {
+      const idx = row.id.replace('br-','');
+      const nameEl = document.getElementById(`bname-${idx}`);
+      const nomEl  = document.getElementById(`bnom-${idx}`);
+      if (!nameEl || !nomEl) return;
+      const name = nameEl.value.trim();
+      const nom  = parseInt(nomEl.dataset.raw||'0') || 0;
+      if (name && nom > 0) buyers.push({ name, nominal: nom });
+    });
+    return buyers;
+  }
+
+  // ===== SUBMIT =====
+  async function submitOrder() {
+    const buyers = getFilledBuyers();
+    // Validate
+    let hasErr = false;
+    document.querySelectorAll('.buyer-row').forEach(row => {
+      const idx = row.id.replace('br-','');
+      const nameEl = document.getElementById(`bname-${idx}`);
+      const nomEl  = document.getElementById(`bnom-${idx}`);
+      if (!nameEl.value.trim()) { nameEl.classList.add('error'); hasErr = true; }
+      else nameEl.classList.remove('error');
+      if (!parseInt(nomEl.dataset.raw||'0')) { nomEl.classList.add('error'); hasErr = true; }
+      else nomEl.classList.remove('error');
+    });
+    if (hasErr || !buyers.length) { showToast('Lengkapi nama dan nominal pembeli', 'error'); return; }
+
+    const btn = document.getElementById('submitBtn');
+    btn.textContent = 'Mengirim...'; btn.disabled = true;
+
+    const totalNominal = buyers.reduce((s,b) => s+b.nominal, 0);
+    const nab = selectedProduct?.nab;
+
+    const payload = {
+      productId:    selectedProduct.id,
+      productName:  selectedProduct.nama,
+      kategori:     selectedProduct.kategori,
+      mi:           selectedProduct.mi,
+      nabSaatOrder: nab || null,
+      buyers,
+      totalNominal,
+      estimasiUnit: nab ? totalNominal / nab : null,
+      buyerCount:   buyers.length,
+      notes:        document.getElementById('fNotes').value.trim(),
+      salesName:    curUser?.name || '',
+      salesRole:    curUser?.role || '',
+      status:       'pending',
+      created_at:   new Date().toISOString(),
+    };
+
+    try {
+      const { error } = await window._supabase.from(COL_ORDER).insert(payload);
+      if (error) throw error;
+      showToast(`Order ${selectedProduct.nama} berhasil dikirim!`, 'success');
+
+      // Step 3
+      document.getElementById('step2num').className = 'step-num done';
+      document.getElementById('step2num').textContent = '✓';
+      document.getElementById('line23').className = 'step-line done';
+      document.getElementById('step3num').className = 'step-num done';
+      document.getElementById('step3num').textContent = '✓';
+      document.getElementById('step3lbl').className = 'step-label';
+
+      // Reset form
+      document.getElementById('buyerRows').innerHTML = '';
+      buyerCount = 0;
+      document.getElementById('fNotes').value = '';
+      addBuyerRow();
+      loadOrders();
+    } catch(e) {
+      console.error(e); showToast('Gagal mengirim order', 'error');
+    } finally {
+      btn.textContent = '🛒 Kirim Order'; btn.disabled = false;
+    }
+  }
+
+  // ===== LOAD ORDERS =====
+  async function loadOrders() {
+    const tbody = document.getElementById('ordersBody');
+    tbody.innerHTML = `<tr><td colspan="9" class="empty-state" style="padding:20px">Memuat...</td></tr>`;
+    try {
+      let query = window._supabase.from(COL_ORDER).select('*');
+      if (curUser?.role === 'sales') {
+        query = query.eq('salesName', curUser.name || '');
+      }
+      query = query.order('created_at', { ascending: false });
+      const { data, error } = await query;
+      if (error) throw error;
+      const all = data || [];
+      // Filter by productId + double protection untuk sales
+      ordersData = all.filter(o => {
+        if (o.productId !== selectedProduct?.id) return false;
+        if (curUser?.role === 'sales' && (o.salesName || '') !== (curUser.name || '')) return false;
+        return true;
+      });
+      renderOrdersTable();
+    } catch(e) {
+      tbody.innerHTML = `<tr><td colspan="9" class="empty-state" style="color:#e74c3c;padding:20px">Gagal memuat riwayat</td></tr>`;
+    }
+  }
+
+  function renderOrdersTable() {
+    const tbody = document.getElementById('ordersBody');
+    const canAct = ['head_account','admin','treasury'].includes(curUser?.role);
+    if (!ordersData.length) {
+      tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><div class="empty-icon">📋</div><div>Belum ada order untuk produk ini</div></div></td></tr>`;
+      return;
+    }
+    tbody.innerHTML = ordersData.map(order => {
+      const stsCls = order.status==='confirmed'?'status-confirmed':order.status==='cancelled'?'status-cancelled':'status-pending';
+      const stsLabel = order.status==='confirmed'?'Confirmed':order.status==='cancelled'?'Dibatalkan':'Pending';
+      const buyers = order.buyers||[];
+      const chips = buyers.slice(0,3).map(b=>`<span class="buyer-chip">${esc(b.name)}</span>`).join('') + (buyers.length>3?`<span class="buyer-chip">+${buyers.length-3}</span>`:'');
+      const tgl = order.createdAt?.toDate ? order.createdAt.toDate().toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
+      return `<tr>
+        <td style="font-size:.78rem;color:var(--gray);white-space:nowrap">${tgl}</td>
+        <td style="max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:.82rem;font-weight:600">${esc(order.productName||'—')}</td>
+        <td><div class="buyer-chips">${chips}</div></td>
+        <td style="font-weight:700;color:var(--navy)">${fmtRupiahLong(order.totalNominal)}</td>
+        <td style="font-size:.82rem;color:var(--gray)">${order.estimasiUnit ? fmtNum(order.estimasiUnit,2)+' unit' : '—'}</td>
+        <td style="font-size:.82rem">${esc(order.salesName||'—')}</td>
+        <td><span class="status-badge ${stsCls}">${stsLabel}</span></td>
+        <td style="font-size:.78rem;color:var(--gray);max-width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(order.notes||'—')}</td>
+        <td>
+          <div class="action-btns">
+            <button class="btn-icon" onclick="openDetail('${order.id}')">👁</button>
+            ${canAct && order.status==='pending' ? `
+              <button class="btn-icon" onclick="setStatus('${order.id}','confirmed')" style="border-color:#c3e6cb" title="Konfirmasi">✓</button>
+              <button class="btn-icon del" onclick="setStatus('${order.id}','cancelled')" title="Batalkan">✕</button>` : ''}
+            ${canAct ? `<button class="btn-icon del" onclick="deleteOrder('${order.id}')" title="Hapus">🗑</button>` : ''}
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+
+  // ===== ORDER ACTIONS =====
+  async function setStatus(id, status) {
+    try {
+      const { error } = await window._supabase.from(COL_ORDER).update({ status }).eq('id', id);
+      if (error) throw error;
+      const o = ordersData.find(x => x.id === id);
+      if (o) o.status = status;
+      renderOrdersTable();
+      showToast(status==='confirmed'?'Order dikonfirmasi':'Order dibatalkan','success');
+    } catch(e) { showToast('Gagal update status','error'); }
+  }
+
+  async function deleteOrder(id) {
+    if (!confirm('Hapus riwayat order ini?')) return;
+    try {
+      const { error } = await window._supabase.from(COL_ORDER).delete().eq('id', id);
+      if (error) throw error;
+      ordersData = ordersData.filter(o => o.id !== id);
+      renderOrdersTable();
+      showToast('Order dihapus','success');
+    } catch(e) { showToast('Gagal hapus','error'); }
+  }
+
+  // ===== DETAIL MODAL =====
+  function openDetail(id) {
+    const order = ordersData.find(o => o.id === id);
+    if (!order) return;
+    const canAct = ['head_account','admin','treasury'].includes(curUser?.role);
+    const stsCls = order.status==='confirmed'?'status-confirmed':order.status==='cancelled'?'status-cancelled':'status-pending';
+    const stsLabel = order.status==='confirmed'?'Confirmed':order.status==='cancelled'?'Dibatalkan':'Pending';
+    const tgl = order.createdAt?.toDate ? order.createdAt.toDate().toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
+
+    document.getElementById('detailModalTitle').textContent = 'Detail Order';
+    document.getElementById('detailModalBody').innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <div style="font-size:.8rem;color:var(--gray)">${tgl}</div>
+        <span class="status-badge ${stsCls}">${stsLabel}</span>
+      </div>
+      <div style="background:#fafafa;border-radius:12px;padding:14px 16px;margin-bottom:16px">
+        <div style="font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;color:var(--navy);margin-bottom:4px">${esc(order.productName||'—')}</div>
+        <div style="font-size:.78rem;color:var(--gray)">${esc(order.mi||'')} • ${esc(order.kategori||'')}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:12px">
+          <div><div style="font-size:.65rem;color:#bbb;text-transform:uppercase;letter-spacing:.5px">NAB saat order</div><div style="font-weight:700;color:var(--gold)">${order.nabSaatOrder ? 'Rp '+fmtNum(order.nabSaatOrder,2) : '—'}</div></div>
+          <div><div style="font-size:.65rem;color:#bbb;text-transform:uppercase;letter-spacing:.5px">Total Nominal</div><div style="font-weight:700;color:var(--navy)">${fmtRupiahLong(order.totalNominal)}</div></div>
+          <div><div style="font-size:.65rem;color:#bbb;text-transform:uppercase;letter-spacing:.5px">Est. Unit</div><div style="font-weight:700">${order.estimasiUnit ? fmtNum(order.estimasiUnit,4)+' unit' : '—'}</div></div>
+        </div>
+      </div>
+      <div style="font-size:.7rem;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Daftar Pembeli (${(order.buyers||[]).length})</div>
+      <div class="detail-buyer-list">
+        ${(order.buyers||[]).map(b => `
+          <div class="dbi">
+            <div><div class="dbi-name">${esc(b.name)}</div></div>
+            <div class="dbi-nom">${fmtRupiahLong(b.nominal)}</div>
+          </div>`).join('')}
+      </div>
+      ${order.notes ? `<div style="margin-top:14px;padding:12px;background:#fafafa;border-radius:10px;border-left:3px solid var(--gold)"><div style="font-size:.65rem;font-weight:700;color:var(--gold);text-transform:uppercase;margin-bottom:4px">Catatan</div><div style="font-size:.85rem;color:#555">${esc(order.notes)}</div></div>` : ''}
+      <div style="margin-top:10px;font-size:.78rem;color:var(--gray)">Sales: <b>${esc(order.salesName||'—')}</b></div>
+    `;
+    const footer = document.getElementById('detailModalFooter');
+    footer.innerHTML = `<button class="modal-btn modal-btn-outline" onclick="document.getElementById('detailModal').classList.remove('open')">Tutup</button>`;
+    if (canAct && order.status==='pending') {
+      footer.innerHTML += `
+        <button class="modal-btn modal-btn-danger" onclick="setStatus('${id}','cancelled');document.getElementById('detailModal').classList.remove('open')">Batalkan</button>
+        <button class="modal-btn modal-btn-success" onclick="setStatus('${id}','confirmed');document.getElementById('detailModal').classList.remove('open')">Konfirmasi</button>`;
+    }
+    document.getElementById('detailModal').classList.add('open');
+  }
+
+  function closeDetailModal(e) {
+    if (e.target === document.getElementById('detailModal')) document.getElementById('detailModal').classList.remove('open');
+  }
+
+  // ===== UTILS =====
+  function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function fmtNum(n, dec=0) { return Number(n).toLocaleString('id-ID',{minimumFractionDigits:dec,maximumFractionDigits:dec}); }
+  function fmtRupiah(n) {
+    n = Number(n);
+    if (n >= 1e12) return `Rp ${(n/1e12).toLocaleString('id-ID',{maximumFractionDigits:2})} T`;
+    if (n >= 1e9)  return `Rp ${(n/1e9).toLocaleString('id-ID',{maximumFractionDigits:2})} M`;
+    if (n >= 1e6)  return `Rp ${(n/1e6).toLocaleString('id-ID',{maximumFractionDigits:1})} jt`;
+    return `Rp ${n.toLocaleString('id-ID')}`;
+  }
+  function fmtRupiahLong(n) {
+    n = Number(n);
+    if (!n) return 'Rp 0';
+    if (n >= 1e12) return `Rp ${(n/1e12).toLocaleString('id-ID',{maximumFractionDigits:2})} T`;
+    if (n >= 1e9)  return `Rp ${(n/1e9).toLocaleString('id-ID',{maximumFractionDigits:2})} M`;
+    if (n >= 1e6)  return `Rp ${(n/1e6).toLocaleString('id-ID',{maximumFractionDigits:2})} jt`;
+    return `Rp ${n.toLocaleString('id-ID')}`;
+  }
+  function showToast(msg, type='info') {
+    const t = document.createElement('div'); t.className = `toast toast-${type}`; t.textContent = msg;
+    document.getElementById('toastContainer').appendChild(t);
+    setTimeout(() => t.remove(), 3500);
+  }
+</script>
+</body>
+</html>

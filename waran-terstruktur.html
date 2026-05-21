@@ -1,0 +1,1697 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Fawz Pro | Waran Terstruktur</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script>
+    const SUPABASE_URL = 'https://yhmrfluehibfapvtxcfi.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlobXJmbHVlaGliZmFwdnR4Y2ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNjEzODUsImV4cCI6MjA5NDczNzM4NX0.se_H4n_eLsf81d_1GH5sqsPCpX89MHewlPuuNkY6qcU';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    window._supabase = supabase;
+    window.addEventListener('DOMContentLoaded', () => { initPage(); });
+  </script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --navy: #0d0d2b; --purple: #1e1252; --gold: #f5a623; --gold-light: #ffc857;
+      --bg: #f4f5fb; --white: #fff; --border: #e0e0ef; --text: #1a1a3a; --gray: #888;
+      --nav-h: 68px;
+      --success: #27ae60; --danger: #e74c3c; --warning: #f39c12; --info: #2980b9;
+      /* Waran type colors */
+      --call: #1a5a7a;   --put: #8a1f1f;
+      --idx: #1e4d8a;    --single: #3a6b2e;
+    }
+    body { font-family: 'Poppins', sans-serif; background: var(--bg); min-height: 100vh; padding-top: var(--nav-h); color: var(--text); }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
+
+    /* ── PAGE ── */
+    .page-container { max-width: 1300px; margin: 0 auto; padding: 36px 28px; }
+
+    /* ── HEADER ── */
+    .page-header { margin-bottom: 28px; }
+    .back-link { display:inline-flex; align-items:center; gap:6px; color:var(--gray); font-size:.82rem; font-weight:500; text-decoration:none; margin-bottom:14px; transition:color .2s; }
+    .back-link:hover { color:var(--navy); }
+    .back-link svg { transition:transform .2s; }
+    .back-link:hover svg { transform:translateX(-3px); }
+    .page-title { font-family:'Playfair Display',serif; font-size:2rem; font-weight:900; color:var(--navy); }
+    .page-subtitle { font-size:.88rem; color:var(--gray); margin-top:4px; }
+    .title-underline { width:48px; height:3px; background:linear-gradient(90deg,var(--gold),var(--gold-light)); border-radius:2px; margin-top:8px; }
+
+    /* ── TABS ── */
+    .main-tabs { display:flex; gap:0; border-bottom:2px solid var(--border); margin-bottom:28px; }
+    .main-tab { padding:12px 24px; font-size:.88rem; font-weight:600; color:var(--gray); cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-2px; transition:all .2s; }
+    .main-tab.active { color:var(--navy); border-bottom-color:var(--gold); }
+    .main-tab:hover:not(.active) { color:var(--text); }
+    .main-tab-section { display:none; }
+    .main-tab-section.active { display:block; }
+
+    /* ── CARD ── */
+    .card { background:#fff; border-radius:16px; box-shadow:0 2px 12px rgba(0,0,0,.06); }
+    .card-header { padding:20px 24px; border-bottom:1px solid #f0f0f5; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; }
+    .card-title { font-family:'Playfair Display',serif; font-size:1.1rem; font-weight:700; color:var(--navy); }
+    .card-subtitle { font-size:.75rem; color:var(--gray); margin-top:2px; }
+    .card-body { padding:24px; }
+
+    /* ── FORM ── */
+    .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+    .form-grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; }
+    @media(max-width:700px) { .form-grid,.form-grid-3 { grid-template-columns:1fr; } }
+    .form-group { display:flex; flex-direction:column; gap:5px; }
+    .form-group.span2 { grid-column:1/-1; }
+    .form-label { font-size:.7rem; font-weight:700; color:#666; text-transform:uppercase; letter-spacing:.5px; }
+    .req { color:var(--danger); margin-left:2px; }
+    .form-input, .form-select, .form-textarea {
+      padding:10px 13px; border:1.5px solid var(--border); border-radius:10px;
+      font-family:'Poppins',sans-serif; font-size:.875rem; color:var(--text);
+      outline:none; transition:border .2s,box-shadow .2s; background:#fff;
+    }
+    .form-input:focus, .form-select:focus, .form-textarea:focus { border-color:var(--gold); box-shadow:0 0 0 3px rgba(245,166,35,.1); }
+    .form-input.error { border-color:var(--danger); }
+    .form-textarea { resize:vertical; min-height:80px; }
+    .input-pfx-wrap { position:relative; }
+    .input-pfx { position:absolute; left:12px; top:50%; transform:translateY(-50%); font-size:.82rem; font-weight:600; color:#bbb; pointer-events:none; }
+    .input-pfx-wrap .form-input { padding-left:38px; }
+    .nom-hint { font-size:.72rem; color:var(--gold); font-weight:600; margin-top:3px; min-height:16px; }
+    .form-hint { font-size:.72rem; color:var(--gray); margin-top:3px; }
+
+    /* ── BUTTONS ── */
+    .btn { display:inline-flex; align-items:center; gap:7px; padding:11px 20px; border-radius:10px; font-family:'Poppins',sans-serif; font-size:.875rem; font-weight:600; cursor:pointer; transition:all .2s; border:none; }
+    .btn-primary { background:linear-gradient(135deg,var(--gold),#e8931a); color:#fff; box-shadow:0 4px 14px rgba(245,166,35,.35); }
+    .btn-primary:hover { transform:translateY(-2px); box-shadow:0 8px 22px rgba(245,166,35,.45); }
+    .btn-primary:disabled { opacity:.6; cursor:not-allowed; transform:none; }
+    .btn-full { width:100%; justify-content:center; }
+    .btn-outline { background:#fff; color:var(--navy); border:1.5px solid var(--border); padding:9px 16px; font-size:.82rem; }
+    .btn-outline:hover { border-color:var(--gold); color:var(--gold); }
+    .btn-sm { padding:6px 12px; font-size:.78rem; }
+    .btn-danger-sm { background:#fff0f0; border:1.5px solid #ffcccc; color:var(--danger); padding:6px 12px; border-radius:8px; font-size:.78rem; font-weight:600; cursor:pointer; transition:all .15s; font-family:'Poppins',sans-serif; }
+    .btn-danger-sm:hover { background:#ffe0e0; }
+
+    /* ── PRODUCT CARDS (Data Waran) ── */
+    .products-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:20px; }
+    @media(max-width:1100px) { .products-grid { grid-template-columns:repeat(2,1fr); } }
+    @media(max-width:640px)  { .products-grid { grid-template-columns:1fr; } }
+
+    .waran-card {
+      background:#fff; border-radius:14px; overflow:hidden;
+      border:2px solid transparent; cursor:pointer;
+      box-shadow:0 2px 10px rgba(0,0,0,.05);
+      transition:all .22s; animation:fadeUp .35s ease both;
+    }
+    .waran-card:hover { transform:translateY(-3px); box-shadow:0 10px 28px rgba(0,0,0,.1); border-color:rgba(245,166,35,.35); }
+    .waran-card.selected { border-color:var(--gold); box-shadow:0 0 0 3px rgba(245,166,35,.15),0 8px 24px rgba(0,0,0,.08); }
+    .waran-stripe { height:5px; }
+    .stripe-call { background:linear-gradient(90deg,var(--call),#27ae60); }
+    .stripe-put  { background:linear-gradient(90deg,var(--put),#e74c3c); }
+    .stripe-idx  { background:linear-gradient(90deg,var(--idx),#3498db); }
+    .stripe-single { background:linear-gradient(90deg,var(--single),#8bc34a); }
+
+    .waran-card-body { padding:14px 16px; }
+    .waran-type-badge { display:inline-block; font-size:.62rem; font-weight:700; text-transform:uppercase; letter-spacing:.7px; padding:2px 8px; border-radius:20px; margin-bottom:8px; }
+    .badge-call   { background:#e8f8ff; color:var(--call); border:1px solid rgba(26,90,122,.2); }
+    .badge-put    { background:#fff0f0; color:var(--put); border:1px solid rgba(138,31,31,.2); }
+    .badge-idx    { background:#e8f0ff; color:var(--idx); border:1px solid rgba(30,77,138,.2); }
+    .badge-single { background:#eef8e8; color:var(--single); border:1px solid rgba(58,107,46,.2); }
+
+    .waran-name { font-family:'Playfair Display',serif; font-size:.95rem; font-weight:700; color:var(--navy); line-height:1.3; margin-bottom:3px; }
+    .waran-underlying { font-size:.75rem; color:var(--gray); margin-bottom:10px; }
+    .waran-metrics { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+    .wm-label { font-size:.62rem; text-transform:uppercase; letter-spacing:.4px; color:#bbb; font-weight:600; }
+    .wm-value { font-size:.88rem; font-weight:700; color:var(--text); }
+    .wm-value.gold { color:var(--gold); }
+    .wm-value.green { color:var(--success); }
+    .wm-value.red { color:var(--danger); }
+
+    .waran-select-indicator { display:flex; align-items:center; justify-content:center; padding:10px; border-top:1px solid #f5f5fa; margin-top:10px; gap:6px; font-size:.78rem; font-weight:600; color:#ccc; transition:all .2s; }
+    .waran-card.selected .waran-select-indicator { color:var(--gold); }
+
+    /* ── ORDER LAYOUT ── */
+    .order-layout { display:grid; grid-template-columns:1fr 360px; gap:24px; align-items:start; }
+    @media(max-width:900px) { .order-layout { grid-template-columns:1fr; } }
+
+    /* Selected waran banner */
+    .selected-banner {
+      background:linear-gradient(135deg,var(--navy),var(--purple));
+      border-radius:14px; padding:18px 20px; margin-bottom:20px;
+      display:flex; gap:16px; align-items:center; flex-wrap:wrap;
+      position:relative; overflow:hidden;
+    }
+    .selected-banner::before { content:''; position:absolute; top:-30px; right:-30px; width:120px; height:120px; border-radius:50%; background:radial-gradient(circle,rgba(245,166,35,.15),transparent 70%); }
+    .spb-name { font-family:'Playfair Display',serif; font-size:1.1rem; font-weight:700; color:#fff; }
+    .spb-sub  { font-size:.78rem; color:rgba(255,255,255,.5); margin-top:2px; }
+    .spb-stat { text-align:center; }
+    .spb-stat-label { font-size:.62rem; text-transform:uppercase; letter-spacing:.6px; color:rgba(255,255,255,.4); margin-bottom:3px; }
+    .spb-stat-value { font-size:1rem; font-weight:700; color:#fff; }
+    .spb-stat-value.gold { color:var(--gold-light); }
+    .spb-divider { width:1px; height:48px; background:rgba(255,255,255,.1); flex-shrink:0; }
+    .spb-change-btn { margin-left:auto; padding:6px 14px; border-radius:8px; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.2); color:rgba(255,255,255,.7); font-size:.75rem; font-weight:600; cursor:pointer; transition:all .2s; font-family:'Poppins',sans-serif; white-space:nowrap; }
+    .spb-change-btn:hover { background:rgba(255,255,255,.18); color:#fff; }
+
+    /* Buyer rows */
+    .buyer-rows { display:flex; flex-direction:column; gap:12px; margin-bottom:10px; }
+    .buyer-row { background:#fafafa; border:1.5px solid var(--border); border-radius:12px; padding:16px 14px 12px; position:relative; }
+    .buyer-row-label { position:absolute; top:-9px; left:14px; font-size:.62rem; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#bbb; background:#fafafa; padding:0 4px; }
+    .buyer-row-grid { display:grid; grid-template-columns:1fr 1fr auto; gap:10px; align-items:end; }
+    @media(max-width:540px) { .buyer-row-grid { grid-template-columns:1fr; } }
+    .btn-remove-buyer { width:36px; height:36px; border-radius:9px; border:1.5px solid #ffcccc; background:#fff0f0; color:var(--danger); cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:1rem; transition:all .15s; flex-shrink:0; align-self:flex-end; }
+    .btn-remove-buyer:hover { background:#ffe0e0; }
+    .btn-add-buyer { display:flex; align-items:center; justify-content:center; gap:6px; width:100%; padding:10px; border-radius:10px; border:1.5px dashed rgba(245,166,35,.4); background:rgba(245,166,35,.05); color:var(--gold); font-size:.82rem; font-weight:600; cursor:pointer; transition:all .2s; font-family:'Poppins',sans-serif; margin-bottom:4px; }
+    .btn-add-buyer:hover { background:rgba(245,166,35,.12); border-color:var(--gold); }
+
+    /* Lot calc */
+    .lot-calc { background:#fffbf0; border:1px solid rgba(245,166,35,.25); border-radius:10px; padding:12px 14px; margin-top:14px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; }
+    .lot-calc-label { font-size:.75rem; color:var(--gold); font-weight:600; }
+    .lot-calc-value { font-size:.95rem; font-weight:700; color:var(--navy); }
+
+    /* Summary sidebar */
+    .summary-card { background:#fff; border-radius:16px; box-shadow:0 2px 12px rgba(0,0,0,.06); position:sticky; top:84px; }
+    .total-box { background:linear-gradient(135deg,var(--navy),var(--purple)); border-radius:12px; padding:16px; margin-bottom:16px; }
+    .total-label { font-size:.68rem; text-transform:uppercase; letter-spacing:.8px; color:rgba(255,255,255,.4); margin-bottom:8px; }
+    .total-buyers-list { display:flex; flex-direction:column; gap:5px; margin-bottom:10px; max-height:180px; overflow-y:auto; }
+    .tbl-item { display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,.07); border-radius:8px; padding:7px 10px; }
+    .tbl-name { font-size:.8rem; color:rgba(255,255,255,.85); font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:55%; }
+    .tbl-nom  { font-size:.8rem; color:var(--gold-light); font-weight:700; }
+    .total-grand { display:flex; justify-content:space-between; border-top:1px solid rgba(255,255,255,.1); padding-top:10px; margin-top:4px; }
+    .total-grand-label { font-size:.72rem; color:rgba(255,255,255,.5); }
+    .total-grand-value { font-size:1.05rem; font-weight:700; color:#fff; }
+    .sum-row { display:flex; justify-content:space-between; padding:9px 0; border-bottom:1px solid #f5f5fa; font-size:.82rem; }
+    .sum-row:last-child { border-bottom:none; }
+    .sum-key { color:var(--gray); }
+    .sum-val { font-weight:600; text-align:right; max-width:60%; }
+    .sum-val.gold { color:var(--gold); }
+    .sum-val.green { color:var(--success); }
+
+    /* Step indicator */
+    .steps-wrap { display:flex; align-items:center; gap:0; margin-bottom:28px; }
+    .step { display:flex; align-items:center; gap:10px; }
+    .step-num { width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:.8rem; font-weight:700; flex-shrink:0; transition:all .3s; }
+    .step-num.active { background:var(--gold); color:#fff; box-shadow:0 4px 12px rgba(245,166,35,.4); }
+    .step-num.done { background:var(--success); color:#fff; }
+    .step-num.idle { background:#e8e8f0; color:#aaa; }
+    .step-label { font-size:.8rem; font-weight:600; color:var(--text); }
+    .step-label.idle { color:#ccc; }
+    .step-line { flex:1; height:2px; background:#e8e8f0; margin:0 12px; min-width:40px; }
+    .step-line.done { background:var(--success); }
+
+    /* Filter bar */
+    .picker-filter { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px; align-items:center; }
+    .picker-search { position:relative; flex:1; min-width:200px; }
+    .picker-search input { width:100%; padding:10px 14px 10px 38px; border:1.5px solid var(--border); border-radius:12px; font-family:'Poppins',sans-serif; font-size:.875rem; outline:none; transition:border .2s; background:#fff; }
+    .picker-search input:focus { border-color:var(--gold); box-shadow:0 0 0 3px rgba(245,166,35,.1); }
+    .picker-search-icon { position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#aaa; }
+    .type-tabs { display:flex; gap:5px; flex-wrap:wrap; }
+    .type-tab { padding:7px 14px; border-radius:20px; border:1.5px solid var(--border); background:#fff; font-size:.78rem; font-weight:600; color:var(--gray); cursor:pointer; transition:all .2s; }
+    .type-tab.active { background:var(--navy); color:#fff; border-color:var(--navy); }
+    .type-tab:hover:not(.active) { border-color:var(--gold); color:var(--gold); }
+
+    /* Table */
+    .orders-table-card { background:#fff; border-radius:16px; box-shadow:0 2px 12px rgba(0,0,0,.06); overflow:hidden; }
+    .section-label { font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:1.2px; color:var(--gold); margin-bottom:14px; display:flex; align-items:center; gap:8px; }
+    .section-label::after { content:''; flex:1; height:1px; background:linear-gradient(90deg,#ffd96044,transparent); }
+    table { width:100%; border-collapse:collapse; font-size:.875rem; }
+    thead { background:linear-gradient(135deg,var(--navy),var(--purple)); }
+    thead th { padding:12px 14px; text-align:left; font-size:.68rem; font-weight:700; color:rgba(255,255,255,.65); text-transform:uppercase; letter-spacing:1px; white-space:nowrap; }
+    tbody tr { border-bottom:1px solid #f5f5fa; transition:background .15s; }
+    tbody tr:last-child { border-bottom:none; }
+    tbody tr:hover { background:#fffbf3; }
+    tbody td { padding:11px 14px; vertical-align:middle; }
+    .status-badge { font-size:.68rem; font-weight:700; padding:3px 10px; border-radius:20px; display:inline-block; }
+    .status-pending   { background:#fff8e8; color:#b37a00; border:1px solid rgba(245,166,35,.3); }
+    .status-confirmed { background:#e8f8f0; color:var(--success); border:1px solid rgba(39,174,96,.25); }
+    .status-cancelled { background:#fff0f0; color:var(--danger); border:1px solid rgba(231,76,60,.2); }
+    .buyer-chips { display:flex; flex-wrap:wrap; gap:3px; }
+    .buyer-chip { font-size:.7rem; font-weight:600; padding:2px 8px; border-radius:12px; background:#f0f4ff; color:#2d4abf; }
+    .action-btns { display:flex; gap:5px; }
+    .btn-icon { width:30px; height:30px; border-radius:7px; display:flex; align-items:center; justify-content:center; font-size:.8rem; cursor:pointer; border:1.5px solid var(--border); background:#fff; transition:all .15s; }
+    .btn-icon:hover { border-color:var(--gold); background:#fffbf3; }
+    .btn-icon.del:hover { border-color:#ffcccc; background:#fff0f0; }
+    .empty-state { text-align:center; padding:48px 20px; color:#bbb; }
+    .empty-icon { font-size:2.2rem; margin-bottom:10px; }
+
+    /* Data section table filters */
+    .table-filters { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:16px; align-items:center; }
+    .filter-search { position:relative; flex:1; min-width:200px; }
+    .filter-search input { width:100%; padding:9px 14px 9px 36px; border:1.5px solid var(--border); border-radius:10px; font-family:'Poppins',sans-serif; font-size:.82rem; outline:none; transition:border .2s; background:#fff; }
+    .filter-search input:focus { border-color:var(--gold); }
+    .filter-search-icon { position:absolute; left:11px; top:50%; transform:translateY(-50%); color:#aaa; font-size:.85rem; }
+    .filter-select { padding:9px 12px; border:1.5px solid var(--border); border-radius:10px; font-family:'Poppins',sans-serif; font-size:.82rem; color:var(--text); outline:none; background:#fff; }
+    .filter-select:focus { border-color:var(--gold); }
+
+    /* Add product form */
+    .add-waran-section { margin-bottom:24px; }
+    .expiry-badge { display:inline-block; padding:2px 8px; border-radius:12px; font-size:.7rem; font-weight:600; }
+    .expiry-near { background:#fff3e0; color:#e65100; border:1px solid rgba(230,81,0,.2); }
+    .expiry-ok   { background:#e8f5e9; color:#1b5e20; border:1px solid rgba(27,94,32,.2); }
+    .expiry-exp  { background:#fce4ec; color:#880e4f; border:1px solid rgba(136,14,79,.2); }
+
+    /* Modal */
+    .modal-overlay { display:none; position:fixed; inset:0; background:rgba(13,13,43,.55); backdrop-filter:blur(4px); z-index:2000; align-items:center; justify-content:center; }
+    .modal-overlay.open { display:flex; }
+    .modal { background:#fff; border-radius:20px; padding:30px; width:600px; max-width:96vw; max-height:92vh; overflow-y:auto; box-shadow:0 24px 80px rgba(0,0,0,.2); animation:slideUp .25s ease; }
+    @keyframes slideUp { from { transform:translateY(18px);opacity:0; } to { transform:translateY(0);opacity:1; } }
+    .modal-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; }
+    .modal-title { font-family:'Playfair Display',serif; font-size:1.3rem; font-weight:700; color:var(--navy); }
+    .modal-close { width:30px; height:30px; border-radius:7px; border:1.5px solid var(--border); background:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:.9rem; color:var(--gray); transition:all .15s; }
+    .modal-close:hover { border-color:#ffcccc; color:var(--danger); background:#fff0f0; }
+    .modal-footer { display:flex; gap:10px; justify-content:flex-end; margin-top:18px; padding-top:16px; border-top:1px solid #f0f0f5; }
+    .modal-btn { padding:9px 18px; border-radius:9px; font-family:'Poppins',sans-serif; font-size:.875rem; font-weight:600; cursor:pointer; transition:all .2s; border:none; }
+    .modal-btn-outline { background:#fff; color:var(--navy); border:1.5px solid var(--border); }
+    .modal-btn-outline:hover { border-color:var(--navy); }
+    .modal-btn-success { background:linear-gradient(135deg,var(--success),#1e7e4e); color:#fff; }
+    .modal-btn-danger  { background:linear-gradient(135deg,var(--danger),#c0392b); color:#fff; }
+
+    /* Access denied */
+    .access-denied { text-align:center; padding:60px 20px; }
+    .access-denied-icon { font-size:3rem; margin-bottom:16px; }
+    .access-denied-title { font-family:'Playfair Display',serif; font-size:1.4rem; font-weight:700; color:var(--navy); margin-bottom:8px; }
+    .access-denied-sub { font-size:.88rem; color:var(--gray); }
+
+    /* Toast */
+    .toast-container { position:fixed; bottom:28px; right:28px; z-index:9999; display:flex; flex-direction:column; gap:10px; }
+    .toast { padding:14px 20px; border-radius:12px; font-size:.875rem; font-weight:500; box-shadow:0 6px 24px rgba(0,0,0,.15); animation:toastIn .3s ease; max-width:320px; }
+    @keyframes toastIn { from { opacity:0; transform:translateX(20px); } to { opacity:1; transform:translateX(0); } }
+    .toast-success { background:#f0fff8; border:1px solid #a8e6c1; color:#1e7e4e; }
+    .toast-error   { background:#fff0f0; border:1px solid #ffcccc; color:#c0392b; }
+    .toast-info    { background:#f0f4ff; border:1px solid #c5d3ff; color:#2d4abf; }
+    .skeleton { background:linear-gradient(90deg,#f0f0f5 25%,#e8e8f0 50%,#f0f0f5 75%); background-size:200% 100%; animation:shimmer 1.4s infinite; border-radius:8px; }
+    @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+    /* Summary order tab */
+    .orders-section { margin-top:32px; }
+    .tbl-search-row { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px; align-items:center; }
+  </style>
+</head>
+<body>
+<div id="navbar-placeholder"></div>
+<script src="navbar.js"></script>
+
+<div class="page-container">
+
+  <!-- Header -->
+  <div class="page-header">
+    <a href="index.html" class="back-link">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      Kembali ke Dashboard
+    </a>
+    <div class="page-title">Waran Terstruktur</div>
+    <div class="page-subtitle">Kelola produk & order waran terstruktur</div>
+    <div class="title-underline"></div>
+  </div>
+
+  <!-- MAIN TABS -->
+  <div class="main-tabs" id="mainTabs">
+    <div class="main-tab active" onclick="switchTab('data')" id="tabData">Data Waran</div>
+    <div class="main-tab" onclick="switchTab('order')" id="tabOrder">Order Waran</div>
+    <div class="main-tab" onclick="switchTab('history')" id="tabHistory">Riwayat Order</div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════ -->
+  <!-- TAB 1: DATA WARAN                                   -->
+  <!-- ════════════════════════════════════════════════════ -->
+  <div class="main-tab-section active" id="sectionData">
+
+    <!-- Add Form (head_account, admin, treasury only) -->
+    <div class="add-waran-section" id="addWaranSection">
+      <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
+        <button class="btn btn-primary btn-sm" onclick="openAddModal()" style="gap:8px">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Tambah Produk
+        </button>
+      </div>
+    </div>
+
+    <!-- Modal Tambah Produk -->
+    <div class="modal-overlay" id="addWaranModal" onclick="closeModalOutside(event,'addWaranModal')">
+      <div class="modal">
+        <div class="modal-header">
+          <div class="modal-title">Tambah Produk Waran Terstruktur</div>
+          <button class="modal-close" onclick="closeModal('addWaranModal')">✕</button>
+        </div>
+        <div class="form-grid" style="margin-bottom:16px">
+          <div class="form-group">
+            <label class="form-label">Kode Waran <span class="req">*</span></label>
+            <input class="form-input" id="fKode" placeholder="cth. BBCADRCF6A" style="text-transform:uppercase" oninput="parseWaranKode()" maxlength="10"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Underlying Asset <span class="req">*</span></label>
+            <input class="form-input" id="fUnderlying" placeholder="Otomatis dari kode" style="background:#fffbf0"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Tipe Waran <span class="req">*</span></label>
+            <select class="form-select" id="fTipe" style="background:#fffbf0">
+              <option value="">Otomatis dari kode</option>
+              <option value="Call">Call Warrant</option>
+              <option value="Put">Put Warrant</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Kategori <span class="req">*</span></label>
+            <select class="form-select" id="fKategori">
+              <option value="">-- Pilih Kategori --</option>
+              <option value="Single Stock">Single Stock</option>
+              <option value="Index">Index</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Penerbit (Issuer)</label>
+            <input class="form-input" id="fIssuer" placeholder="Otomatis dari kode" style="background:#fffbf0" readonly/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Harga Waran (Rp/unit) <span class="req">*</span></label>
+            <div class="input-pfx-wrap">
+              <span class="input-pfx">Rp</span>
+              <input class="form-input" id="fHarga" type="text" inputmode="numeric" placeholder="100" oninput="fmtInputNum(this)"/>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Strike Price (Rp) <span class="req">*</span></label>
+            <div class="input-pfx-wrap">
+              <span class="input-pfx">Rp</span>
+              <input class="form-input" id="fStrike" type="text" inputmode="numeric" placeholder="10.000" oninput="fmtInputNum(this)"/>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Rasio Konversi</label>
+            <input class="form-input" id="fRasio" type="number" step="0.01" placeholder="cth. 10 (1 lembar = 10 unit)"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Tanggal Jatuh Tempo <span class="req">*</span></label>
+            <input class="form-input" id="fExpiry" type="date" style="background:#fffbf0"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Lot Minimum</label>
+            <input class="form-input" id="fMinLot" type="number" min="1" placeholder="cth. 1"/>
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:16px">
+          <label class="form-label">Keterangan / Catatan</label>
+          <textarea class="form-textarea" id="fKetData" placeholder="Catatan tambahan (opsional)..."></textarea>
+        </div>
+        <div class="modal-footer">
+          <button class="modal-btn modal-btn-outline" onclick="resetAddForm()">Reset</button>
+          <button class="modal-btn modal-btn-success" onclick="submitWaranData()" id="btnSubmitData">Simpan Produk</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Data Table -->
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Daftar Produk Waran Terstruktur</div>
+          <div class="card-subtitle" id="dataCountSubtitle">Memuat data...</div>
+        </div>
+        <button class="btn btn-outline btn-sm" onclick="loadWaranData()">Refresh</button>
+      </div>
+      <div class="card-body">
+        <div class="table-filters">
+          <div class="filter-search">
+            <span class="filter-search-icon">🔍</span>
+            <input type="text" id="searchData" placeholder="Cari kode, underlying, issuer..." oninput="filterDataTable()"/>
+          </div>
+          <select class="filter-select" id="filterTipe" onchange="filterDataTable()">
+            <option value="">Semua Tipe</option>
+            <option value="Call">Call</option>
+            <option value="Put">Put</option>
+          </select>
+          <select class="filter-select" id="filterKategori" onchange="filterDataTable()">
+            <option value="">Semua Kategori</option>
+            <option value="Single Stock">Single Stock</option>
+            <option value="Index">Index</option>
+          </select>
+        </div>
+        <div style="overflow-x:auto">
+          <table>
+            <thead>
+              <tr>
+                <th>Kode</th>
+                <th>Underlying</th>
+                <th>Tipe</th>
+                <th>Kategori</th>
+                <th>Issuer</th>
+                <th>Harga (Rp)</th>
+                <th>Strike (Rp)</th>
+                <th>Rasio</th>
+                <th>Jatuh Tempo</th>
+                <th>Min Lot</th>
+                <th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="dataTableBody">
+              <tr><td colspan="11"><div class="empty-state skeleton" style="height:60px;border-radius:8px;margin:8px 0"></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════ -->
+  <!-- TAB 2: ORDER WARAN                                  -->
+  <!-- ════════════════════════════════════════════════════ -->
+  <div class="main-tab-section" id="sectionOrder">
+
+    <!-- Step Indicator -->
+    <div class="steps-wrap" id="stepsWrap">
+      <div class="step">
+        <div class="step-num active" id="step1num">1</div>
+        <div class="step-label" id="step1lbl">Pilih Waran</div>
+      </div>
+      <div class="step-line" id="line12"></div>
+      <div class="step">
+        <div class="step-num idle" id="step2num">2</div>
+        <div class="step-label idle" id="step2lbl">Isi Order</div>
+      </div>
+      <div class="step-line" id="line23"></div>
+      <div class="step">
+        <div class="step-num idle" id="step3num">3</div>
+        <div class="step-label idle" id="step3lbl">Selesai</div>
+      </div>
+    </div>
+
+    <!-- STEP 1: Pick Waran -->
+    <div id="step1Section">
+      <div class="picker-filter">
+        <div class="picker-search">
+          <span class="picker-search-icon">🔍</span>
+          <input type="text" id="orderSearch" placeholder="Cari kode waran atau underlying..." oninput="filterOrderGrid()"/>
+        </div>
+      </div>
+      <div class="type-tabs" id="orderTypeTabs"></div>
+      <br/>
+      <div class="products-grid" id="orderWaranGrid">
+        <div style="height:180px" class="skeleton"></div>
+        <div style="height:180px" class="skeleton"></div>
+        <div style="height:180px" class="skeleton"></div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;margin-top:4px">
+        <button class="btn btn-primary" id="btnProceed" onclick="goToStep2()" disabled style="width:auto;padding:12px 28px;opacity:.5">
+          Lanjut ke Form Order →
+        </button>
+      </div>
+    </div>
+
+    <!-- STEP 2: Order Form -->
+    <div id="step2Section" style="display:none">
+      <div class="order-layout">
+        <!-- LEFT -->
+        <div>
+          <div class="selected-banner" id="selectedBanner"></div>
+
+          <!-- Data Pembeli -->
+          <div class="card" style="margin-bottom:20px">
+            <div class="card-header">
+              <div>
+                <div class="card-title">Data Pembeli</div>
+                <div class="card-subtitle">Tambahkan satu atau lebih pembeli dalam satu order</div>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="buyer-rows" id="buyerRows"></div>
+              <button class="btn-add-buyer" onclick="addBuyerRow()">+ Tambah Pembeli</button>
+              <div class="lot-calc" id="lotCalc" style="display:none">
+                <div>
+                  <div class="lot-calc-label">Estimasi Total Lot</div>
+                  <div style="font-size:.75rem;color:var(--gray);margin-top:2px">Total nominal ÷ (Harga × 100 per lot)</div>
+                </div>
+                <div class="lot-calc-value" id="lotCalcValue">— Lot</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Catatan & Submit -->
+          <div class="card">
+            <div class="card-body">
+              <div class="form-group" style="margin-bottom:16px">
+                <label class="form-label">Keterangan / Catatan</label>
+                <textarea class="form-textarea" id="fOrderNotes" placeholder="Catatan tambahan (opsional)..."></textarea>
+              </div>
+              <button class="btn btn-primary btn-full" id="submitOrderBtn" onclick="submitOrder()">Kirim Order</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT: Summary -->
+        <div>
+          <div class="summary-card">
+            <div class="card-header">
+              <div class="card-title">Ringkasan Order</div>
+              <div class="card-subtitle">Live preview</div>
+            </div>
+            <div class="card-body">
+              <div class="total-box">
+                <div class="total-label">Daftar Pembeli</div>
+                <div class="total-buyers-list" id="summaryBuyers">
+                  <div style="text-align:center;color:rgba(255,255,255,.25);font-size:.8rem;padding:6px">Belum ada pembeli</div>
+                </div>
+                <div class="total-grand">
+                  <span class="total-grand-label">Total Nominal</span>
+                  <span class="total-grand-value" id="summaryTotal">Rp 0</span>
+                </div>
+              </div>
+              <div id="summaryRows"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Orders History (below order form) -->
+    <div class="orders-section" id="orderHistSection" style="display:none">
+      <div class="section-label">Riwayat Order Waran Ini</div>
+      <div class="orders-table-card" style="overflow-x:auto">
+        <table>
+          <thead>
+            <tr>
+              <th>Tgl Order</th><th>Kode Waran</th><th>Pembeli</th>
+              <th>Total Nominal</th><th>Est. Lot</th><th>Sales</th>
+              <th>Status</th><th>Catatan</th><th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="orderHistBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════ -->
+  <!-- TAB 3: RIWAYAT ORDER (semua order)                 -->
+  <!-- ════════════════════════════════════════════════════ -->
+  <div class="main-tab-section" id="sectionHistory">
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Riwayat Semua Order Waran Terstruktur</div>
+          <div class="card-subtitle" id="histCountSubtitle">Memuat...</div>
+        </div>
+        <button class="btn btn-outline btn-sm" onclick="loadAllOrders()">Refresh</button>
+      </div>
+      <div class="card-body">
+        <div class="tbl-search-row">
+          <div class="filter-search">
+            <span class="filter-search-icon">🔍</span>
+            <input type="text" id="histSearch" placeholder="Cari kode, pembeli, sales..." oninput="filterHistTable()"/>
+          </div>
+          <select class="filter-select" id="histFilterStatus" onchange="filterHistTable()">
+            <option value="">Semua Status</option>
+            <option value="pending">Pending</option>
+            <option value="confirmed">Confirmed</option>
+            <option value="cancelled">Dibatalkan</option>
+          </select>
+          <select class="filter-select" id="histFilterTipe" onchange="filterHistTable()">
+            <option value="">Semua Tipe</option>
+            <option value="Call">Call</option>
+            <option value="Put">Put</option>
+          </select>
+        </div>
+        <div style="overflow-x:auto">
+          <table>
+            <thead>
+              <tr>
+                <th>Tgl Order</th><th>Kode Waran</th><th>Underlying</th><th>Tipe</th>
+                <th>Pembeli</th><th>Total Nominal</th><th>Est. Lot</th>
+                <th>Sales</th><th>Status</th><th>Catatan</th><th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="histTableBody">
+              <tr><td colspan="11"><div class="empty-state skeleton" style="height:60px;border-radius:8px;margin:8px 0"></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /page-container -->
+
+<!-- Detail Modal -->
+<div class="modal-overlay" id="detailModal" onclick="closeModalOutside(event,'detailModal')">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="detailModalTitle">Detail Order</div>
+      <button class="modal-close" onclick="closeModal('detailModal')">✕</button>
+    </div>
+    <div id="detailModalBody"></div>
+    <div class="modal-footer" id="detailModalFooter"></div>
+  </div>
+</div>
+
+<!-- Edit Waran Modal -->
+<div class="modal-overlay" id="editModal" onclick="closeModalOutside(event,'editModal')">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Edit Produk Waran</div>
+      <button class="modal-close" onclick="closeModal('editModal')">✕</button>
+    </div>
+    <div id="editModalBody"></div>
+    <div class="modal-footer" id="editModalFooter"></div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+  let curUser       = null;
+  let waranData     = [];       // all waran products
+  let filteredWaran = [];       // filtered for data table
+  let orderWaranList = [];      // for order grid
+  let filteredOrderGrid = [];
+  let selectedWaran  = null;
+  let activeOrderType = '';
+  let buyerCount     = 0;
+  let orderHistData  = [];      // orders for selected waran
+  let allOrdersData  = [];      // all orders (tab 3)
+  let filteredAllOrders = [];
+
+  const canManageData = () => ['head_account','admin','treasury'].includes(curUser?.role);
+  const canActOrder   = () => ['head_account','admin','treasury'].includes(curUser?.role);
+
+  // ═══════════════════════════════
+  // INIT
+  // ═══════════════════════════════
+  function initPage() {
+    const raw = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember');
+    if (!raw) { window.location.href = 'login.html'; return; }
+    sessionStorage.setItem('fawz_user', raw);
+    curUser = JSON.parse(raw);
+
+    // Show/hide Add form based on role
+    if (!canManageData()) {
+      document.getElementById('addWaranSection').style.display = 'none';
+    }
+
+    loadWaranData();
+    loadAllOrders();
+  }
+
+  // ═══════════════════════════════
+  // TAB SWITCH
+  // ═══════════════════════════════
+  function switchTab(name) {
+    ['data','order','history'].forEach(t => {
+      document.getElementById('tab' + cap(t)).classList.toggle('active', t === name);
+      document.getElementById('section' + cap(t)).classList.toggle('active', t === name);
+    });
+    if (name === 'order' && !orderWaranList.length) buildOrderGrid();
+  }
+  function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+  // ═══════════════════════════════
+  // LOAD WARAN DATA
+  // ═══════════════════════════════
+  async function loadWaranData() {
+    try {
+      const { data, error } = await window._supabase.from('waran_terstruktur').select('*').order('kode', { ascending: true });
+      if (error) throw error;
+      waranData = data || [];
+      filteredWaran = [...waranData];
+      orderWaranList = [...waranData];
+      filteredOrderGrid = [...waranData];
+      renderDataTable();
+      buildOrderTypeTabs();
+      renderOrderGrid(filteredOrderGrid);
+      document.getElementById('dataCountSubtitle').textContent = `${waranData.length} produk terdaftar`;
+    } catch(e) {
+      console.error(e);
+      showToast('Gagal memuat data waran','error');
+      document.getElementById('dataTableBody').innerHTML = `<tr><td colspan="11"><div class="empty-state" style="color:var(--danger)">⚠️ Gagal memuat data</div></td></tr>`;
+    }
+  }
+
+  // ═══════════════════════════════
+  // DATA TABLE
+  // ═══════════════════════════════
+  function filterDataTable() {
+    const q = document.getElementById('searchData').value.toLowerCase();
+    const tp = document.getElementById('filterTipe').value;
+    const kt = document.getElementById('filterKategori').value;
+    filteredWaran = waranData.filter(w => {
+      const mq = !q || [w.kode,w.underlying,w.issuer,w.kategori].some(f => (f||'').toLowerCase().includes(q));
+      const mt = !tp || w.tipe === tp;
+      const mk = !kt || w.kategori === kt;
+      return mq && mt && mk;
+    });
+    renderDataTable();
+  }
+
+  function renderDataTable() {
+    const tbody = document.getElementById('dataTableBody');
+    const canEdit = canManageData();
+    if (!filteredWaran.length) {
+      tbody.innerHTML = `<tr><td colspan="11"><div class="empty-state"><div class="empty-icon"></div><div>Tidak ada data waran</div></div></td></tr>`;
+      return;
+    }
+    tbody.innerHTML = filteredWaran.map(w => {
+      const typeCls = w.tipe === 'Call' ? 'badge-call' : 'badge-put';
+      const expiry = w.expiry ? new Date(w.expiry) : null;
+      const today = new Date(); today.setHours(0,0,0,0);
+      let expiryBadge = '';
+      if (expiry) {
+        const diff = Math.ceil((expiry - today) / 86400000);
+        const dateStr = expiry.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'});
+        if (diff < 0) expiryBadge = `<span class="expiry-badge expiry-exp">${dateStr} (Kadaluarsa)</span>`;
+        else if (diff <= 30) expiryBadge = `<span class="expiry-badge expiry-near">${dateStr} (${diff}h lagi)</span>`;
+        else expiryBadge = `<span class="expiry-badge expiry-ok">${dateStr}</span>`;
+      }
+      return `<tr>
+        <td style="font-weight:700;color:var(--navy);white-space:nowrap">${esc(w.kode||'—')}</td>
+        <td style="font-weight:600">${esc(w.underlying||'—')}</td>
+        <td><span class="waran-type-badge ${typeCls}">${esc(w.tipe||'—')}</span></td>
+        <td style="font-size:.82rem">${esc(w.kategori||'—')}</td>
+        <td style="font-size:.8rem;color:var(--gray)">${esc(w.issuer||'—')}</td>
+        <td style="font-weight:700;color:var(--gold)">${w.harga ? 'Rp '+fmtNum(w.harga,0) : '—'}</td>
+        <td style="font-weight:600">${w.strike ? 'Rp '+fmtNum(w.strike,0) : '—'}</td>
+        <td style="font-size:.82rem">${w.rasio ? '1:'+w.rasio : '—'}</td>
+        <td>${expiryBadge || '—'}</td>
+        <td style="font-size:.82rem">${w.minLot || 1} lot</td>
+        <td>
+          <div class="action-btns">
+            ${canEdit ? `
+              <button class="btn-icon" onclick="openEditModal('${w.id}')" title="Edit">✏️</button>
+              <button class="btn-icon del" onclick="deleteWaran('${w.id}')" title="Hapus">🗑</button>` : ''}
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+
+  // ═══════════════════════════════
+  // ADD FORM TOGGLE
+  // ═══════════════════════════════
+  let addFormOpen = false;
+  function openAddModal() {
+    document.getElementById('addWaranModal').classList.add('open');
+  }
+  function toggleAddForm() { openAddModal(); }
+  function resetAddForm() {
+    ['fKode','fUnderlying','fIssuer','fHarga','fStrike','fRasio','fExpiry','fMinLot','fKetData'].forEach(id => {
+      const el = document.getElementById(id); if(el) el.value = '';
+    });
+    document.getElementById('fTipe').value = '';
+    document.getElementById('fKategori').value = '';
+    const hint = document.getElementById('fKodeHint');
+    if (hint) { hint.textContent = ''; hint.style.color = ''; }
+    const issuerHint = document.getElementById('fIssuerHint');
+    if (issuerHint) issuerHint.textContent = '';  }
+
+  // ═══════════════════════════════════════════════════
+  // AUTO-PARSE KODE WARAN TERSTRUKTUR
+  // Format: XXXXAACMYA
+  //   XXXX = Underlying (4 huruf)
+  //   AA   = Kode sekuritas penerbit (2 huruf)
+  //   C    = Tipe: C=Call, P=Put
+  //   M    = Kode bulan jatuh tempo (kode opsi standar)
+  //   Y    = Digit terakhir tahun (0-9)
+  //   A    = Kode unik (diabaikan)
+  // ═══════════════════════════════════════════════════
+  function parseWaranKode() {
+    const kodeEl    = document.getElementById('fKode');
+    const kode      = (kodeEl.value || '').toUpperCase().replace(/\s/g,'');
+    const hintEl    = null;
+    const issuerHintEl = null;
+
+    // Kode bulan → {bulan (1-12), nama}
+    // Standar kode opsi futures BEI: F=Jan,G=Feb,H=Mar,J=Apr,K=Mei,M=Jun,N=Jul,Q=Agu,U=Sep,V=Okt,X=Nov,Z=Des
+    const BULAN_MAP = {
+      'F': { bulan: 1,  nama: 'Januari'  },
+      'G': { bulan: 2,  nama: 'Februari' },
+      'H': { bulan: 3,  nama: 'Maret'    },
+      'J': { bulan: 4,  nama: 'April'    },
+      'K': { bulan: 5,  nama: 'Mei'      },
+      'M': { bulan: 6,  nama: 'Juni'     },
+      'N': { bulan: 7,  nama: 'Juli'     },
+      'Q': { bulan: 8,  nama: 'Agustus'  },
+      'U': { bulan: 9,  nama: 'September'},
+      'V': { bulan: 10, nama: 'Oktober'  },
+      'X': { bulan: 11, nama: 'November' },
+      'Z': { bulan: 12, nama: 'Desember' },
+    };
+
+    // Daftar lengkap kode anggota bursa BEI
+    const ISSUER_MAP = {
+      'AG': 'PT Kiwoom Sekuritas Indonesia',
+      'AH': 'PT Shinhan Sekuritas Indonesia',
+      'AK': 'PT UBS Sekuritas Indonesia',
+      'AP': 'PT Pacific Sekuritas Indonesia',
+      'AR': 'PT Binaartha Sekuritas',
+      'AT': 'PT Phintraco Sekuritas',
+      'AZ': 'PT Sucor Sekuritas',
+      'BF': 'PT Inti Fikasa Sekuritas',
+      'BK': 'PT J.P. Morgan Sekuritas Indonesia',
+      'BQ': 'PT Korea Investment And Sekuritas Indonesia',
+      'BR': 'PT Trust Sekuritas',
+      'CC': 'PT Mandiri Sekuritas',
+      'CD': 'PT Mega Capital Sekuritas',
+      'CP': 'PT KB Valbury Sekuritas',
+      'CS': 'PT Credit Suisse Sekuritas Indonesia',
+      'DD': 'PT Makindo Sekuritas',
+      'DH': 'PT Sinarmas Sekuritas',
+      'DM': 'PT Masindo Artha Sekuritas',
+      'DP': 'PT DBS Vickers Sekuritas Indonesia',
+      'DR': 'PT RHB Sekuritas Indonesia',
+      'DU': 'PT KAF Sekuritas Indonesia',
+      'DX': 'PT Bahana Sekuritas',
+      'EP': 'PT MNC Sekuritas',
+      'FS': 'PT Yuanta Sekuritas Indonesia',
+      'GA': 'PT BNC Sekuritas Indonesia',
+      'GI': 'PT Webull Sekuritas Indonesia',
+      'GR': 'PT Panin Sekuritas Tbk',
+      'GW': 'PT HSBC Sekuritas Indonesia',
+      'HD': 'PT KGI Sekuritas Indonesia',
+      'HP': 'PT Henan Putihrai Sekuritas',
+      'ID': 'PT Anugerah Sekuritas Indonesia',
+      'IF': 'PT Samuel Sekuritas Indonesia',
+      'IH': 'PT Pacific 2000 Sekuritas',
+      'II': 'PT Danatama Makmur Sekuritas',
+      'IN': 'PT Investindo Nusantara Sekuritas',
+      'IT': 'PT Inti Teladan Sekuritas',
+      'IU': 'PT Indo Capital Sekuritas',
+      'KI': 'PT Ciptadana Sekuritas Asia',
+      'KK': 'PT Phillip Sekuritas Indonesia',
+      'KZ': 'PT CLSA Sekuritas Indonesia',
+      'LG': 'PT Trimegah Sekuritas Indonesia Tbk',
+      'LS': 'PT Reliance Sekuritas Indonesia Tbk',
+      'MG': 'PT Semesta Indovest Sekuritas',
+      'MU': 'PT Minna Padi Investama Sekuritas Tbk',
+      'NI': 'PT BNI Sekuritas',
+      'OD': 'PT BRI Danareksa Sekuritas',
+      'OK': 'PT Net Sekuritas',
+      'PD': 'PT Indo Premier Sekuritas',
+      'PF': 'PT Danasakti Sekuritas Indonesia',
+      'PG': 'PT Panca Global Sekuritas',
+      'PO': 'PT Pilarmas Investindo Sekuritas',
+      'PP': 'PT Aldiracita Sekuritas Indonesia',
+      'PS': 'PT Paramitra Alfa Sekuritas',
+      'RB': 'PT Ina Sekuritas Indonesia',
+      'RF': 'PT Buana Capital Sekuritas',
+      'RG': 'PT Profindo Sekuritas Indonesia',
+      'RO': 'PT Nilai Inti Sekuritas',
+      'RS': 'PT Yulie Sekuritas Indonesia Tbk',
+      'RX': 'PT Macquarie Sekuritas Indonesia',
+      'SC': 'PT IMG Sekuritas',
+      'SF': 'PT Surya Fajar Sekuritas',
+      'SH': 'PT Artha Sekuritas Indonesia',
+      'SQ': 'PT BCA Sekuritas',
+      'SS': 'PT Supra Sekuritas Indonesia',
+      'TP': 'PT OCBC Sekuritas Indonesia',
+      'XA': 'PT NH Korindo Sekuritas Indonesia',
+      'XC': 'PT Ajaib Sekuritas Asia',
+      'XL': 'PT Stockbit Sekuritas Digital',
+      'YB': 'PT Jasa Utama Capital Sekuritas',
+      'YJ': 'PT Lotus Andalan Sekuritas',
+      'YO': 'PT Amantara Sekuritas Indonesia',
+      'YP': 'PT Mirae Asset Sekuritas Indonesia',
+      'YU': 'PT CGS International Sekuritas Indonesia',
+      'ZP': 'PT Maybank Sekuritas Indonesia',
+      'ZR': 'PT Bumiputera Sekuritas',
+    };
+
+    // Reset jika kode < 9 karakter (belum lengkap)
+    if (kode.length < 9) {
+      if (hintEl) hintEl.style.color = '';
+      if (kode.length === 0) {
+        if (hintEl) hintEl.textContent = '';
+      } else {
+        if (hintEl) hintEl.textContent = `Masukkan 10 karakter (saat ini: ${kode.length})`;
+      }
+      return;
+    }
+
+    // Parse komponen
+    const underlying = kode.substring(0, 4);
+    const issuerKode = kode.substring(4, 6);
+    const tipeKar    = kode.charAt(6);           // C atau P
+    const bulanKar   = kode.charAt(7);
+    const tahunKar   = kode.charAt(8);
+
+    // 1. Underlying
+    const elUnderlying = document.getElementById('fUnderlying');
+    if (elUnderlying && !elUnderlying._manualEdit) elUnderlying.value = underlying;
+
+    // 2. Tipe Waran
+    const elTipe = document.getElementById('fTipe');
+    if (elTipe && !elTipe._manualEdit) {
+      if (tipeKar === 'C') elTipe.value = 'Call';
+      else if (tipeKar === 'P') elTipe.value = 'Put';
+      else elTipe.value = '';
+    }
+
+    // 3. Penerbit Issuer
+    const elIssuer = document.getElementById('fIssuer');
+    const issuerName = ISSUER_MAP[issuerKode] || null;
+    if (elIssuer) {
+      if (issuerName) {
+        elIssuer.value = issuerName;
+        elIssuer.setAttribute('readonly', true);
+        elIssuer.placeholder = 'Otomatis dari kode';
+      } else {
+        elIssuer.value = '';
+        elIssuer.removeAttribute('readonly');
+        elIssuer.placeholder = `Kode "${issuerKode}" — isi manual`;
+      }
+    }
+
+    // 4. Tanggal Jatuh Tempo (akhir bulan)
+    const bulanInfo = BULAN_MAP[bulanKar];
+    const tahunDigit = parseInt(tahunKar);
+    const elExpiry = document.getElementById('fExpiry');
+
+    if (bulanInfo && !isNaN(tahunDigit) && elExpiry && !elExpiry._manualEdit) {
+      // Tentukan tahun penuh dari digit terakhir
+      const now = new Date();
+      const currentYear = now.getFullYear();
+      const currentDecade = Math.floor(currentYear / 10) * 10;
+      let tahunPenuh = currentDecade + tahunDigit;
+      // Jika tahun hasil < tahun sekarang - 1, naikkan satu dekade
+      if (tahunPenuh < currentYear - 1) tahunPenuh += 10;
+
+      // Akhir bulan
+      const lastDay = new Date(tahunPenuh, bulanInfo.bulan, 0).getDate();
+      const mm = String(bulanInfo.bulan).padStart(2, '0');
+      const dd = String(lastDay).padStart(2, '0');
+      elExpiry.value = `${tahunPenuh}-${mm}-${dd}`;
+    }
+
+    // 5. Update hint kode
+    const tipeLabel = tipeKar === 'C' ? 'Call' : tipeKar === 'P' ? 'Put' : '?';
+    const bulanLabel = bulanInfo ? bulanInfo.nama : `?[${bulanKar}]`;
+    const tahunLabel = !isNaN(tahunDigit) ? `202${tahunKar}` : '?';
+    if (hintEl) {
+      hintEl.textContent = `${underlying} · ${issuerName || issuerKode} · ${tipeLabel} · Jatuh tempo ${bulanLabel} ${tahunLabel}`;
+      hintEl.style.color = '';
+    }
+
+    // 6. Auto-detect kategori Index jika underlying adalah indeks
+    const INDEX_LIST = ['IHSG','IDX3','IDX8','LQ45','JII7','IDXV','IDXG','IDXH'];
+    const elKategori = document.getElementById('fKategori');
+    if (elKategori && !elKategori.value) {
+      if (INDEX_LIST.some(idx => underlying.startsWith(idx.substring(0,4)))) {
+        elKategori.value = 'Index';
+      }
+    }
+  }
+
+  // ═══════════════════════════════
+  // SUBMIT WARAN DATA
+  // ═══════════════════════════════
+  async function submitWaranData() {
+    const kode       = document.getElementById('fKode').value.trim().toUpperCase();
+    const underlying = document.getElementById('fUnderlying').value.trim().toUpperCase();
+    const tipe       = document.getElementById('fTipe').value;
+    const kategori   = document.getElementById('fKategori').value;
+    const issuer     = document.getElementById('fIssuer').value.trim();
+    const hargaRaw   = rawNum(document.getElementById('fHarga'));
+    const strikeRaw  = rawNum(document.getElementById('fStrike'));
+    const rasio      = parseFloat(document.getElementById('fRasio').value) || null;
+    const expiry     = document.getElementById('fExpiry').value;
+    const minLot     = parseInt(document.getElementById('fMinLot').value) || 1;
+    const keterangan = document.getElementById('fKetData').value.trim();
+
+    if (!kode || !underlying || !tipe || !kategori || !hargaRaw || !strikeRaw || !expiry) {
+      showToast('Lengkapi semua field wajib (*)','error'); return;
+    }
+
+    const btn = document.getElementById('btnSubmitData');
+    btn.textContent = 'Menyimpan...'; btn.disabled = true;
+
+    const payload = {
+      kode, underlying, tipe, kategori, issuer,
+      harga: hargaRaw, strike: strikeRaw, rasio, expiry, minLot, keterangan,
+      createdBy: curUser?.name || curUser?.email || '',
+      createdRole: curUser?.role || '',
+      createdAt: new Date().toISOString(),
+    };
+
+    try {
+      const { error } = await window._supabase.from('waran_terstruktur').insert(payload).select().single();
+      if (error) throw error;
+      showToast(`Produk ${kode} berhasil ditambahkan!`,'success');
+      resetAddForm();
+      closeModal('addWaranModal');
+      await loadWaranData();
+    } catch(e) {
+      console.error(e); showToast('Gagal menyimpan data','error');
+    } finally {
+      btn.textContent = 'Simpan Produk'; btn.disabled = false;
+    }
+  }
+
+  // ═══════════════════════════════
+  // DELETE WARAN
+  // ═══════════════════════════════
+  async function deleteWaran(id) {
+    if (!confirm('Hapus produk waran ini?')) return;
+    try {
+      const { error } = await window._supabase.from('waran_terstruktur').delete().eq('id', id);
+      if (error) throw error;
+      waranData = waranData.filter(w => w.id !== id);
+      filteredWaran = filteredWaran.filter(w => w.id !== id);
+      renderDataTable();
+      showToast('Produk berhasil dihapus','success');
+    } catch(e) { showToast('Gagal menghapus','error'); }
+  }
+
+  // ═══════════════════════════════
+  // EDIT MODAL
+  // ═══════════════════════════════
+  function openEditModal(id) {
+    const w = waranData.find(x => x.id === id);
+    if (!w) return;
+    document.getElementById('editModalBody').innerHTML = `
+      <div class="form-grid" style="margin-bottom:16px">
+        <div class="form-group">
+          <label class="form-label">Kode Waran</label>
+          <input class="form-input" id="eFKode" value="${esc(w.kode||'')}" style="text-transform:uppercase"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Underlying Asset</label>
+          <input class="form-input" id="eFUnderlying" value="${esc(w.underlying||'')}"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tipe Waran</label>
+          <select class="form-select" id="eFTipe">
+            <option value="Call" ${w.tipe==='Call'?'selected':''}>Call Warrant</option>
+            <option value="Put"  ${w.tipe==='Put'?'selected':''}>Put Warrant</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Kategori</label>
+          <select class="form-select" id="eFKategori">
+            <option value="Single Stock" ${w.kategori==='Single Stock'?'selected':''}>Single Stock</option>
+            <option value="Index"        ${w.kategori==='Index'?'selected':''}>Index</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Issuer</label>
+          <input class="form-input" id="eFIssuer" value="${esc(w.issuer||'')}"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Harga (Rp/unit)</label>
+          <div class="input-pfx-wrap">
+            <span class="input-pfx">Rp</span>
+            <input class="form-input" id="eFHarga" type="text" value="${w.harga ? fmtNum(w.harga,0) : ''}" oninput="fmtInputNum(this)"/>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Strike Price (Rp)</label>
+          <div class="input-pfx-wrap">
+            <span class="input-pfx">Rp</span>
+            <input class="form-input" id="eFStrike" type="text" value="${w.strike ? fmtNum(w.strike,0) : ''}" oninput="fmtInputNum(this)"/>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Rasio Konversi</label>
+          <input class="form-input" id="eFRasio" type="number" step="0.01" value="${w.rasio||''}"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tanggal Jatuh Tempo</label>
+          <input class="form-input" id="eFExpiry" type="date" value="${w.expiry||''}"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Min Lot</label>
+          <input class="form-input" id="eFMinLot" type="number" min="1" value="${w.minLot||1}"/>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Keterangan</label>
+        <textarea class="form-textarea" id="eFKet">${esc(w.keterangan||'')}</textarea>
+      </div>
+    `;
+    document.getElementById('editModalFooter').innerHTML = `
+      <button class="modal-btn modal-btn-outline" onclick="closeModal('editModal')">Batal</button>
+      <button class="modal-btn modal-btn-success" onclick="saveEdit('${id}')">Simpan</button>
+    `;
+    document.getElementById('editModal').classList.add('open');
+  }
+
+  async function saveEdit(id) {
+    const payload = {
+      kode:      document.getElementById('eFKode').value.trim().toUpperCase(),
+      underlying:document.getElementById('eFUnderlying').value.trim().toUpperCase(),
+      tipe:      document.getElementById('eFTipe').value,
+      kategori:  document.getElementById('eFKategori').value,
+      issuer:    document.getElementById('eFIssuer').value.trim(),
+      harga:     rawNum(document.getElementById('eFHarga')),
+      strike:    rawNum(document.getElementById('eFStrike')),
+      rasio:     parseFloat(document.getElementById('eFRasio').value) || null,
+      expiry:    document.getElementById('eFExpiry').value,
+      minLot:    parseInt(document.getElementById('eFMinLot').value) || 1,
+      keterangan:document.getElementById('eFKet').value.trim(),
+      updatedBy: curUser?.name || '',
+    };
+    try {
+      const { error } = await window._supabase.from('waran_terstruktur').update(payload).eq('id', id);
+      if (error) throw error;
+      showToast('Produk berhasil diperbarui','success');
+      closeModal('editModal');
+      await loadWaranData();
+    } catch(e) { showToast('Gagal menyimpan','error'); }
+  }
+
+  // ═══════════════════════════════
+  // ORDER: STEP 1 GRID
+  // ═══════════════════════════════
+  function buildOrderTypeTabs() {
+    const types = ['','Call','Put'];
+    const labels = {'':'Semua','Call':'Call Warrant','Put':'Put Warrant'};
+    document.getElementById('orderTypeTabs').innerHTML = types.map(t => {
+      const cnt = t ? orderWaranList.filter(w => w.tipe === t).length : orderWaranList.length;
+      if (!cnt && t) return '';
+      return `<button class="type-tab ${activeOrderType===t?'active':''}" onclick="setOrderType('${t}')">${labels[t]} (${cnt})</button>`;
+    }).join('');
+  }
+
+  function setOrderType(t) {
+    activeOrderType = t;
+    buildOrderTypeTabs();
+    filterOrderGrid();
+  }
+
+  function filterOrderGrid() {
+    const q = document.getElementById('orderSearch').value.toLowerCase();
+    filteredOrderGrid = orderWaranList.filter(w => {
+      const mq = !q || [w.kode,w.underlying,w.issuer].some(f => (f||'').toLowerCase().includes(q));
+      const mt = !activeOrderType || w.tipe === activeOrderType;
+      return mq && mt;
+    });
+    renderOrderGrid(filteredOrderGrid);
+  }
+
+  function renderOrderGrid(list) {
+    const grid = document.getElementById('orderWaranGrid');
+    if (!list.length) {
+      grid.innerHTML = `<div style="grid-column:1/-1"><div class="empty-state"><div class="empty-icon"></div><div>Tidak ada produk waran</div></div></div>`;
+      return;
+    }
+    grid.innerHTML = list.map((w, i) => {
+      const typeCls  = w.tipe === 'Call' ? 'stripe-call' : 'stripe-put';
+      const badgeCls = w.tipe === 'Call' ? 'badge-call'  : 'badge-put';
+      const sel = selectedWaran?.id === w.id;
+      const expiry = w.expiry ? new Date(w.expiry).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}) : '—';
+      return `
+      <div class="waran-card ${sel?'selected':''}" onclick="selectWaran('${w.id}')" style="animation-delay:${i*.04}s">
+        <div class="waran-stripe ${typeCls}"></div>
+        <div class="waran-card-body">
+          <span class="waran-type-badge ${badgeCls}">${esc(w.tipe||'—')} · ${esc(w.kategori||'—')}</span>
+          <div class="waran-name">${esc(w.kode||'—')}</div>
+          <div class="waran-underlying">${esc(w.underlying||'—')} · ${esc(w.issuer||'')}</div>
+          <div class="waran-metrics">
+            <div>
+              <div class="wm-label">Harga/Unit</div>
+              <div class="wm-value gold">${w.harga ? 'Rp '+fmtNum(w.harga,0) : '—'}</div>
+            </div>
+            <div>
+              <div class="wm-label">Strike Price</div>
+              <div class="wm-value">${w.strike ? 'Rp '+fmtNum(w.strike,0) : '—'}</div>
+            </div>
+            <div>
+              <div class="wm-label">Rasio</div>
+              <div class="wm-value">${w.rasio ? '1:'+w.rasio : '—'}</div>
+            </div>
+            <div>
+              <div class="wm-label">Jatuh Tempo</div>
+              <div class="wm-value" style="font-size:.78rem">${expiry}</div>
+            </div>
+          </div>
+        </div>
+        <div class="waran-select-indicator">${sel ? '✓ Dipilih' : '○ Pilih Waran Ini'}</div>
+      </div>`;
+    }).join('');
+
+    const btn = document.getElementById('btnProceed');
+    btn.disabled = !selectedWaran;
+    btn.style.opacity = selectedWaran ? '1' : '.5';
+  }
+
+  function selectWaran(id) {
+    selectedWaran = orderWaranList.find(w => w.id === id) || null;
+    renderOrderGrid(filteredOrderGrid);
+  }
+
+  // ═══════════════════════════════
+  // ORDER: STEP NAVIGATION
+  // ═══════════════════════════════
+  function goToStep2() {
+    if (!selectedWaran) return;
+    document.getElementById('step1num').className = 'step-num done'; document.getElementById('step1num').textContent = '✓';
+    document.getElementById('line12').className = 'step-line done';
+    document.getElementById('step2num').className = 'step-num active';
+    document.getElementById('step2lbl').className = 'step-label';
+    document.getElementById('step1Section').style.display = 'none';
+    document.getElementById('step2Section').style.display = '';
+    document.getElementById('orderHistSection').style.display = '';
+    renderSelectedBanner();
+    document.getElementById('buyerRows').innerHTML = '';
+    buyerCount = 0;
+    addBuyerRow();
+    loadOrderHist();
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+
+  function goBackToStep1() {
+    document.getElementById('step1num').className = 'step-num active'; document.getElementById('step1num').textContent = '1';
+    document.getElementById('line12').className = 'step-line';
+    document.getElementById('step2num').className = 'step-num idle';
+    document.getElementById('step2lbl').className = 'step-label idle';
+    document.getElementById('step1Section').style.display = '';
+    document.getElementById('step2Section').style.display = 'none';
+    document.getElementById('orderHistSection').style.display = 'none';
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+
+  function renderSelectedBanner() {
+    const w = selectedWaran;
+    const badgeCls = w.tipe === 'Call' ? 'badge-call' : 'badge-put';
+    const expiry = w.expiry ? new Date(w.expiry).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}) : '—';
+    document.getElementById('selectedBanner').innerHTML = `
+      <div>
+        <span class="waran-type-badge ${badgeCls}" style="margin-bottom:6px">${esc(w.tipe)} · ${esc(w.kategori)}</span>
+        <div class="spb-name">${esc(w.kode)}</div>
+        <div class="spb-sub">${esc(w.underlying||'')} · ${esc(w.issuer||'')}</div>
+      </div>
+      <div class="spb-divider"></div>
+      <div class="spb-stat">
+        <div class="spb-stat-label">Harga/Unit</div>
+        <div class="spb-stat-value gold">${w.harga ? 'Rp '+fmtNum(w.harga,0) : '—'}</div>
+      </div>
+      <div class="spb-divider"></div>
+      <div class="spb-stat">
+        <div class="spb-stat-label">Strike</div>
+        <div class="spb-stat-value">${w.strike ? 'Rp '+fmtNum(w.strike,0) : '—'}</div>
+      </div>
+      <div class="spb-divider"></div>
+      <div class="spb-stat">
+        <div class="spb-stat-label">Jatuh Tempo</div>
+        <div class="spb-stat-value" style="font-size:.82rem">${expiry}</div>
+      </div>
+      <button class="spb-change-btn" onclick="goBackToStep1()">⟵ Ganti Waran</button>
+    `;
+    updateSummaryRows();
+  }
+
+  // ═══════════════════════════════
+  // BUYER ROWS
+  // ═══════════════════════════════
+  function addBuyerRow() {
+    buyerCount++;
+    const idx = buyerCount;
+    const row = document.createElement('div');
+    row.className = 'buyer-row'; row.id = `br-${idx}`;
+    row.innerHTML = `
+      <div class="buyer-row-label">Pembeli #${idx}</div>
+      <div class="buyer-row-grid">
+        <div class="form-group">
+          <label class="form-label">Nama Pembeli <span class="req">*</span></label>
+          <input class="form-input" id="bname-${idx}" placeholder="Nama nasabah..." oninput="updateSummary()"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Nominal (Rp) <span class="req">*</span></label>
+          <div class="input-pfx-wrap">
+            <span class="input-pfx">Rp</span>
+            <input class="form-input" id="bnom-${idx}" type="text" inputmode="numeric"
+              placeholder="50.000.000" oninput="formatNomInput(this);updateSummary()"/>
+          </div>
+          <div class="nom-hint" id="bnomhint-${idx}"></div>
+        </div>
+        ${idx > 1 ? `<button class="btn-remove-buyer" onclick="removeBuyerRow(${idx})" title="Hapus pembeli">×</button>` : '<div></div>'}
+      </div>`;
+    document.getElementById('buyerRows').appendChild(row);
+    updateSummary();
+  }
+
+  function removeBuyerRow(idx) {
+    const el = document.getElementById(`br-${idx}`);
+    if (el) el.remove();
+    updateSummary();
+  }
+
+  function formatNomInput(el) {
+    const raw = el.value.replace(/\D/g,'');
+    if (!raw) { el.value=''; el.dataset.raw='0'; return; }
+    const n = parseInt(raw);
+    el.value = n.toLocaleString('id-ID');
+    el.dataset.raw = raw;
+    const hint = document.getElementById(el.id.replace('bnom-','bnomhint-'));
+    if (hint) hint.textContent = n ? fmtRupiahLong(n) : '';
+  }
+
+  function getFilledBuyers() {
+    const buyers = [];
+    document.querySelectorAll('.buyer-row').forEach(row => {
+      const idx = row.id.replace('br-','');
+      const nameEl = document.getElementById(`bname-${idx}`);
+      const nomEl  = document.getElementById(`bnom-${idx}`);
+      if (!nameEl || !nomEl) return;
+      const name = nameEl.value.trim();
+      const nom  = parseInt(nomEl.dataset.raw||'0') || 0;
+      if (name && nom > 0) buyers.push({ name, nominal: nom });
+    });
+    return buyers;
+  }
+
+  // ═══════════════════════════════
+  // LIVE SUMMARY
+  // ═══════════════════════════════
+  function updateSummary() {
+    const buyers = getFilledBuyers();
+    const total  = buyers.reduce((s,b) => s+b.nominal, 0);
+    const el = document.getElementById('summaryBuyers');
+    el.innerHTML = buyers.length
+      ? buyers.map(b => `<div class="tbl-item"><span class="tbl-name">${esc(b.name)}</span><span class="tbl-nom">${fmtRupiah(b.nominal)}</span></div>`).join('')
+      : `<div style="text-align:center;color:rgba(255,255,255,.25);font-size:.8rem;padding:6px">Belum ada pembeli</div>`;
+    document.getElementById('summaryTotal').textContent = fmtRupiahLong(total);
+
+    const harga = selectedWaran?.harga;
+    const lotCalc = document.getElementById('lotCalc');
+    if (harga && total > 0) {
+      lotCalc.style.display = 'flex';
+      const estLot = total / (harga * 100);
+      document.getElementById('lotCalcValue').textContent = fmtNum(estLot, 2) + ' Lot';
+    } else {
+      lotCalc.style.display = 'none';
+    }
+    updateSummaryRows();
+  }
+
+  function updateSummaryRows() {
+    const w = selectedWaran;
+    if (!w) return;
+    const buyers = getFilledBuyers();
+    const total  = buyers.reduce((s,b) => s+b.nominal, 0);
+    const expiry = w.expiry ? new Date(w.expiry).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}) : '—';
+    document.getElementById('summaryRows').innerHTML = `
+      <div class="sum-row"><span class="sum-key">Kode Waran</span><span class="sum-val" style="color:var(--navy);font-weight:700">${esc(w.kode)}</span></div>
+      <div class="sum-row"><span class="sum-key">Underlying</span><span class="sum-val">${esc(w.underlying||'—')}</span></div>
+      <div class="sum-row"><span class="sum-key">Tipe</span><span class="sum-val">${esc(w.tipe||'—')}</span></div>
+      <div class="sum-row"><span class="sum-key">Harga/Unit</span><span class="sum-val gold">${w.harga ? 'Rp '+fmtNum(w.harga,0) : '—'}</span></div>
+      <div class="sum-row"><span class="sum-key">Jatuh Tempo</span><span class="sum-val">${expiry}</span></div>
+      <div class="sum-row"><span class="sum-key">Jumlah Pembeli</span><span class="sum-val" style="color:var(--success)">${buyers.length} pembeli</span></div>
+      <div class="sum-row"><span class="sum-key">Dikirim oleh</span><span class="sum-val">${esc(curUser?.name||curUser?.email||'—')}</span></div>
+    `;
+  }
+
+  // ═══════════════════════════════
+  // SUBMIT ORDER
+  // ═══════════════════════════════
+  async function submitOrder() {
+    const buyers = getFilledBuyers();
+    let hasErr = false;
+    document.querySelectorAll('.buyer-row').forEach(row => {
+      const idx = row.id.replace('br-','');
+      const nameEl = document.getElementById(`bname-${idx}`);
+      const nomEl  = document.getElementById(`bnom-${idx}`);
+      if (!nameEl.value.trim()) { nameEl.classList.add('error'); hasErr = true; } else nameEl.classList.remove('error');
+      if (!parseInt(nomEl.dataset.raw||'0')) { nomEl.classList.add('error'); hasErr = true; } else nomEl.classList.remove('error');
+    });
+    if (hasErr || !buyers.length) { showToast('Lengkapi nama dan nominal pembeli','error'); return; }
+
+    const btn = document.getElementById('submitOrderBtn');
+    btn.textContent = 'Mengirim...'; btn.disabled = true;
+
+    const w = selectedWaran;
+    const totalNominal = buyers.reduce((s,b) => s+b.nominal, 0);
+    const estLot = w.harga ? totalNominal / (w.harga * 100) : null;
+
+    const payload = {
+      waranId:    w.id,
+      kode:       w.kode,
+      underlying: w.underlying,
+      tipe:       w.tipe,
+      kategori:   w.kategori,
+      issuer:     w.issuer || '',
+      hargaSaatOrder: w.harga || null,
+      strikeSaatOrder: w.strike || null,
+      buyers,
+      totalNominal,
+      estimasiLot: estLot,
+      buyerCount: buyers.length,
+      notes: document.getElementById('fOrderNotes').value.trim(),
+      salesName: curUser?.name || '',
+      salesRole: curUser?.role || '',
+      status: 'pending',
+      createdAt: new Date().toISOString(),
+    };
+
+    try {
+      const { error } = await window._supabase.from('waran_orders').insert(payload).select().single();
+      if (error) throw error;
+      showToast(`Order ${w.kode} berhasil dikirim!`,'success');
+      // Step 3
+      document.getElementById('step2num').className = 'step-num done'; document.getElementById('step2num').textContent = '✓';
+      document.getElementById('line23').className = 'step-line done';
+      document.getElementById('step3num').className = 'step-num done'; document.getElementById('step3num').textContent = '✓';
+      document.getElementById('step3lbl').className = 'step-label';
+      // Reset
+      document.getElementById('buyerRows').innerHTML = ''; buyerCount = 0;
+      document.getElementById('fOrderNotes').value = '';
+      addBuyerRow();
+      loadOrderHist();
+    } catch(e) {
+      console.error(e); showToast('Gagal mengirim order','error');
+    } finally {
+      btn.textContent = 'Kirim Order'; btn.disabled = false;
+    }
+  }
+
+  // ═══════════════════════════════
+  // LOAD ORDER HISTORY (for selected waran)
+  // ═══════════════════════════════
+  async function loadOrderHist() {
+    const tbody = document.getElementById('orderHistBody');
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:20px;color:#aaa">Memuat...</td></tr>`;
+    try {
+      let query = window._supabase.from('waran_orders').select('*').order('created_at', { ascending: false });
+      if (curUser?.role === 'sales') {
+        query = query.eq('sales_name', curUser.name || '');
+      }
+      const { data, error } = await query;
+      if (error) throw error;
+      const all = data || [];
+      orderHistData = all.filter(o => {
+        if (o.waranId !== selectedWaran?.id) return false;
+        if (curUser?.role === 'sales' && (o.salesName||'') !== (curUser.name||'')) return false;
+        return true;
+      });
+      renderOrderHistTable();
+    } catch(e) {
+      tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;color:var(--danger);padding:20px">Gagal memuat riwayat</td></tr>`;
+    }
+  }
+
+  function renderOrderHistTable() {
+    const tbody = document.getElementById('orderHistBody');
+    const canAct = canActOrder();
+    if (!orderHistData.length) {
+      tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><div class="empty-icon"></div><div>Belum ada order untuk waran ini</div></div></td></tr>`;
+      return;
+    }
+    tbody.innerHTML = orderHistData.map(o => buildOrderRow(o, 9, canAct, true)).join('');
+  }
+
+  // ═══════════════════════════════
+  // LOAD ALL ORDERS (tab 3)
+  // ═══════════════════════════════
+  async function loadAllOrders() {
+    const tbody = document.getElementById('histTableBody');
+    tbody.innerHTML = `<tr><td colspan="11" style="text-align:center;padding:20px;color:#aaa">Memuat...</td></tr>`;
+    try {
+      let query = window._supabase.from('waran_orders').select('*').order('created_at', { ascending: false });
+      if (curUser?.role === 'sales') {
+        query = query.eq('sales_name', curUser.name || '');
+      }
+      const { data, error } = await query;
+      if (error) throw error;
+      allOrdersData = data || [];
+      filteredAllOrders = [...allOrdersData];
+      document.getElementById('histCountSubtitle').textContent = `${allOrdersData.length} order ditemukan`;
+      renderHistTable();
+    } catch(e) {
+      tbody.innerHTML = `<tr><td colspan="11" style="text-align:center;color:var(--danger);padding:20px">Gagal memuat riwayat</td></tr>`;
+    }
+  }
+
+  function filterHistTable() {
+    const q  = document.getElementById('histSearch').value.toLowerCase();
+    const st = document.getElementById('histFilterStatus').value;
+    const tp = document.getElementById('histFilterTipe').value;
+    filteredAllOrders = allOrdersData.filter(o => {
+      const mq = !q || [o.kode,o.underlying,o.salesName,...(o.buyers||[]).map(b=>b.name)].some(f=>(f||'').toLowerCase().includes(q));
+      const ms = !st || o.status === st;
+      const mt = !tp || o.tipe === tp;
+      return mq && ms && mt;
+    });
+    renderHistTable();
+  }
+
+  function renderHistTable() {
+    const tbody = document.getElementById('histTableBody');
+    const canAct = canActOrder();
+    if (!filteredAllOrders.length) {
+      tbody.innerHTML = `<tr><td colspan="11"><div class="empty-state"><div class="empty-icon"></div><div>Tidak ada data order</div></div></td></tr>`;
+      return;
+    }
+    tbody.innerHTML = filteredAllOrders.map(o => {
+      const stsCls   = o.status==='confirmed'?'status-confirmed':o.status==='cancelled'?'status-cancelled':'status-pending';
+      const stsLabel = o.status==='confirmed'?'Confirmed':o.status==='cancelled'?'Dibatalkan':'Pending';
+      const buyers   = o.buyers||[];
+      const chips    = buyers.slice(0,3).map(b=>`<span class="buyer-chip">${esc(b.name)}</span>`).join('') + (buyers.length>3?`<span class="buyer-chip">+${buyers.length-3}</span>`:'');
+      const tgl      = fmtDate(o.createdAt);
+      const typeCls  = o.tipe==='Call'?'badge-call':'badge-put';
+      return `<tr>
+        <td style="font-size:.78rem;color:var(--gray);white-space:nowrap">${tgl}</td>
+        <td style="font-weight:700;color:var(--navy)">${esc(o.kode||'—')}</td>
+        <td style="font-size:.82rem">${esc(o.underlying||'—')}</td>
+        <td><span class="waran-type-badge ${typeCls}" style="font-size:.62rem">${esc(o.tipe||'—')}</span></td>
+        <td><div class="buyer-chips">${chips}</div></td>
+        <td style="font-weight:700;color:var(--navy)">${fmtRupiahLong(o.totalNominal)}</td>
+        <td style="font-size:.82rem;color:var(--gray)">${o.estimasiLot ? fmtNum(o.estimasiLot,2)+' lot' : '—'}</td>
+        <td style="font-size:.82rem">${esc(o.salesName||'—')}</td>
+        <td><span class="status-badge ${stsCls}">${stsLabel}</span></td>
+        <td style="font-size:.78rem;color:var(--gray);max-width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(o.notes||'—')}</td>
+        <td>
+          <div class="action-btns">
+            <button class="btn-icon" onclick="openDetail('${o.id}','all')">👁</button>
+            ${canAct && o.status==='pending' ? `
+              <button class="btn-icon" onclick="setStatus('${o.id}','confirmed','all')" style="border-color:#c3e6cb" title="Konfirmasi">✓</button>
+              <button class="btn-icon del" onclick="setStatus('${o.id}','cancelled','all')" title="Batalkan">✕</button>` : ''}
+            ${canAct ? `<button class="btn-icon del" onclick="deleteOrder('${o.id}','all')" title="Hapus">🗑</button>` : ''}
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+
+  // ═══════════════════════════════
+  // ORDER ACTIONS
+  // ═══════════════════════════════
+  async function setStatus(id, status, source) {
+    try {
+      const { error } = await window._supabase.from('waran_orders').update({ status }).eq('id', id);
+      if (error) throw error;
+      if (source === 'all') {
+        const o = allOrdersData.find(x => x.id === id); if(o) o.status = status;
+        renderHistTable();
+      } else {
+        const o = orderHistData.find(x => x.id === id); if(o) o.status = status;
+        renderOrderHistTable();
+      }
+      showToast(status==='confirmed'?'Order dikonfirmasi':'Order dibatalkan','success');
+    } catch(e) { showToast('Gagal update status','error'); }
+  }
+
+  async function deleteOrder(id, source) {
+    if (!confirm('Hapus riwayat order ini?')) return;
+    try {
+      const { error } = await window._supabase.from('waran_orders').delete().eq('id', id);
+      if (error) throw error;
+      if (source === 'all') {
+        allOrdersData = allOrdersData.filter(o => o.id !== id);
+        filteredAllOrders = filteredAllOrders.filter(o => o.id !== id);
+        renderHistTable();
+      } else {
+        orderHistData = orderHistData.filter(o => o.id !== id);
+        renderOrderHistTable();
+      }
+      showToast('Order dihapus','success');
+    } catch(e) { showToast('Gagal hapus','error'); }
+  }
+
+  // ═══════════════════════════════
+  // DETAIL MODAL
+  // ═══════════════════════════════
+  function openDetail(id, source) {
+    const list = source === 'all' ? allOrdersData : orderHistData;
+    const o = list.find(x => x.id === id);
+    if (!o) return;
+    const canAct = canActOrder();
+    const stsCls   = o.status==='confirmed'?'status-confirmed':o.status==='cancelled'?'status-cancelled':'status-pending';
+    const stsLabel = o.status==='confirmed'?'Confirmed':o.status==='cancelled'?'Dibatalkan':'Pending';
+    const tgl = fmtDate(o.createdAt);
+    document.getElementById('detailModalBody').innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <div style="font-size:.8rem;color:var(--gray)">${tgl}</div>
+        <span class="status-badge ${stsCls}">${stsLabel}</span>
+      </div>
+      <div style="background:#fafafa;border-radius:12px;padding:14px 16px;margin-bottom:16px">
+        <div style="font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;color:var(--navy);margin-bottom:2px">${esc(o.kode||'—')}</div>
+        <div style="font-size:.78rem;color:var(--gray)">${esc(o.underlying||'')} · ${esc(o.tipe||'')} · ${esc(o.kategori||'')}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:12px">
+          <div><div style="font-size:.65rem;color:#bbb;text-transform:uppercase;letter-spacing:.5px">Harga saat order</div><div style="font-weight:700;color:var(--gold)">${o.hargaSaatOrder?'Rp '+fmtNum(o.hargaSaatOrder,0):'—'}</div></div>
+          <div><div style="font-size:.65rem;color:#bbb;text-transform:uppercase;letter-spacing:.5px">Total Nominal</div><div style="font-weight:700;color:var(--navy)">${fmtRupiahLong(o.totalNominal)}</div></div>
+          <div><div style="font-size:.65rem;color:#bbb;text-transform:uppercase;letter-spacing:.5px">Est. Lot</div><div style="font-weight:700">${o.estimasiLot?fmtNum(o.estimasiLot,2)+' lot':'—'}</div></div>
+        </div>
+      </div>
+      <div style="font-size:.7rem;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Daftar Pembeli (${(o.buyers||[]).length})</div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">
+        ${(o.buyers||[]).map(b=>`
+          <div style="display:flex;justify-content:space-between;align-items:center;background:#fafafa;border-radius:10px;padding:10px 14px;border:1.5px solid #f0f0f5">
+            <div style="font-weight:600;font-size:.88rem">${esc(b.name)}</div>
+            <div style="font-weight:700;color:var(--navy)">${fmtRupiahLong(b.nominal)}</div>
+          </div>`).join('')}
+      </div>
+      ${o.notes ? `<div style="padding:12px;background:#fafafa;border-radius:10px;border-left:3px solid var(--gold);margin-bottom:10px"><div style="font-size:.65rem;font-weight:700;color:var(--gold);text-transform:uppercase;margin-bottom:4px">Catatan</div><div style="font-size:.85rem;color:#555">${esc(o.notes)}</div></div>` : ''}
+      <div style="font-size:.78rem;color:var(--gray)">Sales: <b>${esc(o.salesName||'—')}</b> · Issuer: <b>${esc(o.issuer||'—')}</b></div>
+    `;
+    const footer = document.getElementById('detailModalFooter');
+    footer.innerHTML = `<button class="modal-btn modal-btn-outline" onclick="closeModal('detailModal')">Tutup</button>`;
+    if (canAct && o.status==='pending') {
+      footer.innerHTML += `
+        <button class="modal-btn modal-btn-danger" onclick="setStatus('${id}','cancelled','${source}');closeModal('detailModal')">Batalkan</button>
+        <button class="modal-btn modal-btn-success" onclick="setStatus('${id}','confirmed','${source}');closeModal('detailModal')">Konfirmasi</button>`;
+    }
+    document.getElementById('detailModal').classList.add('open');
+  }
+
+  // ═══════════════════════════════
+  // MODAL HELPERS
+  // ═══════════════════════════════
+  function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+  function closeModalOutside(e, id) { if (e.target === document.getElementById(id)) closeModal(id); }
+
+  // ═══════════════════════════════
+  // UTILS
+  // ═══════════════════════════════
+  function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function fmtNum(n, dec=0) { return Number(n).toLocaleString('id-ID',{minimumFractionDigits:dec,maximumFractionDigits:dec}); }
+  function fmtRupiah(n) {
+    n = Number(n); if (!n) return 'Rp 0';
+    if (n >= 1e9)  return `Rp ${(n/1e9).toLocaleString('id-ID',{maximumFractionDigits:2})} M`;
+    if (n >= 1e6)  return `Rp ${(n/1e6).toLocaleString('id-ID',{maximumFractionDigits:1})} jt`;
+    return `Rp ${n.toLocaleString('id-ID')}`;
+  }
+  function fmtRupiahLong(n) {
+    n = Number(n); if (!n) return 'Rp 0';
+    if (n >= 1e9)  return `Rp ${(n/1e9).toLocaleString('id-ID',{maximumFractionDigits:2})} M`;
+    if (n >= 1e6)  return `Rp ${(n/1e6).toLocaleString('id-ID',{maximumFractionDigits:2})} jt`;
+    return `Rp ${n.toLocaleString('id-ID')}`;
+  }
+  function fmtDate(ts) {
+    if (!ts) return '—';
+    const d = new Date(ts);
+    if (isNaN(d.getTime())) return '—';
+    return d.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  }
+  function fmtInputNum(el) {
+    const raw = el.value.replace(/\D/g,'');
+    if (!raw) { el.value=''; el.dataset.raw='0'; return; }
+    const n = parseInt(raw);
+    el.value = n.toLocaleString('id-ID');
+    el.dataset.raw = raw;
+  }
+  function rawNum(el) {
+    if (!el) return 0;
+    const raw = el.dataset.raw || el.value.replace(/\D/g,'');
+    return parseInt(raw) || 0;
+  }
+  function showToast(msg, type='info') {
+    const t = document.createElement('div'); t.className = `toast toast-${type}`; t.textContent = msg;
+    document.getElementById('toastContainer').appendChild(t);
+    setTimeout(() => t.remove(), 3500);
+  }
+</script>
+</body>
+</html>

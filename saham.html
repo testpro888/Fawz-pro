@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Fawz Pro | Transaksi Saham</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script>
+    const SUPABASE_URL = 'https://yhmrfluehibfapvtxcfi.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlobXJmbHVlaGliZmFwdnR4Y2ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNjEzODUsImV4cCI6MjA5NDczNzM4NX0.se_H4n_eLsf81d_1GH5sqsPCpX89MHewlPuuNkY6qcU';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  </script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --navy: #0d0d2b; --gold: #f5a623; --gold-light: #ffc857;
+      --bg: #f4f5fb; --white: #fff; --border: #e0e0ef; --text: #1a1a3a; --gray: #888;
+      --nav-h: 68px; --green: #27ae60; --red: #e74c3c;
+    }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); min-height: 100vh; padding-top: var(--nav-h); color: var(--text); }
+
+    @keyframes fadeUp { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
+
+    .page-container { max-width: 1300px; margin: 0 auto; padding: 36px 28px; }
+    .page-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 28px; flex-wrap: wrap; gap: 16px; animation: fadeUp 0.4s ease both; }
+    .page-title { font-size: 2rem; font-weight: 900; color: var(--navy); }
+    .page-subtitle { font-size: 0.88rem; color: var(--gray); margin-top: 4px; }
+    .title-underline { width: 48px; height: 3px; background: linear-gradient(90deg, var(--gold), var(--gold-light)); border-radius: 2px; margin-top: 8px; }
+
+    .btn { display: inline-flex; align-items: center; gap: 7px; padding: 11px 20px; border-radius: 10px; font-family: 'Inter', sans-serif; font-size: 0.875rem; font-weight: 600; cursor: pointer; transition: all 0.2s; border: none; }
+    .btn-primary { background: linear-gradient(135deg, var(--gold), #e8931a); color: #fff; box-shadow: 0 4px 14px rgba(245,166,35,0.35); }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(245,166,35,0.45); }
+    .btn-outline { background: #fff; color: var(--navy); border: 1.5px solid var(--border); }
+    .btn-outline:hover { border-color: var(--gold); color: var(--gold); }
+
+    /* Stats */
+    .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; animation: fadeUp 0.4s 0.05s ease both; }
+    .stat-box { background: #fff; border-radius: 14px; padding: 18px 22px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+    .stat-box-label { font-size: 0.72rem; color: var(--gray); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+    .stat-box-val { font-size: 1.5rem; font-weight: 700; color: var(--navy); }
+
+    /* Filter */
+    .filter-bar { background: #fff; border-radius: 14px; padding: 14px 18px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 18px; animation: fadeUp 0.4s 0.08s ease both; }
+    .filter-bar input, .filter-bar select { height: 36px; border: 1px solid var(--border); border-radius: 8px; padding: 0 12px; font-family: 'Inter', sans-serif; font-size: 0.8rem; color: var(--text); outline: none; }
+    .filter-bar input:focus, .filter-bar select:focus { border-color: var(--gold); }
+    .filter-spacer { flex: 1; }
+
+    /* Table */
+    .table-wrapper { background: #fff; border-radius: 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); overflow: hidden; animation: fadeUp 0.4s 0.12s ease both; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.84rem; }
+    thead { background: var(--navy); }
+    thead th { padding: 13px 14px; text-align: left; font-weight: 600; color: #fff; font-size: 0.76rem; letter-spacing: 0.3px; white-space: nowrap; }
+    tbody tr { border-bottom: 1px solid #f5f5fc; transition: background 0.15s; }
+    tbody tr:hover { background: #fffbf3; }
+    tbody td { padding: 11px 14px; color: #333; vertical-align: middle; }
+    .empty-state { text-align: center; padding: 60px 20px; color: #bbb; }
+
+    /* Rekap */
+    .rekap-section { margin-top: 32px; animation: fadeUp 0.4s 0.2s ease both; }
+    .rekap-title { font-size: 1.1rem; font-weight: 700; color: var(--navy); margin-bottom: 16px; }
+    .rekap-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
+    .rekap-card { background: #fff; border-radius: 14px; padding: 18px 22px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+    .rekap-name { font-weight: 600; color: var(--navy); margin-bottom: 8px; }
+    .rekap-row { display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 4px; }
+    .rekap-row span:first-child { color: var(--gray); }
+    .rekap-row span:last-child { font-weight: 600; }
+
+    /* Modal */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(13,13,43,0.55); backdrop-filter: blur(4px); z-index: 2000; align-items: center; justify-content: center; }
+    .modal-overlay.open { display: flex; }
+    .modal { background: #fff; border-radius: 20px; padding: 32px; width: 560px; max-width: 96vw; max-height: 92vh; overflow-y: auto; box-shadow: 0 24px 80px rgba(0,0,0,0.2); animation: fadeUp 0.25s ease; }
+    .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+    .modal-title { font-size: 1.2rem; font-weight: 700; color: var(--navy); }
+    .modal-close { width: 32px; height: 32px; border-radius: 8px; border: 1.5px solid var(--border); background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1rem; color: var(--gray); }
+    .modal-close:hover { border-color: #ffcccc; color: var(--red); }
+
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .form-group { display: flex; flex-direction: column; gap: 5px; }
+    .form-group.full { grid-column: 1 / -1; }
+    .form-label { font-size: 0.72rem; font-weight: 700; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
+    .form-input, .form-select { padding: 10px 13px; border: 1.5px solid var(--border); border-radius: 10px; font-family: 'Inter', sans-serif; font-size: 0.88rem; color: var(--text); outline: none; }
+    .form-input:focus, .form-select:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(245,166,35,0.1); }
+    .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px; padding-top: 20px; border-top: 1px solid #f0f0f5; }
+
+    /* Toast */
+    .toast-container { position: fixed; bottom: 28px; right: 28px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+    .toast { padding: 14px 20px; border-radius: 12px; font-size: 0.875rem; font-weight: 500; box-shadow: 0 6px 24px rgba(0,0,0,0.15); animation: fadeUp 0.3s ease; max-width: 320px; }
+    .toast-success { background: #f0fff8; border: 1px solid #a8e6c1; color: #1e7e4e; }
+    .toast-error { background: #fff0f0; border: 1px solid #ffcccc; color: #c0392b; }
+
+    @media (max-width: 768px) {
+      .stats-row { grid-template-columns: 1fr 1fr; }
+      .form-grid { grid-template-columns: 1fr; }
+      .page-container { padding: 24px 16px; }
+    }
+  </style>
+
+  <script>
+    (function() {
+      const raw = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember');
+      if (!raw) { window.location.replace('login.html'); return; }
+      sessionStorage.setItem('fawz_user', raw);
+    })();
+  </script>
+</head>
+<body>
+
+<div id="navbar-placeholder"></div>
+<script src="navbar.js"></script>
+
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <div class="page-title">Transaksi Saham</div>
+      <div class="page-subtitle">Input harian: volume transaksi & fee per nasabah</div>
+      <div class="title-underline"></div>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <input type="month" id="filterMonth" onchange="applyFilter()" style="height:38px;border:1px solid var(--border);border-radius:8px;padding:0 12px;font-family:'Inter',sans-serif;font-size:0.82rem;"/>
+      <button class="btn btn-primary" onclick="openAddModal()">+ Input Transaksi</button>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="stat-box"><div class="stat-box-label">Total Volume</div><div class="stat-box-val" id="statVolume">Rp 0</div></div>
+    <div class="stat-box"><div class="stat-box-label">Total Fee</div><div class="stat-box-val" id="statFee">Rp 0</div></div>
+    <div class="stat-box"><div class="stat-box-label">Jumlah Transaksi</div><div class="stat-box-val" id="statCount">0</div></div>
+    <div class="stat-box"><div class="stat-box-label">Nasabah Aktif</div><div class="stat-box-val" id="statNasabah">0</div></div>
+  </div>
+
+  <!-- Table -->
+  <div class="table-wrapper">
+    <div style="overflow-x:auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Tanggal</th>
+            <th>Client ID</th>
+            <th>Nama Nasabah</th>
+            <th>Volume (Rp)</th>
+            <th>Fee (Rp)</th>
+            <th>Sales</th>
+            <th>Catatan</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          <tr><td colspan="9"><div class="empty-state">⏳ Memuat data...</div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Rekap Bulanan -->
+  <div class="rekap-section">
+    <div class="rekap-title">📊 Rekap Bulanan per Nasabah</div>
+    <div class="rekap-grid" id="rekapGrid"></div>
+  </div>
+</div>
+
+<!-- Modal: Input Transaksi -->
+<div class="modal-overlay" id="addModal" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Input Transaksi Saham</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label">Tanggal</label>
+        <input class="form-input" type="date" id="fTanggal"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Client ID</label>
+        <input class="form-input" id="fClientId" placeholder="C001234" list="clientList"/>
+        <datalist id="clientList"></datalist>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Nama Nasabah</label>
+        <input class="form-input" id="fClientName" placeholder="Nama nasabah"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Volume Transaksi (Rp)</label>
+        <input class="form-input" type="number" id="fVolume" placeholder="0"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Fee (Rp)</label>
+        <input class="form-input" type="number" id="fFee" placeholder="0"/>
+      </div>
+      <div class="form-group full">
+        <label class="form-label">Catatan</label>
+        <input class="form-input" id="fCatatan" placeholder="Opsional"/>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal()">Batal</button>
+      <button class="btn btn-primary" id="btnSave" onclick="saveTransaction()">Simpan</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+  let allData = [];
+  let filteredData = [];
+  let curUser = null;
+  let customers = [];
+
+  function getCurUser() {
+    const raw = sessionStorage.getItem('fawz_user');
+    return raw ? JSON.parse(raw) : null;
+  }
+
+  async function initPage() {
+    curUser = getCurUser();
+    // Set default month filter to current month
+    const now = new Date();
+    document.getElementById('filterMonth').value = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+
+    await loadCustomers();
+    await loadData();
+  }
+
+  async function loadCustomers() {
+    try {
+      const { data, error } = await supabase.from('customers').select('client_id, client_name').order('client_name');
+      if (!error && data) {
+        customers = data;
+        const dl = document.getElementById('clientList');
+        dl.innerHTML = data.map(c => `<option value="${c.client_id}">${c.client_name}</option>`).join('');
+      }
+    } catch(e) { console.warn('Load customers:', e); }
+  }
+
+  async function loadData() {
+    try {
+      const { data, error } = await supabase
+        .from('saham_transaksi')
+        .select('*')
+        .order('tanggal', { ascending: false });
+      if (error) throw error;
+      allData = data || [];
+      applyFilter();
+    } catch(e) {
+      console.error('Load error:', e);
+      document.getElementById('tableBody').innerHTML = '<tr><td colspan="9"><div class="empty-state">❌ Gagal memuat data</div></td></tr>';
+    }
+  }
+
+  function applyFilter() {
+    const month = document.getElementById('filterMonth').value;
+    if (month) {
+      filteredData = allData.filter(r => r.tanggal && r.tanggal.startsWith(month));
+    } else {
+      filteredData = [...allData];
+    }
+    renderTable();
+    renderStats();
+    renderRekap();
+  }
+
+  function renderTable() {
+    const tbody = document.getElementById('tableBody');
+    if (!filteredData.length) {
+      tbody.innerHTML = '<tr><td colspan="9"><div class="empty-state">📭 Belum ada data transaksi saham</div></td></tr>';
+      return;
+    }
+    tbody.innerHTML = filteredData.map((r, i) => `
+      <tr>
+        <td>${i+1}</td>
+        <td>${r.tanggal || '—'}</td>
+        <td><strong>${r.client_id || '—'}</strong></td>
+        <td>${r.client_name || '—'}</td>
+        <td style="font-weight:600;">${formatRp(r.volume)}</td>
+        <td style="color:var(--green);font-weight:600;">${formatRp(r.fee)}</td>
+        <td>${r.sales_name || '—'}</td>
+        <td style="font-size:0.78rem;color:#888;">${r.catatan || '—'}</td>
+        <td><button onclick="deleteRow('${r.id}')" style="border:none;background:#fff0f0;color:var(--red);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:0.75rem;">🗑</button></td>
+      </tr>
+    `).join('');
+  }
+
+  function renderStats() {
+    const totalVol = filteredData.reduce((s, r) => s + (parseFloat(r.volume) || 0), 0);
+    const totalFee = filteredData.reduce((s, r) => s + (parseFloat(r.fee) || 0), 0);
+    const uniqueClients = new Set(filteredData.map(r => r.client_id)).size;
+    document.getElementById('statVolume').textContent = formatRp(totalVol);
+    document.getElementById('statFee').textContent = formatRp(totalFee);
+    document.getElementById('statCount').textContent = filteredData.length.toLocaleString('id-ID');
+    document.getElementById('statNasabah').textContent = uniqueClients;
+  }
+
+  function renderRekap() {
+    const map = {};
+    filteredData.forEach(r => {
+      const key = r.client_id || 'unknown';
+      if (!map[key]) map[key] = { name: r.client_name || '—', volume: 0, fee: 0, count: 0 };
+      map[key].volume += parseFloat(r.volume) || 0;
+      map[key].fee += parseFloat(r.fee) || 0;
+      map[key].count++;
+    });
+
+    const grid = document.getElementById('rekapGrid');
+    const entries = Object.entries(map).sort((a, b) => b[1].volume - a[1].volume);
+    if (!entries.length) { grid.innerHTML = '<div style="color:#bbb;font-size:0.85rem;">Belum ada data.</div>'; return; }
+
+    grid.innerHTML = entries.map(([id, d]) => `
+      <div class="rekap-card">
+        <div class="rekap-name">${d.name} <span style="font-size:0.72rem;color:var(--gray);">(${id})</span></div>
+        <div class="rekap-row"><span>Total Volume</span><span>${formatRp(d.volume)}</span></div>
+        <div class="rekap-row"><span>Total Fee</span><span style="color:var(--green);">${formatRp(d.fee)}</span></div>
+        <div class="rekap-row"><span>Jumlah Transaksi</span><span>${d.count}x</span></div>
+      </div>
+    `).join('');
+  }
+
+  function openAddModal() {
+    document.getElementById('fTanggal').value = new Date().toISOString().split('T')[0];
+    document.getElementById('addModal').classList.add('open');
+  }
+
+  function closeModal() {
+    document.getElementById('addModal').classList.remove('open');
+    ['fTanggal','fClientId','fClientName','fVolume','fFee','fCatatan'].forEach(id => document.getElementById(id).value = '');
+  }
+
+  async function saveTransaction() {
+    const tanggal = document.getElementById('fTanggal').value;
+    const client_id = document.getElementById('fClientId').value.trim();
+    const client_name = document.getElementById('fClientName').value.trim();
+    const volume = parseFloat(document.getElementById('fVolume').value) || 0;
+    const fee = parseFloat(document.getElementById('fFee').value) || 0;
+    const catatan = document.getElementById('fCatatan').value.trim();
+
+    if (!tanggal || !client_id || !client_name) {
+      showToast('Tanggal, Client ID, dan Nama wajib diisi', 'error');
+      return;
+    }
+
+    const btn = document.getElementById('btnSave');
+    btn.disabled = true; btn.textContent = 'Menyimpan...';
+
+    try {
+      const { data: inserted, error } = await supabase.from('saham_transaksi').insert({
+        tanggal, client_id, client_name, volume, fee, catatan,
+        sales_name: curUser?.name || '',
+        created_by: curUser?.name || ''
+      }).select().single();
+
+      if (error) throw error;
+
+      allData.unshift(inserted);
+      applyFilter();
+      closeModal();
+      showToast('Transaksi berhasil disimpan!', 'success');
+    } catch(e) {
+      console.error(e);
+      showToast('Gagal menyimpan: ' + e.message, 'error');
+    }
+    btn.disabled = false; btn.textContent = 'Simpan';
+  }
+
+  async function deleteRow(id) {
+    if (!confirm('Hapus transaksi ini?')) return;
+    try {
+      await supabase.from('saham_transaksi').delete().eq('id', id);
+      allData = allData.filter(r => r.id !== id);
+      applyFilter();
+      showToast('Data dihapus', 'success');
+    } catch(e) { showToast('Gagal menghapus', 'error'); }
+  }
+
+  // Auto-fill nama from client_id
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('fClientId').addEventListener('change', function() {
+      const c = customers.find(x => x.client_id === this.value);
+      if (c) document.getElementById('fClientName').value = c.client_name;
+    });
+  });
+
+  function formatRp(n) {
+    return 'Rp ' + (n || 0).toLocaleString('id-ID');
+  }
+
+  function showToast(msg, type) {
+    const c = document.getElementById('toastContainer');
+    const t = document.createElement('div');
+    t.className = `toast toast-${type}`;
+    t.textContent = msg;
+    c.appendChild(t);
+    setTimeout(() => t.remove(), 3500);
+  }
+
+  window.addEventListener('DOMContentLoaded', initPage);
+</script>
+</body>
+</html>

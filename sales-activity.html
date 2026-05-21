@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Fawz Pro | Sales Activity</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script>
+    const SUPABASE_URL = 'https://yhmrfluehibfapvtxcfi.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlobXJmbHVlaGliZmFwdnR4Y2ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNjEzODUsImV4cCI6MjA5NDczNzM4NX0.se_H4n_eLsf81d_1GH5sqsPCpX89MHewlPuuNkY6qcU';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    window._supabase = supabase;
+    window.addEventListener('DOMContentLoaded', () => { initPage(); });
+  </script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --navy: #0d0d2b;
+      --purple: #1e1252;
+      --gold: #f5a623;
+      --gold-light: #ffc857;
+      --bg: #f4f5fb;
+      --white: #fff;
+      --border: #e0e0ef;
+      --text: #1a1a3a;
+      --gray: #888;
+      --nav-h: 68px;
+      --success: #27ae60;
+      --warning: #f39c12;
+      --danger: #e74c3c;
+      --info: #2980b9;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      min-height: 100vh;
+      padding-top: var(--nav-h);
+      color: var(--text);
+    }
+
+    /* ── PAGE ── */
+    .page-container { max-width: 1300px; margin: 0 auto; padding: 36px 28px; }
+
+    .page-header {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      margin-bottom: 28px; flex-wrap: wrap; gap: 16px;
+    }
+    .page-title { font-family: 'Inter', sans-serif; font-size: 2rem; font-weight: 900; color: var(--navy); line-height: 1.1; }
+    .page-subtitle { font-size: .88rem; color: var(--gray); margin-top: 4px; }
+    .title-underline { width: 48px; height: 3px; background: linear-gradient(90deg, var(--gold), var(--gold-light)); border-radius: 2px; margin-top: 8px; }
+
+    /* ── BUTTONS ── */
+    .btn {
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 11px 20px; border-radius: 10px;
+      font-family: 'Inter', sans-serif; font-size: .875rem; font-weight: 600;
+      cursor: pointer; transition: all .2s; border: none; white-space: nowrap;
+    }
+    .btn-primary { background: linear-gradient(135deg, var(--gold), #e8931a); color: #fff; box-shadow: 0 4px 14px rgba(245,166,35,.35); }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(245,166,35,.45); }
+    .btn-primary:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+    .btn-outline { background: #fff; color: var(--navy); border: 1.5px solid var(--border); }
+    .btn-outline:hover { border-color: var(--gold); color: var(--gold); background: #fffbf3; }
+    .btn-danger { background: linear-gradient(135deg, var(--danger), #c0392b); color: #fff; box-shadow: 0 4px 14px rgba(231,76,60,.3); }
+    .btn-danger:hover { transform: translateY(-2px); }
+    .btn-sm { padding: 7px 14px; font-size: .8rem; }
+
+    /* ── ADD FAB ── */
+    .fab-add {
+      width: 44px; height: 44px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--navy), var(--purple));
+      color: #fff; font-size: 1.4rem; font-weight: 300;
+      border: none; cursor: pointer; display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 16px rgba(13,13,43,.3);
+      transition: all .2s;
+    }
+    .fab-add:hover { transform: scale(1.1) rotate(90deg); box-shadow: 0 8px 24px rgba(13,13,43,.4); }
+
+    /* ── FILTER BAR ── */
+    .filter-bar {
+      display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+      background: #fff; border-radius: 14px; padding: 14px 18px;
+      box-shadow: 0 2px 10px rgba(0,0,0,.05); margin-bottom: 22px;
+    }
+    .filter-bar .search-wrap { position: relative; flex: 1; min-width: 180px; }
+    .filter-bar .search-wrap input {
+      width: 100%; padding: 9px 14px 9px 36px;
+      border: 1.5px solid var(--border); border-radius: 10px;
+      font-family: 'Inter', sans-serif; font-size: .875rem; color: var(--text);
+      outline: none; transition: border .2s;
+    }
+    .filter-bar .search-wrap input:focus { border-color: var(--gold); }
+    .search-icon { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: #aaa; font-size: .9rem; }
+    .filter-select {
+      padding: 9px 14px; border: 1.5px solid var(--border); border-radius: 10px;
+      font-family: 'Inter', sans-serif; font-size: .85rem; color: var(--text);
+      outline: none; background: #fff; cursor: pointer; transition: border .2s; min-width: 140px;
+    }
+    .filter-select:focus { border-color: var(--gold); }
+    .filter-date { padding: 9px 14px; border: 1.5px solid var(--border); border-radius: 10px; font-family: 'Inter', sans-serif; font-size: .85rem; color: var(--text); outline: none; transition: border .2s; }
+    .filter-date:focus { border-color: var(--gold); }
+
+    /* ── TABLE CARD ── */
+    .table-card {
+      background: #fff; border-radius: 16px;
+      box-shadow: 0 2px 12px rgba(0,0,0,.06);
+      overflow: hidden; margin-bottom: 28px;
+    }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: .875rem; }
+    thead {
+      background: linear-gradient(135deg, var(--navy) 0%, var(--purple) 100%);
+    }
+    thead th {
+      padding: 14px 16px; text-align: left;
+      font-size: .72rem; font-weight: 700; color: rgba(255,255,255,.7);
+      text-transform: uppercase; letter-spacing: 1px; white-space: nowrap;
+    }
+    thead th:first-child { border-radius: 0; }
+    tbody tr { border-bottom: 1px solid #f5f5fa; transition: background .15s; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: #fffbf3; }
+    tbody td { padding: 12px 16px; color: var(--text); vertical-align: middle; }
+
+    .empty-state { text-align: center; padding: 60px 20px; color: #bbb; }
+    .empty-icon { font-size: 2.8rem; margin-bottom: 12px; }
+    .empty-text { font-size: .9rem; font-weight: 500; }
+    .empty-sub { font-size: .78rem; margin-top: 4px; }
+
+    /* table footer / pagination */
+    .table-footer {
+      padding: 12px 18px; display: flex; align-items: center;
+      justify-content: space-between; border-top: 1px solid #f0f0f5;
+      font-size: .82rem; color: var(--gray);
+    }
+    .pagination { display: flex; gap: 4px; }
+    .pg-btn {
+      width: 30px; height: 30px; border-radius: 7px; display: flex; align-items: center; justify-content: center;
+      font-size: .8rem; cursor: pointer; border: 1.5px solid var(--border);
+      background: #fff; color: var(--text); transition: all .15s;
+    }
+    .pg-btn.active { background: var(--gold); border-color: var(--gold); color: #fff; font-weight: 700; }
+    .pg-btn:hover:not(.active) { border-color: var(--gold); }
+
+    /* Badges */
+    .badge { display: inline-block; font-size: .68rem; font-weight: 700; padding: 3px 10px; border-radius: 20px; letter-spacing: .3px; }
+    .badge-success { background: #e8f8f0; color: var(--success); border: 1px solid rgba(39,174,96,.2); }
+    .badge-warning { background: #fff8e8; color: var(--warning); border: 1px solid rgba(243,156,18,.25); }
+    .badge-danger  { background: #fff0f0; color: var(--danger);  border: 1px solid rgba(231,76,60,.2); }
+    .badge-info    { background: #e8f0ff; color: var(--info);    border: 1px solid rgba(41,128,185,.2); }
+    .badge-gray    { background: #f0f0f5; color: #888;           border: 1px solid #e0e0ef; }
+
+    .action-btns { display: flex; gap: 5px; }
+    .btn-icon {
+      width: 30px; height: 30px; border-radius: 7px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: .82rem; cursor: pointer; border: 1.5px solid var(--border);
+      background: #fff; transition: all .15s; color: var(--gray);
+    }
+    .btn-icon:hover { border-color: var(--gold); background: #fffbf3; color: var(--gold); }
+    .btn-icon.del:hover { border-color: #ffcccc; background: #fff0f0; color: var(--danger); }
+
+    /* ── STAT CARDS ── */
+    .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 8px; }
+    @media (max-width: 768px) { .stats-grid { grid-template-columns: 1fr; } }
+
+    .stat-card {
+      border-radius: 18px; padding: 24px 28px;
+      background: linear-gradient(135deg, var(--navy) 0%, var(--purple) 100%);
+      box-shadow: 0 8px 32px rgba(13,13,43,.22);
+      position: relative; overflow: hidden;
+      color: #fff; animation: fadeUp .5s ease both;
+    }
+    .stat-card:nth-child(1) { animation-delay: .05s; }
+    .stat-card:nth-child(2) { animation-delay: .1s; }
+    .stat-card:nth-child(3) { animation-delay: .15s; }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+
+    .stat-card::before {
+      content: ''; position: absolute; top: -30px; right: -30px;
+      width: 120px; height: 120px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(245,166,35,.2) 0%, transparent 70%);
+    }
+    .stat-label {
+      font-size: .8rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 1px; color: rgba(255,255,255,.65); margin-bottom: 10px;
+    }
+    .stat-divider { width: 40px; height: 2px; background: linear-gradient(90deg, var(--gold), transparent); border-radius: 2px; margin-bottom: 14px; }
+    .stat-value { font-family: 'Inter', sans-serif; font-size: 2.6rem; font-weight: 900; color: #fff; line-height: 1; }
+
+    /* ── MODAL ── */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(13,13,43,.6); backdrop-filter: blur(5px);
+      z-index: 2000; align-items: center; justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: #fff; border-radius: 20px; padding: 32px;
+      width: 600px; max-width: 96vw; max-height: 92vh; overflow-y: auto;
+      box-shadow: 0 24px 80px rgba(0,0,0,.2); animation: slideUp .25s ease;
+    }
+    @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+    .modal-title { font-family: 'Inter', sans-serif; font-size: 1.4rem; font-weight: 700; color: var(--navy); }
+    .modal-close {
+      width: 32px; height: 32px; border-radius: 8px; border: 1.5px solid var(--border);
+      background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center;
+      font-size: 1rem; color: var(--gray); transition: all .15s;
+    }
+    .modal-close:hover { border-color: #ffcccc; color: var(--danger); background: #fff0f0; }
+    .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px; padding-top: 20px; border-top: 1px solid #f0f0f5; }
+
+    /* Form */
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-group.full { grid-column: 1 / -1; }
+    .form-label { font-size: .72rem; font-weight: 700; color: #666; text-transform: uppercase; letter-spacing: .5px; }
+    .req { color: var(--danger); margin-left: 2px; }
+    .form-input, .form-select, .form-textarea {
+      padding: 10px 13px; border: 1.5px solid var(--border); border-radius: 10px;
+      font-family: 'Inter', sans-serif; font-size: .88rem; color: var(--text);
+      outline: none; transition: border .2s, box-shadow .2s; background: #fff;
+    }
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
+      border-color: var(--gold); box-shadow: 0 0 0 3px rgba(245,166,35,.1);
+    }
+    .form-input.error, .form-select.error { border-color: var(--danger); }
+    .form-textarea { resize: vertical; min-height: 80px; }
+    .form-input:disabled, .form-select:disabled { background: #fafafa; cursor: not-allowed; opacity: .7; }
+
+    /* Toast */
+    .toast-container { position: fixed; bottom: 28px; right: 28px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+    .toast { padding: 14px 20px; border-radius: 12px; font-size: .875rem; font-weight: 500; box-shadow: 0 6px 24px rgba(0,0,0,.15); animation: toastIn .3s ease; max-width: 320px; }
+    @keyframes toastIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+    .toast-success { background: #f0fff8; border: 1px solid #a8e6c1; color: #1e7e4e; }
+    .toast-error   { background: #fff0f0; border: 1px solid #ffcccc; color: #c0392b; }
+    .toast-info    { background: #f0f4ff; border: 1px solid #c5d3ff; color: #2d4abf; }
+
+    @media (max-width: 768px) { .form-grid { grid-template-columns: 1fr; } .page-header { flex-direction: column; } }
+
+    .sales-name-cell { font-weight: 600; color: var(--navy); }
+    .sales-code-cell { font-family: 'Courier New', monospace; font-size: .8rem; color: var(--gray); background: #f5f5fa; padding: 2px 8px; border-radius: 6px; display: inline-block; }
+    .client-cell { font-size: .85rem; }
+    .date-cell { font-size: .8rem; color: var(--gray); white-space: nowrap; }
+    .activity-cell { font-weight: 500; font-size: .85rem; }
+  </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<div id="navbar-placeholder"></div>
+<script src="navbar.js"></script>
+
+<div class="page-container">
+
+  <!-- Header -->
+  <div class="page-header">
+    <div>
+      <div class="page-title">Activity Report</div>
+      <div class="page-subtitle">Laporan aktivitas sales | semua kegiatan & interaksi dengan klien</div>
+      <div class="title-underline"></div>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+      <button class="btn btn-outline btn-sm" onclick="exportCSV()">⬇ Export CSV</button>
+      <button class="fab-add" onclick="openModal()" title="Tambah Aktivitas">+</button>
+    </div>
+  </div>
+
+  <!-- Filter Bar -->
+  <div class="filter-bar">
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="filterSearch" placeholder="Cari nama, klien, aktivitas..." oninput="applyFilters()"/>
+    </div>
+    <select class="filter-select" id="filterActivity" onchange="applyFilters()">
+      <option value="">Semua Aktivitas</option>
+      <option>Meeting</option>
+      <option>Call</option>
+      <option>Email</option>
+      <option>Presentasi</option>
+      <option>Follow Up</option>
+      <option>Site Visit</option>
+      <option>Lainnya</option>
+    </select>
+    <select class="filter-select" id="filterStatus" onchange="applyFilters()">
+      <option value="">Semua Status</option>
+      <option>Selesai</option>
+      <option>Dalam Proses</option>
+      <option>Dijadwalkan</option>
+      <option>Dibatalkan</option>
+    </select>
+    <input type="month" class="filter-date" id="filterMonth" onchange="applyFilters()"/>
+    <button class="btn btn-outline btn-sm" onclick="resetFilters()">Reset</button>
+  </div>
+
+  <!-- Table -->
+  <div class="table-card">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Sales Code</th>
+            <th>Sales Name</th>
+            <th>Activity</th>
+            <th>Client</th>
+            <th>Status</th>
+            <th>Keterangan</th>
+            <th style="text-align:center">Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="activityBody">
+          <tr><td colspan="8"><div class="empty-state"><div class="empty-icon">📋</div><div class="empty-text">Memuat data...</div></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="table-footer" id="tableFooter" style="display:none">
+      <span id="footerInfo">Menampilkan 0 data</span>
+      <div class="pagination" id="pagination"></div>
+    </div>
+  </div>
+
+  <!-- Stat Cards -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-label">Total Activity</div>
+      <div class="stat-divider"></div>
+      <div class="stat-value" id="statTotal">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">This Month Activity</div>
+      <div class="stat-divider"></div>
+      <div class="stat-value" id="statMonth">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Last 30D Activity</div>
+      <div class="stat-divider"></div>
+      <div class="stat-value" id="stat30d">0</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- MODAL: Add/Edit Activity -->
+<div class="modal-overlay" id="activityModal" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modalTitle">Tambah Aktivitas</div>
+      <button class="modal-close" onclick="document.getElementById('activityModal').classList.remove('open')">✕</button>
+    </div>
+
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label">Tanggal <span class="req">*</span></label>
+        <input type="date" class="form-input" id="fDate"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Aktivitas <span class="req">*</span></label>
+        <select class="form-select" id="fActivity">
+          <option value="">— Pilih —</option>
+          <option>Meeting</option>
+          <option>Call</option>
+          <option>Email</option>
+          <option>Presentasi</option>
+          <option>Follow Up</option>
+          <option>Site Visit</option>
+          <option>Lainnya</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Sales Code <span class="req">*</span></label>
+        <input type="text" class="form-input" id="fSalesCode" placeholder="Mis. SLS-001"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Sales Name <span class="req">*</span></label>
+        <input type="text" class="form-input" id="fSalesName" placeholder="Nama sales..."/>
+      </div>
+      <div class="form-group full">
+        <label class="form-label">Client <span class="req">*</span></label>
+        <input type="text" class="form-input" id="fClient" placeholder="Nama klien / perusahaan..."/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Status <span class="req">*</span></label>
+        <select class="form-select" id="fStatus">
+          <option value="">— Pilih —</option>
+          <option>Selesai</option>
+          <option>Dalam Proses</option>
+          <option>Dijadwalkan</option>
+          <option>Dibatalkan</option>
+        </select>
+      </div>
+      <div class="form-group full">
+        <label class="form-label">Keterangan</label>
+        <textarea class="form-textarea" id="fNotes" placeholder="Catatan / detail aktivitas..."></textarea>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="document.getElementById('activityModal').classList.remove('open')">Batal</button>
+      <button class="btn btn-primary" id="saveBtn" onclick="saveActivity()">Simpan</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+  const COL = 'sales_activities';
+  const PAGE_SIZE = 10;
+
+  let curUser = null;
+  let allData = [];
+  let filtered = [];
+  let editId = null;
+  let currentPage = 1;
+
+  const STATUS_BADGE = {
+    'Selesai':      'badge-success',
+    'Dalam Proses': 'badge-warning',
+    'Dijadwalkan':  'badge-info',
+    'Dibatalkan':   'badge-danger',
+  };
+
+  // ===== INIT =====
+  function initPage() {
+    const raw = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember');
+    if (!raw) { window.location.href = 'login.html'; return; }
+    sessionStorage.setItem('fawz_user', raw);
+    curUser = JSON.parse(raw);
+    // Semua role boleh — filter data per role sudah ada di bawah
+
+    // Pre-fill sales fields if sales role
+    if (['sales'].includes(curUser.role)) {
+      document.getElementById('fSalesName').value = curUser.name || '';
+      document.getElementById('fSalesName').disabled = true;
+      document.getElementById('fSalesCode').value = curUser.code || '';
+      document.getElementById('fSalesCode').disabled = true;
+    }
+
+    // Set default date
+    document.getElementById('fDate').value = new Date().toISOString().split('T')[0];
+
+    // Set default month filter
+    const now = new Date();
+    document.getElementById('filterMonth').value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+
+    loadData();
+  }
+
+  // ===== LOAD =====
+  async function loadData() {
+    try {
+      let query = window._supabase.from('sales_activities').select('*');
+      if (curUser?.role === 'sales') {
+        query = query.eq('sales_name', curUser.name || '');
+      }
+      const { data, error } = await query.order('date', { ascending: false });
+      if (error) throw error;
+      allData = data || [];
+      applyFilters();
+      updateStats();
+    } catch(e) {
+      console.error(e);
+      document.getElementById('activityBody').innerHTML = `<tr><td colspan="8"><div class="empty-state" style="color:#e74c3c"><div class="empty-icon">⚠️</div><div class="empty-text">Gagal memuat data</div></div></td></tr>`;
+    }
+  }
+
+  // ===== FILTERS =====
+  function applyFilters() {
+    const q = document.getElementById('filterSearch').value.toLowerCase();
+    const act = document.getElementById('filterActivity').value;
+    const status = document.getElementById('filterStatus').value;
+    const month = document.getElementById('filterMonth').value; // "YYYY-MM"
+
+    filtered = allData.filter(item => {
+      // Paksa filter salesName untuk role sales (double protection)
+      if (curUser?.role === 'sales' && item.salesName !== curUser.name) return false;
+
+      const matchQ = !q || [item.salesName, item.salesCode, item.client, item.activity, item.notes]
+        .some(f => (f||'').toLowerCase().includes(q));
+      const matchAct = !act || item.activity === act;
+      const matchStatus = !status || item.status === status;
+      const matchMonth = !month || (item.date||'').startsWith(month);
+      return matchQ && matchAct && matchStatus && matchMonth;
+    });
+
+    currentPage = 1;
+    renderTable();
+  }
+
+  function resetFilters() {
+    document.getElementById('filterSearch').value = '';
+    document.getElementById('filterActivity').value = '';
+    document.getElementById('filterStatus').value = '';
+    const now = new Date();
+    document.getElementById('filterMonth').value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+    applyFilters();
+  }
+
+  // ===== RENDER TABLE =====
+  function renderTable() {
+    const tbody = document.getElementById('activityBody');
+    const footer = document.getElementById('tableFooter');
+    const canEdit = curUser && ['head_account','admin','treasury'].includes(curUser.role);
+    const isSales = curUser && curUser.role === 'sales';
+
+    if (!filtered.length) {
+      tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="empty-icon">📋</div><div class="empty-text">Tidak ada data aktivitas</div><div class="empty-sub">Klik tombol + untuk menambah aktivitas baru</div></div></td></tr>`;
+      footer.style.display = 'none';
+      return;
+    }
+
+    const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+    const start = (currentPage - 1) * PAGE_SIZE;
+    const pageData = filtered.slice(start, start + PAGE_SIZE);
+
+    tbody.innerHTML = pageData.map(item => {
+      const badgeCls = STATUS_BADGE[item.status] || 'badge-gray';
+      const canDo = canEdit || (isSales && item.salesName === curUser.name);
+      return `<tr>
+        <td class="date-cell">${fmtDate(item.date)}</td>
+        <td><span class="sales-code-cell">${esc(item.salesCode||'—')}</span></td>
+        <td class="sales-name-cell">${esc(item.salesName||'—')}</td>
+        <td class="activity-cell">${esc(item.activity||'—')}</td>
+        <td class="client-cell">${esc(item.client||'—')}</td>
+        <td><span class="badge ${badgeCls}">${esc(item.status||'—')}</span></td>
+        <td style="max-width:200px;font-size:.8rem;color:var(--gray);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(item.notes||'')}">${esc(item.notes||'—')}</td>
+        <td>
+          <div class="action-btns">
+            ${canDo ? `<button class="btn-icon" title="Edit" onclick="openEdit('${item.id}')">✏️</button>` : ''}
+            ${canEdit ? `<button class="btn-icon del" title="Hapus" onclick="deleteItem('${item.id}')">🗑</button>` : ''}
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+
+    // Footer
+    footer.style.display = 'flex';
+    document.getElementById('footerInfo').textContent = `Menampilkan ${start+1}–${Math.min(start+PAGE_SIZE, filtered.length)} dari ${filtered.length} data`;
+
+    // Pagination
+    const pg = document.getElementById('pagination');
+    let pgHtml = '';
+    for (let i = 1; i <= totalPages; i++) {
+      pgHtml += `<div class="pg-btn ${i===currentPage?'active':''}" onclick="goPage(${i})">${i}</div>`;
+    }
+    pg.innerHTML = pgHtml;
+  }
+
+  function goPage(n) { currentPage = n; renderTable(); window.scrollTo({top:0,behavior:'smooth'}); }
+
+  // ===== STATS =====
+  function updateStats() {
+    const now = new Date();
+    const thisMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+    const ago30 = new Date(now - 30*24*60*60*1000).toISOString().split('T')[0];
+
+    document.getElementById('statTotal').textContent = allData.length;
+    document.getElementById('statMonth').textContent = allData.filter(d => (d.date||'').startsWith(thisMonth)).length;
+    document.getElementById('stat30d').textContent = allData.filter(d => (d.date||'') >= ago30).length;
+  }
+
+  // ===== MODAL =====
+  function openModal() {
+    editId = null;
+    document.getElementById('modalTitle').textContent = 'Tambah Aktivitas';
+    document.getElementById('saveBtn').textContent = 'Simpan';
+    document.getElementById('fDate').value = new Date().toISOString().split('T')[0];
+    document.getElementById('fActivity').value = '';
+    document.getElementById('fStatus').value = '';
+    document.getElementById('fClient').value = '';
+    document.getElementById('fNotes').value = '';
+
+    if (!['sales'].includes(curUser?.role)) {
+      document.getElementById('fSalesName').value = '';
+      document.getElementById('fSalesCode').value = '';
+      document.getElementById('fSalesName').disabled = false;
+      document.getElementById('fSalesCode').disabled = false;
+    }
+
+    clearErrors();
+    document.getElementById('activityModal').classList.add('open');
+  }
+
+  function openEdit(id) {
+    const item = allData.find(d => d.id === id);
+    if (!item) return;
+    editId = id;
+    document.getElementById('modalTitle').textContent = 'Edit Aktivitas';
+    document.getElementById('saveBtn').textContent = 'Update';
+    document.getElementById('fDate').value = item.date || '';
+    document.getElementById('fActivity').value = item.activity || '';
+    document.getElementById('fSalesCode').value = item.salesCode || '';
+    document.getElementById('fSalesName').value = item.salesName || '';
+    document.getElementById('fClient').value = item.client || '';
+    document.getElementById('fStatus').value = item.status || '';
+    document.getElementById('fNotes').value = item.notes || '';
+
+    // Allow editing own record
+    const isOwn = curUser?.name === item.salesName;
+    const isAdmin = ['head_account','admin','treasury'].includes(curUser?.role);
+    document.getElementById('fSalesName').disabled = !isAdmin;
+    document.getElementById('fSalesCode').disabled = !isAdmin;
+
+    clearErrors();
+    document.getElementById('activityModal').classList.add('open');
+  }
+
+  function closeModal(e) {
+    if (e.target === document.getElementById('activityModal'))
+      document.getElementById('activityModal').classList.remove('open');
+  }
+
+  function clearErrors() {
+    document.querySelectorAll('.form-input, .form-select').forEach(el => el.classList.remove('error'));
+  }
+
+  // ===== SAVE =====
+  async function saveActivity() {
+    const date       = document.getElementById('fDate').value.trim();
+    const activity   = document.getElementById('fActivity').value;
+    const salesCode  = document.getElementById('fSalesCode').value.trim();
+    const salesName  = document.getElementById('fSalesName').value.trim();
+    const client     = document.getElementById('fClient').value.trim();
+    const status     = document.getElementById('fStatus').value;
+    const notes      = document.getElementById('fNotes').value.trim();
+
+    let hasErr = false;
+    const required = { fDate: date, fActivity: activity, fSalesCode: salesCode, fSalesName: salesName, fClient: client, fStatus: status };
+    for (const [id, val] of Object.entries(required)) {
+      const el = document.getElementById(id);
+      if (!val) { el.classList.add('error'); hasErr = true; }
+      else el.classList.remove('error');
+    }
+    if (hasErr) { showToast('Lengkapi semua field yang wajib diisi', 'error'); return; }
+
+    const btn = document.getElementById('saveBtn');
+    btn.textContent = 'Menyimpan...'; btn.disabled = true;
+
+    const payload = { date, activity, salesCode, salesName, client, status, notes, updatedAt: new Date().toISOString() };
+
+    try {
+      if (editId) {
+        const { error } = await window._supabase.from('sales_activities').update({
+          date, tipe: activity, sales_code: salesCode, sales_name: salesName,
+          client_name: client, hasil: status, keterangan: notes
+        }).eq('id', editId);
+        if (error) throw error;
+        const idx = allData.findIndex(d => d.id === editId);
+        if (idx !== -1) allData[idx] = { id: editId, ...payload };
+        showToast('Aktivitas diperbarui', 'success');
+      } else {
+        payload.createdBy = curUser?.name || '';
+        const { data: inserted, error } = await window._supabase.from('sales_activities').insert({
+          date, tipe: activity, sales_code: salesCode, sales_name: salesName,
+          client_name: client, hasil: status, keterangan: notes,
+          created_by: curUser?.name || ''
+        }).select().single();
+        if (error) throw error;
+        allData.unshift(inserted || { id: 'new_' + Date.now(), ...payload });
+        showToast('Aktivitas berhasil ditambahkan', 'success');
+      }
+      document.getElementById('activityModal').classList.remove('open');
+      applyFilters();
+      updateStats();
+    } catch(e) {
+      console.error(e);
+      showToast('Gagal menyimpan data', 'error');
+    } finally {
+      btn.textContent = editId ? 'Update' : 'Simpan';
+      btn.disabled = false;
+    }
+  }
+
+  // ===== DELETE =====
+  async function deleteItem(id) {
+    if (!confirm('Hapus aktivitas ini?')) return;
+    try {
+      const { error } = await window._supabase.from('sales_activities').delete().eq('id', id);
+      if (error) throw error;
+      allData = allData.filter(d => d.id !== id);
+      applyFilters();
+      updateStats();
+      showToast('Aktivitas dihapus', 'success');
+    } catch(e) { showToast('Gagal menghapus', 'error'); }
+  }
+
+  // ===== EXPORT CSV =====
+  function exportCSV() {
+    const headers = ['Date','Sales Code','Sales Name','Activity','Client','Status','Keterangan'];
+    const rows = filtered.map(d => [d.date, d.salesCode, d.salesName, d.activity, d.client, d.status, d.notes]
+      .map(v => `"${(v||'').replace(/"/g,'""')}"`).join(','));
+    const csv = [headers.join(','), ...rows].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = `sales-activity-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click(); URL.revokeObjectURL(url);
+    showToast('CSV berhasil diexport', 'success');
+  }
+
+  // ===== UTILS =====
+  function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function fmtDate(d) {
+    if (!d) return '—';
+    try { return new Date(d).toLocaleDateString('id-ID', { day:'2-digit', month:'short', year:'numeric' }); }
+    catch { return d; }
+  }
+  function showToast(msg, type='info') {
+    const t = document.createElement('div'); t.className = `toast toast-${type}`; t.textContent = msg;
+    document.getElementById('toastContainer').appendChild(t);
+    setTimeout(() => t.remove(), 3500);
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Fawz Pro | Data Reksadana</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script>
+    const SUPABASE_URL = 'https://yhmrfluehibfapvtxcfi.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlobXJmbHVlaGliZmFwdnR4Y2ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNjEzODUsImV4cCI6MjA5NDczNzM4NX0.se_H4n_eLsf81d_1GH5sqsPCpX89MHewlPuuNkY6qcU';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    window._supabase = supabase;
+    window.addEventListener('DOMContentLoaded', () => { initPage(); });
+  </script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --navy: #0d0d2b; --purple: #1e1252; --gold: #f5a623; --gold-light: #ffc857;
+      --bg: #f4f5fb; --white: #fff; --border: #e0e0ef; --text: #1a1a3a; --gray: #888;
+      --nav-h: 68px;
+      --success: #27ae60; --danger: #e74c3c; --warning: #f39c12; --info: #2980b9;
+
+      /* Reksadana category colors */
+      --pasar-uang:   #1a7a3c;
+      --pendapatan-tetap: #1e4d8a;
+      --campuran:     #7a4a1a;
+      --saham:        #8a1f1f;
+      --index:        #1a5a7a;
+      --syariah:      #3a6b2e;
+    }
+    body { font-family: 'Poppins', sans-serif; background: var(--bg); min-height: 100vh; padding-top: var(--nav-h); color: var(--text); }
+
+    @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+
+    /* ── PAGE ── */
+    .page-container { max-width: 1300px; margin: 0 auto; padding: 36px 28px; }
+
+    /* ── HEADER ── */
+    .page-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 28px; flex-wrap: wrap; gap: 16px; }
+    .page-title { font-family: 'Playfair Display', serif; font-size: 2rem; font-weight: 900; color: var(--navy); line-height: 1.1; }
+    .page-subtitle { font-size: .88rem; color: var(--gray); margin-top: 4px; }
+    .title-underline { width: 48px; height: 3px; background: linear-gradient(90deg, var(--gold), var(--gold-light)); border-radius: 2px; margin-top: 8px; }
+    .header-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+
+    /* ── STAT CARDS ── */
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+    @media (max-width: 900px) { .stats-grid { grid-template-columns: repeat(2,1fr); } }
+    @media (max-width: 540px) { .stats-grid { grid-template-columns: 1fr; } }
+
+    .stat-card {
+      border-radius: 16px; padding: 20px 22px;
+      background: linear-gradient(135deg, var(--navy), var(--purple));
+      color: #fff; position: relative; overflow: hidden;
+      box-shadow: 0 6px 24px rgba(13,13,43,.2);
+      animation: fadeUp .5s ease both;
+      cursor: default;
+    }
+    .stat-card::before { content:''; position:absolute; width:100px; height:100px; border-radius:50%; background:radial-gradient(circle,rgba(245,166,35,.18),transparent 70%); right:-20px; top:-20px; }
+    .stat-card-label { font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:rgba(255,255,255,.5); margin-bottom:8px; }
+    .stat-card-divider { width:28px; height:2px; background:linear-gradient(90deg,var(--gold),transparent); border-radius:2px; margin-bottom:10px; }
+    .stat-card-value { font-family:'Playfair Display',serif; font-size:2rem; font-weight:900; color:#fff; line-height:1; }
+    .stat-card-sub { font-size:.72rem; color:rgba(255,255,255,.45); margin-top:6px; }
+
+    /* ── FILTER BAR ── */
+    .filter-bar { display:flex; gap:10px; align-items:center; flex-wrap:wrap; background:#fff; border-radius:14px; padding:14px 18px; box-shadow:0 2px 10px rgba(0,0,0,.05); margin-bottom:22px; }
+    .search-wrap { position:relative; flex:1; min-width:200px; }
+    .search-wrap input { width:100%; padding:9px 14px 9px 36px; border:1.5px solid var(--border); border-radius:10px; font-family:'Poppins',sans-serif; font-size:.875rem; outline:none; transition:border .2s; color:var(--text); }
+    .search-wrap input:focus { border-color:var(--gold); }
+    .search-icon { position:absolute; left:11px; top:50%; transform:translateY(-50%); color:#aaa; font-size:.9rem; }
+    .filter-select { padding:9px 14px; border:1.5px solid var(--border); border-radius:10px; font-family:'Poppins',sans-serif; font-size:.85rem; color:var(--text); outline:none; background:#fff; cursor:pointer; transition:border .2s; min-width:150px; }
+    .filter-select:focus { border-color:var(--gold); }
+
+    /* ── TABS ── */
+    .tabs-wrap { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:20px; }
+    .tab-btn { padding:8px 18px; border-radius:20px; border:1.5px solid var(--border); background:#fff; font-family:'Poppins',sans-serif; font-size:.82rem; font-weight:600; color:var(--gray); cursor:pointer; transition:all .2s; }
+    .tab-btn.active { background:var(--navy); color:#fff; border-color:var(--navy); }
+    .tab-btn:hover:not(.active) { border-color:var(--gold); color:var(--gold); }
+    .tab-count { display:inline-block; background:rgba(255,255,255,.2); padding:1px 7px; border-radius:10px; font-size:.7rem; margin-left:4px; }
+    .tab-btn:not(.active) .tab-count { background:var(--bg); color:var(--gray); }
+
+    /* ── CARDS GRID ── */
+    .cards-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:18px; margin-bottom:28px; }
+    @media (max-width:1100px) { .cards-grid { grid-template-columns:repeat(2,1fr); } }
+    @media (max-width:640px)  { .cards-grid { grid-template-columns:1fr; } }
+
+    .reks-card {
+      background:#fff; border-radius:16px; overflow:hidden;
+      box-shadow:0 2px 12px rgba(0,0,0,.06);
+      transition:transform .22s, box-shadow .22s;
+      cursor:pointer; animation:fadeUp .4s ease both;
+    }
+    .reks-card:hover { transform:translateY(-4px); box-shadow:0 12px 32px rgba(0,0,0,.12); }
+    .reks-card-top { height:6px; }
+    .reks-card-top.pasar-uang    { background:linear-gradient(90deg, var(--pasar-uang), #27ae60); }
+    .reks-card-top.pendapatan-tetap { background:linear-gradient(90deg, var(--pendapatan-tetap), #3498db); }
+    .reks-card-top.campuran      { background:linear-gradient(90deg, var(--campuran), #e67e22); }
+    .reks-card-top.saham         { background:linear-gradient(90deg, var(--saham), #e74c3c); }
+    .reks-card-top.index         { background:linear-gradient(90deg, var(--index), #16a085); }
+    .reks-card-top.syariah       { background:linear-gradient(90deg, var(--syariah), #8bc34a); }
+
+    .reks-card-body { padding:18px 20px; }
+    .reks-card-cat { display:inline-block; font-size:.65rem; font-weight:700; text-transform:uppercase; letter-spacing:.8px; padding:3px 10px; border-radius:20px; margin-bottom:10px; }
+    .cat-pasar-uang    { background:#e8f8f0; color:var(--pasar-uang); border:1px solid rgba(26,122,60,.2); }
+    .cat-pendapatan-tetap { background:#e8f0ff; color:var(--pendapatan-tetap); border:1px solid rgba(30,77,138,.2); }
+    .cat-campuran      { background:#fff3e8; color:var(--campuran); border:1px solid rgba(122,74,26,.2); }
+    .cat-saham         { background:#fff0f0; color:var(--saham); border:1px solid rgba(138,31,31,.2); }
+    .cat-index         { background:#e8f8ff; color:var(--index); border:1px solid rgba(26,90,122,.2); }
+    .cat-syariah       { background:#eef8e8; color:var(--syariah); border:1px solid rgba(58,107,46,.2); }
+
+    .reks-name { font-family:'Playfair Display',serif; font-size:1rem; font-weight:700; color:var(--navy); line-height:1.3; margin-bottom:4px; }
+    .reks-manager { font-size:.78rem; color:var(--gray); margin-bottom:14px; }
+    .reks-stats { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px; }
+    .reks-stat-item { }
+    .reks-stat-label { font-size:.65rem; text-transform:uppercase; letter-spacing:.5px; color:#bbb; font-weight:600; margin-bottom:2px; }
+    .reks-stat-value { font-size:.92rem; font-weight:700; color:var(--text); }
+    .reks-stat-value.gold { color:var(--gold); }
+    .reks-stat-value.green { color:var(--success); }
+    .reks-stat-value.red { color:var(--danger); }
+
+    .reks-card-footer { display:flex; justify-content:space-between; align-items:center; padding-top:12px; border-top:1px solid #f5f5fa; }
+    .reks-updated { font-size:.7rem; color:#ccc; }
+
+    .action-mini { display:flex; gap:5px; }
+    .btn-mini { width:28px; height:28px; border-radius:7px; display:flex; align-items:center; justify-content:center; font-size:.75rem; cursor:pointer; border:1.5px solid var(--border); background:#fff; transition:all .15s; color:var(--gray); }
+    .btn-mini:hover { border-color:var(--gold); background:#fffbf3; }
+    .btn-mini.del:hover { border-color:#ffcccc; background:#fff0f0; }
+
+    /* ── TABLE VIEW ── */
+    .table-card { background:#fff; border-radius:16px; box-shadow:0 2px 12px rgba(0,0,0,.06); overflow:hidden; }
+    .table-wrap { overflow-x:auto; }
+    table { width:100%; border-collapse:collapse; font-size:.875rem; }
+    thead { background:linear-gradient(135deg, var(--navy), var(--purple)); }
+    thead th { padding:13px 16px; text-align:left; font-size:.7rem; font-weight:700; color:rgba(255,255,255,.7); text-transform:uppercase; letter-spacing:1px; white-space:nowrap; }
+    tbody tr { border-bottom:1px solid #f5f5fa; transition:background .15s; }
+    tbody tr:last-child { border-bottom:none; }
+    tbody tr:hover { background:#fffbf3; }
+    tbody td { padding:12px 16px; vertical-align:middle; }
+
+    .table-footer { padding:12px 18px; display:flex; align-items:center; justify-content:space-between; border-top:1px solid #f0f0f5; font-size:.82rem; color:var(--gray); }
+    .pagination { display:flex; gap:4px; }
+    .pg-btn { width:30px; height:30px; border-radius:7px; display:flex; align-items:center; justify-content:center; font-size:.8rem; cursor:pointer; border:1.5px solid var(--border); background:#fff; color:var(--text); transition:all .15s; }
+    .pg-btn.active { background:var(--gold); border-color:var(--gold); color:#fff; font-weight:700; }
+    .pg-btn:hover:not(.active) { border-color:var(--gold); }
+
+    .empty-state { text-align:center; padding:60px 20px; color:#bbb; }
+    .empty-icon { font-size:2.8rem; margin-bottom:12px; }
+
+    /* ── BTNS ── */
+    .btn { display:inline-flex; align-items:center; gap:7px; padding:11px 20px; border-radius:10px; font-family:'Poppins',sans-serif; font-size:.875rem; font-weight:600; cursor:pointer; transition:all .2s; border:none; white-space:nowrap; }
+    .btn-primary { background:linear-gradient(135deg,var(--gold),#e8931a); color:#fff; box-shadow:0 4px 14px rgba(245,166,35,.35); }
+    .btn-primary:hover { transform:translateY(-2px); box-shadow:0 8px 22px rgba(245,166,35,.45); }
+    .btn-primary:disabled { opacity:.6; cursor:not-allowed; transform:none; }
+    .btn-outline { background:#fff; color:var(--navy); border:1.5px solid var(--border); }
+    .btn-outline:hover { border-color:var(--gold); color:var(--gold); background:#fffbf3; }
+    .btn-sm { padding:7px 14px; font-size:.8rem; }
+    .view-toggle { display:flex; border:1.5px solid var(--border); border-radius:10px; overflow:hidden; }
+    .view-toggle-btn { padding:7px 12px; background:#fff; border:none; font-size:.9rem; cursor:pointer; transition:background .15s; }
+    .view-toggle-btn.active { background:var(--navy); color:#fff; }
+
+    /* ── MODAL ── */
+    .modal-overlay { display:none; position:fixed; inset:0; background:rgba(13,13,43,.6); backdrop-filter:blur(5px); z-index:2000; align-items:center; justify-content:center; }
+    .modal-overlay.open { display:flex; }
+    .modal { background:#fff; border-radius:20px; padding:32px; width:640px; max-width:96vw; max-height:92vh; overflow-y:auto; box-shadow:0 24px 80px rgba(0,0,0,.2); animation:slideUp .25s ease; }
+    @keyframes slideUp { from { transform:translateY(20px); opacity:0; } to { transform:translateY(0); opacity:1; } }
+    .modal-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; }
+    .modal-title { font-family:'Playfair Display',serif; font-size:1.4rem; font-weight:700; color:var(--navy); }
+    .modal-close { width:32px; height:32px; border-radius:8px; border:1.5px solid var(--border); background:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:1rem; color:var(--gray); transition:all .15s; }
+    .modal-close:hover { border-color:#ffcccc; color:var(--danger); background:#fff0f0; }
+    .modal-footer { display:flex; gap:10px; justify-content:flex-end; margin-top:24px; padding-top:20px; border-top:1px solid #f0f0f5; }
+
+    .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+    .form-group { display:flex; flex-direction:column; gap:6px; }
+    .form-group.full { grid-column:1/-1; }
+    .form-label { font-size:.72rem; font-weight:700; color:#666; text-transform:uppercase; letter-spacing:.5px; }
+    .req { color:var(--danger); }
+    .form-input, .form-select, .form-textarea { padding:10px 13px; border:1.5px solid var(--border); border-radius:10px; font-family:'Poppins',sans-serif; font-size:.88rem; color:var(--text); outline:none; transition:border .2s, box-shadow .2s; background:#fff; }
+    .form-input:focus, .form-select:focus, .form-textarea:focus { border-color:var(--gold); box-shadow:0 0 0 3px rgba(245,166,35,.1); }
+    .form-input.error, .form-select.error { border-color:var(--danger); }
+    .form-textarea { resize:vertical; min-height:70px; }
+    .input-prefix-wrap { position:relative; }
+    .input-prefix { position:absolute; left:12px; top:50%; transform:translateY(-50%); font-size:.82rem; font-weight:600; color:#aaa; pointer-events:none; }
+    .input-prefix-wrap .form-input { padding-left:42px; }
+
+    /* Toast */
+    .toast-container { position:fixed; bottom:28px; right:28px; z-index:9999; display:flex; flex-direction:column; gap:10px; }
+    .toast { padding:14px 20px; border-radius:12px; font-size:.875rem; font-weight:500; box-shadow:0 6px 24px rgba(0,0,0,.15); animation:toastIn .3s ease; max-width:320px; }
+    @keyframes toastIn { from { opacity:0; transform:translateX(20px); } to { opacity:1; transform:translateX(0); } }
+    .toast-success { background:#f0fff8; border:1px solid #a8e6c1; color:#1e7e4e; }
+    .toast-error   { background:#fff0f0; border:1px solid #ffcccc; color:#c0392b; }
+    .toast-info    { background:#f0f4ff; border:1px solid #c5d3ff; color:#2d4abf; }
+
+    @media (max-width:768px) { .form-grid { grid-template-columns:1fr; } .page-header { flex-direction:column; } }
+  </style>
+</head>
+<body>
+<div id="navbar-placeholder"></div>
+<script src="navbar.js"></script>
+
+<div class="page-container">
+
+  <!-- Header -->
+  <div class="page-header">
+    <div>
+      <div class="page-title">Data Reksadana</div>
+      <div class="page-subtitle">Kelola produk reksadana — NAB, kategori, dan imbal hasil</div>
+      <div class="title-underline"></div>
+    </div>
+    <div class="header-actions">
+      <div class="view-toggle" id="viewToggle">
+        <button class="view-toggle-btn active" id="btnGrid" onclick="setView('grid')" title="Tampilan kartu">⊞</button>
+        <button class="view-toggle-btn" id="btnTable" onclick="setView('table')" title="Tampilan tabel">☰</button>
+      </div>
+      <button class="btn btn-outline btn-sm" onclick="exportCSV()">⬇ Export CSV</button>
+      <button class="btn btn-primary" onclick="openModal()" id="btnAdd">+ Tambah Reksadana</button>
+    </div>
+  </div>
+
+  <!-- Stat Cards -->
+  <div class="stats-grid" id="statsGrid">
+    <div class="stat-card" style="animation-delay:.05s">
+      <div class="stat-card-label">Total Produk</div>
+      <div class="stat-card-divider"></div>
+      <div class="stat-card-value" id="statTotal">0</div>
+      <div class="stat-card-sub">Semua kategori</div>
+    </div>
+    <div class="stat-card" style="animation-delay:.1s">
+      <div class="stat-card-label">Pasar Uang</div>
+      <div class="stat-card-divider"></div>
+      <div class="stat-card-value" id="statPasarUang">0</div>
+      <div class="stat-card-sub">Produk</div>
+    </div>
+    <div class="stat-card" style="animation-delay:.15s">
+      <div class="stat-card-label">Pendapatan Tetap</div>
+      <div class="stat-card-divider"></div>
+      <div class="stat-card-value" id="statPendapatanTetap">0</div>
+      <div class="stat-card-sub">Produk</div>
+    </div>
+    <div class="stat-card" style="animation-delay:.2s">
+      <div class="stat-card-label">Saham / Campuran</div>
+      <div class="stat-card-divider"></div>
+      <div class="stat-card-value" id="statSaham">0</div>
+      <div class="stat-card-sub">Produk</div>
+    </div>
+  </div>
+
+  <!-- Filter Bar -->
+  <div class="filter-bar">
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="filterSearch" placeholder="Cari nama produk, MI..." oninput="applyFilters()"/>
+    </div>
+    <select class="filter-select" id="filterKategori" onchange="applyFilters()">
+      <option value="">Semua Kategori</option>
+      <option value="Pasar Uang">Pasar Uang</option>
+      <option value="Pendapatan Tetap">Pendapatan Tetap</option>
+      <option value="Campuran">Campuran</option>
+      <option value="Saham">Saham</option>
+      <option value="Index">Index</option>
+      <option value="Syariah">Syariah</option>
+    </select>
+    <select class="filter-select" id="filterMI" onchange="applyFilters()">
+      <option value="">Semua MI</option>
+    </select>
+    <button class="btn btn-outline btn-sm" onclick="resetFilters()">Reset</button>
+  </div>
+
+  <!-- Category Tabs -->
+  <div class="tabs-wrap" id="tabsWrap"></div>
+
+  <!-- Cards Grid View -->
+  <div id="viewGrid">
+    <div class="cards-grid" id="cardsGrid"></div>
+    <div id="cardsPagination" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;font-size:.82rem;color:var(--gray)">
+      <span id="cardsInfo"></span>
+      <div class="pagination" id="cardsPg"></div>
+    </div>
+  </div>
+
+  <!-- Table View -->
+  <div id="viewTable" style="display:none;">
+    <div class="table-card">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Nama Produk</th>
+              <th>Kategori</th>
+              <th>Manajer Investasi</th>
+              <th>NAB/Unit</th>
+              <th>Return YTD</th>
+              <th>Return 1Y</th>
+              <th>Min. Investasi</th>
+              <th>Subscription Fee</th>
+              <th>Update</th>
+              <th style="text-align:center">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+      <div class="table-footer" id="tableFooter" style="display:none">
+        <span id="tableInfo"></span>
+        <div class="pagination" id="tablePg"></div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /page-container -->
+
+<!-- MODAL ADD/EDIT -->
+<div class="modal-overlay" id="reksModal" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modalTitle">Tambah Reksadana</div>
+      <button class="modal-close" onclick="document.getElementById('reksModal').classList.remove('open')">✕</button>
+    </div>
+
+    <div class="form-grid">
+      <div class="form-group full">
+        <label class="form-label">Nama Produk <span class="req">*</span></label>
+        <input type="text" class="form-input" id="fNama" placeholder="Mis. Schroder Dana Istimewa..."/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Kategori <span class="req">*</span></label>
+        <select class="form-select" id="fKategori">
+          <option value="">— Pilih —</option>
+          <option>Pasar Uang</option>
+          <option>Pendapatan Tetap</option>
+          <option>Campuran</option>
+          <option>Saham</option>
+          <option>Index</option>
+          <option>Syariah</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Manajer Investasi <span class="req">*</span></label>
+        <input type="text" class="form-input" id="fMI" placeholder="Mis. Schroder Investment..."/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">NAB / Unit (Rp) <span class="req">*</span></label>
+        <div class="input-prefix-wrap">
+          <span class="input-prefix">Rp</span>
+          <input type="text" class="form-input" id="fNAB" placeholder="1.234,56" oninput="formatDecimalInput(this)"/>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Min. Investasi (Rp)</label>
+        <div class="input-prefix-wrap">
+          <span class="input-prefix">Rp</span>
+          <input type="text" class="form-input" id="fMinInv" placeholder="100.000" oninput="formatIntInput(this)"/>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Return YTD (%)</label>
+        <input type="number" class="form-input" id="fReturnYTD" placeholder="Mis. 8.50" step="0.01"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Return 1 Tahun (%)</label>
+        <input type="number" class="form-input" id="fReturn1Y" placeholder="Mis. 12.00" step="0.01"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Return 3 Tahun (%)</label>
+        <input type="number" class="form-input" id="fReturn3Y" placeholder="Mis. 35.00" step="0.01"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Subscription Fee (%)</label>
+        <input type="number" class="form-input" id="fSubFee" placeholder="Mis. 1.00" step="0.01"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Redemption Fee (%)</label>
+        <input type="number" class="form-input" id="fRedFee" placeholder="Mis. 0.50" step="0.01"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Management Fee (%/tahun)</label>
+        <input type="number" class="form-input" id="fMgmtFee" placeholder="Mis. 2.00" step="0.01"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Tanggal Update</label>
+        <input type="date" class="form-input" id="fTanggal"/>
+      </div>
+      <div class="form-group full">
+        <label class="form-label">Deskripsi / Catatan</label>
+        <textarea class="form-textarea" id="fDeskripsi" placeholder="Profil risiko, strategi investasi, dll..."></textarea>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="document.getElementById('reksModal').classList.remove('open')">Batal</button>
+      <button class="btn btn-primary" id="saveBtn" onclick="saveReksadana()">Simpan</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+  const COL = 'reksadana';
+  const PAGE_SIZE = 9;
+  const CAT_KEYS = { 'Pasar Uang':'pasar-uang', 'Pendapatan Tetap':'pendapatan-tetap', 'Campuran':'campuran', 'Saham':'saham', 'Index':'index', 'Syariah':'syariah' };
+
+  let curUser = null;
+  let allData = [];
+  let filtered = [];
+  let editId = null;
+  let currentPage = 1;
+  let currentView = 'grid';
+  let activeTab = '';
+
+  // ===== INIT =====
+  function initPage() {
+    const raw = sessionStorage.getItem('fawz_user');
+    if (!raw) { window.location.href = 'login.html'; return; }
+    curUser = JSON.parse(raw);
+    document.getElementById('fTanggal').value = new Date().toISOString().split('T')[0];
+
+    // Restrict add/edit to authorized roles
+    const canEdit = ['head_account','admin','treasury'].includes(curUser?.role);
+    if (!canEdit) { document.getElementById('btnAdd').style.display = 'none'; }
+
+    loadData();
+  }
+
+  // ===== LOAD =====
+  async function loadData() {
+    try {
+      const { data, error } = await window._supabase.from(COL).select('*').order('nama', { ascending: true });
+      if (error) throw error;
+      allData = data || [];
+      buildMIFilter();
+      buildTabs();
+      applyFilters();
+      updateStats();
+    } catch(e) {
+      console.error(e);
+      document.getElementById('cardsGrid').innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:48px;color:#e74c3c">⚠️ Gagal memuat data</div>`;
+    }
+  }
+
+  function buildMIFilter() {
+    const mis = [...new Set(allData.map(d => d.mi).filter(Boolean))].sort();
+    const sel = document.getElementById('filterMI');
+    sel.innerHTML = `<option value="">Semua MI</option>` + mis.map(m => `<option>${esc(m)}</option>`).join('');
+  }
+
+  function buildTabs() {
+    const cats = ['', 'Pasar Uang','Pendapatan Tetap','Campuran','Saham','Index','Syariah'];
+    const labels = { '':'Semua', 'Pasar Uang':'Pasar Uang','Pendapatan Tetap':'Pend. Tetap','Campuran':'Campuran','Saham':'Saham','Index':'Index','Syariah':'Syariah' };
+    document.getElementById('tabsWrap').innerHTML = cats.map(cat => {
+      const count = cat === '' ? allData.length : allData.filter(d => d.kategori === cat).length;
+      return `<button class="tab-btn ${activeTab===cat?'active':''}" onclick="setTab('${cat}')">
+        ${labels[cat]}<span class="tab-count">${count}</span>
+      </button>`;
+    }).join('');
+  }
+
+  function setTab(cat) { activeTab = cat; document.getElementById('filterKategori').value = cat; applyFilters(); }
+
+  // ===== FILTERS =====
+  function applyFilters() {
+    const q = document.getElementById('filterSearch').value.toLowerCase();
+    const kat = document.getElementById('filterKategori').value;
+    const mi = document.getElementById('filterMI').value;
+
+    if (kat !== activeTab) { activeTab = kat; buildTabs(); }
+
+    filtered = allData.filter(item => {
+      const mq = !q || [item.nama, item.mi, item.kategori, item.deskripsi].some(f => (f||'').toLowerCase().includes(q));
+      const mk = !kat || item.kategori === kat;
+      const mm = !mi || item.mi === mi;
+      return mq && mk && mm;
+    });
+
+    currentPage = 1;
+    currentView === 'grid' ? renderCards() : renderTable();
+  }
+
+  function resetFilters() {
+    document.getElementById('filterSearch').value = '';
+    document.getElementById('filterKategori').value = '';
+    document.getElementById('filterMI').value = '';
+    activeTab = '';
+    buildTabs();
+    applyFilters();
+  }
+
+  // ===== VIEW TOGGLE =====
+  function setView(v) {
+    currentView = v;
+    document.getElementById('viewGrid').style.display = v === 'grid' ? '' : 'none';
+    document.getElementById('viewTable').style.display = v === 'table' ? '' : 'none';
+    document.getElementById('btnGrid').classList.toggle('active', v === 'grid');
+    document.getElementById('btnTable').classList.toggle('active', v === 'table');
+    v === 'grid' ? renderCards() : renderTable();
+  }
+
+  // ===== RENDER CARDS =====
+  function renderCards() {
+    const grid = document.getElementById('cardsGrid');
+    const canEdit = ['head_account','admin','treasury'].includes(curUser?.role);
+    if (!filtered.length) {
+      grid.innerHTML = `<div style="grid-column:1/-1"><div class="empty-state"><div class="empty-icon">📊</div><div style="font-size:.9rem;font-weight:500">Tidak ada produk reksadana</div><div style="font-size:.78rem;margin-top:4px">Klik "+ Tambah Reksadana" untuk menambah produk baru</div></div></div>`;
+      document.getElementById('cardsPagination').style.display = 'none';
+      return;
+    }
+    const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+    const start = (currentPage - 1) * PAGE_SIZE;
+    const pageData = filtered.slice(start, start + PAGE_SIZE);
+
+    grid.innerHTML = pageData.map((item, i) => {
+      const catKey = CAT_KEYS[item.kategori] || 'saham';
+      const r1y = parseFloat(item.return1Y);
+      const rYTD = parseFloat(item.returnYTD);
+      return `
+      <div class="reks-card" style="animation-delay:${i*0.04}s">
+        <div class="reks-card-top ${catKey}"></div>
+        <div class="reks-card-body">
+          <span class="reks-card-cat cat-${catKey}">${esc(item.kategori||'—')}</span>
+          <div class="reks-name">${esc(item.nama||'—')}</div>
+          <div class="reks-manager">${esc(item.mi||'—')}</div>
+          <div class="reks-stats">
+            <div class="reks-stat-item">
+              <div class="reks-stat-label">NAB/Unit</div>
+              <div class="reks-stat-value gold">${item.nab ? 'Rp '+fmtNum(item.nab,2) : '—'}</div>
+            </div>
+            <div class="reks-stat-item">
+              <div class="reks-stat-label">Return YTD</div>
+              <div class="reks-stat-value ${isNaN(rYTD)?'':(rYTD>=0?'green':'red')}">${isNaN(rYTD)?'—':(rYTD>=0?'+':'')+rYTD.toFixed(2)+'%'}</div>
+            </div>
+            <div class="reks-stat-item">
+              <div class="reks-stat-label">Return 1Y</div>
+              <div class="reks-stat-value ${isNaN(r1y)?'':(r1y>=0?'green':'red')}">${isNaN(r1y)?'—':(r1y>=0?'+':'')+r1y.toFixed(2)+'%'}</div>
+            </div>
+            <div class="reks-stat-item">
+              <div class="reks-stat-label">Min. Inv</div>
+              <div class="reks-stat-value">${item.minInvestasi ? fmtRupiah(item.minInvestasi) : '—'}</div>
+            </div>
+          </div>
+          <div class="reks-card-footer">
+            <span class="reks-updated">Update: ${fmtDate(item.tanggal)}</span>
+            ${canEdit ? `
+            <div class="action-mini">
+              <button class="btn-mini" title="Edit" onclick="openEdit('${item.id}')">✏️</button>
+              <button class="btn-mini del" title="Hapus" onclick="deleteItem('${item.id}')">🗑</button>
+            </div>` : ''}
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+
+    // Pagination
+    const pgWrap = document.getElementById('cardsPagination');
+    pgWrap.style.display = filtered.length ? 'flex' : 'none';
+    document.getElementById('cardsInfo').textContent = `${start+1}–${Math.min(start+PAGE_SIZE,filtered.length)} dari ${filtered.length} produk`;
+    let pgHtml = '';
+    for (let i = 1; i <= totalPages; i++) pgHtml += `<div class="pg-btn ${i===currentPage?'active':''}" onclick="goPage(${i})">${i}</div>`;
+    document.getElementById('cardsPg').innerHTML = pgHtml;
+  }
+
+  // ===== RENDER TABLE =====
+  function renderTable() {
+    const tbody = document.getElementById('tableBody');
+    const canEdit = ['head_account','admin','treasury'].includes(curUser?.role);
+    const PAGE = 15;
+
+    if (!filtered.length) {
+      tbody.innerHTML = `<tr><td colspan="10"><div class="empty-state"><div class="empty-icon">📊</div><div>Tidak ada data</div></div></td></tr>`;
+      document.getElementById('tableFooter').style.display = 'none';
+      return;
+    }
+    const totalPages = Math.ceil(filtered.length / PAGE);
+    const start = (currentPage - 1) * PAGE;
+    const pageData = filtered.slice(start, start + PAGE);
+
+    tbody.innerHTML = pageData.map(item => {
+      const catKey = CAT_KEYS[item.kategori] || 'saham';
+      const r1y = parseFloat(item.return1Y);
+      const rYTD = parseFloat(item.returnYTD);
+      return `<tr>
+        <td style="font-weight:600;max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(item.nama||'—')}</td>
+        <td><span class="reks-card-cat cat-${catKey}" style="font-size:.65rem">${esc(item.kategori||'—')}</span></td>
+        <td style="font-size:.82rem;color:var(--gray)">${esc(item.mi||'—')}</td>
+        <td style="font-weight:700;color:var(--gold)">${item.nab ? 'Rp '+fmtNum(item.nab,2) : '—'}</td>
+        <td style="font-weight:600;color:${isNaN(rYTD)?'inherit':(rYTD>=0?'var(--success)':'var(--danger)')}">${isNaN(rYTD)?'—':(rYTD>=0?'+':'')+rYTD.toFixed(2)+'%'}</td>
+        <td style="font-weight:600;color:${isNaN(r1y)?'inherit':(r1y>=0?'var(--success)':'var(--danger)')}">${isNaN(r1y)?'—':(r1y>=0?'+':'')+r1y.toFixed(2)+'%'}</td>
+        <td style="font-size:.82rem">${item.minInvestasi ? fmtRupiah(item.minInvestasi) : '—'}</td>
+        <td style="font-size:.82rem">${item.subFee != null ? item.subFee+'%' : '—'}</td>
+        <td style="font-size:.78rem;color:#bbb;white-space:nowrap">${fmtDate(item.tanggal)}</td>
+        <td>
+          <div class="action-mini" style="justify-content:center">
+            ${canEdit ? `<button class="btn-mini" title="Edit" onclick="openEdit('${item.id}')">✏️</button>
+            <button class="btn-mini del" title="Hapus" onclick="deleteItem('${item.id}')">🗑</button>` : '—'}
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+
+    const foot = document.getElementById('tableFooter');
+    foot.style.display = 'flex';
+    document.getElementById('tableInfo').textContent = `${start+1}–${Math.min(start+PAGE, filtered.length)} dari ${filtered.length} produk`;
+    let pgHtml = '';
+    for (let i = 1; i <= totalPages; i++) pgHtml += `<div class="pg-btn ${i===currentPage?'active':''}" onclick="goPage(${i})">${i}</div>`;
+    document.getElementById('tablePg').innerHTML = pgHtml;
+  }
+
+  function goPage(n) { currentPage = n; currentView === 'grid' ? renderCards() : renderTable(); window.scrollTo({top:0,behavior:'smooth'}); }
+
+  // ===== STATS =====
+  function updateStats() {
+    document.getElementById('statTotal').textContent = allData.length;
+    document.getElementById('statPasarUang').textContent = allData.filter(d => d.kategori === 'Pasar Uang').length;
+    document.getElementById('statPendapatanTetap').textContent = allData.filter(d => d.kategori === 'Pendapatan Tetap').length;
+    document.getElementById('statSaham').textContent = allData.filter(d => ['Saham','Campuran','Index'].includes(d.kategori)).length;
+  }
+
+  // ===== MODAL =====
+  function openModal() {
+    editId = null;
+    document.getElementById('modalTitle').textContent = 'Tambah Reksadana';
+    document.getElementById('saveBtn').textContent = 'Simpan';
+    ['fNama','fMI','fNAB','fMinInv','fDeskripsi'].forEach(id => document.getElementById(id).value = '');
+    ['fKategori'].forEach(id => document.getElementById(id).value = '');
+    ['fReturnYTD','fReturn1Y','fReturn3Y','fSubFee','fRedFee','fMgmtFee'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('fTanggal').value = new Date().toISOString().split('T')[0];
+    clearErrors();
+    document.getElementById('reksModal').classList.add('open');
+  }
+
+  function openEdit(id) {
+    const item = allData.find(d => d.id === id);
+    if (!item) return;
+    editId = id;
+    document.getElementById('modalTitle').textContent = 'Edit Reksadana';
+    document.getElementById('saveBtn').textContent = 'Update';
+    document.getElementById('fNama').value = item.nama || '';
+    document.getElementById('fKategori').value = item.kategori || '';
+    document.getElementById('fMI').value = item.mi || '';
+    document.getElementById('fNAB').value = item.nab ? fmtNum(item.nab,2) : '';
+    document.getElementById('fMinInv').value = item.minInvestasi ? Number(item.minInvestasi).toLocaleString('id-ID') : '';
+    document.getElementById('fReturnYTD').value = item.returnYTD ?? '';
+    document.getElementById('fReturn1Y').value = item.return1Y ?? '';
+    document.getElementById('fReturn3Y').value = item.return3Y ?? '';
+    document.getElementById('fSubFee').value = item.subFee ?? '';
+    document.getElementById('fRedFee').value = item.redFee ?? '';
+    document.getElementById('fMgmtFee').value = item.mgmtFee ?? '';
+    document.getElementById('fTanggal').value = item.tanggal || '';
+    document.getElementById('fDeskripsi').value = item.deskripsi || '';
+    clearErrors();
+    document.getElementById('reksModal').classList.add('open');
+  }
+
+  function closeModal(e) { if (e.target === document.getElementById('reksModal')) document.getElementById('reksModal').classList.remove('open'); }
+  function clearErrors() { document.querySelectorAll('.form-input, .form-select').forEach(el => el.classList.remove('error')); }
+
+  // ===== SAVE =====
+  async function saveReksadana() {
+    const nama     = document.getElementById('fNama').value.trim();
+    const kategori = document.getElementById('fKategori').value;
+    const mi       = document.getElementById('fMI').value.trim();
+    const nabRaw   = document.getElementById('fNAB').dataset?.raw || document.getElementById('fNAB').value.replace(/\./g,'').replace(',','.');
+    const nab      = parseFloat(nabRaw) || null;
+
+    let hasErr = false;
+    if (!nama)     { document.getElementById('fNama').classList.add('error'); hasErr = true; }
+    if (!kategori) { document.getElementById('fKategori').classList.add('error'); hasErr = true; }
+    if (!mi)       { document.getElementById('fMI').classList.add('error'); hasErr = true; }
+    if (!nab)      { document.getElementById('fNAB').classList.add('error'); hasErr = true; }
+    if (hasErr) { showToast('Lengkapi field yang wajib diisi', 'error'); return; }
+
+    const minInvRaw = document.getElementById('fMinInv').value.replace(/\./g,'');
+    const payload = {
+      nama, kategori, mi, nab,
+      minInvestasi: parseInt(minInvRaw) || null,
+      returnYTD:  parseFloat(document.getElementById('fReturnYTD').value) || null,
+      return1Y:   parseFloat(document.getElementById('fReturn1Y').value) || null,
+      return3Y:   parseFloat(document.getElementById('fReturn3Y').value) || null,
+      subFee:     parseFloat(document.getElementById('fSubFee').value) || null,
+      redFee:     parseFloat(document.getElementById('fRedFee').value) || null,
+      mgmtFee:    parseFloat(document.getElementById('fMgmtFee').value) || null,
+      tanggal:    document.getElementById('fTanggal').value,
+      deskripsi:  document.getElementById('fDeskripsi').value.trim(),
+      updatedAt:  new Date().toISOString(),
+    };
+
+    const btn = document.getElementById('saveBtn');
+    btn.textContent = 'Menyimpan...'; btn.disabled = true;
+
+    try {
+      if (editId) {
+        const { error } = await window._supabase.from(COL).update(payload).eq('id', editId);
+        if (error) throw error;
+        const idx = allData.findIndex(d => d.id === editId);
+        if (idx !== -1) allData[idx] = { id: editId, ...payload };
+        showToast('Data reksadana diperbarui', 'success');
+      } else {
+        payload.created_at = new Date().toISOString();
+        const { data: newRow, error } = await window._supabase.from(COL).insert(payload).select().single();
+        if (error) throw error;
+        allData.unshift(newRow);
+        showToast('Reksadana berhasil ditambahkan', 'success');
+      }
+      document.getElementById('reksModal').classList.remove('open');
+      buildMIFilter(); buildTabs(); applyFilters(); updateStats();
+    } catch(e) {
+      console.error(e); showToast('Gagal menyimpan data', 'error');
+    } finally {
+      btn.textContent = editId ? 'Update' : 'Simpan'; btn.disabled = false;
+    }
+  }
+
+  // ===== DELETE =====
+  async function deleteItem(id) {
+    if (!confirm('Hapus produk reksadana ini?')) return;
+    try {
+      const { error } = await window._supabase.from(COL).delete().eq('id', id);
+      if (error) throw error;
+      allData = allData.filter(d => d.id !== id);
+      buildMIFilter(); buildTabs(); applyFilters(); updateStats();
+      showToast('Produk dihapus', 'success');
+    } catch(e) { showToast('Gagal menghapus', 'error'); }
+  }
+
+  // ===== EXPORT =====
+  function exportCSV() {
+    const headers = ['Nama','Kategori','Manajer Investasi','NAB','Min Inv','Return YTD (%)','Return 1Y (%)','Return 3Y (%)','Sub Fee (%)','Red Fee (%)','Mgmt Fee (%)','Update','Deskripsi'];
+    const rows = filtered.map(d => [d.nama,d.kategori,d.mi,d.nab,d.minInvestasi,d.returnYTD,d.return1Y,d.return3Y,d.subFee,d.redFee,d.mgmtFee,d.tanggal,d.deskripsi]
+      .map(v => `"${(v??'').toString().replace(/"/g,'""')}"`).join(','));
+    const csv = [headers.join(','), ...rows].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = `reksadana-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click(); URL.revokeObjectURL(url);
+    showToast('CSV berhasil diexport', 'success');
+  }
+
+  // ===== UTILS =====
+  function formatDecimalInput(el) {
+    let raw = el.value.replace(/[^\d,]/g,'');
+    el.value = raw;
+    el.dataset.raw = raw.replace(',','.');
+  }
+  function formatIntInput(el) {
+    let raw = el.value.replace(/\D/g,'');
+    if (!raw) { el.value = ''; return; }
+    el.value = parseInt(raw).toLocaleString('id-ID');
+  }
+  function fmtNum(n, dec=0) {
+    return Number(n).toLocaleString('id-ID', { minimumFractionDigits: dec, maximumFractionDigits: dec });
+  }
+  function fmtRupiah(n) {
+    n = Number(n);
+    if (n >= 1e9)  return `Rp ${(n/1e9).toLocaleString('id-ID',{maximumFractionDigits:1})} M`;
+    if (n >= 1e6)  return `Rp ${(n/1e6).toLocaleString('id-ID',{maximumFractionDigits:1})} jt`;
+    return `Rp ${n.toLocaleString('id-ID')}`;
+  }
+  function fmtDate(d) {
+    if (!d) return '—';
+    try { return new Date(d).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}); }
+    catch { return d; }
+  }
+  function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function showToast(msg, type='info') {
+    const t = document.createElement('div'); t.className = `toast toast-${type}`; t.textContent = msg;
+    document.getElementById('toastContainer').appendChild(t);
+    setTimeout(() => t.remove(), 3500);
+  }
+</script>
+</body>
+</html>

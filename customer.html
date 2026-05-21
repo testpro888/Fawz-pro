@@ -1,0 +1,1419 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Fawz Pro | Data Customer</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+
+  <!-- Supabase SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script>
+    const SUPABASE_URL = 'https://yhmrfluehibfapvtxcfi.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlobXJmbHVlaGliZmFwdnR4Y2ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNjEzODUsImV4cCI6MjA5NDczNzM4NX0.se_H4n_eLsf81d_1GH5sqsPCpX89MHewlPuuNkY6qcU';
+    const _sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    window._supabase = _sb;
+
+    window.addEventListener('DOMContentLoaded', () => { loadCustomers(); });
+  </script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy: #0d0d2b;
+      --purple: #1e1252;
+      --gold: #f5a623;
+      --gold-light: #ffc857;
+      --bg: #f4f5fb;
+      --white: #ffffff;
+      --nav-h: 68px;
+      --border: #e0e0ef;
+      --text: #1a1a3a;
+      --gray: #888;
+    }
+
+    body { font-family: 'Inter', sans-serif; background: var(--bg); min-height: 100vh; padding-top: var(--nav-h); color: var(--text); }
+
+    /* PAGE */
+    .page-container { max-width: 1400px; margin: 0 auto; padding: 36px 28px; }
+    .page-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 28px; flex-wrap: wrap; gap: 16px; }
+    .page-title { font-family: 'Inter', sans-serif; font-size: 2rem; font-weight: 900; color: var(--navy); line-height: 1.1; }
+    .page-subtitle { font-size: 0.88rem; color: var(--gray); margin-top: 4px; }
+    .title-underline { width: 48px; height: 3px; background: linear-gradient(90deg, var(--gold), var(--gold-light)); border-radius: 2px; margin-top: 8px; }
+    .header-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+
+    .btn { display: inline-flex; align-items: center; gap: 7px; padding: 11px 20px; border-radius: 10px; font-family: 'Inter', sans-serif; font-size: 0.875rem; font-weight: 600; cursor: pointer; transition: all 0.2s; border: none; white-space: nowrap; }
+    .btn-primary { background: linear-gradient(135deg, var(--gold), #e8931a); color: #fff; box-shadow: 0 4px 14px rgba(245,166,35,0.35); }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(245,166,35,0.45); }
+    .btn-outline { background: #fff; color: var(--navy); border: 1.5px solid var(--border); }
+    .btn-outline:hover { border-color: var(--gold); color: var(--gold); background: #fffbf3; }
+
+    /* Stats */
+    .stats-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-bottom: 24px; }
+    .stat-box { background: #fff; border-radius: 14px; padding: 18px 22px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+    .stat-box-label { font-size: 0.72rem; color: var(--gray); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+    .stat-box-val { font-size: 1.8rem; font-weight: 700; color: var(--navy); }
+
+    /* Toolbar */
+    .toolbar { background: #fff; border-radius: 14px; padding: 16px 20px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+    .search-wrap { position: relative; flex: 1; min-width: 220px; }
+    .search-wrap input { width: 100%; padding: 10px 16px 10px 40px; border: 1.5px solid var(--border); border-radius: 10px; font-family: 'Inter', sans-serif; font-size: 0.9rem; color: var(--text); outline: none; transition: border 0.2s; }
+    .search-wrap input:focus { border-color: var(--gold); }
+    .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #aaa; font-size: 1rem; }
+    .filter-select { padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 10px; font-family: 'Inter', sans-serif; font-size: 0.875rem; color: var(--text); outline: none; background: #fff; cursor: pointer; }
+    .filter-select:focus { border-color: var(--gold); }
+
+    /* Table */
+    .table-card { background: #fff; border-radius: 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); overflow: hidden; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+    thead { background: #fafafa; border-bottom: 2px solid #f0f0f5; }
+    thead th { padding: 14px 16px; text-align: left; font-size: 0.72rem; font-weight: 700; color: #aaa; text-transform: uppercase; letter-spacing: 1px; white-space: nowrap; }
+    tbody tr { border-bottom: 1px solid #f5f5fa; transition: background 0.15s; cursor: pointer; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: #fffbf3; }
+    tbody td { padding: 13px 16px; color: var(--text); vertical-align: middle; }
+
+    .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 600; white-space: nowrap; }
+    .badge-aktif    { background: #e8f8f0; color: #27ae60; }
+    .badge-open     { background: #e8f0ff; color: #2d4abf; }
+    .badge-suspend  { background: #f0f0ff; color: #7159c1; }
+    .badge-closed   { background: #f5f5f5; color: #999; }
+
+    .action-btns { display: flex; gap: 6px; }
+    .btn-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; cursor: pointer; border: 1.5px solid var(--border); background: #fff; transition: all 0.15s; }
+    .btn-icon:hover { border-color: var(--gold); background: #fffbf3; }
+    .btn-icon.del:hover { border-color: #ffcccc; background: #fff0f0; }
+
+    .empty-state { text-align: center; padding: 60px 20px; color: #bbb; }
+    .empty-state .empty-icon { font-size: 2.5rem; margin-bottom: 12px; }
+    .table-footer { padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; border-top: 1px solid #f0f0f5; font-size: 0.82rem; color: var(--gray); }
+    .pagination { display: flex; gap: 4px; }
+    .pg-btn { width: 30px; height: 30px; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; cursor: pointer; border: 1.5px solid var(--border); background: #fff; color: var(--text); transition: all 0.15s; }
+    .pg-btn.active { background: var(--gold); border-color: var(--gold); color: #fff; font-weight: 700; }
+    .pg-btn:hover:not(.active) { border-color: var(--gold); }
+
+    .skeleton { background: linear-gradient(90deg, #f0f0f5 25%, #e8e8f0 50%, #f0f0f5 75%); background-size: 200% 100%; animation: shimmer 1.4s infinite; border-radius: 6px; display: inline-block; }
+    @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+    /* MODAL */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(13,13,43,0.55); backdrop-filter: blur(4px); z-index: 2000; align-items: center; justify-content: center; }
+    .modal-overlay.open { display: flex; }
+    .modal { background: #fff; border-radius: 20px; padding: 32px; width: 800px; max-width: 96vw; max-height: 92vh; overflow-y: auto; box-shadow: 0 24px 80px rgba(0,0,0,0.2); animation: slideUp 0.25s ease; }
+    @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+    .modal-title { font-family: 'Inter', sans-serif; font-size: 1.4rem; font-weight: 700; color: var(--navy); }
+    .modal-close { width: 32px; height: 32px; border-radius: 8px; border: 1.5px solid var(--border); background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1rem; color: var(--gray); transition: all 0.15s; }
+    .modal-close:hover { border-color: #ffcccc; color: #e74c3c; background: #fff0f0; }
+
+    /* Form sections */
+    .form-section { margin-bottom: 22px; }
+    .form-section-title { font-size: 0.68rem; font-weight: 700; color: var(--gold); text-transform: uppercase; letter-spacing: 1.5px; padding-bottom: 8px; margin-bottom: 14px; border-bottom: 1.5px solid #fdf0d8; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .form-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+    .form-group { display: flex; flex-direction: column; gap: 5px; }
+    .form-group.full { grid-column: 1 / -1; }
+    .form-label { font-size: 0.72rem; font-weight: 700; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
+    .req { color: #e74c3c; margin-left: 2px; }
+    .form-input, .form-select, .form-textarea { padding: 10px 13px; border: 1.5px solid var(--border); border-radius: 10px; font-family: 'Inter', sans-serif; font-size: 0.88rem; color: var(--text); outline: none; transition: border 0.2s, box-shadow 0.2s; background: #fff; }
+    .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(245,166,35,0.1); }
+    .form-textarea { resize: vertical; min-height: 68px; }
+    .mono { font-family: 'Courier New', monospace !important; font-size: 0.82rem !important; letter-spacing: 0.3px; }
+    .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px; padding-top: 20px; border-top: 1px solid #f0f0f5; }
+
+    /* Detail modal */
+    .detail-modal { width: 860px; }
+    .detail-section { margin-bottom: 22px; }
+    .detail-section-title { font-size: 0.68rem; font-weight: 700; color: var(--gold); text-transform: uppercase; letter-spacing: 1.5px; padding-bottom: 7px; margin-bottom: 12px; border-bottom: 1.5px solid #fdf0d8; }
+    .detail-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    .d-item { display: flex; flex-direction: column; gap: 3px; }
+    .d-item label { font-size: 0.65rem; font-weight: 700; color: #bbb; text-transform: uppercase; letter-spacing: 0.8px; }
+    .d-item span { font-size: 0.875rem; color: var(--text); font-weight: 500; word-break: break-all; }
+    .d-item span.empty { color: #ccc; font-style: italic; font-weight: 400; }
+
+    /* Upload */
+    .upload-zone { border: 2px dashed var(--border); border-radius: 14px; padding: 36px; text-align: center; cursor: pointer; transition: all 0.2s; background: #fafafa; }
+    .upload-zone:hover, .upload-zone.dragover { border-color: var(--gold); background: #fffbf3; }
+    .upload-icon { font-size: 2.5rem; margin-bottom: 10px; }
+    .upload-hint { font-size: 0.8rem; color: var(--gray); margin-top: 6px; line-height: 1.6; }
+    .upload-hint strong { color: var(--gold); }
+    #csvFileInput { display: none; }
+    .csv-preview { margin-top: 16px; border: 1.5px solid var(--border); border-radius: 10px; overflow: hidden; max-height: 200px; overflow-y: auto; }
+    .csv-preview table { font-size: 0.78rem; }
+    .csv-preview thead th { padding: 8px 12px; }
+    .csv-preview tbody td { padding: 7px 12px; }
+
+    /* Toast */
+    .toast-container { position: fixed; bottom: 28px; right: 28px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+    .toast { padding: 14px 20px; border-radius: 12px; font-size: 0.875rem; font-weight: 500; box-shadow: 0 6px 24px rgba(0,0,0,0.15); animation: toastIn 0.3s ease; max-width: 320px; }
+    @keyframes toastIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+    .toast-success { background: #f0fff8; border: 1px solid #a8e6c1; color: #1e7e4e; }
+    .toast-error { background: #fff0f0; border: 1px solid #ffcccc; color: #c0392b; }
+    .toast-info { background: #f0f4ff; border: 1px solid #c5d3ff; color: #2d4abf; }
+
+    /* Checkbox select */
+    .cb-cell { width: 52px; text-align: center !important; padding: 0 8px !important; }
+    .row-cb { width: 16px; height: 16px; accent-color: var(--gold); cursor: pointer; }
+    thead th.cb-cell { vertical-align: middle; }
+
+    /* Sort header */
+    .th-sort { cursor: pointer; user-select: none; white-space: nowrap; }
+    .th-sort:hover { color: var(--gold); }
+    .sort-icon { display: inline-block; margin-left: 4px; font-size: 0.65rem; color: #ccc; vertical-align: middle; transition: color 0.15s; }
+    .th-sort:hover .sort-icon { color: var(--gold); }
+    .sort-icon.asc::after { content: '▲'; color: var(--gold); }
+    .sort-icon.desc::after { content: '▼'; color: var(--gold); }
+    .sort-icon.none::after { content: '⇅'; }
+    .cb-header-wrap { display: inline-flex; align-items: center; gap: 3px; position: relative; }
+    .cb-arrow-btn {
+      width: 16px; height: 16px; border: none; background: none; cursor: pointer;
+      color: #bbb; font-size: 0.6rem; padding: 0; display: flex; align-items: center; justify-content: center;
+      border-radius: 3px; transition: background 0.15s, color 0.15s; line-height: 1;
+    }
+    .cb-arrow-btn:hover { background: #f0f0f8; color: var(--gold); }
+    .cb-dropdown {
+      display: none; position: absolute; top: calc(100% + 6px); left: -4px;
+      background: #fff; border-radius: 10px; box-shadow: 0 6px 24px rgba(0,0,0,0.14);
+      min-width: 210px; overflow: hidden; z-index: 300; border: 1px solid #ededf8;
+    }
+    .cb-dropdown.open { display: block; }
+    .cb-dd-item {
+      display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+      font-size: 0.83rem; color: #333; cursor: pointer; transition: background 0.12s;
+      border-bottom: 1px solid #f5f5fa; white-space: nowrap; font-weight: 500;
+    }
+    .cb-dd-item:last-child { border-bottom: none; }
+    .cb-dd-item:hover { background: #fffbf3; color: var(--gold); }
+    .cb-dd-count { font-size: 0.72rem; color: #aaa; margin-left: auto; font-weight: 400; }
+
+    /* Bulk action bar */
+    .bulk-bar {
+      display: none; align-items: center; gap: 12px;
+      background: linear-gradient(135deg, #fff8ec, #fffbf3);
+      border: 1.5px solid var(--gold-light); border-radius: 12px;
+      padding: 12px 20px; margin-bottom: 16px;
+      box-shadow: 0 2px 12px rgba(245,166,35,0.15);
+      animation: slideDown 0.2s ease;
+    }
+    .bulk-bar.visible { display: flex; }
+    @keyframes slideDown { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:translateY(0); } }
+    .bulk-count { font-weight: 700; color: var(--navy); font-size: 0.9rem; }
+    .bulk-count span { color: var(--gold); font-size: 1.05rem; }
+    .btn-danger { background: linear-gradient(135deg, #e74c3c, #c0392b); color: #fff; box-shadow: 0 4px 14px rgba(231,76,60,0.3); }
+    .btn-danger:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(231,76,60,0.4); }
+    .btn-sm { padding: 8px 16px; font-size: 0.82rem; }
+
+    /* Multi-securities */
+    .sec-list { display: flex; flex-direction: column; gap: 16px; }
+    .sec-card {
+      border: 1.5px solid var(--border); border-radius: 14px; padding: 18px 18px 14px;
+      position: relative; background: #fafafa; transition: border-color 0.2s;
+    }
+    .sec-card:hover { border-color: #d0cfe8; }
+    .sec-card-header {
+      display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;
+    }
+    .sec-card-label {
+      font-size: 0.72rem; font-weight: 700; color: var(--gold); text-transform: uppercase;
+      letter-spacing: 1.2px; display: flex; align-items: center; gap: 8px;
+    }
+    .sec-badge {
+      background: linear-gradient(135deg, var(--gold), #e8931a); color: #fff;
+      border-radius: 20px; padding: 2px 10px; font-size: 0.68rem; font-weight: 700; letter-spacing: 0;
+    }
+    .sec-remove-btn {
+      width: 28px; height: 28px; border-radius: 8px; border: 1.5px solid #ffd0d0;
+      background: #fff0f0; color: #e74c3c; font-size: 0.85rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; transition: all 0.15s; line-height: 1;
+    }
+    .sec-remove-btn:hover { background: #ffe0e0; border-color: #e74c3c; }
+    .sec-divider { border: none; border-top: 1px dashed #e8e0f0; margin: 10px 0 12px; }
+    .add-sec-btn {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      width: 100%; padding: 12px; border: 2px dashed var(--border); border-radius: 12px;
+      background: #fff; color: var(--gray); font-family: 'Inter', sans-serif;
+      font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.2s;
+    }
+    .add-sec-btn:hover { border-color: var(--gold); color: var(--gold); background: #fffbf3; }
+
+    /* Detail securities */
+    .det-sec-card {
+      border: 1.5px solid #ede8ff; border-radius: 12px; padding: 16px 18px;
+      background: linear-gradient(135deg, #faf8ff, #fffbf3); margin-bottom: 12px;
+    }
+    .det-sec-header {
+      display: flex; align-items: center; gap: 10px; margin-bottom: 12px;
+    }
+    .det-sec-num {
+      width: 26px; height: 26px; border-radius: 50%; background: linear-gradient(135deg, var(--gold), #e8931a);
+      color: #fff; font-size: 0.72rem; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .det-sec-name { font-size: 0.9rem; font-weight: 700; color: var(--navy); }
+
+    @media (max-width: 1100px) { .stats-row { grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width: 768px) { .stats-row { grid-template-columns: 1fr 1fr; } .form-grid, .form-grid-3 { grid-template-columns: 1fr; } .detail-grid { grid-template-columns: 1fr 1fr; } .nav-menu { display: none; } .page-header { flex-direction: column; } }
+    @media (max-width: 480px) { .stats-row { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<div id="navbar-placeholder"></div>
+<script src="navbar.js"></script>
+
+<!-- PAGE -->
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <div class="page-title">Data Customer</div>
+      <div class="page-subtitle">Kelola data nasabah dan klien FAWZ Pro</div>
+      <div class="title-underline"></div>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-outline" onclick="openUploadModal()">⬆️ Upload CSV</button>
+      <button class="btn btn-outline" onclick="exportCSV()">⬇️ Export CSV</button>
+      <button class="btn btn-primary" onclick="openAddModal()">+ Tambah Customer</button>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="stat-box"><div class="stat-box-label">Total Customer</div><div class="stat-box-val" id="statTotal">—</div></div>
+    <div class="stat-box"><div class="stat-box-label">Active</div><div class="stat-box-val" id="statAktif" style="color:#27ae60">—</div></div>
+    <div class="stat-box"><div class="stat-box-label">Open</div><div class="stat-box-val" id="statOpen" style="color:#2d4abf">—</div></div>
+    <div class="stat-box"><div class="stat-box-label">Suspended</div><div class="stat-box-val" id="statSuspend" style="color:#7159c1">—</div></div>
+    <div class="stat-box"><div class="stat-box-label">Closed</div><div class="stat-box-val" id="statClosed" style="color:#999">—</div></div>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="searchInput" placeholder="Cari ClientID, nama, KSEI SID, RDN, email, NPWP..." oninput="applyFilters()"/>
+    </div>
+    <select class="filter-select" id="filterStatus" onchange="applyFilters()">
+      <option value="">Semua Status</option>
+      <option value="Aktif">Active</option>
+      <option value="Open">Open</option>
+      <option value="Suspended">Suspended</option>
+      <option value="Closed">Closed</option>
+    </select>
+    <select class="filter-select" id="filterSales" onchange="applyFilters()">
+      <option value="">Semua Sales</option>
+    </select>
+    <select class="filter-select" id="filterOffice" onchange="applyFilters()">
+      <option value="">Semua Kantor</option>
+    </select>
+  </div>
+
+  <!-- Bulk Action Bar -->
+  <div class="bulk-bar" id="bulkBar">
+    <div class="bulk-count">🗂️ <span id="bulkCount">0</span> nasabah dipilih</div>
+    <button class="btn btn-danger btn-sm" onclick="deleteSelected()">🗑️ Hapus Terpilih</button>
+    <button class="btn btn-outline btn-sm" onclick="clearSelection()">✕ Batal Pilih</button>
+  </div>
+
+  <!-- Table -->
+  <div class="table-card">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th class="cb-cell">
+              <div class="cb-header-wrap" id="cbHeaderWrap">
+                <input type="checkbox" class="row-cb" id="cbSelectAll" title="Pilih halaman ini" onchange="toggleSelectAll(this.checked)"/>
+                <button class="cb-arrow-btn" id="cbArrowBtn" onclick="toggleCbDropdown(event)" title="Opsi pilih">▾</button>
+                <div class="cb-dropdown" id="cbDropdown">
+                  <div class="cb-dd-item" onclick="selectPageData()">☑️ Pilih halaman ini <span class="cb-dd-count" id="ddPageCount">0</span></div>
+                  <div class="cb-dd-item" onclick="selectAllData()">⚡ Pilih semua data <span class="cb-dd-count" id="ddAllCount">0</span></div>
+                  <div class="cb-dd-item" onclick="clearSelection()">✕ Batalkan semua pilihan</div>
+                </div>
+              </div>
+            </th>
+            <th>#</th>
+            <th class="th-sort" onclick="toggleSort('clientID')" id="thClientID">Client ID <span class="sort-icon none" id="sortIconClientID"></span></th>
+            <th class="th-sort" onclick="toggleSort('clientName')" id="thClientName">Nama Nasabah <span class="sort-icon none" id="sortIconClientName"></span></th>
+            <th>KSEI Single ID / RDN</th>
+            <th>Sales PIC</th>
+            <th>Kantor</th>
+            <th>Status</th>
+            <th>Tgl. Aktif</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="customerTableBody">
+          <tr><td colspan="10"><div class="empty-state"><div class="empty-icon">⏳</div><p>Memuat data...</p></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="table-footer">
+      <div id="tableInfo">Menampilkan 0 data</div>
+      <div class="pagination" id="pagination"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: ADD / EDIT -->
+<div class="modal-overlay" id="formModal" onclick="closeFormModal(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="formModalTitle">Tambah Customer</div>
+      <button class="modal-close" onclick="document.getElementById('formModal').classList.remove('open')">✕</button>
+    </div>
+    <input type="hidden" id="editDocId"/>
+
+    <!-- Section 1: Identitas -->
+    <div class="form-section">
+      <div class="form-section-title">🪪 Identitas Klien</div>
+      <div class="form-grid">
+        <div class="form-group"><label class="form-label">Client ID</label><input class="form-input mono" id="fClientID" placeholder="C001234"/></div>
+        <div class="form-group"><label class="form-label">Nama Lengkap <span class="req">*</span></label><input class="form-input" id="fClientName" placeholder="Nama sesuai KTP"/></div>
+        <div class="form-group"><label class="form-label">No. KTP (NIK)</label><input class="form-input mono" id="fKTPNumber" placeholder="16 digit NIK"/></div>
+        <div class="form-group"><label class="form-label">Tanggal Lahir</label><input class="form-input" id="fBirthDate" type="date"/></div>
+        <div class="form-group"><label class="form-label">NPWP</label><input class="form-input mono" id="fNPWP" placeholder="XX.XXX.XXX.X-XXX.XXX"/></div>
+        <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="fEmail" type="email" placeholder="email@example.com"/></div>
+        <div class="form-group"><label class="form-label">No. Telepon</label><input class="form-input" id="fPhone" placeholder="+62..."/></div>
+        <div class="form-group"><label class="form-label">Pekerjaan</label><input class="form-input" id="fOccupation" placeholder="Karyawan Swasta, Wiraswasta..."/></div>
+        <div class="form-group"><label class="form-label">Nama Perusahaan</label><input class="form-input" id="fCompanyName" placeholder="PT / CV / Nama usaha"/></div>
+        <div class="form-group"><label class="form-label">Bidang Usaha</label><input class="form-input" id="fNatureOfBusiness" placeholder="Perdagangan, Jasa, dll"/></div>
+        <div class="form-group"><label class="form-label">Jabatan</label><input class="form-input" id="fPosition" placeholder="Direktur, Manajer, Staff..."/></div>
+        <div class="form-group full"><label class="form-label">Alamat</label><textarea class="form-textarea" id="fAddress" placeholder="Alamat lengkap sesuai KTP"></textarea></div>
+      </div>
+    </div>
+
+    <!-- Section 2+3: Multi Sekuritas -->
+    <div class="form-section">
+      <div class="form-section-title">🏦 Data Sekuritas & Rekening</div>
+      <div class="sec-list" id="secList"></div>
+      <button type="button" class="add-sec-btn" style="margin-top:12px;" onclick="addSekuritas()">
+        ＋ Tambah Sekuritas
+      </button>
+    </div>
+
+    <!-- Section 3: KSEI / KPEI / STP -->
+    <div class="form-section">
+      <div class="form-section-title">📋 KSEI / KPEI / STP</div>
+      <div class="form-grid">
+        <div class="form-group"><label class="form-label">KSEI Single Investor ID</label><input class="form-input mono" id="fKSEISingleID" placeholder="IDD..."/></div>
+        <div class="form-group"><label class="form-label">KSEI Sub Account No.</label><input class="form-input mono" id="fKSEISubAccountNo" placeholder="Sub akun KSEI"/></div>
+        <div class="form-group"><label class="form-label">KPEI Sub Account No.</label><input class="form-input mono" id="fKPEISubAccountNo" placeholder="Sub akun KPEI"/></div>
+        <div class="form-group"><label class="form-label">STP KSEI Sub Acct No.</label><input class="form-input mono" id="fSTPKSEISubAccountNo" placeholder="STP KSEI"/></div>
+        <div class="form-group"><label class="form-label">STP KPEI Sub Acct No.</label><input class="form-input mono" id="fSTPKPEISubAccountNo" placeholder="STP KPEI"/></div>
+      </div>
+    </div>
+
+    <!-- Section 4: Sales & Kantor -->
+    <div class="form-section">
+      <div class="form-section-title">🏢 Sales & Kantor</div>
+      <div class="form-grid">
+        <div class="form-group"><label class="form-label">Sales Person ID</label><input class="form-input mono" id="fSalesPersonID" placeholder="ID Sales"/></div>
+        <div class="form-group"><label class="form-label">Nama Sales <span class="req">*</span></label><input class="form-input" id="fSalesPersonName" placeholder="Nama sales PIC"/></div>
+        <div class="form-group"><label class="form-label">Office ID</label><input class="form-input mono" id="fOfficeID" placeholder="ID Kantor"/></div>
+        <div class="form-group"><label class="form-label">Nama Kantor</label><input class="form-input" id="fOfficeName" placeholder="Nama cabang"/></div>
+        <div class="form-group"><label class="form-label">Department ID</label><input class="form-input mono" id="fDepartmentID" placeholder="ID Departemen"/></div>
+      </div>
+    </div>
+
+    <!-- Section 5: Status & Tanggal -->
+    <div class="form-section">
+      <div class="form-section-title">📅 Status & Tanggal</div>
+      <div class="form-grid">
+        <div class="form-group"><label class="form-label">Status Klien <span class="req">*</span></label>
+          <select class="form-select" id="fClientStatus">
+            <option value="Aktif">Active</option>
+            <option value="Open">Open</option>
+            <option value="Suspended">Suspended</option>
+            <option value="Closed">Closed</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Deskripsi Status</label><input class="form-input" id="fClientStatusDescription" placeholder="Keterangan status klien"/></div>
+        <div class="form-group"><label class="form-label">Tgl. Dibuat</label><input class="form-input" id="fCreatedDate" type="date"/></div>
+        <div class="form-group"><label class="form-label">Tgl. Aktif</label><input class="form-input" id="fActiveDate" type="date"/></div>
+        <div class="form-group"><label class="form-label">Tgl. Tutup</label><input class="form-input" id="fClosedDate" type="date"/></div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="document.getElementById('formModal').classList.remove('open')">Batal</button>
+      <button class="btn btn-primary" id="formSaveBtn" onclick="saveCustomer()">Simpan</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: DETAIL VIEW -->
+<div class="modal-overlay" id="detailModal" onclick="closeDetailModal(event)">
+  <div class="modal detail-modal">
+    <div class="modal-header">
+      <div class="modal-title" id="detailModalTitle">Detail Customer</div>
+      <button class="modal-close" onclick="document.getElementById('detailModal').classList.remove('open')">✕</button>
+    </div>
+    <div id="detailContent"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="document.getElementById('detailModal').classList.remove('open')">Tutup</button>
+      <button class="btn btn-primary" id="detailEditBtn">✏️ Edit Data</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: UPLOAD CSV -->
+<div class="modal-overlay" id="uploadModal" onclick="closeUploadModal(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Upload CSV Customer</div>
+      <button class="modal-close" onclick="document.getElementById('uploadModal').classList.remove('open')">✕</button>
+    </div>
+    <div class="upload-zone" id="uploadZone" onclick="document.getElementById('csvFileInput').click()"
+      ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
+      <div class="upload-icon">📂</div>
+      <div style="font-weight:600; color:var(--navy);">Klik atau drag & drop file CSV</div>
+      <div class="upload-hint">
+        Mendukung header sistem (PascalCase): <strong>ClientID, ClientName, SalesPersonName, KSEISingleID, BankAccountNo, ...</strong><br/>
+        atau header manual (lowercase): <strong>clientid, clientname, salespersonname, kseisingleid, ...</strong>
+      </div>
+    </div>
+    <input type="file" id="csvFileInput" accept=".csv" onchange="handleCSVFile(event)"/>
+    <div id="csvPreviewWrap" style="display:none; margin-top:14px;">
+      <div style="font-size:0.82rem; color:var(--gray); margin-bottom:8px;" id="csvPreviewInfo"></div>
+      <div class="csv-preview" id="csvPreview"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="downloadTemplate()">⬇️ Download Template</button>
+      <button class="btn btn-outline" onclick="document.getElementById('uploadModal').classList.remove('open')">Batal</button>
+      <button class="btn btn-primary" id="uploadSaveBtn" onclick="importCSV()" disabled>Import Data</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+  let allCustomers = [], filteredCustomers = [], csvRows = [];
+  let selectedIds = new Set();
+  let sortField = '', sortDir = 'asc'; // '' = default (no sort)
+  const PAGE_SIZE = 15;
+  let currentPage = 1;
+  const ROLE_LABELS = { head_account: 'Head Account', admin: 'Admin', sales: 'Sales', treasury: 'Treasury' };
+
+  // ===== SUPABASE =====
+  // Helper: map snake_case Supabase row → camelCase for UI compatibility
+  function mapCustomerRow(r) {
+    return {
+      id: r.id,
+      clientID: r.client_id || '',
+      clientName: r.client_name || '',
+      cifInvestorBirthDate: r.birth_date || '',
+      cifInvestorKTPNumber: r.ktp_number || '',
+      npwp: r.npwp || '',
+      email: r.email || '',
+      phone: r.phone || '',
+      cifInvestorOccupation: r.occupation || '',
+      cifCompanyName: r.company_name || '',
+      cifInvestorNatureOfBusiness: r.nature_of_business || '',
+      cifInvestorPosition: r.position || '',
+      address: r.address || '',
+      kseiSingleID: r.ksei_single_id || '',
+      kseiSubAccountNo: r.ksei_sub_account_no || '',
+      kpeiSubAccountNo: r.kpei_sub_account_no || '',
+      stpKSEISubAccountNo: r.stp_ksei_sub_account_no || '',
+      stpKPEISubAccountNo: r.stp_kpei_sub_account_no || '',
+      salesPersonName: r.sales_person_name || '',
+      salesPersonID: r.sales_person_id_legacy || '',
+      officeName: r.office_name || '',
+      officeID: r.office_id || '',
+      departmentID: r.department_id || '',
+      clientStatus: r.client_status || 'Aktif',
+      clientStatusDescription: r.client_status_description || '',
+      activeDate: r.active_date || '',
+      closedDate: r.closed_date || '',
+      createdDate: r.created_at ? r.created_at.slice(0,10) : '',
+      bankAccountNo: '', // will be filled from securities if needed
+      bankAccountID: '',
+      ...r, // keep original snake_case fields too
+    };
+  }
+
+  async function loadCustomers() {
+    try {
+      const { data, error } = await window._supabase
+        .from('customers')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      allCustomers = (data || []).map(mapCustomerRow);
+      applyFilters(); updateStats(); populateFilters();
+      showToast('Data berhasil dimuat', 'success');
+    } catch (e) {
+      console.error(e);
+      showToast('Gagal memuat data.', 'error');
+      renderTable([]);
+    }
+  }
+
+  async function saveCustomer() {
+    const docId = document.getElementById('editDocId').value;
+    const data = getFormData();
+    if (!data.clientName && !data.client_name) { showToast('Nama Lengkap wajib diisi!', 'error'); return; }
+    const btn = document.getElementById('formSaveBtn');
+    btn.textContent = 'Menyimpan...'; btn.disabled = true;
+    try {
+      // Map camelCase to snake_case for Supabase
+      const row = {
+        client_id: data.clientID || data.client_id || null,
+        client_name: data.clientName || data.client_name || null,
+        birth_date: data.birthDate || data.birth_date || null,
+        ktp_number: data.ktpNumber || data.ktp_number || null,
+        npwp: data.npwp || null,
+        email: data.email || null,
+        phone: data.phone || null,
+        occupation: data.occupation || null,
+        company_name: data.companyName || data.company_name || null,
+        nature_of_business: data.natureOfBusiness || data.nature_of_business || null,
+        position: data.position || null,
+        address: data.address || null,
+        ksei_single_id: data.kseiSingleID || data.ksei_single_id || null,
+        ksei_sub_account_no: data.kseiSubAccountNo || data.ksei_sub_account_no || null,
+        kpei_sub_account_no: data.kpeiSubAccountNo || data.kpei_sub_account_no || null,
+        stp_ksei_sub_account_no: data.stpKSEISubAccountNo || data.stp_ksei_sub_account_no || null,
+        stp_kpei_sub_account_no: data.stpKPEISubAccountNo || data.stp_kpei_sub_account_no || null,
+        sales_person_name: data.salesPersonName || data.sales_person_name || null,
+        office_name: data.officeName || data.office_name || null,
+        client_status: data.clientStatus || data.client_status || 'Aktif',
+        client_status_description: data.clientStatusDescription || data.client_status_description || null,
+        active_date: data.activeDate || data.active_date || null,
+        closed_date: data.closedDate || data.closed_date || null,
+      };
+
+      if (docId) {
+        const { error } = await window._supabase.from('customers').update(row).eq('id', docId);
+        if (error) throw error;
+        const idx = allCustomers.findIndex(c => c.id === docId);
+        if (idx !== -1) allCustomers[idx] = mapCustomerRow({ id: docId, ...row });
+        showToast('Data berhasil diperbarui', 'success');
+      } else {
+        const { data: inserted, error } = await window._supabase.from('customers').insert(row).select().single();
+        if (error) throw error;
+        allCustomers.unshift(mapCustomerRow(inserted));
+        showToast('Customer berhasil ditambahkan', 'success');
+      }
+      document.getElementById('formModal').classList.remove('open');
+      applyFilters(); updateStats(); populateFilters();
+    } catch (e) { console.error(e); showToast('Gagal menyimpan data', 'error'); }
+    finally { btn.textContent = 'Simpan'; btn.disabled = false; }
+  }
+
+  async function deleteCustomer(docId, name) {
+    if (!confirm(`Hapus customer "${name}"? Tindakan ini tidak dapat dibatalkan.`)) return;
+    try {
+      const { error } = await window._supabase.from('customers').delete().eq('id', docId);
+      if (error) throw error;
+      allCustomers = allCustomers.filter(c => c.id !== docId);
+      applyFilters(); updateStats(); populateFilters();
+      showToast(`Customer "${name}" dihapus`, 'success');
+    } catch (e) { showToast('Gagal menghapus data', 'error'); }
+  }
+
+  // ===== FORM =====
+  function v(id) { const el = document.getElementById(id); return el ? el.value.trim() : ''; }
+
+  function getFormData() {
+    // Collect multi-securities
+    const secCards = document.querySelectorAll('#secList .sec-card');
+    const securities = Array.from(secCards).map(card => {
+      const g = sel => { const el = card.querySelector(sel); return el ? el.value.trim() : ''; };
+      return {
+        sekuritasName:      g('.sf-sekuritasName'),
+        rdnBankName:        g('.sf-rdnBankName'),
+        rdnAccountNo:       g('.sf-rdnAccountNo'),
+
+        personalBankName:   g('.sf-personalBankName'),
+        personalAccountNo:  g('.sf-personalAccountNo'),
+        personalAccountName: g('.sf-personalAccountName'),
+      };
+    }).filter(s => s.sekuritasName || s.rdnAccountNo || s.kseiSingleID);
+
+    // For backward compat: also store flat fields from first entry
+    const first = securities[0] || {};
+    return {
+      clientID: v('fClientID'), clientName: v('fClientName'),
+      cifInvestorBirthDate: v('fBirthDate'), cifInvestorKTPNumber: v('fKTPNumber'),
+      npwp: v('fNPWP'), email: v('fEmail'), phone: v('fPhone'),
+      cifInvestorOccupation: v('fOccupation'), cifCompanyName: v('fCompanyName'),
+      cifInvestorNatureOfBusiness: v('fNatureOfBusiness'), cifInvestorPosition: v('fPosition'),
+      address: v('fAddress'),
+      // flat compat fields
+      bankAccountNo: first.rdnAccountNo || '', bankAccountName: first.personalAccountName || '',
+      savingsBankName: first.rdnBankName || '',
+      // KSEI/KPEI — single per investor, read from dedicated fields
+      kseiSingleID: v('fKSEISingleID'), kseiSubAccountNo: v('fKSEISubAccountNo'),
+      kpeiSubAccountNo: v('fKPEISubAccountNo'),
+      stpKSEISubAccountNo: v('fSTPKSEISubAccountNo'), stpKPEISubAccountNo: v('fSTPKPEISubAccountNo'),
+      // new array
+      securities,
+      salesPersonID: v('fSalesPersonID'), salesPersonName: v('fSalesPersonName'),
+      officeID: v('fOfficeID'), officeName: v('fOfficeName'), departmentID: v('fDepartmentID'),
+      clientStatus: v('fClientStatus'), clientStatusDescription: v('fClientStatusDescription'),
+      createdDate: v('fCreatedDate'), activeDate: v('fActiveDate'), closedDate: v('fClosedDate'),
+    };
+  }
+
+  function clearForm() {
+    ['fClientID','fClientName','fBirthDate','fKTPNumber','fNPWP','fEmail','fPhone',
+     'fOccupation','fCompanyName','fNatureOfBusiness','fPosition','fAddress',
+     'fKSEISingleID','fKSEISubAccountNo','fKPEISubAccountNo','fSTPKSEISubAccountNo','fSTPKPEISubAccountNo',
+     'fSalesPersonID','fSalesPersonName','fOfficeID','fOfficeName','fDepartmentID',
+     'fClientStatusDescription','fCreatedDate','fActiveDate','fClosedDate'].forEach(id => {
+       const el = document.getElementById(id); if (el) el.value = '';
+     });
+    document.getElementById('fClientStatus').value = 'Aktif';
+    document.getElementById('editDocId').value = '';
+    // clear securities
+    document.getElementById('secList').innerHTML = '';
+  }
+
+  function fillForm(c) {
+    const s = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
+    s('fClientID', c.clientID); s('fClientName', c.clientName); s('fBirthDate', c.cifInvestorBirthDate);
+    s('fKTPNumber', c.cifInvestorKTPNumber); s('fNPWP', c.npwp); s('fEmail', c.email); s('fPhone', c.phone);
+    s('fOccupation', c.cifInvestorOccupation); s('fCompanyName', c.cifCompanyName);
+    s('fNatureOfBusiness', c.cifInvestorNatureOfBusiness); s('fPosition', c.cifInvestorPosition); s('fAddress', c.address);
+    s('fKSEISingleID', c.kseiSingleID); s('fKSEISubAccountNo', c.kseiSubAccountNo);
+    s('fKPEISubAccountNo', c.kpeiSubAccountNo); s('fSTPKSEISubAccountNo', c.stpKSEISubAccountNo); s('fSTPKPEISubAccountNo', c.stpKPEISubAccountNo);
+    s('fSalesPersonID', c.salesPersonID); s('fSalesPersonName', c.salesPersonName);
+    s('fOfficeID', c.officeID); s('fOfficeName', c.officeName); s('fDepartmentID', c.departmentID);
+    s('fClientStatus', c.clientStatus || 'Aktif'); s('fClientStatusDescription', c.clientStatusDescription);
+    s('fCreatedDate', c.createdDate); s('fActiveDate', c.activeDate); s('fClosedDate', c.closedDate);
+
+    // Fill securities — support new array AND old flat fields
+    document.getElementById('secList').innerHTML = '';
+    const secArr = c.securities && c.securities.length ? c.securities : null;
+    if (secArr) {
+      secArr.forEach(sec => addSekuritas(sec));
+    } else if (c.bankAccountNo || c.kseiSingleID || c.savingsBankName) {
+      // migrate old flat data as single entry
+      addSekuritas({
+        sekuritasName: '',
+        rdnBankName: c.savingsBankName || '',
+        rdnAccountNo: c.bankAccountNo || '',
+
+        personalBankName: c.savingsBankName || '',
+        personalAccountNo: c.bankAccountNo || '',
+        personalAccountName: c.bankAccountName || '',
+      });
+    }
+  }
+
+  // ===== MULTI-SEKURITAS =====
+  let secCounter = 0;
+  const SEKURITAS_OPTIONS = ['Maybank','CGS iTrade','Mirae Asset','Mandiri Sekuritas','BNI Sekuritas',
+    'Sinarmas Sekuritas','Trimegah Sekuritas','MNC Sekuritas','Philip Sekuritas','Phintraco Sekuritas',
+    'RHB Sekuritas','Henan Putihrai','OCBC Sekuritas','Samuel Sekuritas','Lainnya'];
+
+  function buildSecuritasCard(idx, data = {}) {
+    const id = `sec${idx}`;
+    const sv = (field) => data[field] ? ` value="${esc(data[field])}"` : '';
+    const opts = SEKURITAS_OPTIONS.map(o =>
+      `<option${data.sekuritasName === o ? ' selected' : ''}>${o}</option>`).join('');
+    return `<div class="sec-card" id="${id}">
+      <div class="sec-card-header">
+        <div class="sec-card-label">
+          <span class="sec-badge">#${idx}</span>
+          Sekuritas
+        </div>
+        <button type="button" class="sec-remove-btn" title="Hapus sekuritas ini" onclick="removeSekuritas('${id}')">✕</button>
+      </div>
+      <div class="form-grid">
+        <div class="form-group full">
+          <label class="form-label">Nama Sekuritas <span class="req">*</span></label>
+          <select class="form-select sf-sekuritasName">
+            <option value="">— Pilih Sekuritas —</option>
+            ${opts}
+          </select>
+        </div>
+      </div>
+      <hr class="sec-divider"/>
+      <div style="font-size:0.68rem;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">📄 RDN (Rekening Dana Nasabah)</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Bank RDN</label>
+          <input class="form-input sf-rdnBankName" placeholder="BCA, BNI, Mandiri..."${sv('rdnBankName')}/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">No. Rekening RDN</label>
+          <input class="form-input mono sf-rdnAccountNo" placeholder="Nomor rekening RDN"${sv('rdnAccountNo')}/>
+        </div>
+      </div>
+      <hr class="sec-divider"/>
+      <div style="font-size:0.68rem;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">🏧 Rekening Pribadi (Penarikan)</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Nama Bank</label>
+          <input class="form-input sf-personalBankName" placeholder="BCA, Mandiri..."${sv('personalBankName')}/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">No. Rekening</label>
+          <input class="form-input mono sf-personalAccountNo" placeholder="Nomor rekening"${sv('personalAccountNo')}/>
+        </div>
+        <div class="form-group full">
+          <label class="form-label">Nama di Rekening</label>
+          <input class="form-input sf-personalAccountName" placeholder="Nama pemilik rekening"${sv('personalAccountName')}/>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  function addSekuritas(data = {}) {
+    secCounter++;
+    const list = document.getElementById('secList');
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = buildSecuritasCard(secCounter, data);
+    list.appendChild(wrapper.firstElementChild);
+    renumberSecCards();
+  }
+
+  function removeSekuritas(cardId) {
+    const card = document.getElementById(cardId);
+    if (card) card.remove();
+    renumberSecCards();
+  }
+
+  function renumberSecCards() {
+    document.querySelectorAll('#secList .sec-card').forEach((card, i) => {
+      const badge = card.querySelector('.sec-badge');
+      if (badge) badge.textContent = '#' + (i + 1);
+    });
+  }
+
+  function openAddModal() {
+    clearForm();
+    document.getElementById('formModalTitle').textContent = 'Tambah Customer';
+    document.getElementById('formModal').classList.add('open');
+  }
+
+  function openEditModal(id) {
+    const c = allCustomers.find(x => x.id === id);
+    if (!c) return;
+    document.getElementById('formModalTitle').textContent = 'Edit Customer';
+    document.getElementById('editDocId').value = id;
+    fillForm(c);
+    document.getElementById('formModal').classList.add('open');
+  }
+
+  function closeFormModal(e) { if (e.target === document.getElementById('formModal')) document.getElementById('formModal').classList.remove('open'); }
+
+  // ===== DETAIL VIEW =====
+  function openDetailModal(id) {
+    const c = allCustomers.find(x => x.id === id);
+    if (!c) return;
+    document.getElementById('detailModalTitle').textContent = c.clientName || '—';
+    document.getElementById('detailEditBtn').onclick = () => {
+      document.getElementById('detailModal').classList.remove('open');
+      openEditModal(id);
+    };
+    const di = (label, val, mono = false) =>
+      `<div class="d-item"><label>${label}</label><span class="${!val ? 'empty' : ''}" style="${mono && val ? 'font-family:Courier New,monospace;font-size:0.82rem' : ''}">${esc(val || '—')}</span></div>`;
+
+    document.getElementById('detailContent').innerHTML = `
+      <div class="detail-section">
+        <div class="detail-section-title">🪪 Identitas Klien</div>
+        <div class="detail-grid">
+          ${di('Client ID', c.clientID, true)}${di('Nama Lengkap', c.clientName)}${di('Tgl. Lahir', fmtDate(c.cifInvestorBirthDate))}
+          ${di('No. KTP (NIK)', c.cifInvestorKTPNumber, true)}${di('NPWP', c.npwp, true)}${di('Email', c.email)}
+          ${di('Telepon', c.phone)}${di('Pekerjaan', c.cifInvestorOccupation)}${di('Jabatan', c.cifInvestorPosition)}
+          ${di('Nama Perusahaan', c.cifCompanyName)}${di('Bidang Usaha', c.cifInvestorNatureOfBusiness)}
+        </div>
+        ${c.address ? `<div style="margin-top:12px;"><div class="d-item" style="grid-column:1/-1"><label>Alamat</label><span>${esc(c.address)}</span></div></div>` : ''}
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-title">🏦 Data Sekuritas & Rekening</div>
+        ${(function(){
+          const secArr = c.securities && c.securities.length ? c.securities : null;
+          const entries = secArr || (c.bankAccountNo || c.kseiSingleID ? [{
+            sekuritasName: '',
+            rdnBankName: c.savingsBankName||'', rdnAccountNo: c.bankAccountNo||'',
+            kseiSingleID: c.kseiSingleID||'', kseiSubAccountNo: c.kseiSubAccountNo||'',
+            kpeiSubAccountNo: c.kpeiSubAccountNo||'',
+            stpKSEISubAccountNo: c.stpKSEISubAccountNo||'', stpKPEISubAccountNo: c.stpKPEISubAccountNo||'',
+            personalBankName: c.savingsBankName||'', personalAccountNo: c.bankAccountNo||'',
+            personalAccountName: c.bankAccountName||'',
+          }] : []);
+          if (!entries.length) return '<div style="color:#ccc;font-style:italic;font-size:0.85rem;">Belum ada data sekuritas</div>';
+          return entries.map((s, idx) => `
+            <div class="det-sec-card">
+              <div class="det-sec-header">
+                <div class="det-sec-num">${idx+1}</div>
+                <div class="det-sec-name">${esc(s.sekuritasName || 'Sekuritas ' + (idx+1))}</div>
+              </div>
+              <div class="detail-grid">
+                ${di('Bank RDN', s.rdnBankName)}${di('No. Rekening RDN', s.rdnAccountNo, true)}
+              </div>
+              <div style="margin-top:10px;padding-top:10px;border-top:1px dashed #ede8ff;">
+                <div style="font-size:0.65rem;font-weight:700;color:#bbb;text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;">Rekening Pribadi</div>
+                <div class="detail-grid">
+                  ${di('Nama Bank', s.personalBankName)}${di('No. Rekening', s.personalAccountNo, true)}${di('Nama di Rekening', s.personalAccountName)}
+                </div>
+              </div>
+            </div>`).join('');
+        })()}
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-title">📋 KSEI / KPEI / STP</div>
+        <div class="detail-grid">
+          ${di('KSEI Single Investor ID', c.kseiSingleID, true)}${di('KSEI Sub Account', c.kseiSubAccountNo, true)}${di('KPEI Sub Account', c.kpeiSubAccountNo, true)}
+          ${di('STP KSEI Sub Acct', c.stpKSEISubAccountNo, true)}${di('STP KPEI Sub Acct', c.stpKPEISubAccountNo, true)}
+        </div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-title">🏢 Sales & Kantor</div>
+        <div class="detail-grid">
+          ${di('Sales Person ID', c.salesPersonID, true)}${di('Nama Sales', c.salesPersonName)}${di('Office ID', c.officeID, true)}
+          ${di('Nama Kantor', c.officeName)}${di('Department ID', c.departmentID, true)}
+        </div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-title">📅 Status & Tanggal</div>
+        <div class="detail-grid">
+          ${di('Status', c.clientStatus)}${di('Deskripsi Status', c.clientStatusDescription)}
+          ${di('Tgl. Dibuat', fmtDate(c.createdDate))}${di('Tgl. Aktif', fmtDate(c.activeDate))}${di('Tgl. Tutup', fmtDate(c.closedDate))}
+        </div>
+      </div>`;
+    document.getElementById('detailModal').classList.add('open');
+  }
+
+  function closeDetailModal(e) { if (e.target === document.getElementById('detailModal')) document.getElementById('detailModal').classList.remove('open'); }
+
+  // ===== FILTER & RENDER =====
+  function applyFilters() {
+    const search = document.getElementById('searchInput').value.toLowerCase().replace(/[.\-]/g,'');
+    const status = document.getElementById('filterStatus').value;
+    const sales = document.getElementById('filterSales').value;
+    const office = document.getElementById('filterOffice').value;
+
+    filteredCustomers = allCustomers.filter(c => {
+      const matchSearch = !search ||
+        (c.clientID||'').toLowerCase().includes(search) ||
+        (c.clientName||'').toLowerCase().includes(search) ||
+        (c.email||'').toLowerCase().includes(search) ||
+        (c.phone||'').includes(search) ||
+        (c.kseiSingleID||'').toLowerCase().includes(search) ||
+        (c.bankAccountNo||'').replace(/[.\-]/g,'').toLowerCase().includes(search) ||
+        (c.npwp||'').replace(/[.\-]/g,'').includes(search) ||
+        (c.cifInvestorKTPNumber||'').includes(search);
+      const matchStatus = !status || c.clientStatus === status;
+      const matchSales  = !sales  || c.salesPersonName === sales;
+      const matchOffice = !office || c.officeName === office;
+      return matchSearch && matchStatus && matchSales && matchOffice;
+    });
+    currentPage = 1;
+    applySortAndRender();
+  }
+
+  function applySortAndRender() {
+    if (sortField) {
+      filteredCustomers.sort((a, b) => {
+        const va = (a[sortField] || '').toLowerCase();
+        const vb = (b[sortField] || '').toLowerCase();
+        return sortDir === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va);
+      });
+    }
+    renderTable(filteredCustomers);
+  }
+
+  function toggleSort(field) {
+    if (sortField === field) {
+      if (sortDir === 'asc') sortDir = 'desc';
+      else if (sortDir === 'desc') { sortField = ''; sortDir = 'asc'; }
+    } else {
+      sortField = field;
+      sortDir = 'asc';
+    }
+    updateSortIcons();
+    currentPage = 1;
+    applySortAndRender();
+  }
+
+  function updateSortIcons() {
+    ['clientID', 'clientName'].forEach(f => {
+      const el = document.getElementById('sortIcon' + f.charAt(0).toUpperCase() + f.slice(1));
+      if (!el) return;
+      el.className = 'sort-icon ' + (sortField === f ? sortDir : 'none');
+    });
+  }
+
+  function renderTable(data) {
+    const tbody = document.getElementById('customerTableBody');
+    const total = data.length;
+    const start = (currentPage - 1) * PAGE_SIZE;
+    const end = Math.min(start + PAGE_SIZE, total);
+    const pageData = data.slice(start, end);
+
+    document.getElementById('tableInfo').textContent =
+      `Menampilkan ${pageData.length > 0 ? start + 1 : 0}–${end} dari ${total} data`;
+
+    if (pageData.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="10"><div class="empty-state"><div class="empty-icon">👥</div><p>Belum ada data customer</p></div></td></tr>`;
+      renderPagination(0, 0); return;
+    }
+
+    tbody.innerHTML = pageData.map((c, i) => {
+      const status = c.clientStatus || 'Aktif';
+      const statusClass =
+        status === 'Aktif'     ? 'badge-aktif' :
+        status === 'Open'      ? 'badge-open' :
+        status === 'Suspended' ? 'badge-suspend' :
+        status === 'Closed'    ? 'badge-closed' : 'badge-aktif';
+      const tglAktif = c.activeDate ? fmtDate(c.activeDate) : (c.createdDate ? fmtDate(c.createdDate) : '—');
+      const checked = selectedIds.has(c.id) ? 'checked' : '';
+
+      return `<tr onclick="openDetailModal('${c.id}')">
+        <td class="cb-cell" onclick="event.stopPropagation()">
+          <input type="checkbox" class="row-cb" data-id="${c.id}" ${checked} onchange="toggleRowSelect('${c.id}', this.checked)"/>
+        </td>
+        <td style="color:#bbb;font-size:0.78rem;">${start+i+1}</td>
+        <td><span style="font-family:'Courier New',monospace;font-size:0.8rem;color:#666;">${esc(c.clientID||'—')}</span></td>
+        <td>
+          <div style="font-weight:600;">${esc(c.clientName||'—')}</div>
+          <div style="font-size:0.72rem;color:#aaa;">${esc(c.email||'')}</div>
+        </td>
+        <td>
+          <div style="font-family:'Courier New',monospace;font-size:0.78rem;">${esc(c.kseiSingleID||'—')}</div>
+          <div style="font-family:'Courier New',monospace;font-size:0.7rem;color:#aaa;">${esc(c.bankAccountNo||'')}</div>
+        </td>
+        <td style="color:#555;">${esc(c.salesPersonName||'—')}</td>
+        <td style="font-size:0.82rem;color:#777;">${esc(c.officeName||'—')}</td>
+        <td>
+          <span class="badge ${statusClass}">${esc(status)}</span>
+          ${c.clientStatusDescription ? `<div style="font-size:0.68rem;color:#aaa;margin-top:3px;">${esc(c.clientStatusDescription)}</div>` : ''}
+        </td>
+        <td style="font-size:0.82rem;color:#888;">${tglAktif}</td>
+        <td onclick="event.stopPropagation()">
+          <div class="action-btns">
+            <button class="btn-icon" title="Edit" onclick="openEditModal('${c.id}')">✏️</button>
+            <button class="btn-icon del" title="Hapus" onclick="deleteCustomer('${c.id}','${esc(c.clientName||'')}')">🗑️</button>
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+
+    renderPagination(total, Math.ceil(total / PAGE_SIZE));
+    updateSelectAllState();
+  }
+
+  function renderPagination(total, totalPages) {
+    const pg = document.getElementById('pagination');
+    if (totalPages <= 1) { pg.innerHTML = ''; return; }
+    let html = '';
+    if (currentPage > 1) html += `<button class="pg-btn" onclick="goPage(${currentPage-1})">‹</button>`;
+    for (let p = Math.max(1, currentPage-2); p <= Math.min(totalPages, currentPage+2); p++)
+      html += `<button class="pg-btn ${p===currentPage?'active':''}" onclick="goPage(${p})">${p}</button>`;
+    if (currentPage < totalPages) html += `<button class="pg-btn" onclick="goPage(${currentPage+1})">›</button>`;
+    pg.innerHTML = html;
+  }
+
+  function goPage(p) { currentPage = p; renderTable(filteredCustomers); }
+
+  // ===== SELECTION & BULK DELETE =====
+  function toggleRowSelect(id, checked) {
+    if (checked) selectedIds.add(id);
+    else selectedIds.delete(id);
+    updateBulkBar();
+    updateSelectAllState();
+  }
+
+  function toggleSelectAll(checked) {
+    const pageData = filteredCustomers.slice((currentPage-1)*PAGE_SIZE, currentPage*PAGE_SIZE);
+    pageData.forEach(c => { if (checked) selectedIds.add(c.id); else selectedIds.delete(c.id); });
+    document.querySelectorAll('#customerTableBody .row-cb').forEach(cb => { cb.checked = checked; });
+    updateBulkBar();
+  }
+
+  function selectPageData() {
+    closeCbDropdown();
+    const pageData = filteredCustomers.slice((currentPage-1)*PAGE_SIZE, currentPage*PAGE_SIZE);
+    pageData.forEach(c => selectedIds.add(c.id));
+    document.querySelectorAll('#customerTableBody .row-cb').forEach(cb => { cb.checked = true; });
+    updateSelectAllState();
+    updateBulkBar();
+  }
+
+  function selectAllData() {
+    closeCbDropdown();
+    filteredCustomers.forEach(c => selectedIds.add(c.id));
+    document.querySelectorAll('#customerTableBody .row-cb').forEach(cb => { cb.checked = true; });
+    const cbAll = document.getElementById('cbSelectAll');
+    if (cbAll) { cbAll.checked = true; cbAll.indeterminate = false; }
+    updateBulkBar();
+    showToast(`Semua ${filteredCustomers.length} data dipilih`, 'info');
+  }
+
+  function toggleCbDropdown(e) {
+    e.stopPropagation();
+    const dd = document.getElementById('cbDropdown');
+    // Update counts
+    const pageCount = filteredCustomers.slice((currentPage-1)*PAGE_SIZE, currentPage*PAGE_SIZE).length;
+    document.getElementById('ddPageCount').textContent = pageCount;
+    document.getElementById('ddAllCount').textContent = filteredCustomers.length;
+    dd.classList.toggle('open');
+  }
+
+  function closeCbDropdown() {
+    const dd = document.getElementById('cbDropdown');
+    if (dd) dd.classList.remove('open');
+  }
+
+  // Close dropdown when clicking outside
+  document.addEventListener('click', function(e) {
+    if (!document.getElementById('cbHeaderWrap')?.contains(e.target)) closeCbDropdown();
+  });
+
+  function updateSelectAllState() {
+    const cbAll = document.getElementById('cbSelectAll');
+    if (!cbAll) return;
+    const pageData = filteredCustomers.slice((currentPage-1)*PAGE_SIZE, currentPage*PAGE_SIZE);
+    if (pageData.length === 0) { cbAll.checked = false; cbAll.indeterminate = false; return; }
+    const selectedOnPage = pageData.filter(c => selectedIds.has(c.id)).length;
+    if (selectedOnPage === 0) { cbAll.checked = false; cbAll.indeterminate = false; }
+    else if (selectedOnPage === pageData.length) { cbAll.checked = true; cbAll.indeterminate = false; }
+    else { cbAll.checked = false; cbAll.indeterminate = true; }
+  }
+
+  function updateBulkBar() {
+    const bar = document.getElementById('bulkBar');
+    document.getElementById('bulkCount').textContent = selectedIds.size;
+    bar.classList.toggle('visible', selectedIds.size > 0);
+  }
+
+  function clearSelection() {
+    closeCbDropdown();
+    selectedIds.clear();
+    document.querySelectorAll('#customerTableBody .row-cb').forEach(cb => cb.checked = false);
+    const cbAll = document.getElementById('cbSelectAll');
+    if (cbAll) { cbAll.checked = false; cbAll.indeterminate = false; }
+    updateBulkBar();
+  }
+
+  async function deleteSelected() {
+    if (selectedIds.size === 0) return;
+    const count = selectedIds.size;
+    if (!confirm(`Hapus ${count} nasabah yang dipilih? Tindakan ini tidak dapat dibatalkan.`)) return;
+    let success = 0, fail = 0;
+    for (const id of [...selectedIds]) {
+      try {
+        await window._supabase.from('customers').delete().eq('id', id);
+        allCustomers = allCustomers.filter(c => c.id !== id);
+        success++;
+      } catch (e) { console.error(e); fail++; }
+    }
+    selectedIds.clear();
+    applyFilters(); updateStats(); populateFilters(); updateBulkBar();
+    if (fail === 0) showToast(`${success} nasabah berhasil dihapus`, 'success');
+    else showToast(`${success} berhasil, ${fail} gagal dihapus`, 'error');
+  }
+
+  function updateStats() {
+    document.getElementById('statTotal').textContent   = allCustomers.length;
+    document.getElementById('statAktif').textContent   = allCustomers.filter(c => c.clientStatus === 'Aktif').length;
+    document.getElementById('statOpen').textContent    = allCustomers.filter(c => c.clientStatus === 'Open').length;
+    document.getElementById('statSuspend').textContent = allCustomers.filter(c => c.clientStatus === 'Suspended').length;
+    document.getElementById('statClosed').textContent  = allCustomers.filter(c => c.clientStatus === 'Closed').length;
+  }
+
+  function populateFilters() {
+    const populate = (selId, vals, curVal, placeholder) => {
+      const sel = document.getElementById(selId);
+      sel.innerHTML = `<option value="">${placeholder}</option>` +
+        vals.map(v => `<option value="${esc(v)}" ${v===curVal?'selected':''}>${esc(v)}</option>`).join('');
+    };
+    const curS = document.getElementById('filterSales').value;
+    const curO = document.getElementById('filterOffice').value;
+    populate('filterSales',  [...new Set(allCustomers.map(c=>c.salesPersonName).filter(Boolean))].sort(), curS, 'Semua Sales');
+    populate('filterOffice', [...new Set(allCustomers.map(c=>c.officeName).filter(Boolean))].sort(), curO, 'Semua Kantor');
+  }
+
+  // ===== CSV IMPORT =====
+  function openUploadModal() {
+    csvRows = [];
+    document.getElementById('csvPreviewWrap').style.display = 'none';
+    document.getElementById('uploadSaveBtn').disabled = true;
+    document.getElementById('csvFileInput').value = '';
+    document.getElementById('uploadModal').classList.add('open');
+  }
+  function closeUploadModal(e) { if (e.target===document.getElementById('uploadModal')) document.getElementById('uploadModal').classList.remove('open'); }
+  function handleDragOver(e) { e.preventDefault(); document.getElementById('uploadZone').classList.add('dragover'); }
+  function handleDragLeave() { document.getElementById('uploadZone').classList.remove('dragover'); }
+  function handleDrop(e) { e.preventDefault(); document.getElementById('uploadZone').classList.remove('dragover'); const f=e.dataTransfer.files[0]; if(f) processCSVFile(f); }
+  function handleCSVFile(e) { const f=e.target.files[0]; if(f) processCSVFile(f); }
+
+  // Mapper: mendukung header sistem (PascalCase) & manual (lowercase/snake_case)
+  function mapRow(obj) {
+    const g = (...keys) => { for (const k of keys) { if (obj[k]!==undefined && obj[k]!=='') return (obj[k]||'').trim(); } return ''; };
+    const raw = {
+      clientID:                    g('clientid','ClientID','client_id'),
+      clientName:                  g('clientname','ClientName','client_name','nama'),
+      cifInvestorBirthDate:        g('cifinvestorbirthdate','CIFInvestorBirthDate','tgl_lahir','birthdate'),
+      officeID:                    g('officeid','OfficeID','office_id'),
+      officeName:                  g('officename','OfficeName','kantor'),
+      departmentID:                g('departmentid','DepartmentID','dept_id'),
+      salesPersonID:               g('salespersonid','SalesPersonID','sales_id'),
+      salesPersonName:             g('salespersonname','SalesPersonName','sales_pic','sales'),
+      bankAccountID:               g('bankaccountid','BankAccountID'),
+      bankAccountNo:               g('bankaccountno','BankAccountNo','rdn','no_rekening'),
+      bankAccountName:             g('bankaccountname','BankAccountName','nama_rekening'),
+      kseiSingleID:                g('kseisingleid','KSEISingleID','sid'),
+      kseiSubAccountNo:            g('kseisubaccountno','KSEISubAccountNo'),
+      kpeiSubAccountNo:            g('kpeisubaccountno','KPEISubAccountNo'),
+      stpKSEISubAccountNo:         g('stpkseisubaccountno','STPKSEISubAccountNo'),
+      stpKPEISubAccountNo:         g('stpkpeisubaccountno','STPKPEISubAccountNo'),
+      savingsID:                   g('savingsid','SavingsID'),
+      savingsBankID:               g('savingsbankid','SavingsBankID'),
+      savingsBankName:             g('savingsbankname','SavingsBankName','bank'),
+      npwp:                        g('npwp','NPWP'),
+      address:                     g('address','Address','alamat'),
+      email:                       g('email','Email'),
+      phone:                       g('phone','Phone','telepon','no_telepon'),
+      cifInvestorKTPNumber:        g('cifinvestorktpnumber','CIFInvestorKTPNumber','ktp','nik'),
+      cifInvestorOccupation:       g('cifinvestoroccupation','CIFInvestorOccupation','pekerjaan'),
+      cifCompanyName:              g('cifcompanyname','CIFCompanyName','perusahaan'),
+      cifInvestorNatureOfBusiness: g('cifinvestornatureofbusiness','CIFInvestorNatureOfBusiness','bidang_usaha'),
+      cifInvestorPosition:         g('cifinvestorposition','CIFInvestorPosition','jabatan'),
+      clientStatusDescription:     g('clientstatusdescription','ClientStatusDescription','status_desc'),
+      closedDate:                  g('closeddate','ClosedDate','tgl_tutup'),
+      createdDate:                 g('createddate','CreatedDate','tgl_daftar'),
+      activeDate:                  g('activedate','ActiveDate','tgl_aktif'),
+    };
+    // Normalize status — ClientStatusDescription dari sistem bisa jadi "Active", "Inactive", dll
+    const rawStatus = g('clientstatus','ClientStatus','status') || raw.clientStatusDescription;
+    raw.clientStatus = normalizeStatus(rawStatus);
+    return raw;
+  }
+
+  function normalizeStatus(s) {
+    if (!s) return 'Aktif';
+    const r = s.toLowerCase().trim();
+    if (r === 'active' || r === 'aktif' || r === 'act' || r === 'a') return 'Aktif';
+    if (r === 'open' || r === 'op') return 'Open';
+    if (r.includes('suspend')) return 'Suspended';
+    if (r.includes('closed') || r.includes('tutup') || r === 'close') return 'Closed';
+    return 'Aktif';
+  }
+
+  function processCSVFile(file) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const lines = e.target.result.trim().split('\n').filter(l => l.trim());
+      if (lines.length < 2) { showToast('File CSV kosong atau tidak valid', 'error'); return; }
+      const headers = lines[0].split(',').map(h => h.trim().replace(/"/g,''));
+      const headersLower = headers.map(h => h.toLowerCase());
+      csvRows = lines.slice(1).map(line => {
+        const vals = parseCSVLine(line);
+        const obj = {};
+        headers.forEach((h, i) => { obj[h] = vals[i]||''; obj[headersLower[i]] = vals[i]||''; });
+        return mapRow(obj);
+      }).filter(r => r.clientName || r.clientID);
+      renderCSVPreview();
+      document.getElementById('uploadSaveBtn').disabled = csvRows.length === 0;
+    };
+    reader.readAsText(file);
+  }
+
+  function parseCSVLine(line) {
+    const result = []; let cur = '', inQ = false;
+    for (const ch of line) {
+      if (ch === '"') { inQ = !inQ; }
+      else if (ch === ',' && !inQ) { result.push(cur); cur = ''; }
+      else cur += ch;
+    }
+    result.push(cur);
+    return result;
+  }
+
+  function renderCSVPreview() {
+    document.getElementById('csvPreviewInfo').textContent = `${csvRows.length} data ditemukan. Preview 5 baris pertama:`;
+    const preview = csvRows.slice(0, 5);
+    document.getElementById('csvPreview').innerHTML = `<table>
+      <thead><tr><th>Client ID</th><th>Nama</th><th>KSEI Single ID</th><th>No. Rekening</th><th>Sales</th><th>Status</th></tr></thead>
+      <tbody>${preview.map(r=>`<tr><td>${esc(r.clientID)}</td><td>${esc(r.clientName)}</td><td>${esc(r.kseiSingleID)}</td><td>${esc(r.bankAccountNo)}</td><td>${esc(r.salesPersonName)}</td><td>${esc(r.clientStatus)}</td></tr>`).join('')}</tbody>
+    </table>`;
+    document.getElementById('csvPreviewWrap').style.display = 'block';
+  }
+
+  // Helper: parse date from CSV (supports M/D/YYYY, YYYY-MM-DD, etc)
+  function parseDateField(val) {
+    if (!val || val.trim() === '') return null;
+    val = val.trim();
+    // Already ISO format
+    if (/^\d{4}-\d{2}-\d{2}/.test(val)) return val.slice(0, 10);
+    // M/D/YYYY or MM/DD/YYYY format
+    const parts = val.split('/');
+    if (parts.length === 3) {
+      const [m, d, y] = parts;
+      const year = y.length === 2 ? '20' + y : y;
+      return `${year}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`;
+    }
+    return null;
+  }
+
+  async function importCSV() {
+    if (!csvRows.length) return;
+    const btn = document.getElementById('uploadSaveBtn');
+    btn.textContent = 'Mengimport...'; btn.disabled = true;
+    try {
+      let success = 0, errors = [];
+      for (const row of csvRows) {
+        // Map camelCase CSV fields → snake_case Supabase columns
+        const supaRow = {
+          client_id:                 row.clientID || null,
+          client_name:               row.clientName || null,
+          birth_date:                parseDateField(row.cifInvestorBirthDate),
+          ktp_number:                row.cifInvestorKTPNumber || null,
+          npwp:                      row.npwp || null,
+          email:                     row.email || null,
+          phone:                     row.phone || null,
+          occupation:                row.cifInvestorOccupation || null,
+          company_name:              row.cifCompanyName || null,
+          nature_of_business:        row.cifInvestorNatureOfBusiness || null,
+          position:                  row.cifInvestorPosition || null,
+          address:                   row.address || null,
+          ksei_single_id:            row.kseiSingleID || null,
+          ksei_sub_account_no:       row.kseiSubAccountNo || null,
+          kpei_sub_account_no:       row.kpeiSubAccountNo || null,
+          stp_ksei_sub_account_no:   row.stpKSEISubAccountNo || null,
+          stp_kpei_sub_account_no:   row.stpKPEISubAccountNo || null,
+          sales_person_name:         row.salesPersonName || null,
+          office_name:               row.officeName || null,
+          client_status:             row.clientStatus || 'Aktif',
+          client_status_description: row.clientStatusDescription || null,
+          active_date:               parseDateField(row.activeDate),
+          closed_date:               parseDateField(row.closedDate),
+        };
+        // Remove null/empty values to avoid constraint issues
+        Object.keys(supaRow).forEach(k => { if (supaRow[k] === null || supaRow[k] === '') delete supaRow[k]; });
+        // Ensure client_name exists
+        if (!supaRow.client_name) continue;
+
+        let result;
+        if (supaRow.client_id) {
+          // Upsert jika ada client_id (update jika sudah ada)
+          result = await window._supabase
+            .from('customers')
+            .upsert(supaRow, { onConflict: 'client_id' })
+            .select()
+            .single();
+        } else {
+          // Insert biasa jika tidak ada client_id
+          result = await window._supabase
+            .from('customers')
+            .insert(supaRow)
+            .select()
+            .single();
+        }
+        const { data: inserted, error } = result;
+        if (!error && inserted) {
+          // Insert securities data (RDN + bank pribadi) ke customer_securities
+          const secRow = {
+            customer_id: inserted.id,
+            sekuritas_name: 'Maybank',
+            rdn_bank_name: row.bankAccountID || null,
+            rdn_account_no: row.bankAccountNo || null,
+            sec_client_id: row.clientID || null,
+            sid: row.kseiSingleID || null,
+            personal_bank_name: row.savingsBankName || row.bankAccountID || null,
+            personal_account_no: row.savingsID || row.bankAccountNo || null,
+            personal_account_name: row.bankAccountName || row.clientName || null,
+          };
+          // Only insert if there's meaningful data
+          if (secRow.rdn_bank_name || secRow.rdn_account_no || secRow.sid) {
+            await window._supabase.from('customer_securities').insert(secRow);
+          }
+
+          // Map with extra fields for display
+          const mapped = mapCustomerRow(inserted);
+          mapped.bankAccountNo = row.bankAccountNo || '';
+          mapped.bankAccountID = row.bankAccountID || '';
+          mapped.bankAccountName = row.bankAccountName || '';
+          allCustomers.unshift(mapped);
+          success++;
+        } else if (error) {
+          errors.push(`${row.clientID || row.clientName}: ${error.message}`);
+        }
+      }
+      document.getElementById('uploadModal').classList.remove('open');
+      applyFilters(); updateStats(); populateFilters();
+      if (success > 0) showToast(`${success} customer berhasil diimport`, 'success');
+      if (errors.length > 0) {
+        console.warn('Import errors:', errors);
+        if (success === 0) showToast(`Gagal import: ${errors[0]}`, 'error');
+      }
+    } catch (e) { console.error(e); showToast('Gagal import: ' + e.message, 'error'); }
+    finally { btn.textContent = 'Import Data'; btn.disabled = false; }
+  }
+
+  function downloadTemplate() {
+    const H = ['ClientID','ClientName','CIFInvestorBirthDate','OfficeID','OfficeName','DepartmentID',
+      'SalesPersonID','SalesPersonName','BankAccountID','BankAccountNo','BankAccountName',
+      'KSEISingleID','KSEISubAccountNo','KPEISubAccountNo','STPKSEISubAccountNo','STPKPEISubAccountNo',
+      'SavingsID','SavingsBankID','SavingsBankName','NPWP','Address','Email','Phone',
+      'CIFInvestorKTPNumber','CIFInvestorOccupation','CIFCompanyName','CIFInvestorNatureOfBusiness',
+      'CIFInvestorPosition','ClientStatusDescription','ClosedDate','CreatedDate','ActiveDate'];
+    const E = ['C001234','Budi Santoso','1990-05-15','OFF01','Kantor Pusat Medan','DEPT01',
+      'S001','Razaq Arafi','BA001','001-123456','Budi Santoso',
+      'IDD123456789','SUB001','KPEI001','STPK001','STPKP001',
+      'SAV001','BNK01','BCA','12.345.678.9-012.000','Jl. Sudirman No.1 Jakarta','budi@example.com','081234567890',
+      '3271012345678901','Karyawan Swasta','PT Contoh Maju','Teknologi','Manajer',
+      'Active','','2024-01-10','2024-01-15'];
+    const blob = new Blob([H.join(',')+'\n'+E.join(',')], {type:'text/csv'});
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+    a.download = 'template_customer_fawzpro.csv'; a.click();
+  }
+
+  // ===== EXPORT CSV =====
+  function exportCSV() {
+    const data = filteredCustomers.length ? filteredCustomers : allCustomers;
+    if (!data.length) { showToast('Tidak ada data untuk diexport', 'error'); return; }
+    const H = ['ClientID','ClientName','CIFInvestorBirthDate','OfficeID','OfficeName','DepartmentID',
+      'SalesPersonID','SalesPersonName','BankAccountID','BankAccountNo','BankAccountName',
+      'KSEISingleID','KSEISubAccountNo','KPEISubAccountNo','STPKSEISubAccountNo','STPKPEISubAccountNo',
+      'SavingsID','SavingsBankID','SavingsBankName','NPWP','Address','Email','Phone',
+      'CIFInvestorKTPNumber','CIFInvestorOccupation','CIFCompanyName','CIFInvestorNatureOfBusiness',
+      'CIFInvestorPosition','ClientStatusDescription','ClientStatus','ClosedDate','CreatedDate','ActiveDate'];
+    const K = ['clientID','clientName','cifInvestorBirthDate','officeID','officeName','departmentID',
+      'salesPersonID','salesPersonName','bankAccountID','bankAccountNo','bankAccountName',
+      'kseiSingleID','kseiSubAccountNo','kpeiSubAccountNo','stpKSEISubAccountNo','stpKPEISubAccountNo',
+      'savingsID','savingsBankID','savingsBankName','npwp','address','email','phone',
+      'cifInvestorKTPNumber','cifInvestorOccupation','cifCompanyName','cifInvestorNatureOfBusiness',
+      'cifInvestorPosition','clientStatusDescription','clientStatus','closedDate','createdDate','activeDate'];
+    const rows = data.map(c => K.map(k => `"${(c[k]||'').toString().replace(/"/g,'""')}"`).join(','));
+    const csv = [H.join(','), ...rows].join('\n');
+    const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+    a.download = `customer_fawzpro_${new Date().toISOString().slice(0,10)}.csv`; a.click();
+    showToast(`${data.length} data berhasil diexport`, 'success');
+  }
+
+  // ===== UTILS =====
+  function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function fmtDate(d) {
+    if (!d) return '';
+    try { return new Date(d).toLocaleDateString('id-ID', {day:'2-digit',month:'short',year:'numeric'}); }
+    catch { return d; }
+  }
+
+  function showToast(msg, type='info') {
+    const t = document.createElement('div');
+    t.className = `toast toast-${type}`; t.textContent = msg;
+    document.getElementById('toastContainer').appendChild(t);
+    setTimeout(() => t.remove(), 3500);
+  }
+
+  // BOOT
+  (function() {
+    const raw = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember');
+    if (!raw) { window.location.replace('login.html'); return; }
+    sessionStorage.setItem('fawz_user', raw);
+    // ── ROLE GUARD ──
+    const _gu = JSON.parse(raw);
+    if (!['head_account','admin','treasury'].includes(_gu.role)) { window.location.replace('dashboard.html'); return; }
+  })();
+</script>
+</body>
+</html>

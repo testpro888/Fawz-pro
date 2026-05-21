@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Fawz Pro | Profil Saya</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+
+  <!-- Supabase SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script>
+    const SUPABASE_URL = 'https://yhmrfluehibfapvtxcfi.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlobXJmbHVlaGliZmFwdnR4Y2ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNjEzODUsImV4cCI6MjA5NDczNzM4NX0.se_H4n_eLsf81d_1GH5sqsPCpX89MHewlPuuNkY6qcU';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    window._supabase = supabase;
+    window._supabaseReady = true;
+  </script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --navy: #0d0d2b; --gold: #f5a623; --gold-light: #ffc857;
+      --nav-h: 68px; --bg: #f4f5fb;
+    }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); min-height: 100vh; padding-top: var(--nav-h); }
+
+    .page-container { max-width: 900px; margin: 0 auto; padding: 40px 32px 80px; }
+
+    @keyframes fadeUp { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
+
+    /* Header */
+    .page-header { margin-bottom: 28px; animation: fadeUp 0.4s ease both; }
+    .page-header h1 { font-size: 2rem; font-weight: 900; color: var(--navy); line-height: 1.1; margin-bottom: 6px; }
+    .page-header-underline { width: 48px; height: 3px; background: linear-gradient(90deg, var(--gold), var(--gold-light)); border-radius: 2px; margin-bottom: 8px; }
+    .page-header p { color: #888; font-size: 0.9rem; }
+
+    /* Profile Hero */
+    .profile-hero {
+      background: linear-gradient(135deg, var(--navy) 0%, #1a0e4a 60%, #0d0d2b 100%);
+      border-radius: 20px; padding: 36px 40px;
+      display: flex; align-items: center; gap: 28px;
+      margin-bottom: 20px; position: relative; overflow: hidden;
+      box-shadow: 0 8px 32px rgba(13,13,43,0.25);
+      animation: fadeUp 0.4s 0.05s ease both;
+    }
+    .profile-hero::before { content:''; position:absolute; width:260px; height:260px; border-radius:50%; background:rgba(245,166,35,0.07); right:-60px; top:-80px; }
+    .hero-avatar {
+      width: 88px; height: 88px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--gold), var(--gold-light));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2.4rem; font-weight: 700; color: #fff;
+      flex-shrink: 0; box-shadow: 0 0 0 4px rgba(245,166,35,0.25);
+      position: relative; z-index: 1; overflow: hidden;
+    }
+    .hero-avatar img { width:100%; height:100%; object-fit:cover; border-radius:50%; }
+    .hero-info { position: relative; z-index: 1; }
+    .hero-name { font-size: 1.6rem; font-weight: 700; color: #fff; line-height: 1.2; margin-bottom: 4px; }
+    .hero-role-badge {
+      display: inline-block; background: rgba(245,166,35,0.2); border: 1px solid rgba(245,166,35,0.4);
+      color: var(--gold); font-size: 0.72rem; font-weight: 700;
+      padding: 4px 12px; border-radius: 20px; letter-spacing: 0.8px;
+      text-transform: uppercase; margin-bottom: 8px;
+    }
+    .hero-username { color: rgba(255,255,255,0.45); font-size: 0.82rem; }
+
+    /* Grid & Cards */
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+    .card { background: #fff; border-radius: 16px; padding: 24px 28px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); animation: fadeUp 0.4s ease both; }
+    .section-card { background: #fff; border-radius: 16px; padding: 28px 32px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); margin-bottom: 20px; animation: fadeUp 0.4s ease both; }
+
+    .card-label { font-size: 0.68rem; font-weight: 700; color: #bbb; text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+    .card-label::after { content: ''; flex: 1; height: 1px; background: #f0f0f5; }
+
+    .info-row { margin-bottom: 14px; }
+    .info-row:last-child { margin-bottom: 0; }
+    .info-key { font-size: 0.7rem; font-weight: 600; color: #bbb; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px; }
+    .info-val { font-size: 0.92rem; font-weight: 500; color: var(--navy); }
+
+    /* Form */
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-label { font-size: 0.72rem; font-weight: 600; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
+    .form-input, .form-select {
+      padding: 11px 14px; border: 1.5px solid #e0e0ef; border-radius: 10px;
+      font-family: 'Inter', sans-serif; font-size: 0.9rem; color: var(--navy);
+      outline: none; transition: border 0.2s, box-shadow 0.2s; background: #fafafa;
+    }
+    .form-input:focus, .form-select:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(245,166,35,0.1); background: #fff; }
+    .form-input::placeholder { color: #ccc; }
+    .form-input:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .form-feedback { font-size: 0.82rem; padding: 10px 14px; border-radius: 8px; margin-top: 8px; display: none; }
+    .form-feedback.success { background: #e8f8f0; color: #27ae60; display: block; }
+    .form-feedback.error   { background: #fff0f0; color: #e74c3c; display: block; }
+    .form-feedback.info    { background: #eef4ff; color: #3b6fd4; display: block; }
+
+    /* Buttons */
+    .btn-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .btn-primary {
+      padding: 11px 26px; background: linear-gradient(135deg, var(--gold), #e8931a);
+      border: none; border-radius: 10px; cursor: pointer;
+      font-family: 'Inter', sans-serif; font-size: 0.88rem; font-weight: 600; color: #fff;
+      box-shadow: 0 4px 14px rgba(245,166,35,0.35); transition: transform 0.15s, box-shadow 0.15s;
+      display: inline-flex; align-items: center; gap: 6px;
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(245,166,35,0.45); }
+    .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+    .btn-ghost { padding: 11px 20px; border: 1.5px solid #e0e0ef; border-radius: 10px; background: none; cursor: pointer; font-family: 'Inter', sans-serif; font-size: 0.88rem; color: #666; transition: border-color 0.15s; }
+    .btn-ghost:hover { border-color: #bbb; }
+    .btn-danger-ghost { padding: 11px 20px; border: 1.5px solid #e74c3c; border-radius: 10px; background: none; cursor: pointer; font-family: 'Inter', sans-serif; font-size: 0.85rem; font-weight: 600; color: #e74c3c; transition: background 0.15s, color 0.15s; }
+    .btn-danger-ghost:hover { background: #e74c3c; color: #fff; }
+
+    /* Account list */
+    .account-list { display: flex; flex-direction: column; gap: 8px; }
+    .account-item { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-radius: 12px; background: #fafafa; border: 1.5px solid transparent; transition: border-color 0.15s; }
+    .account-item:hover { background: #f5f5fb; border-color: #e8e8f5; }
+    .acc-left { display: flex; align-items: center; gap: 12px; }
+    .acc-avatar { width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, var(--navy), #1a0e4a); display: flex; align-items: center; justify-content: center; font-size: 0.9rem; font-weight: 700; color: var(--gold); flex-shrink: 0; }
+    .acc-name { font-weight: 600; font-size: 0.88rem; color: var(--navy); }
+    .acc-username { font-size: 0.74rem; color: #aaa; margin-top: 1px; }
+    .acc-right { display: flex; align-items: center; gap: 8px; }
+    .acc-role { font-size: 0.7rem; font-weight: 700; padding: 3px 10px; border-radius: 20px; background: #f0f0f5; color: #666; }
+    .acc-role.head_account { background: rgba(245,166,35,0.15); color: #b87e10; }
+    .acc-role.admin   { background: rgba(74,108,223,0.1);  color: #4a6cdf; }
+    .acc-role.sales   { background: rgba(39,174,96,0.12);  color: #1e8449; }
+    .acc-role.treasury{ background: rgba(142,68,173,0.1);  color: #7d3c98; }
+    .self-badge { font-size: 0.65rem; font-weight: 700; background: rgba(245,166,35,0.15); color: var(--gold); padding: 2px 7px; border-radius: 20px; }
+    .btn-del { width: 30px; height: 30px; border-radius: 8px; border: none; background: #fff0f0; color: #e74c3c; cursor: pointer; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; transition: background 0.15s; }
+    .btn-del:hover { background: #e74c3c; color: #fff; }
+    .account-item.is-self .btn-del { opacity: 0.2; pointer-events: none; }
+
+    .add-form-wrapper { margin-top: 20px; background: #fafafa; border-radius: 12px; padding: 20px 22px; border: 1.5px dashed #ddd; display: none; }
+    .add-form-wrapper.open { display: block; }
+    .add-form-title { font-size: 0.82rem; font-weight: 700; color: #555; margin-bottom: 16px; }
+
+    /* Loading state */
+    .skeleton { background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%); background-size: 200% 100%; animation: shimmer 1.2s infinite; border-radius: 6px; }
+    @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+    /* Spinner */
+    .mini-spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.4); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Danger */
+    .danger-card { background: #fff; border-radius: 16px; padding: 22px 28px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); border: 1.5px solid #ffe0e0; display: flex; align-items: center; justify-content: space-between; gap: 20px; animation: fadeUp 0.4s 0.3s ease both; }
+    .danger-info h4 { font-size: 0.92rem; font-weight: 600; color: #c0392b; margin-bottom: 4px; }
+    .danger-info p  { font-size: 0.78rem; color: #aaa; }
+
+    @media (max-width: 768px) {
+      .page-container { padding: 24px 16px 60px; }
+      .profile-hero { flex-direction: column; text-align: center; padding: 28px 24px; }
+      .info-grid, .form-grid { grid-template-columns: 1fr; }
+      .danger-card { flex-direction: column; align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<div id="navbar-placeholder"></div>
+<script src="navbar.js"></script>
+
+<div class="page-container">
+
+  <!-- Header -->
+  <div class="page-header">
+    <h1>Profil Saya</h1>
+    <div class="page-header-underline"></div>
+    <p>Informasi akun, keamanan, dan pengelolaan pengguna</p>
+  </div>
+
+  <!-- Hero Card -->
+  <div class="profile-hero">
+    <div class="hero-avatar" id="heroAvatar">?</div>
+    <div class="hero-info">
+      <div class="hero-name"       id="heroName">—</div>
+      <div class="hero-role-badge" id="heroRole">—</div>
+      <div class="hero-username"   id="heroUsername">—</div>
+    </div>
+  </div>
+
+  <!-- Info Grid -->
+  <div class="info-grid">
+    <div class="card" style="animation-delay:0.1s">
+      <div class="card-label">🪪 Informasi Akun</div>
+      <div class="info-row"><div class="info-key">Nama Lengkap</div><div class="info-val" id="infoName">—</div></div>
+      <div class="info-row"><div class="info-key">Username</div><div class="info-val" id="infoUsername">—</div></div>
+      <div class="info-row"><div class="info-key">Role</div><div class="info-val" id="infoRole">—</div></div>
+    </div>
+    <div class="card" style="animation-delay:0.15s">
+      <div class="card-label">🔒 Status Sesi</div>
+      <div class="info-row"><div class="info-key">Status</div><div class="info-val" style="color:#27ae60;">● Aktif</div></div>
+      <div class="info-row"><div class="info-key">Login Pukul</div><div class="info-val" id="infoSession">—</div></div>
+      <div class="info-row"><div class="info-key">Hari Ini</div><div class="info-val" id="infoDate">—</div></div>
+    </div>
+  </div>
+
+  <!-- Ganti Password -->
+  <div class="section-card" style="animation-delay:0.2s">
+    <div class="card-label">🔑 Ganti Password</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label">Password Lama</label>
+        <input class="form-input" type="password" id="oldPass" placeholder="Password saat ini"/>
+      </div>
+      <div></div>
+      <div class="form-group">
+        <label class="form-label">Password Baru</label>
+        <input class="form-input" type="password" id="newPass" placeholder="Minimal 6 karakter"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Konfirmasi Password Baru</label>
+        <input class="form-input" type="password" id="confirmPass" placeholder="Ulangi password baru"/>
+      </div>
+    </div>
+    <div class="form-feedback" id="passFeedback"></div>
+    <div class="btn-row" style="margin-top:16px;">
+      <button class="btn-primary" id="btnSavePass" onclick="changePassword()">Simpan Password</button>
+      <button class="btn-ghost" onclick="clearPassForm()">Batal</button>
+    </div>
+  </div>
+
+  <!-- Kelola Akun — hanya head_account -->
+  <div class="section-card" id="kelolaSection" style="display:none; animation-delay:0.24s;">
+    <div class="card-label">👥 Kelola Akun Pengguna</div>
+    <div id="accountListWrap">
+      <div id="accountList" class="account-list"></div>
+    </div>
+    <div class="form-feedback" id="accFeedback" style="margin-top:12px;"></div>
+    <div style="margin-top:18px;">
+      <button class="btn-primary" onclick="toggleAddForm()">+ Tambah Akun Baru</button>
+    </div>
+
+    <div class="add-form-wrapper" id="addFormWrapper">
+      <div class="add-form-title">📋 Data Akun Baru</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Nama Lengkap</label>
+          <input class="form-input" id="newName" placeholder="Nama Lengkap"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Username</label>
+          <input class="form-input" id="newUsername" placeholder="username unik"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input class="form-input" type="password" id="newAccPass" placeholder="Minimal 6 karakter"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Role</label>
+          <select class="form-select" id="newRole">
+            <option value="sales">Sales</option>
+            <option value="admin">Admin</option>
+            <option value="treasury">Treasury</option>
+          </select>
+          <!-- head_account tidak bisa membuat head_account lain -->
+        </div>
+      </div>
+      <div class="form-feedback" id="addFeedback"></div>
+      <div class="btn-row" style="margin-top:16px;">
+        <button class="btn-primary" id="btnCreateAcc" onclick="saveAccount()">Buat Akun</button>
+        <button class="btn-ghost" onclick="toggleAddForm()">Batal</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Logout -->
+  <div class="danger-card">
+    <div class="danger-info">
+      <h4>🚪 Keluar dari Akun</h4>
+      <p>Sesi akan dihapus dan Anda diarahkan ke halaman login.</p>
+    </div>
+    <button class="btn-danger-ghost" onclick="doLogout()">Keluar Sekarang</button>
+  </div>
+
+</div>
+
+<script>
+  const ROLE_LABELS = {
+    head_account: 'Head Account', admin: 'Admin', sales: 'Sales', treasury: 'Treasury'
+  };
+
+  let curUser = null;
+
+  // ===== WAIT SUPABASE =====
+  async function waitSupabase(ms = 6000) {
+    let waited = 0;
+    while (!window._supabaseReady && waited < ms) {
+      await new Promise(r => setTimeout(r, 100));
+      waited += 100;
+    }
+    return window._supabaseReady;
+  }
+
+  // ===== INIT =====
+  async function initProfile() {
+    const raw = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember');
+    if (!raw) { window.location.href = 'login.html'; return; }
+    sessionStorage.setItem('fawz_user', raw);
+    curUser = JSON.parse(raw);
+
+    const roleName = ROLE_LABELS[curUser.role] || curUser.role;
+    const initial  = (curUser.name || 'U')[0].toUpperCase();
+
+    // Hero
+    document.getElementById('heroAvatar').textContent   = initial;
+    document.getElementById('heroName').textContent     = curUser.name || '—';
+    document.getElementById('heroRole').textContent     = roleName;
+    document.getElementById('heroUsername').textContent = '@' + (curUser.username || '—');
+    document.getElementById('infoName').textContent     = curUser.name || '—';
+    document.getElementById('infoUsername').textContent = curUser.username || '—';
+    document.getElementById('infoRole').textContent     = roleName;
+
+    const now = new Date();
+    document.getElementById('infoSession').textContent = now.toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit' });
+    document.getElementById('infoDate').textContent    = now.toLocaleDateString('id-ID', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+
+    // Kelola Akun hanya head_account
+    if (curUser.role === 'head_account') {
+      document.getElementById('kelolaSection').style.display = 'block';
+      await loadAccountList();
+      if (window.location.hash === '#kelola') {
+        setTimeout(() => document.getElementById('kelolaSection').scrollIntoView({ behavior:'smooth', block:'start' }), 400);
+      }
+    }
+  }
+
+  // ===== LOAD ACCOUNT LIST FROM SUPABASE =====
+  async function loadAccountList() {
+    const container = document.getElementById('accountList');
+    container.innerHTML = '<div class="skeleton" style="height:44px; margin-bottom:8px;"></div>'.repeat(3);
+
+    try {
+      await waitSupabase();
+      const { data: accounts, error } = await window._supabase
+        .from('accounts')
+        .select('*')
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+
+      let list = accounts || [];
+      // Selalu pastikan head_account ada di list
+      const hasHead = list.find(a => a.username === 'fawzheadaccount');
+      if (!hasHead) {
+        list.unshift({ username: 'fawzheadaccount', name: 'Muhammad Razaq Arafi', role: 'head_account' });
+      }
+
+      renderAccountList(list);
+    } catch (err) {
+      console.error('Gagal load akun:', err);
+      document.getElementById('accountList').innerHTML =
+        '<div style="color:#e74c3c;font-size:0.85rem;padding:8px;">⚠️ Gagal memuat data akun. Periksa koneksi.</div>';
+    }
+  }
+
+  function renderAccountList(accounts) {
+    const container = document.getElementById('accountList');
+    if (!accounts.length) {
+      container.innerHTML = '<div style="color:#aaa;font-size:0.85rem;padding:8px;">Belum ada akun.</div>';
+      return;
+    }
+    container.innerHTML = accounts.map(a => {
+      const isSelf = a.username === curUser.username;
+      const isHead = a.role === 'head_account';
+      return `
+        <div class="account-item${isSelf ? ' is-self' : ''}">
+          <div class="acc-left">
+            <div class="acc-avatar">${esc(a.name || a.username)[0].toUpperCase()}</div>
+            <div>
+              <div class="acc-name">${esc(a.name || '—')}</div>
+              <div class="acc-username">@${esc(a.username || '—')}</div>
+            </div>
+          </div>
+          <div class="acc-right">
+            ${isSelf ? '<span class="self-badge">ANDA</span>' : ''}
+            <span class="acc-role ${a.role}">${ROLE_LABELS[a.role] || a.role}</span>
+            ${!isSelf && !isHead
+              ? `<button class="btn-del" onclick="deleteAccount('${esc(a.id || '')}','${esc(a.username)}','${esc(a.name || '')}')" title="Hapus akun">✕</button>`
+              : `<button class="btn-del" style="opacity:0.2;cursor:not-allowed;" disabled>✕</button>`}
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  async function deleteAccount(docId, username, name) {
+    if (!confirm(`Hapus akun "${name}" (@${username})?\n\nTindakan ini tidak dapat dibatalkan.`)) return;
+    try {
+      await waitSupabase();
+      if (docId) {
+        const { error } = await window._supabase
+          .from('accounts')
+          .delete()
+          .eq('id', docId);
+        if (error) throw error;
+      }
+      showFb('accFeedback', `✅ Akun "${name}" berhasil dihapus.`, 'success');
+      await loadAccountList();
+    } catch (err) {
+      console.error(err);
+      showFb('accFeedback', '⚠️ Gagal menghapus akun. Coba lagi.', 'error');
+    }
+  }
+
+  function toggleAddForm() {
+    const w = document.getElementById('addFormWrapper');
+    w.classList.toggle('open');
+    if (!w.classList.contains('open')) clearAddForm();
+  }
+
+  async function saveAccount() {
+    const name     = document.getElementById('newName').value.trim();
+    const username = document.getElementById('newUsername').value.trim().toLowerCase();
+    const password = document.getElementById('newAccPass').value;
+    const role     = document.getElementById('newRole').value;
+
+    if (!name || !username || !password) {
+      showFb('addFeedback', '⚠️ Nama, username, dan password wajib diisi.', 'error'); return;
+    }
+    if (password.length < 6) {
+      showFb('addFeedback', '⚠️ Password minimal 6 karakter.', 'error'); return;
+    }
+    if (username === 'fawzheadaccount') {
+      showFb('addFeedback', '❌ Username tersebut tidak dapat digunakan.', 'error'); return;
+    }
+
+    const btn = document.getElementById('btnCreateAcc');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="mini-spinner"></span> Menyimpan...';
+
+    try {
+      await waitSupabase();
+
+      // Cek username sudah ada
+      const { data: existing } = await window._supabase
+        .from('accounts')
+        .select('id')
+        .eq('username', username)
+        .limit(1);
+
+      if (existing && existing.length > 0) {
+        showFb('addFeedback', '❌ Username sudah terdaftar.', 'error');
+        btn.disabled = false; btn.textContent = 'Buat Akun'; return;
+      }
+
+      const { error } = await window._supabase
+        .from('accounts')
+        .insert({
+          name, username, password, role,
+          created_by: curUser.username
+        });
+
+      if (error) throw error;
+
+      clearAddForm();
+      document.getElementById('addFormWrapper').classList.remove('open');
+      showFb('accFeedback', `✅ Akun "${name}" (${ROLE_LABELS[role]}) berhasil dibuat!`, 'success');
+      await loadAccountList();
+    } catch (err) {
+      console.error(err);
+      showFb('addFeedback', '⚠️ Gagal menyimpan. Coba lagi.', 'error');
+    }
+
+    btn.disabled = false;
+    btn.textContent = 'Buat Akun';
+  }
+
+  function clearAddForm() {
+    ['newName','newUsername','newAccPass'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('newRole').value = 'sales';
+    hideFb('addFeedback');
+  }
+
+  // ===== CHANGE PASSWORD =====
+  async function changePassword() {
+    const oldPass     = document.getElementById('oldPass').value;
+    const newPass     = document.getElementById('newPass').value;
+    const confirmPass = document.getElementById('confirmPass').value;
+
+    if (!oldPass || !newPass || !confirmPass) { showFb('passFeedback','⚠️ Semua kolom harus diisi.','error'); return; }
+    if (newPass.length < 6)                   { showFb('passFeedback','⚠️ Password baru minimal 6 karakter.','error'); return; }
+    if (newPass !== confirmPass)               { showFb('passFeedback','❌ Konfirmasi password tidak cocok.','error'); return; }
+
+    const btn = document.getElementById('btnSavePass');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="mini-spinner"></span> Menyimpan...';
+
+    try {
+      await waitSupabase();
+
+      if (curUser.username === 'fawzheadaccount') {
+        if (oldPass !== 'fawz12345' && oldPass !== (curUser.password || '')) {
+          showFb('passFeedback','❌ Password lama tidak sesuai.','error');
+          btn.disabled = false; btn.textContent = 'Simpan Password'; return;
+        }
+        // Update di Supabase
+        const { error } = await window._supabase
+          .from('accounts')
+          .update({ password: newPass })
+          .eq('username', 'fawzheadaccount');
+        if (error) console.warn('Head account update:', error);
+        sessionStorage.setItem('fawz_user', JSON.stringify({...curUser, password: newPass}));
+        showFb('passFeedback','✅ Password berhasil diubah! Logout dalam 2 detik...','success');
+        clearPassForm();
+        setTimeout(doLogout, 2000);
+        return;
+      }
+
+      // Cari akun di Supabase
+      const { data: accounts, error: fetchErr } = await window._supabase
+        .from('accounts')
+        .select('*')
+        .eq('username', curUser.username);
+
+      if (fetchErr) throw fetchErr;
+      if (!accounts || accounts.length === 0) { showFb('passFeedback','❌ Akun tidak ditemukan.','error'); btn.disabled = false; btn.textContent = 'Simpan Password'; return; }
+
+      const acc = accounts.find(a => a.password === oldPass);
+      if (!acc) { showFb('passFeedback','❌ Password lama tidak sesuai.','error'); btn.disabled = false; btn.textContent = 'Simpan Password'; return; }
+
+      const { error: updErr } = await window._supabase
+        .from('accounts')
+        .update({ password: newPass })
+        .eq('id', acc.id);
+
+      if (updErr) throw updErr;
+
+      showFb('passFeedback','✅ Password berhasil diubah! Logout dalam 2 detik...','success');
+      clearPassForm();
+      setTimeout(doLogout, 2000);
+    } catch (err) {
+      console.error(err);
+      showFb('passFeedback','⚠️ Gagal memperbarui password. Coba lagi.','error');
+      btn.disabled = false;
+      btn.textContent = 'Simpan Password';
+    }
+  }
+
+  function clearPassForm() {
+    ['oldPass','newPass','confirmPass'].forEach(id => document.getElementById(id).value = '');
+    hideFb('passFeedback');
+  }
+
+  // ===== LOGOUT =====
+  function doLogout() {
+    sessionStorage.removeItem('fawz_user');
+    localStorage.removeItem('fawz_user_remember');
+    window.location.href = 'login.html';
+  }
+
+  // ===== HELPERS =====
+  function showFb(id, msg, type) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = msg;
+    el.className = `form-feedback ${type}`;
+  }
+  function hideFb(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.style.display = 'none';
+    el.className = 'form-feedback';
+  }
+  function esc(str) {
+    return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  window.addEventListener('DOMContentLoaded', initProfile);
+</script>
+</body>
+</html>

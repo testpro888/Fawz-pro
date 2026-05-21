@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Fawz Pro | Navbar</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy: #0d0d2b;
+      --gold: #f5a623;
+      --gold-light: #ffc857;
+      --nav-h: 68px;
+    }
+
+    body { font-family: 'Inter', sans-serif; margin: 0; }
+
+    /* ===== NAVBAR ===== */
+    .fawz-navbar {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+      height: var(--nav-h);
+      background: linear-gradient(90deg, var(--navy) 0%, #1a0e4a 60%, #0d0d2b 100%);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 28px;
+      box-shadow: 0 2px 20px rgba(0,0,0,0.4);
+      /* KRITIS: overflow visible agar dropdown tidak terpotong */
+      overflow: visible;
+    }
+
+    .nav-brand { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+    .nav-brand img { height: 36px; filter: drop-shadow(0 0 8px rgba(245,166,35,0.4)); }
+    .brand-fallback { font-size: 1.4rem; font-weight: 700; color: var(--gold); letter-spacing: 1px; }
+    .brand-badge {
+      background: linear-gradient(135deg, var(--gold), var(--gold-light));
+      color: #fff; font-size: 0.58rem; font-weight: 700;
+      padding: 2px 6px; border-radius: 4px; letter-spacing: 1px;
+      margin-left: -6px; align-self: flex-start; margin-top: 4px;
+    }
+
+    /* ===== MENU ===== */
+    .nav-menu {
+      display: flex; align-items: center; gap: 2px;
+      list-style: none;
+      /* KRITIS: overflow visible */
+      overflow: visible;
+      position: relative;
+    }
+
+    .nav-item {
+      position: relative;
+      /* KRITIS: overflow visible — JANGAN pakai overflow:hidden di sini */
+    }
+
+    .nav-link {
+      display: flex; align-items: center; gap: 5px;
+      padding: 8px 14px;
+      color: rgba(255,255,255,0.8);
+      text-decoration: none;
+      font-size: 0.875rem; font-weight: 500;
+      border-radius: 8px;
+      transition: all 0.2s;
+      white-space: nowrap;
+      cursor: pointer;
+      user-select: none;
+    }
+    .nav-link:hover, .nav-link.active { color: var(--gold); background: rgba(245,166,35,0.1); }
+
+    .chevron { font-size: 0.65rem; transition: transform 0.2s; display: inline-block; }
+    .nav-item.open .chevron { transform: rotate(180deg); }
+
+    /* ===== DROPDOWN — SOLUSI UTAMA ===== */
+    /*
+      Masalah: dropdown tidak muncul karena:
+      1. Parent pakai overflow:hidden (sudah diperbaiki)
+      2. z-index tidak cukup tinggi
+      3. display:none tidak ter-override saat .open
+    */
+    .dropdown {
+      /* Default: tersembunyi tapi via visibility/opacity bukan display:none
+         agar tidak ada reflow yang lambat + transisi halus */
+      visibility: hidden;
+      opacity: 0;
+      pointer-events: none;
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 0;
+      background: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.08);
+      min-width: 210px;
+      z-index: 99999; /* jauh di atas navbar z-index:1000 */
+      transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s;
+      transform: translateY(-4px);
+      overflow: hidden; /* hanya pada dropdown sendiri, bukan parent */
+    }
+
+    /* State: terbuka */
+    .nav-item.open > .dropdown {
+      visibility: visible;
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0);
+    }
+
+    .dropdown-section { padding: 6px 0; border-bottom: 1px solid #f0f0f5; }
+    .dropdown-section:last-child { border-bottom: none; }
+
+    .dropdown-label {
+      font-size: 0.68rem; font-weight: 700; color: #bbb;
+      text-transform: uppercase; letter-spacing: 1px;
+      padding: 8px 16px 4px;
+    }
+
+    .dropdown-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 16px;
+      font-size: 0.85rem; color: #333;
+      text-decoration: none;
+      transition: background 0.12s, color 0.12s;
+      white-space: nowrap;
+    }
+    .dropdown-item:hover { background: #fdf6ec; color: #e8931a; }
+    .d-icon { font-size: 0.9rem; }
+
+    /* ===== RIGHT SIDE ===== */
+    .nav-right { display: flex; align-items: center; gap: 14px; }
+
+    .nav-role-badge {
+      font-size: 0.7rem; font-weight: 600; color: var(--gold);
+      background: rgba(245,166,35,0.15); border: 1px solid rgba(245,166,35,0.3);
+      padding: 3px 10px; border-radius: 20px;
+      text-transform: uppercase; letter-spacing: 0.8px;
+    }
+
+    .nav-user {
+      display: flex; align-items: center; gap: 10px;
+      cursor: pointer; padding: 6px 10px;
+      border-radius: 10px; transition: background 0.2s;
+      position: relative;
+    }
+    .nav-user:hover { background: rgba(255,255,255,0.07); }
+
+    .user-info { text-align: right; }
+    .user-name { font-size: 0.85rem; font-weight: 600; color: #fff; line-height: 1.2; }
+    .user-role { font-size: 0.72rem; color: rgba(255,255,255,0.5); }
+
+    .user-avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--gold), var(--gold-light));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.9rem; font-weight: 700; color: #fff;
+      flex-shrink: 0; overflow: hidden;
+    }
+    .user-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+
+    /* User dropdown — sama mekanismenya */
+    .user-dropdown {
+      visibility: hidden; opacity: 0; pointer-events: none;
+      position: absolute;
+      top: calc(100% + 8px); right: 0;
+      background: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+      min-width: 200px;
+      z-index: 99999;
+      transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s;
+      transform: translateY(-4px);
+      overflow: hidden;
+    }
+    .nav-user.open > .user-dropdown {
+      visibility: visible; opacity: 1; pointer-events: auto; transform: translateY(0);
+    }
+
+    .user-dd-header { padding: 14px 16px; background: #fafafa; border-bottom: 1px solid #f0f0f5; }
+    .user-dd-name { font-weight: 600; font-size: 0.88rem; color: #222; }
+    .user-dd-email { font-size: 0.73rem; color: #888; margin-top: 1px; }
+
+    .user-dd-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 16px; font-size: 0.85rem; color: #444;
+      text-decoration: none; cursor: pointer;
+      transition: background 0.12s;
+    }
+    .user-dd-item:hover { background: #f5f5fb; }
+    .user-dd-item.logout { color: #e74c3c; }
+    .user-dd-item.logout:hover { background: #fff5f5; }
+
+    /* ===== HAMBURGER ===== */
+    .hamburger { display: none; flex-direction: column; gap: 4px; cursor: pointer; padding: 8px; }
+    .hamburger span { width: 22px; height: 2px; background: #fff; border-radius: 2px; transition: all 0.3s; }
+
+    @media (max-width: 1024px) { .nav-menu { display: none; } .hamburger { display: flex; } }
+
+    /* ===== MOBILE DRAWER ===== */
+    .mobile-drawer {
+      display: none;
+      position: fixed;
+      top: var(--nav-h); left: 0; right: 0;
+      background: var(--navy);
+      padding: 16px 20px;
+      z-index: 999;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+      max-height: calc(100vh - var(--nav-h));
+      overflow-y: auto;
+    }
+    .mobile-drawer.open { display: block; }
+    .mob-link {
+      display: block; padding: 12px 16px;
+      color: rgba(255,255,255,0.8); text-decoration: none;
+      font-size: 0.9rem; border-radius: 8px; margin-bottom: 4px;
+      transition: background 0.2s, color 0.2s; cursor: pointer;
+    }
+    .mob-link:hover { background: rgba(245,166,35,0.1); color: var(--gold); }
+    .mob-section-label {
+      font-size: 0.7rem; font-weight: 700; color: rgba(255,255,255,0.3);
+      text-transform: uppercase; letter-spacing: 1.5px;
+      padding: 12px 16px 4px;
+    }
+  </style>
+</head>
+<body>
+
+<nav class="fawz-navbar" id="fawzNavbar">
+  <!-- Brand -->
+  <a class="nav-brand" href="dashboard.html">
+    <img src="assets/logo/fawzpro.png" alt="FAWZ Pro"
+      onerror="this.style.display='none'; document.getElementById('brandFallback').style.display='flex'"/>
+    <div id="brandFallback" style="display:none; align-items:center; gap:6px;">
+      <span class="brand-fallback">🦁 FAWZ</span>
+      <span class="brand-badge">PRO</span>
+    </div>
+  </a>
+
+  <!-- Menu -->
+  <ul class="nav-menu" id="navMenu">
+    <li class="nav-item">
+      <a class="nav-link" href="dashboard.html">Dashboard</a>
+    </li>
+
+    <li class="nav-item" id="navSales">
+      <a class="nav-link">Sales <span class="chevron">▾</span></a>
+      <div class="dropdown">
+        <div class="dropdown-section">
+          <a class="dropdown-item" href="sales-activity.html"><span class="d-icon"></span> Activity Report</a>
+          <a class="dropdown-item" href="sales-transaction.html"><span class="d-icon"></span> Transaction Report</a>
+          <a class="dropdown-item" href="sales-tracker.html"><span class="d-icon"></span> Sales Tracker</a>
+          <a class="dropdown-item" href="sales.html"><span class="d-icon"></span> Sales</a>
+        </div>
+      </div>
+    </li>
+
+    <li class="nav-item" id="navCustomer">
+      <a class="nav-link">Customer <span class="chevron">▾</span></a>
+      <div class="dropdown">
+        <div class="dropdown-section">
+          <a class="dropdown-item" href="customer.html"><span class="d-icon"></span> Data Customer</a>
+          <a class="dropdown-item" href="history-order.html"><span class="d-icon"></span> History Order</a>
+        </div>
+      </div>
+    </li>
+
+    <li class="nav-item" id="navProduct">
+      <a class="nav-link">Product <span class="chevron">▾</span></a>
+      <div class="dropdown">
+        <div class="dropdown-section">
+          <div class="dropdown-label">Obligasi</div>
+          <a class="dropdown-item" href="obligasi-bookbuilding.html"><span class="d-icon"></span> Bookbuilding</a>
+          <a class="dropdown-item" href="obligasi-pasar-sekunder.html"><span class="d-icon"></span> Pasar Sekunder</a>
+          <a class="dropdown-item" href="obligasi-ipo.html"><span class="d-icon"></span> Pasar Perdana (IPO)</a>
+        </div>
+        <div class="dropdown-section">
+          <div class="dropdown-label">Reksadana</div>
+          <a class="dropdown-item" href="reksadana-data.html"><span class="d-icon"></span> Data Reksadana</a>
+          <a class="dropdown-item" href="reksadana-order.html"><span class="d-icon"></span> Order Reksadana</a>
+        </div>
+        <div class="dropdown-section">
+          <div class="dropdown-label">Waran Terstruktur</div>
+          <a class="dropdown-item" href="waran-terstruktur.html"><span class="d-icon"></span> Waran Terstruktur</a>
+        </div>
+        <div class="dropdown-section">
+          <a class="dropdown-item" href="saham.html"><span class="d-icon"></span> Saham</a>
+        </div>
+      </div>
+    </li>
+
+    <li class="nav-item" id="navRevenue">
+      <a class="nav-link">Revenue <span class="chevron">▾</span></a>
+      <div class="dropdown">
+        <div class="dropdown-section">
+          <a class="dropdown-item" href="revenue-data.html"><span class="d-icon"></span> Data Revenue</a>
+          <a class="dropdown-item" href="sales-commission.html"><span class="d-icon"></span> Sales Commission</a>
+          <a class="dropdown-item" href="paid-commission.html"><span class="d-icon"></span> Paid Commission</a>
+          <a class="dropdown-item" href="log-commission.html"><span class="d-icon"></span> Log Commission</a>
+        </div>
+      </div>
+    </li>
+  </ul>
+
+  <!-- Right -->
+  <div class="nav-right">
+    <span class="nav-role-badge" id="navRoleBadge">—</span>
+
+    <div class="nav-user" id="navUser">
+      <div class="user-info">
+        <div class="user-name" id="navUserName">—</div>
+        <div class="user-role" id="navUserRole">—</div>
+      </div>
+      <div class="user-avatar" id="navAvatar">?</div>
+
+      <div class="user-dropdown">
+        <div class="user-dd-header">
+          <div class="user-dd-name" id="ddUserName">—</div>
+          <div class="user-dd-email" id="ddUserEmail">—</div>
+        </div>
+        <a class="user-dd-item" href="profile.html">⚙️ Profil Saya</a>
+        <a class="user-dd-item" id="manageAccountsLink" href="profile.html#kelola" style="display:none">👥 Kelola Akun</a>
+        <div class="user-dd-item logout" onclick="doLogout()">🚪 Keluar</div>
+      </div>
+    </div>
+
+    <div class="hamburger" id="hamburger" onclick="toggleMobile()">
+      <span></span><span></span><span></span>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile Drawer -->
+<div class="mobile-drawer" id="mobileDrawer">
+  <a class="mob-link" href="dashboard.html">🏠 Dashboard</a>
+  <div class="mob-section-label">Sales</div>
+  <a class="mob-link" href="sales.html">Sales</a>
+  <a class="mob-link" href="sales-activity.html">Activity Report</a>
+  <a class="mob-link" href="sales-transaction.html">Transaction Report</a>
+  <a class="mob-link" href="sales-tracker.html">Sales Tracker</a>
+  <div class="mob-section-label">Customer</div>
+  <a class="mob-link" href="customer.html">Data Customer</a>
+  <a class="mob-link" href="history-order.html">History Order</a>
+  <div class="mob-section-label">Product · Obligasi</div>
+  <a class="mob-link" href="obligasi-bookbuilding.html">Bookbuilding</a>
+  <a class="mob-link" href="obligasi-pasar-sekunder.html">Pasar Sekunder</a>
+  <a class="mob-link" href="obligasi-ipo.html">Pasar Perdana (IPO)</a>
+  <div class="mob-section-label">Product · Reksadana</div>
+  <a class="mob-link" href="reksadana-data.html">Data Reksadana</a>
+  <a class="mob-link" href="reksadana-order.html">Order Reksadana</a>
+  <div class="mob-section-label">Product · Waran Terstruktur</div>
+  <a class="mob-link" href="waran-terstruktur.html">Waran Terstruktur</a>
+  <div class="mob-section-label">Product</div>
+  <a class="mob-link" href="saham.html">Saham</a>
+  <div class="mob-section-label">Revenue</div>
+  <a class="mob-link" href="revenue-data.html">Data Revenue</a>
+  <a class="mob-link" href="sales-commission.html">Sales Commission</a>
+  <a class="mob-link" href="paid-commission.html">Paid Commission</a>
+  <a class="mob-link" href="log-commission.html">Log Commission</a>
+  <a class="mob-link" href="profile.html">⚙️ Profil Saya</a>
+  <div class="mob-link" onclick="doLogout()" style="color:#e74c3c; margin-top:12px;">🚪 Keluar</div>
+</div>
+
+<!-- Script dipindah ke navbar.js — jangan tambahkan script di sini -->
+
+</body>
+</html>

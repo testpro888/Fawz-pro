@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Fawz Pro | Transaction Report</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+
+  <!-- Supabase SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script>
+    const SUPABASE_URL = 'https://yhmrfluehibfapvtxcfi.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlobXJmbHVlaGliZmFwdnR4Y2ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNjEzODUsImV4cCI6MjA5NDczNzM4NX0.se_H4n_eLsf81d_1GH5sqsPCpX89MHewlPuuNkY6qcU';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    window._supabase = supabase;
+    window._supabaseReady = true;
+
+    async function loadTransactions() {
+      try {
+        // Baca user session untuk cek role
+        const raw = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember');
+        const curUser = raw ? JSON.parse(raw) : null;
+
+        let query = supabase.from('transactions').select('*');
+
+        if (curUser?.role === 'sales') {
+          const salesCode = curUser.code || curUser.salesCode || '';
+          query = query.eq('sales_code', salesCode);
+        }
+
+        const { data: rows, error } = await query.order('created_at', { ascending: false });
+        if (error) throw error;
+
+        // Simpan curUser di window untuk dipakai applyFilter
+        window._curUser = curUser;
+        window._allRows = rows || [];
+        renderTable(window._allRows);
+        renderSummary(window._allRows);
+
+        // Untuk sales: pre-fill dan lock field Sales Code di modal
+        if (curUser?.role === 'sales') {
+          const salesCodeInput = document.getElementById('fSalesCode');
+          if (salesCodeInput) {
+            salesCodeInput.value = curUser.code || curUser.salesCode || '';
+            salesCodeInput.disabled = true;
+          }
+        }
+      } catch(e) {
+        console.error('Gagal load transaksi:', e);
+        document.getElementById('tableBody').innerHTML =
+          '<tr><td colspan="8" style="text-align:center;padding:32px;color:#aaa;">Gagal memuat data</td></tr>';
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', loadTransactions);
+  </script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --navy: #0d0d2b; --gold: #f5a623; --gold-light: #ffc857;
+      --nav-h: 68px; --bg: #f4f5fb;
+      --table-header: #1a1a5e;
+    }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); min-height: 100vh; padding-top: var(--nav-h); }
+
+    @keyframes fadeUp { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
+
+    .page-container { max-width: 1280px; margin: 0 auto; padding: 36px 32px; }
+
+    /* ── Page Header ── */
+    .page-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 24px; flex-wrap: wrap; gap: 12px;
+      animation: fadeUp 0.4s ease both;
+    }
+    .page-title { font-size: 1.5rem; font-weight: 700; color: var(--navy); }
+    .page-subtitle { font-size: 0.8rem; color: #999; margin-top: 2px; }
+
+    /* ── Filter Bar ── */
+    .filter-bar {
+      background: #fff; border-radius: 14px; padding: 16px 20px;
+      display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px;
+      animation: fadeUp 0.4s 0.05s ease both;
+    }
+    .filter-bar input[type="text"],
+    .filter-bar input[type="date"],
+    .filter-bar select {
+      height: 38px; border: 1px solid #e0e0ee; border-radius: 8px;
+      padding: 0 12px; font-family: 'Inter', sans-serif; font-size: 0.8rem;
+      color: var(--navy); background: #fafafa; outline: none;
+      transition: border-color 0.2s;
+    }
+    .filter-bar input[type="text"]:focus,
+    .filter-bar input[type="date"]:focus,
+    .filter-bar select:focus { border-color: var(--gold); }
+    .filter-bar input[type="text"] { min-width: 200px; }
+    .filter-label { font-size: 0.75rem; color: #888; font-weight: 500; white-space: nowrap; }
+    .btn-filter {
+      height: 38px; padding: 0 18px; border-radius: 8px; border: none;
+      background: var(--navy); color: #fff; font-family: 'Inter', sans-serif;
+      font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: background 0.2s;
+    }
+    .btn-filter:hover { background: #1a1a5e; }
+    .btn-reset {
+      height: 38px; padding: 0 14px; border-radius: 8px;
+      border: 1px solid #e0e0ee; background: #fff; color: #888;
+      font-family: 'Inter', sans-serif; font-size: 0.8rem; cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    .btn-reset:hover { border-color: #bbb; color: var(--navy); }
+    .filter-spacer { flex: 1; }
+
+    /* ── Add Button ── */
+    .btn-add {
+      display: inline-flex; align-items: center; gap: 8px;
+      height: 38px; padding: 0 18px; border-radius: 8px; border: none;
+      background: var(--gold); color: #fff; font-family: 'Inter', sans-serif;
+      font-size: 0.82rem; font-weight: 600; cursor: pointer;
+      transition: background 0.2s, transform 0.15s;
+    }
+    .btn-add:hover { background: #e0951f; transform: translateY(-1px); }
+    .btn-add .plus { font-size: 1.1rem; line-height: 1; }
+
+    /* ── Table ── */
+    .table-wrapper {
+      background: #fff; border-radius: 16px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      overflow: hidden; margin-bottom: 24px;
+      animation: fadeUp 0.4s 0.1s ease both;
+    }
+    .table-toolbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 20px; border-bottom: 1px solid #f0f0f8; flex-wrap: wrap; gap: 10px;
+    }
+    .table-info { font-size: 0.8rem; color: #888; }
+    .table-info span { font-weight: 600; color: var(--navy); }
+    .btn-export {
+      height: 34px; padding: 0 14px; border-radius: 8px;
+      border: 1px solid #e0e0ee; background: #fff; color: var(--navy);
+      font-family: 'Inter', sans-serif; font-size: 0.78rem; font-weight: 500;
+      cursor: pointer; display: flex; align-items: center; gap: 6px;
+      transition: background 0.2s;
+    }
+    .btn-export:hover { background: #f5f5ff; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+    thead tr { background: var(--table-header); }
+    thead th {
+      padding: 13px 16px; text-align: left; font-weight: 600;
+      color: #fff; font-size: 0.78rem; letter-spacing: 0.3px;
+      white-space: nowrap;
+    }
+    thead th:first-child { border-radius: 0; }
+    tbody tr { border-bottom: 1px solid #f5f5fc; transition: background 0.15s; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: #f9f9ff; }
+    tbody td { padding: 12px 16px; color: #333; vertical-align: middle; }
+    tbody td .cell-muted { color: #aaa; font-size: 0.75rem; }
+
+    .badge {
+      display: inline-block; padding: 3px 10px; border-radius: 20px;
+      font-size: 0.7rem; font-weight: 600;
+    }
+    .badge-buy    { background: #e8f5e9; color: #2e7d32; }
+    .badge-sell   { background: #fce4ec; color: #c62828; }
+    .badge-switch { background: #e3f2fd; color: #1565c0; }
+    .badge-sub    { background: #f3e5f5; color: #6a1b9a; }
+
+    .product-tag {
+      display: inline-block; padding: 2px 8px; border-radius: 6px;
+      font-size: 0.7rem; font-weight: 600; background: #eef0ff; color: #3d1f8a;
+    }
+
+    .empty-state {
+      text-align: center; padding: 60px 20px; color: #bbb;
+    }
+    .empty-state .empty-icon { font-size: 2.5rem; margin-bottom: 12px; }
+    .empty-state p { font-size: 0.85rem; color: #ccc; }
+
+    .skeleton {
+      height: 14px; background: linear-gradient(90deg, #f0f0f8 25%, #e8e8f5 50%, #f0f0f8 75%);
+      background-size: 200% 100%; border-radius: 4px;
+      animation: shimmer 1.4s infinite;
+    }
+    @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+    /* ── Pagination ── */
+    .pagination {
+      display: flex; align-items: center; justify-content: flex-end;
+      gap: 6px; padding: 12px 20px; border-top: 1px solid #f0f0f8;
+    }
+    .page-btn {
+      min-width: 32px; height: 32px; border-radius: 8px; border: 1px solid #e0e0ee;
+      background: #fff; color: var(--navy); font-family: 'Inter', sans-serif;
+      font-size: 0.78rem; cursor: pointer; display: flex; align-items: center;
+      justify-content: center; transition: background 0.15s, border-color 0.15s;
+    }
+    .page-btn:hover { background: #f0f0ff; border-color: #c0c0ee; }
+    .page-btn.active { background: var(--navy); color: #fff; border-color: var(--navy); font-weight: 600; }
+    .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* ── Summary Cards ── */
+    .summary-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;
+      animation: fadeUp 0.4s 0.15s ease both;
+    }
+    .sum-card {
+      background: linear-gradient(135deg, #1a1a5e, #0d0d2b);
+      border-radius: 16px; padding: 22px 24px; color: #fff;
+      position: relative; overflow: hidden; cursor: default;
+      transition: transform 0.2s;
+    }
+    .sum-card:hover { transform: translateY(-3px); }
+    .sum-card::before {
+      content: ''; position: absolute; width: 120px; height: 120px;
+      border-radius: 50%; background: rgba(255,255,255,0.05);
+      right: -25px; top: -25px;
+    }
+    .sum-card-label {
+      font-size: 0.72rem; font-weight: 600; color: rgba(255,255,255,0.6);
+      text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;
+    }
+    .sum-card-line {
+      width: 100%; height: 2px; background: rgba(255,255,255,0.15);
+      border-radius: 2px; margin-bottom: 14px; position: relative; z-index: 1;
+    }
+    .sum-card-line-fill {
+      height: 100%; border-radius: 2px;
+      background: linear-gradient(90deg, var(--gold), var(--gold-light));
+      width: 40%;
+    }
+    .sum-card-value {
+      font-size: 2rem; font-weight: 700; line-height: 1;
+      position: relative; z-index: 1;
+    }
+
+    /* ── Modal ── */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0; z-index: 1000;
+      background: rgba(10,10,30,0.55); align-items: center; justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: #fff; border-radius: 20px; padding: 32px;
+      width: 560px; max-width: 95vw; max-height: 90vh; overflow-y: auto;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+      animation: fadeUp 0.25s ease;
+    }
+    .modal-title { font-size: 1.1rem; font-weight: 700; color: var(--navy); margin-bottom: 24px; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .form-group { display: flex; flex-direction: column; gap: 5px; }
+    .form-group.full { grid-column: 1 / -1; }
+    .form-label { font-size: 0.75rem; font-weight: 600; color: #666; }
+    .form-control {
+      height: 40px; border: 1px solid #e0e0ee; border-radius: 8px;
+      padding: 0 12px; font-family: 'Inter', sans-serif; font-size: 0.82rem;
+      color: var(--navy); outline: none; transition: border-color 0.2s;
+    }
+    .form-control:focus { border-color: var(--gold); }
+    textarea.form-control { height: 80px; padding: 10px 12px; resize: vertical; }
+    .modal-actions {
+      display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px;
+    }
+    .btn-cancel {
+      height: 40px; padding: 0 20px; border-radius: 8px; border: 1px solid #e0e0ee;
+      background: #fff; color: #666; font-family: 'Inter', sans-serif;
+      font-size: 0.82rem; cursor: pointer;
+    }
+    .btn-save {
+      height: 40px; padding: 0 24px; border-radius: 8px; border: none;
+      background: var(--navy); color: #fff; font-family: 'Inter', sans-serif;
+      font-size: 0.82rem; font-weight: 600; cursor: pointer; transition: background 0.2s;
+    }
+    .btn-save:hover { background: #1a1a5e; }
+
+    @media (max-width: 900px) {
+      .summary-grid { grid-template-columns: repeat(2, 1fr); }
+      .page-container { padding: 24px 16px; }
+      table { font-size: 0.75rem; }
+    }
+    @media (max-width: 600px) {
+      .summary-grid { grid-template-columns: 1fr 1fr; }
+      .form-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+
+  <!-- Auth Guard -->
+  <script>
+    (function() {
+      const raw = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember');
+      if (!raw) { window.location.replace('login.html'); }
+      else { sessionStorage.setItem('fawz_user', raw); }
+      // Semua role boleh — filter data per role dilakukan di loadData()
+    })();
+  </script>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<div id="navbar-placeholder"></div>
+<script src="navbar.js"></script>
+
+<div class="page-container">
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <div>
+      <div class="page-title">Transaction Report</div>
+      <div class="page-subtitle">Kelola dan pantau seluruh laporan transaksi</div>
+    </div>
+    <button class="btn-add" onclick="openModal()">
+      <span class="plus">＋</span> Tambah Transaksi
+    </button>
+  </div>
+
+  <!-- Filter Bar -->
+  <div class="filter-bar">
+    <span class="filter-label">Cari:</span>
+    <input type="text" id="filterSearch" placeholder="Client ID / Sales Code..." oninput="applyFilter()"/>
+
+    <span class="filter-label">Produk:</span>
+    <select id="filterProduct" onchange="applyFilter()">
+      <option value="">Semua Produk</option>
+      <option value="Obligasi">Obligasi</option>
+      <option value="Reksadana">Reksadana</option>
+      <option value="Saham">Saham</option>
+      <option value="Waran">Waran Terstruktur</option>
+    </select>
+
+    <span class="filter-label">Aksi:</span>
+    <select id="filterAction" onchange="applyFilter()">
+      <option value="">Semua Aksi</option>
+      <option value="Buy">Buy</option>
+      <option value="Sell">Sell</option>
+      <option value="Switch">Switch</option>
+      <option value="Subscribe">Subscribe</option>
+    </select>
+
+    <span class="filter-label">Dari:</span>
+    <input type="date" id="filterDateFrom" onchange="applyFilter()"/>
+    <span class="filter-label">s/d</span>
+    <input type="date" id="filterDateTo" onchange="applyFilter()"/>
+
+    <div class="filter-spacer"></div>
+    <button class="btn-reset" onclick="resetFilter()">Reset</button>
+    <button class="btn-export" onclick="exportCSV()">⬇ Export CSV</button>
+  </div>
+
+  <!-- Table -->
+  <div class="table-wrapper">
+    <div class="table-toolbar">
+      <div class="table-info">Menampilkan <span id="rowCount">0</span> transaksi</div>
+    </div>
+    <div style="overflow-x:auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Sales Code</th>
+            <th>Client ID</th>
+            <th>Product</th>
+            <th>Securities</th>
+            <th>Action</th>
+            <th style="text-align:right;">Amount (Rp)</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          <!-- skeleton rows -->
+          <tr><td colspan="8" style="padding:0;">
+            <div style="padding:12px 16px;display:flex;flex-direction:column;gap:10px;">
+              <div class="skeleton" style="width:100%;height:14px;"></div>
+              <div class="skeleton" style="width:90%;height:14px;"></div>
+              <div class="skeleton" style="width:95%;height:14px;"></div>
+              <div class="skeleton" style="width:80%;height:14px;"></div>
+              <div class="skeleton" style="width:88%;height:14px;"></div>
+            </div>
+          </td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="pagination" id="pagination"></div>
+  </div>
+
+  <!-- Summary Cards -->
+  <div class="summary-grid">
+    <div class="sum-card">
+      <div class="sum-card-label">Total Transaksi</div>
+      <div class="sum-card-line"><div class="sum-card-line-fill"></div></div>
+      <div class="sum-card-value" id="statTotal">0</div>
+    </div>
+    <div class="sum-card">
+      <div class="sum-card-label">Transaksi Bulan Ini</div>
+      <div class="sum-card-line"><div class="sum-card-line-fill" style="width:60%;"></div></div>
+      <div class="sum-card-value" id="statMonth">0</div>
+    </div>
+    <div class="sum-card">
+      <div class="sum-card-label">Transaksi Bulan Lalu</div>
+      <div class="sum-card-line"><div class="sum-card-line-fill" style="width:45%;"></div></div>
+      <div class="sum-card-value" id="statLastMonth">0</div>
+    </div>
+    <div class="sum-card">
+      <div class="sum-card-label">Total Fee / Komisi</div>
+      <div class="sum-card-line"><div class="sum-card-line-fill" style="width:30%;"></div></div>
+      <div class="sum-card-value" id="statFee">Rp 0</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Add Transaction Modal -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModalOutside(event)">
+  <div class="modal">
+    <div class="modal-title">Tambah Transaksi Baru</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label">Tanggal *</label>
+        <input type="date" class="form-control" id="fDate" required/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Sales Code *</label>
+        <input type="text" class="form-control" id="fSalesCode" placeholder="contoh: SLS001"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Client ID *</label>
+        <input type="text" class="form-control" id="fClientId" placeholder="contoh: CLT-001"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Produk *</label>
+        <select class="form-control" id="fProduct">
+          <option value="">Pilih Produk</option>
+          <option>Obligasi</option>
+          <option>Reksadana</option>
+          <option>Saham</option>
+          <option>Waran Terstruktur</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Securities</label>
+        <input type="text" class="form-control" id="fSecurities" placeholder="contoh: BBCA, FR0091"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Aksi *</label>
+        <select class="form-control" id="fAction">
+          <option value="">Pilih Aksi</option>
+          <option>Buy</option>
+          <option>Sell</option>
+          <option>Switch</option>
+          <option>Subscribe</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Amount (Rp) *</label>
+        <input type="number" class="form-control" id="fAmount" placeholder="0" min="0"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Fee / Komisi (Rp)</label>
+        <input type="number" class="form-control" id="fFee" placeholder="0" min="0"/>
+      </div>
+      <div class="form-group full">
+        <label class="form-label">Notes</label>
+        <textarea class="form-control" id="fNotes" placeholder="Catatan tambahan..."></textarea>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Batal</button>
+      <button class="btn-save" onclick="saveTransaction()">Simpan Transaksi</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  /* ─── State ─── */
+  const ROWS_PER_PAGE = 10;
+  let currentPage = 1;
+  let filteredRows = [];
+
+  /* ─── Render Table ─── */
+  function renderTable(rows) {
+    filteredRows = rows;
+    currentPage = 1;
+    renderPage();
+    renderPagination();
+    document.getElementById('rowCount').textContent = rows.length.toLocaleString('id-ID');
+  }
+
+  function renderPage() {
+    const start = (currentPage - 1) * ROWS_PER_PAGE;
+    const slice = filteredRows.slice(start, start + ROWS_PER_PAGE);
+    const tbody  = document.getElementById('tableBody');
+
+    if (!slice.length) {
+      tbody.innerHTML = `
+        <tr><td colspan="8">
+          <div class="empty-state">
+            <div class="empty-icon">📋</div>
+            <div style="font-size:0.9rem;color:#999;font-weight:600;">Belum ada transaksi</div>
+            <p>Klik "Tambah Transaksi" untuk menambahkan data.</p>
+          </div>
+        </td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = slice.map(r => {
+      const date   = formatDate(r.date || r.tanggal);
+      const action = r.action || r.aksi || '';
+      const amount = Number(r.amount || r.nominal || 0);
+      return `
+        <tr>
+          <td>${date}</td>
+          <td><strong>${r.salesCode || r.kode_sales || '—'}</strong></td>
+          <td>${r.clientId || r.client_id || '—'}</td>
+          <td><span class="product-tag">${r.product || r.produk || '—'}</span></td>
+          <td>${r.securities || '—'}</td>
+          <td><span class="badge ${badgeClass(action)}">${action || '—'}</span></td>
+          <td style="text-align:right;font-weight:600;">${amount ? 'Rp ' + amount.toLocaleString('id-ID') : '—'}</td>
+          <td><span style="color:#aaa;font-size:0.75rem;">${r.notes || r.catatan || '—'}</span></td>
+        </tr>`;
+    }).join('');
+  }
+
+  function renderPagination() {
+    const total = Math.ceil(filteredRows.length / ROWS_PER_PAGE);
+    const pag   = document.getElementById('pagination');
+    if (total <= 1) { pag.innerHTML = ''; return; }
+
+    let html = `<button class="page-btn" ${currentPage===1?'disabled':''} onclick="goPage(${currentPage-1})">‹</button>`;
+    for (let i = 1; i <= total; i++) {
+      if (i === 1 || i === total || Math.abs(i - currentPage) <= 1) {
+        html += `<button class="page-btn ${i===currentPage?'active':''}" onclick="goPage(${i})">${i}</button>`;
+      } else if (Math.abs(i - currentPage) === 2) {
+        html += `<button class="page-btn" disabled style="border:none;">…</button>`;
+      }
+    }
+    html += `<button class="page-btn" ${currentPage===total?'disabled':''} onclick="goPage(${currentPage+1})">›</button>`;
+    pag.innerHTML = html;
+  }
+
+  function goPage(n) { currentPage = n; renderPage(); renderPagination(); }
+
+  /* ─── Summary ─── */
+  function renderSummary(rows) {
+    const now     = new Date();
+    const thisM   = now.getMonth();
+    const lastM   = thisM === 0 ? 11 : thisM - 1;
+    const thisY   = now.getFullYear();
+    const lastMY  = thisM === 0 ? thisY - 1 : thisY;
+
+    let thisMonthCount = 0, lastMonthCount = 0, totalFee = 0;
+    rows.forEach(r => {
+      const d = toDate(r.date || r.tanggal);
+      if (d) {
+        if (d.getMonth() === thisM && d.getFullYear() === thisY) thisMonthCount++;
+        if (d.getMonth() === lastM && d.getFullYear() === lastMY) lastMonthCount++;
+      }
+      totalFee += Number(r.fee || r.komisi || 0);
+    });
+
+    document.getElementById('statTotal').textContent     = rows.length.toLocaleString('id-ID');
+    document.getElementById('statMonth').textContent     = thisMonthCount.toLocaleString('id-ID');
+    document.getElementById('statLastMonth').textContent = lastMonthCount.toLocaleString('id-ID');
+    document.getElementById('statFee').textContent       = 'Rp ' + totalFee.toLocaleString('id-ID');
+  }
+
+  /* ─── Filter ─── */
+  function applyFilter() {
+    if (!window._allRows) return;
+    const curUser = window._curUser;
+    const search  = document.getElementById('filterSearch').value.toLowerCase();
+    const product = document.getElementById('filterProduct').value;
+    const action  = document.getElementById('filterAction').value;
+    const from    = document.getElementById('filterDateFrom').value;
+    const to      = document.getElementById('filterDateTo').value;
+
+    const result = window._allRows.filter(r => {
+      // Paksa filter salesCode untuk role sales (double protection)
+      if (curUser?.role === 'sales') {
+        const mySalesCode = (curUser.code || curUser.salesCode || '').toLowerCase();
+        if ((r.salesCode || r.kode_sales || '').toLowerCase() !== mySalesCode) return false;
+      }
+
+      const matchSearch = !search ||
+        (r.clientId||r.client_id||'').toLowerCase().includes(search) ||
+        (r.salesCode||r.kode_sales||'').toLowerCase().includes(search);
+      const matchProduct = !product || (r.product||r.produk||'') === product;
+      const matchAction  = !action  || (r.action||r.aksi||'') === action;
+      const d = toDate(r.date||r.tanggal);
+      const matchFrom = !from || (d && d >= new Date(from));
+      const matchTo   = !to   || (d && d <= new Date(to + 'T23:59:59'));
+      return matchSearch && matchProduct && matchAction && matchFrom && matchTo;
+    });
+
+    renderTable(result);
+    renderSummary(result);
+  }
+
+  function resetFilter() {
+    ['filterSearch','filterDateFrom','filterDateTo'].forEach(id => document.getElementById(id).value = '');
+    ['filterProduct','filterAction'].forEach(id => document.getElementById(id).value = '');
+    if (window._allRows) { applyFilter(); }
+  }
+
+  /* ─── Modal ─── */
+  function openModal() {
+    document.getElementById('fDate').value = new Date().toISOString().split('T')[0];
+    document.getElementById('modalOverlay').classList.add('open');
+  }
+  function closeModal() { document.getElementById('modalOverlay').classList.remove('open'); }
+  function closeModalOutside(e) { if (e.target.id === 'modalOverlay') closeModal(); }
+
+  async function saveTransaction() {
+    const date      = document.getElementById('fDate').value;
+    const salesCode = document.getElementById('fSalesCode').value.trim();
+    const clientId  = document.getElementById('fClientId').value.trim();
+    const product   = document.getElementById('fProduct').value;
+    const action    = document.getElementById('fAction').value;
+    const amount    = Number(document.getElementById('fAmount').value) || 0;
+    const fee       = Number(document.getElementById('fFee').value) || 0;
+    const securities= document.getElementById('fSecurities').value.trim();
+    const notes     = document.getElementById('fNotes').value.trim();
+
+    if (!date || !salesCode || !clientId || !product || !action) {
+      alert('Harap isi semua field yang wajib (*)');
+      return;
+    }
+
+    const newRow = { date, salesCode, clientId, product, securities, action, amount, fee, notes, createdAt: new Date().toISOString() };
+
+    try {
+      if (window._supabase) {
+        const { data: inserted, error } = await window._supabase.from('transactions').insert({
+          tipe: action, produk: product, nominal: parseFloat(amount) || 0,
+          client_id: clientId, sales_code: salesCode, notes,
+          created_by: window._curUser?.name || ''
+        }).select().single();
+        if (error) console.warn('Supabase save error:', error);
+        if (inserted) newRow.id = inserted.id;
+      }
+    } catch(e) { console.warn('Save error:', e); }
+
+    // Optimistically add to local list
+    if (!window._allRows) window._allRows = [];
+    window._allRows.unshift(newRow);
+    renderTable(window._allRows);
+    renderSummary(window._allRows);
+    closeModal();
+
+    // Clear form
+    ['fDate','fSalesCode','fClientId','fSecurities','fAmount','fFee','fNotes'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('fProduct').value = '';
+    document.getElementById('fAction').value  = '';
+  }
+
+  /* ─── Export CSV ─── */
+  function exportCSV() {
+    const rows = filteredRows.length ? filteredRows : (window._allRows || []);
+    if (!rows.length) { alert('Tidak ada data untuk di-export.'); return; }
+    const header = ['Date','Sales Code','Client ID','Product','Securities','Action','Amount','Fee','Notes'];
+    const csv = [header.join(','), ...rows.map(r =>
+      [r.date||r.tanggal||'', r.salesCode||r.kode_sales||'', r.clientId||r.client_id||'',
+       r.product||r.produk||'', r.securities||'', r.action||r.aksi||'',
+       r.amount||r.nominal||0, r.fee||r.komisi||0, `"${(r.notes||r.catatan||'').replace(/"/g,'""')}"`].join(',')
+    )].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+    a.download = `transactions_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+  }
+
+  /* ─── Helpers ─── */
+  function badgeClass(action) {
+    if (!action) return '';
+    const a = action.toLowerCase();
+    if (a === 'buy' || a === 'subscribe') return 'badge-buy';
+    if (a === 'sell') return 'badge-sell';
+    if (a === 'switch') return 'badge-switch';
+    return 'badge-sub';
+  }
+
+  function toDate(val) {
+    if (!val) return null;
+    if (val.toDate) return val.toDate(); // Firestore Timestamp
+    if (val.seconds) return new Date(val.seconds * 1000);
+    return new Date(val);
+  }
+
+  function formatDate(val) {
+    const d = toDate(val);
+    if (!d || isNaN(d)) return '—';
+    return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+  }
+
+  /* ─── Init jika Supabase tidak ready ─── */
+  window.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+      if (!window._allRows) {
+        window._allRows = [];
+        renderTable([]);
+        renderSummary([]);
+      }
+    }, 4000);
+  });
+</script>
+
+</body>
+</html>

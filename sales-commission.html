@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Fawz Pro | Sales Commission</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script>
+    const SUPABASE_URL = 'https://yhmrfluehibfapvtxcfi.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlobXJmbHVlaGliZmFwdnR4Y2ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNjEzODUsImV4cCI6MjA5NDczNzM4NX0.se_H4n_eLsf81d_1GH5sqsPCpX89MHewlPuuNkY6qcU';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    window._supabase = supabase;
+    window.addEventListener('DOMContentLoaded', boot);
+  </script>
+
+  <style>
+    *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+    :root {
+      --navy:#0d0d2b; --purple:#1e1252; --gold:#f5a623; --gold-light:#ffc857;
+      --bg:#f4f5fb; --white:#fff; --border:#e0e0ef; --text:#1a1a3a; --gray:#888;
+      --green:#27ae60; --red:#e74c3c; --blue:#2980b9;
+      --nav-h:68px;
+    }
+    body { font-family:'Inter',sans-serif; background:var(--bg); min-height:100vh; padding-top:var(--nav-h); color:var(--text); }
+
+    /* NAVBAR — style dari navbar.html */
+
+    /* ── PAGE ── */
+    .page-container { max-width:1400px; margin:0 auto; padding:36px 28px; }
+    .page-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:28px; flex-wrap:wrap; gap:16px; }
+    .page-title { font-family:'Inter',sans-serif; font-size:2rem; font-weight:900; color:var(--navy); }
+    .page-subtitle { font-size:.88rem; color:var(--gray); margin-top:4px; }
+    .title-underline { width:48px; height:3px; background:linear-gradient(90deg,var(--gold),var(--gold-light)); border-radius:2px; margin-top:8px; }
+
+    /* ── BUTTONS ── */
+    .btn { display:inline-flex; align-items:center; gap:7px; padding:11px 20px; border-radius:10px; font-family:'Inter',sans-serif; font-size:.875rem; font-weight:600; cursor:pointer; transition:all .2s; border:none; white-space:nowrap; text-decoration:none; }
+    .btn-primary { background:linear-gradient(135deg,var(--gold),#e8931a); color:#fff; box-shadow:0 4px 14px rgba(245,166,35,.35); }
+    .btn-primary:hover { transform:translateY(-2px); box-shadow:0 8px 22px rgba(245,166,35,.45); }
+    .btn-outline { background:#fff; color:var(--navy); border:1.5px solid var(--border); }
+    .btn-outline:hover { border-color:var(--gold); color:var(--gold); }
+    .btn-success { background:linear-gradient(135deg,#27ae60,#1e8a4a); color:#fff; box-shadow:0 4px 14px rgba(39,174,96,.3); }
+    .btn-success:hover { transform:translateY(-2px); }
+    .btn-sm { padding:7px 14px; font-size:.8rem; }
+
+    /* ── SUMMARY BANNER ── */
+    .summary-banner {
+      background:linear-gradient(135deg,#0d0d2b 0%,#1e1252 100%);
+      border-radius:20px; padding:28px 32px; margin-bottom:24px;
+      display:grid; grid-template-columns:1fr auto; gap:24px; align-items:center;
+      box-shadow:0 8px 32px rgba(13,13,43,.22); position:relative; overflow:hidden;
+    }
+    .summary-banner::before {
+      content:''; position:absolute; top:-60px; right:-60px; width:220px; height:220px;
+      border-radius:50%; background:radial-gradient(circle,rgba(245,166,35,.15),transparent 70%);
+    }
+    .banner-label { font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:1.2px; color:rgba(255,255,255,.5); margin-bottom:6px; }
+    .banner-total { font-size:2.4rem; font-weight:900; color:var(--gold); line-height:1; }
+    .banner-sub   { font-size:.82rem; color:rgba(255,255,255,.4); margin-top:6px; }
+    .banner-right { display:flex; gap:28px; }
+    .banner-stat-val   { font-size:1.5rem; font-weight:700; color:#fff; line-height:1; }
+    .banner-stat-val.green { color:#4ede8a; }
+    .banner-stat-val.red   { color:#ff6b6b; }
+    .banner-stat-label { font-size:.67rem; color:rgba(255,255,255,.4); text-transform:uppercase; letter-spacing:.8px; margin-top:4px; }
+    .banner-divider { width:1px; background:rgba(255,255,255,.1); }
+
+    /* ── STAT CARDS ── */
+    .stats-row { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:24px; }
+    .stat-card { background:#fff; border-radius:14px; padding:18px 22px; box-shadow:0 2px 10px rgba(0,0,0,.05); border-left:4px solid transparent; }
+    .stat-card.total   { border-color:var(--gold); }
+    .stat-card.paid    { border-color:var(--green); }
+    .stat-card.unpaid  { border-color:var(--red); }
+    .stat-card.sales-n { border-color:var(--blue); }
+    .stat-label { font-size:.68rem; color:var(--gray); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px; }
+    .stat-value { font-size:1.35rem; font-weight:700; color:var(--navy); line-height:1; }
+    .stat-value.gold  { color:var(--gold); }
+    .stat-value.green { color:var(--green); }
+    .stat-value.red   { color:var(--red); }
+    .stat-value.blue  { color:var(--blue); }
+    .stat-sub { font-size:.7rem; color:var(--gray); margin-top:4px; }
+
+    /* ── PERIODE SELECTOR ── */
+    .periode-bar { background:#fff; border-radius:14px; padding:14px 18px; display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:20px; box-shadow:0 2px 10px rgba(0,0,0,.05); }
+    .periode-bar label { font-size:.8rem; font-weight:600; color:var(--navy); }
+    .filter-select { padding:9px 13px; border:1.5px solid var(--border); border-radius:10px; font-family:'Inter',sans-serif; font-size:.85rem; color:var(--text); outline:none; background:#fff; cursor:pointer; }
+    .filter-select:focus { border-color:var(--gold); }
+    .date-input { padding:9px 12px; border:1.5px solid var(--border); border-radius:10px; font-family:'Inter',sans-serif; font-size:.85rem; outline:none; cursor:pointer; }
+    .date-input:focus { border-color:var(--gold); }
+
+    /* ── LEADERBOARD + TOOLBAR ── */
+    .two-col { display:grid; grid-template-columns:320px 1fr; gap:20px; align-items:start; }
+
+    /* Leaderboard */
+    .leaderboard-card { background:#fff; border-radius:16px; box-shadow:0 2px 12px rgba(0,0,0,.06); overflow:hidden; position:sticky; top:calc(var(--nav-h) + 16px); }
+    .card-title { padding:18px 20px; font-weight:700; font-size:.95rem; color:var(--navy); border-bottom:1px solid #f0f0f5; display:flex; align-items:center; gap:8px; }
+    .lb-list { padding:8px 0; }
+    .lb-item { display:flex; align-items:center; gap:12px; padding:12px 18px; transition:background .12s; cursor:pointer; }
+    .lb-item:hover { background:#fffbf3; }
+    .lb-item.active { background:#fffbf3; border-left:3px solid var(--gold); padding-left:15px; }
+    .lb-rank { width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:.72rem; font-weight:700; flex-shrink:0; }
+    .lb-rank.r1 { background:linear-gradient(135deg,#f5a623,#ffc857); color:#fff; }
+    .lb-rank.r2 { background:linear-gradient(135deg,#8e9eab,#b0bec5); color:#fff; }
+    .lb-rank.r3 { background:linear-gradient(135deg,#cd7f32,#e8a060); color:#fff; }
+    .lb-rank.rn { background:#f0f0fa; color:var(--gray); }
+    .lb-avatar { width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg,var(--gold),var(--gold-light)); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:.9rem; color:#fff; flex-shrink:0; }
+    .lb-info { flex:1; min-width:0; }
+    .lb-name { font-weight:600; font-size:.88rem; color:var(--navy); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .lb-commission { font-size:.78rem; color:var(--green); font-weight:600; }
+    .lb-bar-wrap { margin:0 18px 12px; }
+    .lb-bar-bg { height:4px; background:#f0f0fa; border-radius:4px; overflow:hidden; }
+    .lb-bar-fill { height:100%; border-radius:4px; background:linear-gradient(90deg,var(--gold),var(--gold-light)); transition:width .5s ease; }
+
+    /* ── TOOLBAR ── */
+    .toolbar { background:#fff; border-radius:14px; padding:14px 18px; display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:16px; box-shadow:0 2px 10px rgba(0,0,0,.05); }
+    .search-wrap { position:relative; flex:1; min-width:180px; }
+    .search-wrap input { width:100%; padding:9px 14px 9px 36px; border:1.5px solid var(--border); border-radius:10px; font-family:'Inter',sans-serif; font-size:.875rem; outline:none; transition:border .2s; }
+    .search-wrap input:focus { border-color:var(--gold); }
+    .search-icon { position:absolute; left:11px; top:50%; transform:translateY(-50%); color:#aaa; font-size:.9rem; }
+
+    /* ── TABLE ── */
+    .table-card { background:#fff; border-radius:16px; box-shadow:0 2px 12px rgba(0,0,0,.06); overflow:hidden; }
+    .table-wrap { overflow-x:auto; }
+    table { width:100%; border-collapse:collapse; font-size:.875rem; }
+    thead { background:#fafafa; border-bottom:2px solid #f0f0f5; }
+    thead th { padding:12px 14px; text-align:left; font-size:.67rem; font-weight:700; color:#aaa; text-transform:uppercase; letter-spacing:1px; white-space:nowrap; cursor:pointer; user-select:none; }
+    thead th:hover { color:var(--gold); }
+    thead th .sort-icon { margin-left:4px; opacity:.4; }
+    thead th.sorted .sort-icon { opacity:1; color:var(--gold); }
+    tbody tr { border-bottom:1px solid #f5f5fa; transition:background .12s; }
+    tbody tr:last-child { border-bottom:none; }
+    tbody tr:hover { background:#fffbf3; }
+    tbody td { padding:12px 14px; vertical-align:middle; }
+    .table-footer { padding:12px 18px; display:flex; align-items:center; justify-content:space-between; border-top:1px solid #f0f0f5; font-size:.82rem; color:var(--gray); flex-wrap:wrap; gap:8px; }
+    .pagination { display:flex; gap:4px; }
+    .pg-btn { width:30px; height:30px; border-radius:7px; display:flex; align-items:center; justify-content:center; font-size:.8rem; cursor:pointer; border:1.5px solid var(--border); background:#fff; color:var(--text); transition:all .15s; }
+    .pg-btn.active { background:var(--gold); border-color:var(--gold); color:#fff; font-weight:700; }
+    .pg-btn:hover:not(.active) { border-color:var(--gold); }
+    .pg-btn:disabled { opacity:.4; cursor:not-allowed; }
+
+    /* ── CELL STYLES ── */
+    .sales-name { font-weight:600; color:var(--navy); font-size:.88rem; }
+    .sales-role { font-size:.7rem; color:var(--gray); }
+    .prod-name  { font-weight:600; font-size:.85rem; color:var(--navy); font-family:'Courier New',monospace; }
+    .prod-type  { font-size:.7rem; color:var(--gray); }
+    .cust-name  { font-weight:600; font-size:.85rem; color:var(--navy); }
+    .cust-id    { font-size:.7rem; color:var(--gray); font-family:'Courier New',monospace; }
+    .commission-val { font-weight:700; color:var(--green); font-size:.92rem; }
+    .nominal-val    { font-size:.85rem; color:var(--navy); font-weight:600; }
+    .rate-val       { font-size:.82rem; color:var(--blue); font-weight:600; }
+
+    /* ── BADGES ── */
+    .badge { display:inline-block; font-size:.67rem; font-weight:700; padding:3px 10px; border-radius:20px; white-space:nowrap; }
+    .badge-paid   { background:#e8f8f0; color:#1e7e4e; border:1px solid rgba(39,174,96,.25); }
+    .badge-unpaid { background:#fff8ec; color:#b37a00; border:1px solid rgba(245,166,35,.3); }
+    .badge-obligasi  { background:#ede9fe; color:#6d28d9; border:1px solid rgba(139,92,246,.2); }
+    .badge-reksadana { background:#d1fae5; color:#065f46; border:1px solid rgba(16,185,129,.2); }
+
+    /* ── MARK PAID ── */
+    .pay-btn { padding:5px 12px; border-radius:8px; font-size:.75rem; font-weight:600; cursor:pointer; border:1.5px solid var(--green); color:var(--green); background:#fff; transition:all .15s; white-space:nowrap; }
+    .pay-btn:hover { background:var(--green); color:#fff; }
+    .pay-btn.paid { border-color:#ddd; color:#bbb; cursor:default; background:#fafafa; }
+    .pay-btn.paid:hover { background:#fafafa; color:#bbb; }
+
+    /* ── EMPTY / LOADING ── */
+    .empty-state { text-align:center; padding:60px 20px; color:#bbb; }
+    .empty-icon { font-size:2.8rem; margin-bottom:12px; }
+    .empty-text { font-size:.9rem; }
+    .loading-wrap { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:80px; gap:16px; color:#aaa; }
+    .spinner { width:36px; height:36px; border:3px solid #f0f0f5; border-top-color:var(--gold); border-radius:50%; animation:spin .7s linear infinite; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+
+    /* ── MODAL ── */
+    .modal-overlay { display:none; position:fixed; inset:0; background:rgba(13,13,43,.55); backdrop-filter:blur(4px); z-index:2000; align-items:center; justify-content:center; }
+    .modal-overlay.open { display:flex; }
+    .modal { background:#fff; border-radius:20px; padding:32px; width:560px; max-width:96vw; max-height:90vh; overflow-y:auto; box-shadow:0 24px 80px rgba(0,0,0,.2); animation:slideUp .25s ease; }
+    @keyframes slideUp { from{transform:translateY(20px);opacity:0} to{transform:translateY(0);opacity:1} }
+    .modal-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; }
+    .modal-title { font-size:1.2rem; font-weight:700; color:var(--navy); }
+    .modal-close { width:32px; height:32px; border-radius:8px; border:1.5px solid var(--border); background:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:1rem; color:var(--gray); transition:all .15s; }
+    .modal-close:hover { border-color:#ffcccc; color:var(--red); background:#fff0f0; }
+    .modal-footer { display:flex; gap:10px; justify-content:flex-end; margin-top:24px; padding-top:18px; border-top:1px solid #f0f0f5; }
+    .detail-section { margin-bottom:20px; }
+    .detail-section-title { font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:var(--gold); margin-bottom:12px; }
+    .detail-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .detail-item label { display:block; font-size:.65rem; color:#aaa; text-transform:uppercase; letter-spacing:.8px; margin-bottom:4px; }
+    .detail-item .val { font-size:.9rem; font-weight:600; color:var(--text); }
+    .detail-item.full { grid-column:1/-1; }
+    .commission-highlight { background:linear-gradient(135deg,#f0fff8,#e8f8f0); border:1.5px solid rgba(39,174,96,.3); border-radius:14px; padding:20px; text-align:center; margin-bottom:20px; }
+    .commission-highlight .label { font-size:.72rem; color:var(--gray); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px; }
+    .commission-highlight .amount { font-size:2rem; font-weight:900; color:var(--green); }
+    .commission-highlight .sub { font-size:.78rem; color:var(--gray); margin-top:4px; }
+
+    /* ── TOAST ── */
+    .toast-container { position:fixed; bottom:28px; right:28px; z-index:9999; display:flex; flex-direction:column; gap:10px; }
+    .toast { padding:14px 20px; border-radius:12px; font-size:.875rem; font-weight:500; box-shadow:0 6px 24px rgba(0,0,0,.15); animation:toastIn .3s ease; max-width:320px; }
+    @keyframes toastIn { from{opacity:0;transform:translateX(20px)} to{opacity:1;transform:translateX(0)} }
+    .toast-success { background:#f0fff8; border:1px solid #a8e6c1; color:#1e7e4e; }
+    .toast-error   { background:#fff0f0; border:1px solid #ffcccc; color:#c0392b; }
+    .toast-info    { background:#f0f4ff; border:1px solid #c5d3ff; color:#2d4abf; }
+
+    @media (max-width:1100px) { .two-col { grid-template-columns:1fr; } .leaderboard-card { position:static; } }
+    @media (max-width:900px)  { .stats-row { grid-template-columns:repeat(2,1fr); } .banner-right { display:none; } }
+    @media (max-width:600px)  { .stats-row { grid-template-columns:1fr; } .page-container { padding:20px 14px; } }
+  </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<div id="navbar-placeholder"></div>
+<script src="navbar.js"></script>
+
+<!-- PAGE -->
+<div class="page-container">
+
+  <!-- Header -->
+  <div class="page-header">
+    <div>
+      <div class="page-title">Sales Commission</div>
+      <div class="page-subtitle">Rekapitulasi komisi sales dari transaksi Obligasi & Reksadana</div>
+      <div class="title-underline"></div>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+      <button class="btn btn-outline btn-sm" onclick="exportCSV()">⬇ Export CSV</button>
+    </div>
+  </div>
+
+  <!-- Summary Banner -->
+  <div class="summary-banner">
+    <div>
+      <div class="banner-label">Total Komisi Keseluruhan</div>
+      <div class="banner-total" id="bannerTotal">Rp 0</div>
+      <div class="banner-sub" id="bannerSub">Memuat data…</div>
+    </div>
+    <div class="banner-right">
+      <div class="banner-stat">
+        <div class="banner-stat-val green" id="bannerPaid">Rp 0</div>
+        <div class="banner-stat-label">Sudah Dibayar</div>
+      </div>
+      <div class="banner-divider"></div>
+      <div class="banner-stat">
+        <div class="banner-stat-val red" id="bannerUnpaid">Rp 0</div>
+        <div class="banner-stat-label">Belum Dibayar</div>
+      </div>
+      <div class="banner-divider"></div>
+      <div class="banner-stat">
+        <div class="banner-stat-val" id="bannerSalesCount">0</div>
+        <div class="banner-stat-label">Total Sales</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stat Cards -->
+  <div class="stats-row">
+    <div class="stat-card total">
+      <div class="stat-label">Total Komisi</div>
+      <div class="stat-value gold" id="sTotal" style="font-size:1.15rem;">—</div>
+      <div class="stat-sub" id="sTotalTx">0 transaksi</div>
+    </div>
+    <div class="stat-card paid">
+      <div class="stat-label">Sudah Dibayar</div>
+      <div class="stat-value green" id="sPaid" style="font-size:1.15rem;">—</div>
+      <div class="stat-sub" id="sPaidTx">0 transaksi</div>
+    </div>
+    <div class="stat-card unpaid">
+      <div class="stat-label">Belum Dibayar</div>
+      <div class="stat-value red" id="sUnpaid" style="font-size:1.15rem;">—</div>
+      <div class="stat-sub" id="sUnpaidTx">0 transaksi</div>
+    </div>
+    <div class="stat-card sales-n">
+      <div class="stat-label">Jumlah Sales Aktif</div>
+      <div class="stat-value blue" id="sSalesCount">—</div>
+      <div class="stat-sub">Berdasarkan filter</div>
+    </div>
+  </div>
+
+  <!-- Filter Periode -->
+  <div class="periode-bar">
+    <label>Filter:</label>
+    <select class="filter-select" id="filterSales" onchange="applyFilter()">
+      <option value="">Semua Sales</option>
+    </select>
+    <select class="filter-select" id="filterSumber" onchange="applyFilter()">
+      <option value="">Semua Produk</option>
+      <option value="obligasi">Obligasi</option>
+      <option value="reksadana">Reksadana</option>
+    </select>
+    <select class="filter-select" id="filterStatus" onchange="applyFilter()">
+      <option value="">Semua Status</option>
+      <option value="unpaid">Belum Dibayar</option>
+      <option value="paid">Sudah Dibayar</option>
+    </select>
+    <input type="date" class="date-input" id="filterDateFrom" onchange="applyFilter()" title="Dari tanggal"/>
+    <span style="color:var(--gray);font-size:.85rem;">s/d</span>
+    <input type="date" class="date-input" id="filterDateTo" onchange="applyFilter()" title="Sampai tanggal"/>
+    <button class="btn btn-outline btn-sm" onclick="resetFilter()">✕ Reset</button>
+  </div>
+
+  <!-- 2 Col: Leaderboard + Table -->
+  <div class="two-col">
+
+    <!-- Leaderboard -->
+    <div class="leaderboard-card">
+      <div class="card-title">🏆 Ranking Sales</div>
+      <div class="lb-list" id="leaderboardList">
+        <div class="loading-wrap" style="padding:40px;"><div class="spinner"></div></div>
+      </div>
+    </div>
+
+    <!-- Right: Toolbar + Table -->
+    <div>
+      <div class="toolbar">
+        <div class="search-wrap">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="searchInput" placeholder="Cari sales, nasabah, produk…" oninput="applyFilter()"/>
+        </div>
+      </div>
+
+      <!-- Loading -->
+      <div class="loading-wrap" id="loadingWrap">
+        <div class="spinner"></div>
+        <div style="font-size:.85rem;">Memuat data komisi…</div>
+      </div>
+
+      <!-- Table -->
+      <div class="table-card" id="tableCard" style="display:none;">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:36px;">#</th>
+                <th onclick="sortBy('tanggal')" id="th-tanggal">Tanggal <span class="sort-icon" id="sort-tanggal">↕</span></th>
+                <th onclick="sortBy('salesNama')" id="th-salesNama">Sales <span class="sort-icon" id="sort-salesNama">↕</span></th>
+                <th>Nasabah</th>
+                <th onclick="sortBy('produk')" id="th-produk">Produk <span class="sort-icon" id="sort-produk">↕</span></th>
+                <th>Sumber</th>
+                <th onclick="sortBy('nominal')" id="th-nominal" style="text-align:right;">Nominal <span class="sort-icon" id="sort-nominal">↕</span></th>
+                <th onclick="sortBy('rateKomisi')" id="th-rateKomisi" style="text-align:center;">Rate <span class="sort-icon" id="sort-rateKomisi">↕</span></th>
+                <th onclick="sortBy('komisi')" id="th-komisi" style="text-align:right;">Komisi <span class="sort-icon" id="sort-komisi">↕</span></th>
+                <th style="text-align:center;">Status</th>
+                <th style="text-align:center;">Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+          </table>
+        </div>
+        <div class="table-footer">
+          <div id="tableInfo"></div>
+          <div class="pagination" id="pagination"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /page-container -->
+
+<!-- Detail Modal -->
+<div class="modal-overlay" id="detailModal" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Detail Komisi</div>
+      <button class="modal-close" onclick="document.getElementById('detailModal').classList.remove('open')">✕</button>
+    </div>
+    <div id="detailContent"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline btn-sm" onclick="document.getElementById('detailModal').classList.remove('open')">Tutup</button>
+      <button class="btn btn-success btn-sm" id="modalPayBtn" onclick="markPaidFromModal()">✓ Tandai Lunas</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+  // ─── CONSTANTS ───────────────────────────────────────────
+  const COL_BB       = 'bb_orders';
+  const COL_SEKUNDER = 'pasar_sekunder_orders';
+  const COL_REKSA    = 'reksadana_transactions';
+  const COL_COMMISSION_STATUS = 'sales_commission_status'; // simpan status paid per doc
+
+  // Default rate komisi — sesuaikan dengan kebijakan FAWZ
+  const RATE_OBLIGASI  = 0.001;  // 0.1% dari nominal
+  const RATE_REKSADANA = 0.005;  // 0.5% dari nominal
+
+  const ROLE_LABELS = { head_account:'Head Account', admin:'Admin', sales:'Sales', treasury:'Treasury' };
+
+  // ─── STATE ───────────────────────────────────────────────
+  let allRows    = [];
+  let filtered   = [];
+  let paidMap    = {};   // { docId: { paid, paidAt, paidBy } }
+  let curUser    = null;
+  let canPay     = false;
+  let sortCol    = 'tanggal';
+  let sortAsc    = false;
+  let curPage    = 1;
+  let modalRowId = null;
+  const PAGE_SIZE = 20;
+
+  // ─── BOOT ────────────────────────────────────────────────
+  async function boot() {
+    const raw = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember');
+    if (!raw) { window.location.replace('login.html'); return; }
+
+    // ── ROLE GUARD ──
+    const _gu = JSON.parse(raw);
+    if (!['head_account', 'admin'].includes(_gu.role)) { window.location.replace('dashboard.html'); return; }
+    curUser = JSON.parse(raw);
+    // Hanya head_account & treasury yang bisa mark paid
+    canPay = ['head_account','treasury'].includes(curUser.role);
+
+    try {
+      await Promise.all([loadPaidStatus(), loadAllData()]);
+    } catch(e) {
+      console.error(e);
+      showToast('Gagal memuat data komisi', 'error');
+    }
+
+    document.getElementById('loadingWrap').style.display = 'none';
+    document.getElementById('tableCard').style.display = 'block';
+
+    populateFilters();
+    applyFilter();
+    updateBanner();
+  }
+
+  // ─── LOAD PAID STATUS ────────────────────────────────────
+  async function loadPaidStatus() {
+    try {
+      const { data, error } = await window._supabase
+        .from('sales_commission_status')
+        .select('*');
+      if (!error && data) {
+        data.forEach(d => { paidMap[d.order_id] = d; });
+      }
+    } catch(e) {
+      console.warn('commission_status:', e.message);
+    }
+  }
+
+  // ─── LOAD ALL TRANSACTIONS ───────────────────────────────
+  async function loadAllData() {
+    allRows = [];
+
+    // 1. Bookbuilding Obligasi (verified only)
+    try {
+      const { data, error } = await window._supabase
+        .from('bb_orders')
+        .select('*')
+        .eq('status', 'verified')
+        .order('created_at', { ascending: false });
+      if (!error && data) {
+        data.forEach(o => {
+          const nominal = Number(o.nominal) || 0;
+          const rate    = o.rateKomisi != null ? Number(o.rateKomisi) : RATE_OBLIGASI;
+          const komisi  = o.komisi != null ? Number(o.komisi) : nominal * rate;
+          const paid    = paidMap[o.id];
+          allRows.push({
+            id:          o.id,
+            sumber:      'obligasi',
+            tanggal:     o.tanggal_order || (o.created_at ? o.created_at.slice(0,10) : ''),
+            salesNama:   o.sales_pic || '—',
+            salesKode:   o.sales_code || '',
+            customerName:o.customer_name || '—',
+            customerId:  o.client_id || '',
+            produk:      o.seri || '—',
+            kategori:    o.category || '',
+            nominal:     nominal,
+            rateKomisi:  rate,
+            komisi:      komisi,
+            statusPaid:  paid?.paid ? 'paid' : 'unpaid',
+            paidAt:      paid?.paid_at || '',
+            paidBy:      paid?.paid_by || '',
+          });
+        });
+      }
+    } catch(e) { console.warn('bb_orders:', e.message); }
+
+    // 2. Pasar Sekunder
+    try {
+      const { data, error } = await window._supabase
+        .from('pasar_sekunder_orders')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (!error && data) {
+        data.forEach(o => {
+          const nominal = Number(o.nominal || 0);
+          const rate    = RATE_OBLIGASI;
+          const komisi  = nominal * rate;
+          const paid    = paidMap[o.id];
+          allRows.push({
+            id:          o.id,
+            sumber:      'obligasi',
+            tanggal:     o.created_at ? o.created_at.slice(0,10) : '',
+            salesNama:   o.sales_name || '—',
+            salesKode:   o.sales_code || '',
+            customerName:o.client_name || '—',
+            customerId:  o.client_id || '',
+            produk:      o.seri || '—',
+            kategori:    o.category || '',
+            nominal:     nominal,
+            rateKomisi:  rate,
+            komisi:      komisi,
+            statusPaid:  paid?.paid ? 'paid' : 'unpaid',
+            paidAt:      paid?.paid_at || '',
+            paidBy:      paid?.paid_by || '',
+          });
+        });
+      }
+    } catch(e) { console.warn('pasar_sekunder:', e.message); }
+
+    // 3. Reksadana
+    try {
+      const { data, error } = await window._supabase
+        .from('reksadana_transactions')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (!error && data) {
+        data.forEach(o => {
+          const nominal = Number(o.nominal || 0);
+          const rate    = RATE_REKSADANA;
+          const komisi  = nominal * rate;
+          const paid    = paidMap[o.id];
+          allRows.push({
+            id:          o.id,
+            sumber:      'reksadana',
+            tanggal:     o.created_at ? o.created_at.slice(0,10) : '',
+            salesNama:   o.sales_name || '—',
+            salesKode:   o.sales_code || '',
+            customerName:o.client_name || '—',
+            customerId:  o.client_id || '',
+            produk:      o.nama_produk || '—',
+            kategori:    o.kategori || '',
+            nominal:     nominal,
+            rateKomisi:  rate,
+            komisi:      komisi,
+            statusPaid:  paid?.paid ? 'paid' : 'unpaid',
+            paidAt:      paid?.paid_at || '',
+            paidBy:      paid?.paid_by || '',
+          });
+        });
+      }
+    } catch(e) { console.warn('reksadana:', e.message); }
+
+    allRows.sort((a,b) => (b.tanggal||'').localeCompare(a.tanggal||''));
+  }
+
+  // ─── POPULATE FILTERS ────────────────────────────────────
+  function populateFilters() {
+    const salesSet = [...new Set(allRows.map(r => r.salesNama).filter(v => v && v !== '—'))].sort();
+    const sel = document.getElementById('filterSales');
+    salesSet.forEach(s => {
+      const o = document.createElement('option'); o.value = s; o.textContent = s;
+      sel.appendChild(o);
+    });
+  }
+
+  // ─── FILTER + SORT ───────────────────────────────────────
+  function applyFilter() {
+    const q        = document.getElementById('searchInput').value.toLowerCase();
+    const sales    = document.getElementById('filterSales').value;
+    const sumber   = document.getElementById('filterSumber').value;
+    const status   = document.getElementById('filterStatus').value;
+    const dateFrom = document.getElementById('filterDateFrom').value;
+    const dateTo   = document.getElementById('filterDateTo').value;
+
+    filtered = allRows.filter(r => {
+      const matchQ    = !q || [r.salesNama,r.salesKode,r.customerName,r.customerId,r.produk]
+                          .some(v => (v||'').toLowerCase().includes(q));
+      const matchS    = !sales  || r.salesNama === sales;
+      const matchSumb = !sumber || r.sumber === sumber;
+      const matchSt   = !status || r.statusPaid === status;
+      const matchFrom = !dateFrom || r.tanggal >= dateFrom;
+      const matchTo   = !dateTo   || r.tanggal <= dateTo;
+      return matchQ && matchS && matchSumb && matchSt && matchFrom && matchTo;
+    });
+
+    filtered.sort((a,b) => {
+      let va = a[sortCol] ?? '', vb = b[sortCol] ?? '';
+      if (['nominal','komisi','rateKomisi'].includes(sortCol)) { va = Number(a[sortCol]||0); vb = Number(b[sortCol]||0); }
+      if (va < vb) return sortAsc ? -1 : 1;
+      if (va > vb) return sortAsc ?  1 : -1;
+      return 0;
+    });
+
+    curPage = 1;
+    renderStats();
+    renderTable();
+    renderLeaderboard();
+  }
+
+  function resetFilter() {
+    document.getElementById('searchInput').value = '';
+    document.getElementById('filterSales').value = '';
+    document.getElementById('filterSumber').value = '';
+    document.getElementById('filterStatus').value = '';
+    document.getElementById('filterDateFrom').value = '';
+    document.getElementById('filterDateTo').value = '';
+    applyFilter();
+  }
+
+  function sortBy(col) {
+    if (sortCol === col) { sortAsc = !sortAsc; }
+    else { sortCol = col; sortAsc = !['nominal','komisi','rateKomisi','tanggal'].includes(col); }
+    document.querySelectorAll('.sort-icon').forEach(el => el.textContent = '↕');
+    const icon = document.getElementById('sort-'+col);
+    if (icon) icon.textContent = sortAsc ? '↑' : '↓';
+    document.querySelectorAll('thead th').forEach(th => th.classList.remove('sorted'));
+    const th = document.getElementById('th-'+col);
+    if (th) th.classList.add('sorted');
+    applyFilter();
+  }
+
+  // ─── STATS ───────────────────────────────────────────────
+  function renderStats() {
+    const paidRows   = filtered.filter(r => r.statusPaid === 'paid');
+    const unpaidRows = filtered.filter(r => r.statusPaid === 'unpaid');
+    const total  = filtered.reduce((s,r) => s + r.komisi, 0);
+    const paid   = paidRows.reduce((s,r) => s + r.komisi, 0);
+    const unpaid = unpaidRows.reduce((s,r) => s + r.komisi, 0);
+    const salesSet = new Set(filtered.map(r => r.salesNama));
+
+    document.getElementById('sTotal').textContent    = fmtRp(total);
+    document.getElementById('sTotalTx').textContent  = `${filtered.length} transaksi`;
+    document.getElementById('sPaid').textContent     = fmtRp(paid);
+    document.getElementById('sPaidTx').textContent   = `${paidRows.length} transaksi`;
+    document.getElementById('sUnpaid').textContent   = fmtRp(unpaid);
+    document.getElementById('sUnpaidTx').textContent = `${unpaidRows.length} transaksi`;
+    document.getElementById('sSalesCount').textContent = salesSet.size;
+  }
+
+  function updateBanner() {
+    const total  = allRows.reduce((s,r) => s + r.komisi, 0);
+    const paid   = allRows.filter(r => r.statusPaid==='paid').reduce((s,r) => s + r.komisi, 0);
+    const unpaid = allRows.filter(r => r.statusPaid==='unpaid').reduce((s,r) => s + r.komisi, 0);
+    const salesN = new Set(allRows.map(r => r.salesNama)).size;
+    document.getElementById('bannerTotal').textContent      = fmtRpFull(total);
+    document.getElementById('bannerPaid').textContent       = fmtRp(paid);
+    document.getElementById('bannerUnpaid').textContent     = fmtRp(unpaid);
+    document.getElementById('bannerSalesCount').textContent = salesN;
+    document.getElementById('bannerSub').textContent        = `${allRows.length} transaksi · per ${new Date().toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})}`;
+  }
+
+  // ─── LEADERBOARD ─────────────────────────────────────────
+  function renderLeaderboard() {
+    const salesMap = {};
+    filtered.forEach(r => {
+      if (!salesMap[r.salesNama]) salesMap[r.salesNama] = { nama:r.salesNama, komisi:0, tx:0, paid:0 };
+      salesMap[r.salesNama].komisi += r.komisi;
+      salesMap[r.salesNama].tx++;
+      if (r.statusPaid === 'paid') salesMap[r.salesNama].paid += r.komisi;
+    });
+    const sorted = Object.values(salesMap).sort((a,b) => b.komisi - a.komisi);
+    const max = sorted[0]?.komisi || 1;
+
+    const list = document.getElementById('leaderboardList');
+    if (!sorted.length) {
+      list.innerHTML = `<div class="empty-state" style="padding:32px 20px;"><div class="empty-icon">📊</div><div class="empty-text">Belum ada data</div></div>`;
+      return;
+    }
+
+    list.innerHTML = sorted.map((s, i) => {
+      const rankClass = i===0?'r1':i===1?'r2':i===2?'r3':'rn';
+      const initial = s.nama.charAt(0).toUpperCase();
+      const pct = Math.round((s.komisi / max) * 100);
+      return `
+        <div class="lb-item" onclick="filterBySales('${esc(s.nama)}')">
+          <div class="lb-rank ${rankClass}">${i+1}</div>
+          <div class="lb-avatar">${initial}</div>
+          <div class="lb-info">
+            <div class="lb-name">${esc(s.nama)}</div>
+            <div class="lb-commission">${fmtRp(s.komisi)} · ${s.tx} tx</div>
+          </div>
+        </div>
+        <div class="lb-bar-wrap">
+          <div class="lb-bar-bg"><div class="lb-bar-fill" style="width:${pct}%"></div></div>
+        </div>`;
+    }).join('');
+  }
+
+  function filterBySales(nama) {
+    document.getElementById('filterSales').value = nama;
+    applyFilter();
+    window.scrollTo({ top: 0, behavior:'smooth' });
+  }
+
+  // ─── TABLE ───────────────────────────────────────────────
+  function renderTable() {
+    const tbody = document.getElementById('tableBody');
+    const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+    curPage = Math.min(curPage, totalPages);
+    const slice = filtered.slice((curPage-1)*PAGE_SIZE, curPage*PAGE_SIZE);
+
+    document.getElementById('tableInfo').textContent = filtered.length
+      ? `Menampilkan ${(curPage-1)*PAGE_SIZE+1}–${Math.min(curPage*PAGE_SIZE,filtered.length)} dari ${filtered.length} transaksi`
+      : 'Tidak ada data';
+
+    if (!filtered.length) {
+      tbody.innerHTML = `<tr><td colspan="11"><div class="empty-state"><div class="empty-icon">💰</div><div class="empty-text">Belum ada data komisi yang sesuai filter</div></div></td></tr>`;
+      renderPagination(0,0); return;
+    }
+
+    tbody.innerHTML = slice.map((r, i) => {
+      const rowNum = (curPage-1)*PAGE_SIZE + i + 1;
+      const isPaid = r.statusPaid === 'paid';
+      const sumberBadge = r.sumber === 'obligasi'
+        ? `<span class="badge badge-obligasi">📄 Obligasi</span>`
+        : `<span class="badge badge-reksadana">📈 Reksadana</span>`;
+      const statusBadge = isPaid
+        ? `<span class="badge badge-paid">✓ Lunas</span>`
+        : `<span class="badge badge-unpaid">⏳ Belum</span>`;
+      const payBtn = canPay
+        ? `<button class="pay-btn${isPaid?' paid':''}" onclick="event.stopPropagation();${isPaid?'':'markPaid(\''+r.id+'\', this)'}">${isPaid?'✓ Lunas':'Bayar'}</button>`
+        : `<span style="color:#ccc;font-size:.75rem;">${isPaid?'✓':'-'}</span>`;
+
+      return `<tr onclick="showDetail('${r.id}')" style="cursor:pointer;">
+        <td style="color:var(--gray);font-size:.78rem;">${rowNum}</td>
+        <td style="font-size:.82rem;color:var(--gray);white-space:nowrap;">${fmtDate(r.tanggal)}</td>
+        <td>
+          <div class="sales-name">${esc(r.salesNama)}</div>
+          ${r.salesKode ? `<div class="sales-role">${esc(r.salesKode)}</div>` : ''}
+        </td>
+        <td>
+          <div class="cust-name">${esc(r.customerName)}</div>
+          ${r.customerId ? `<div class="cust-id">${esc(r.customerId)}</div>` : ''}
+        </td>
+        <td>
+          <div class="prod-name">${esc(r.produk)}</div>
+          ${r.kategori ? `<div class="prod-type">${esc(r.kategori)}</div>` : ''}
+        </td>
+        <td>${sumberBadge}</td>
+        <td style="text-align:right;"><div class="nominal-val">${fmtRpFull(r.nominal)}</div></td>
+        <td style="text-align:center;"><div class="rate-val">${(r.rateKomisi*100).toFixed(2)}%</div></td>
+        <td style="text-align:right;"><div class="commission-val">${fmtRpFull(r.komisi)}</div></td>
+        <td style="text-align:center;">${statusBadge}</td>
+        <td style="text-align:center;" onclick="event.stopPropagation();">${payBtn}</td>
+      </tr>`;
+    }).join('');
+
+    renderPagination(totalPages, curPage);
+  }
+
+  function renderPagination(total, cur) {
+    const pg = document.getElementById('pagination');
+    if (total <= 1) { pg.innerHTML = ''; return; }
+    let html = `<button class="pg-btn" onclick="goPage(${cur-1})" ${cur<=1?'disabled':''}>‹</button>`;
+    for (let p = 1; p <= total; p++) {
+      if (p===1 || p===total || Math.abs(p-cur)<=2) {
+        html += `<button class="pg-btn ${p===cur?'active':''}" onclick="goPage(${p})">${p}</button>`;
+      } else if (Math.abs(p-cur)===3) {
+        html += `<span style="padding:0 4px;color:#aaa;line-height:30px;">…</span>`;
+      }
+    }
+    html += `<button class="pg-btn" onclick="goPage(${cur+1})" ${cur>=total?'disabled':''}>›</button>`;
+    pg.innerHTML = html;
+  }
+
+  function goPage(p) { curPage = p; renderTable(); window.scrollTo({top:0,behavior:'smooth'}); }
+
+  // ─── MARK PAID ───────────────────────────────────────────
+  async function markPaid(id, btn) {
+    if (!canPay) { showToast('Tidak memiliki akses untuk menandai lunas', 'error'); return; }
+    const r = allRows.find(x => x.id === id);
+    if (!r || r.statusPaid === 'paid') return;
+
+    const prevText = btn?.textContent;
+    if (btn) { btn.textContent = '…'; btn.disabled = true; }
+
+    try {
+      const now = new Date().toISOString();
+      // Upsert status ke sales_commission_status
+      const { error } = await window._supabase
+        .from('sales_commission_status')
+        .upsert({
+          order_id: id,
+          order_type: r.sumber || 'obligasi',
+          paid: true,
+          paid_at: now,
+          paid_by: curUser?.name || ''
+        }, { onConflict: 'order_id' });
+
+      if (error) throw error;
+
+      // Update local state
+      r.statusPaid = 'paid'; r.paidAt = now; r.paidBy = curUser?.name || '';
+      paidMap[id]  = { paid:true, paid_at:now, paid_by:curUser?.name||'' };
+      applyFilter();
+      updateBanner();
+      showToast(`Komisi ${esc(r.salesNama)} — ${esc(r.produk)} ditandai lunas`, 'success');
+    } catch(e) {
+      showToast('Gagal menyimpan status: '+e.message, 'error');
+      if (btn) { btn.textContent = prevText; btn.disabled = false; }
+    }
+  }
+
+  async function markPaidFromModal() {
+    if (!modalRowId) return;
+    const r = allRows.find(x => x.id === modalRowId);
+    if (!r || r.statusPaid === 'paid') return;
+    await markPaid(modalRowId, null);
+    document.getElementById('detailModal').classList.remove('open');
+  }
+
+  // ─── DETAIL MODAL ────────────────────────────────────────
+  function showDetail(id) {
+    const r = allRows.find(x => x.id === id);
+    if (!r) return;
+    modalRowId = id;
+    const isPaid = r.statusPaid === 'paid';
+
+    const payBtn = document.getElementById('modalPayBtn');
+    payBtn.style.display = canPay && !isPaid ? 'inline-flex' : 'none';
+
+    document.getElementById('detailContent').innerHTML = `
+      <div class="commission-highlight">
+        <div class="label">Komisi Sales</div>
+        <div class="amount">${fmtRpFull(r.komisi)}</div>
+        <div class="sub">${(r.rateKomisi*100).toFixed(2)}% dari nominal ${fmtRpFull(r.nominal)}</div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-title">Informasi Transaksi</div>
+        <div class="detail-grid">
+          <div class="detail-item"><label>Tanggal</label><div class="val">${fmtDate(r.tanggal)}</div></div>
+          <div class="detail-item"><label>Sumber</label><div class="val">${r.sumber === 'obligasi' ? '📄 Obligasi' : '📈 Reksadana'}</div></div>
+          <div class="detail-item"><label>Produk</label><div class="val" style="font-family:'Courier New',monospace;">${esc(r.produk)}</div></div>
+          <div class="detail-item"><label>Kategori</label><div class="val">${esc(r.kategori||'—')}</div></div>
+          <div class="detail-item"><label>Nasabah</label><div class="val">${esc(r.customerName)}</div></div>
+          <div class="detail-item"><label>ID Customer</label><div class="val" style="font-family:'Courier New',monospace;font-size:.82rem;">${esc(r.customerId||'—')}</div></div>
+        </div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-title">Informasi Sales</div>
+        <div class="detail-grid">
+          <div class="detail-item"><label>Nama Sales</label><div class="val">${esc(r.salesNama)}</div></div>
+          <div class="detail-item"><label>Kode Sales</label><div class="val" style="font-family:'Courier New',monospace;">${esc(r.salesKode||'—')}</div></div>
+        </div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-title">Status Pembayaran</div>
+        <div class="detail-grid">
+          <div class="detail-item"><label>Status</label><div class="val" style="color:${isPaid?'var(--green)':'var(--gold)'}; font-weight:700;">${isPaid?'✓ Sudah Dibayar':'⏳ Belum Dibayar'}</div></div>
+          ${isPaid ? `
+          <div class="detail-item"><label>Dibayar Pada</label><div class="val">${fmtDate(r.paidAt)}</div></div>
+          <div class="detail-item full"><label>Dibayar Oleh</label><div class="val">${esc(r.paidBy||'—')}</div></div>
+          ` : '<div class="detail-item"><label>Dibayar Pada</label><div class="val" style="color:#ccc;">—</div></div>'}
+        </div>
+      </div>`;
+
+    document.getElementById('detailModal').classList.add('open');
+  }
+
+  // ─── EXPORT CSV ──────────────────────────────────────────
+  function exportCSV() {
+    if (!filtered.length) { showToast('Tidak ada data untuk diexport', 'error'); return; }
+    const headers = ['Tanggal','Sales Nama','Sales Kode','Nasabah','ID Customer','Produk','Kategori','Sumber','Nominal','Rate Komisi (%)','Komisi','Status','Dibayar Pada','Dibayar Oleh'];
+    const rows = filtered.map(r => [
+      r.tanggal, r.salesNama, r.salesKode, r.customerName, r.customerId,
+      r.produk, r.kategori, r.sumber, r.nominal,
+      (r.rateKomisi*100).toFixed(2), r.komisi, r.statusPaid, r.paidAt||'', r.paidBy||''
+    ].map(v => `"${String(v??'').replace(/"/g,'""')}"`).join(','));
+    const csv  = [headers.join(','), ...rows].join('\n');
+    const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8;'});
+    const a    = document.createElement('a');
+    a.href     = URL.createObjectURL(blob);
+    a.download = `sales-commission-${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    showToast(`${filtered.length} data berhasil diexport`, 'success');
+  }
+
+  // ─── UTILS ───────────────────────────────────────────────
+  function tsToDate(ts) {
+    if (!ts) return '';
+    try { return ts.toDate().toISOString().slice(0,10); } catch { return ''; }
+  }
+  function esc(s) {
+    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  function fmtDate(d) {
+    if (!d) return '—';
+    try { return new Date(d).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}); }
+    catch { return d; }
+  }
+  function fmtRp(val) {
+    const n = Math.abs(Number(val)||0);
+    if (n >= 1e12) return 'Rp '+(n/1e12).toFixed(2)+' T';
+    if (n >= 1e9)  return 'Rp '+(n/1e9).toFixed(2)+' M';
+    if (n >= 1e6)  return 'Rp '+(n/1e6).toFixed(1)+' jt';
+    return 'Rp '+n.toLocaleString('id-ID');
+  }
+  function fmtRpFull(val) {
+    const n = Number(val)||0;
+    return 'Rp '+Math.abs(n).toLocaleString('id-ID',{minimumFractionDigits:0,maximumFractionDigits:2});
+  }
+  function showToast(msg, type='info') {
+    const t = document.createElement('div');
+    t.className = `toast toast-${type}`; t.textContent = msg;
+    document.getElementById('toastContainer').appendChild(t);
+    setTimeout(() => t.remove(), 3500);
+  }
+</script>
+</body>
+</html>
