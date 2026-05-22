@@ -1337,18 +1337,17 @@
           const secRow = {
             customer_id: inserted.id,
             sekuritas_name: 'Maybank',
-            rdn_bank_name: row.savingsBankID || null,
-            rdn_account_no: row.savingsID || null,
-            sec_client_id: row.clientID || null,
-            sid: row.kseiSingleID || null,
-            personal_bank_name: row.bankAccountID || null,
-            personal_account_no: row.bankAccountNo || null,
-            personal_account_name: row.bankAccountName || null,
+            rdn_bank_name: row.savingsBankID || row.SavingsBankID || null,
+            rdn_account_no: row.savingsID || row.SavingsID || null,
+            sec_client_id: row.clientID || row.ClientID || null,
+            sid: row.kseiSingleID || row.KSEISingleID || null,
+            personal_bank_name: row.bankAccountID || row.BankAccountID || null,
+            personal_account_no: row.bankAccountNo || row.BankAccountNo || null,
+            personal_account_name: row.bankAccountName || row.BankAccountName || null,
           };
-          // Only insert if there's meaningful data
-          if (secRow.rdn_bank_name || secRow.rdn_account_no || secRow.personal_bank_name || secRow.personal_account_no) {
-            await window._supabase.from('customer_securities').insert(secRow);
-          }
+          // Always insert securities row (even if some fields empty)
+          const { error: secErr } = await window._supabase.from('customer_securities').insert(secRow);
+          if (secErr) console.warn('Securities insert error:', secErr.message, secRow);
 
           // Map with extra fields for display
           const mapped = mapCustomerRow(inserted);
