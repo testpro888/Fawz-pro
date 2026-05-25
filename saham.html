@@ -262,11 +262,10 @@
         <label class="form-label">Tanggal</label>
         <input class="form-input" type="date" id="fTanggal"/>
       </div>
-      <div class="form-group">
+      <div class="form-group" style="position:relative;">
         <label class="form-label">Client ID</label>
-        <select class="form-input" id="fClientId" onchange="onClientSelect()" style="cursor:pointer;">
-          <option value="">-- Pilih Nasabah --</option>
-        </select>
+        <input class="form-input" id="fClientId" placeholder="Ketik kode nasabah..." autocomplete="off" oninput="filterClientDropdown()" onfocus="showClientDropdown()"/>
+        <div id="clientDropdown" style="display:none;position:absolute;top:100%;left:0;right:0;max-height:200px;overflow-y:auto;background:#fff;border:1.5px solid var(--gold);border-radius:0 0 10px 10px;box-shadow:0 8px 24px rgba(0,0,0,0.12);z-index:100;"></div>
       </div>
       <div class="form-group">
         <label class="form-label">Nama Nasabah</label>
@@ -328,9 +327,6 @@
       if (error) { console.warn('Load customers error:', error); return; }
       if (data) {
         customers = data;
-        const sel = document.getElementById('fClientId');
-        sel.innerHTML = '<option value="">-- Pilih Nasabah --</option>' +
-          data.map(c => `<option value="${c.client_id}">${c.client_id} — ${c.client_name || ''}</option>`).join('');
       }
     } catch(e) { console.warn('Load customers:', e); }
   }
@@ -552,6 +548,7 @@
     document.getElementById('fVolume').value = '';
     document.getElementById('fFee').value = '';
     document.getElementById('fCatatan').value = '';
+    document.getElementById('clientDropdown').style.display = 'none';
     // Clear validation errors on close
     document.getElementById('validationErrorContainer').style.display = 'none';
     document.getElementById('validationErrors').innerHTML = '';
@@ -709,6 +706,76 @@
       document.getElementById('fSalesName').value = c.sales_person_name || c.sales_name || c.sales || '';
     }
   }
+
+  // Custom searchable dropdown for Client ID
+  function filterClientDropdown() {
+    const input = document.getElementById('fClientId');
+    const query = input.value.toUpperCase();
+    const dropdown = document.getElementById('clientDropdown');
+
+    if (!query) {
+      dropdown.style.display = 'none';
+      document.getElementById('fClientName').value = '';
+      document.getElementById('fSalesName').value = '';
+      return;
+    }
+
+    const filtered = customers.filter(c =>
+      (c.client_id && c.client_id.toUpperCase().includes(query)) ||
+      (c.client_name && c.client_name.toUpperCase().includes(query))
+    );
+
+    if (filtered.length === 0) {
+      dropdown.innerHTML = '<div style="padding:10px 14px;color:#888;font-size:0.82rem;">Tidak ditemukan</div>';
+    } else {
+      dropdown.innerHTML = filtered.slice(0, 20).map(c =>
+        `<div class="client-option" onclick="selectClient('${c.client_id}')" style="padding:10px 14px;cursor:pointer;font-size:0.82rem;border-bottom:1px solid #f0f0f5;transition:background 0.1s;" onmouseover="this.style.background='#fffbf3'" onmouseout="this.style.background='#fff'">
+          <strong>${c.client_id}</strong> — ${c.client_name || ''}
+        </div>`
+      ).join('');
+    }
+    dropdown.style.display = 'block';
+  }
+
+  function showClientDropdown() {
+    const input = document.getElementById('fClientId');
+    if (input.value) {
+      filterClientDropdown();
+    } else {
+      // Show all (max 20)
+      const dropdown = document.getElementById('clientDropdown');
+      const list = customers.slice(0, 20);
+      if (list.length === 0) {
+        dropdown.innerHTML = '<div style="padding:10px 14px;color:#888;font-size:0.82rem;">Belum ada data nasabah</div>';
+      } else {
+        dropdown.innerHTML = list.map(c =>
+          `<div class="client-option" onclick="selectClient('${c.client_id}')" style="padding:10px 14px;cursor:pointer;font-size:0.82rem;border-bottom:1px solid #f0f0f5;transition:background 0.1s;" onmouseover="this.style.background='#fffbf3'" onmouseout="this.style.background='#fff'">
+            <strong>${c.client_id}</strong> — ${c.client_name || ''}
+          </div>`
+        ).join('');
+      }
+      dropdown.style.display = 'block';
+    }
+  }
+
+  function selectClient(clientId) {
+    const c = customers.find(x => x.client_id === clientId);
+    if (c) {
+      document.getElementById('fClientId').value = c.client_id;
+      document.getElementById('fClientName').value = c.client_name || '';
+      document.getElementById('fSalesName').value = c.sales_person_name || c.sales_name || c.sales || '';
+    }
+    document.getElementById('clientDropdown').style.display = 'none';
+  }
+
+  // Close dropdown when clicking outside
+  document.addEventListener('click', function(e) {
+    const dropdown = document.getElementById('clientDropdown');
+    const input = document.getElementById('fClientId');
+    if (dropdown && !dropdown.contains(e.target) && e.target !== input) {
+      dropdown.style.display = 'none';
+    }
+  });
 
   function formatRp(n) {
     return 'Rp ' + (n || 0).toLocaleString('id-ID');
