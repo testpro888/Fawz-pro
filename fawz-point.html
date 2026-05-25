@@ -10,7 +10,7 @@
   <script>
     const SUPABASE_URL = 'https://yhmrfluehibfapvtxcfi.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlobXJmbHVlaGliZmFwdnR4Y2ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNjEzODUsImV4cCI6MjA5NDczNzM4NX0.se_H4n_eLsf81d_1GH5sqsPCpX89MHewlPuuNkY6qcU';
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const _sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   </script>
 
   <style>
@@ -337,7 +337,7 @@
    */
   async function processRedemption(clientId, clientName, points, redeemedBy) {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await _sb
         .from('point_redemptions')
         .insert({
           client_id: clientId,
@@ -428,7 +428,7 @@
   async function loadRedemptionHistory() {
     const tbody = document.getElementById('historyBody');
     try {
-      const { data, error } = await supabase
+      const { data, error } = await _sb
         .from('point_redemptions')
         .select('client_name, points_redeemed, redeemed_by, redemption_date')
         .order('redemption_date', { ascending: false });
@@ -504,7 +504,7 @@
 
       // Fetch all transactions for the selected month (all transaction types)
       // Requirements: 8.2 - Accumulate volume from all transaction types
-      const { data, error } = await supabase
+      const { data, error } = await _sb
         .from('saham_transaksi')
         .select('client_id, client_name, volume')
         .gte('tanggal', startDate)
@@ -514,7 +514,7 @@
 
       // Fetch all redemptions (not filtered by month - total lifetime redemptions)
       // Requirements: 9.2 - available = earned - previously redeemed (all time)
-      const { data: redemptions, error: redemError } = await supabase
+      const { data: redemptions, error: redemError } = await _sb
         .from('point_redemptions')
         .select('client_id, points_redeemed');
 
