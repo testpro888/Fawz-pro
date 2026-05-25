@@ -13,7 +13,7 @@
   <script>
     const SUPABASE_URL = 'https://yhmrfluehibfapvtxcfi.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlobXJmbHVlaGliZmFwdnR4Y2ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNjEzODUsImV4cCI6MjA5NDczNzM4NX0.se_H4n_eLsf81d_1GH5sqsPCpX89MHewlPuuNkY6qcU';
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const _sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   </script>
 
   <style>
@@ -323,7 +323,7 @@
 
   async function loadCustomers() {
     try {
-      const { data, error } = await supabase.from('customers').select('*').order('client_name');
+      const { data, error } = await _sb.from('customers').select('*').order('client_name');
       if (error) {
         console.error('Load customers error:', error.message, error);
         return;
@@ -337,7 +337,7 @@
 
   async function loadData() {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await _sb
         .from('saham_transaksi')
         .select('*')
         .order('tanggal', { ascending: false });
@@ -628,7 +628,7 @@
     btn.disabled = true; btn.textContent = 'Menyimpan...';
 
     try {
-      const { data: inserted, error } = await supabase.from('saham_transaksi').insert({
+      const { data: inserted, error } = await _sb.from('saham_transaksi').insert({
         tanggal, client_id, client_name, volume, fee, catatan,
         sales_name: sales_name || '',
         created_by: curUser?.name || ''
@@ -671,7 +671,7 @@
 
     try {
       // Req 10.3: Remove from saham_transaksi table
-      const { error } = await supabase.from('saham_transaksi').delete().eq('id', id);
+      const { error } = await _sb.from('saham_transaksi').delete().eq('id', id);
 
       // Req 10.4: Check for database error from Supabase response
       if (error) {
