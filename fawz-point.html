@@ -433,12 +433,16 @@
         .select('client_name, points_redeemed, redeemed_by, redemption_date')
         .order('redemption_date', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.warn('point_redemptions query error (table may not exist):', error.message);
+        renderRedemptionHistory([]);
+        return;
+      }
 
       renderRedemptionHistory(data || []);
     } catch (e) {
-      console.error('Load redemption history error:', e);
-      tbody.innerHTML = '<tr><td colspan="4"><div class="history-empty">❌ Gagal memuat riwayat redemption</div></td></tr>';
+      console.warn('Load redemption history:', e);
+      renderRedemptionHistory([]);
     }
   }
 
@@ -514,13 +518,15 @@
 
       // Fetch all redemptions (not filtered by month - total lifetime redemptions)
       // Requirements: 9.2 - available = earned - previously redeemed (all time)
-      const { data: redemptions, error: redemError } = await _sb
-        .from('point_redemptions')
-        .select('client_id, points_redeemed');
+      let redemptions = [];
+      try {
+        const { data: redemData, error: redemError } = await _sb
+          .from('point_redemptions')
+          .select('client_id, points_redeemed');
+        if (!redemError) redemptions = redemData || [];
+      } catch(e) { console.warn('point_redemptions table may not exist yet:', e); }
 
-      if (redemError) throw redemError;
-
-      redemptionsData = redemptions || [];
+      redemptionsData = redemptions;
 
       // Build leaderboard from transactions and redemptions
       pointsData = buildLeaderboard(data, redemptionsData);
