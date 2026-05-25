@@ -324,11 +324,15 @@
   async function loadCustomers() {
     try {
       const { data, error } = await supabase.from('customers').select('*').order('client_name');
-      if (error) { console.warn('Load customers error:', error); return; }
-      if (data) {
-        customers = data;
+      if (error) {
+        console.error('Load customers error:', error.message, error);
+        return;
       }
-    } catch(e) { console.warn('Load customers:', e); }
+      customers = data || [];
+      console.log('Loaded customers:', customers.length);
+    } catch(e) {
+      console.error('Load customers exception:', e);
+    }
   }
 
   async function loadData() {
@@ -720,19 +724,22 @@
       return;
     }
 
-    const filtered = customers.filter(c =>
-      (c.client_id && c.client_id.toUpperCase().includes(query)) ||
-      (c.client_name && c.client_name.toUpperCase().includes(query))
-    );
+    const filtered = customers.filter(c => {
+      const cid = (c.client_id || '').toUpperCase();
+      const cname = (c.client_name || '').toUpperCase();
+      return cid.includes(query) || cname.includes(query);
+    });
 
     if (filtered.length === 0) {
       dropdown.innerHTML = '<div style="padding:10px 14px;color:#888;font-size:0.82rem;">Tidak ditemukan</div>';
     } else {
-      dropdown.innerHTML = filtered.slice(0, 20).map(c =>
-        `<div class="client-option" onclick="selectClient('${c.client_id}')" style="padding:10px 14px;cursor:pointer;font-size:0.82rem;border-bottom:1px solid #f0f0f5;transition:background 0.1s;" onmouseover="this.style.background='#fffbf3'" onmouseout="this.style.background='#fff'">
-          <strong>${c.client_id}</strong> — ${c.client_name || ''}
-        </div>`
-      ).join('');
+      dropdown.innerHTML = filtered.slice(0, 20).map(c => {
+        const cid = c.client_id || '';
+        const cname = c.client_name || '';
+        return `<div onclick="selectClient('${cid}')" style="padding:10px 14px;cursor:pointer;font-size:0.82rem;border-bottom:1px solid #f0f0f5;transition:background 0.1s;" onmouseover="this.style.background='#fffbf3'" onmouseout="this.style.background='#fff'">
+          <strong>${cid}</strong> — ${cname}
+        </div>`;
+      }).join('');
     }
     dropdown.style.display = 'block';
   }
@@ -742,17 +749,18 @@
     if (input.value) {
       filterClientDropdown();
     } else {
-      // Show all (max 20)
       const dropdown = document.getElementById('clientDropdown');
-      const list = customers.slice(0, 20);
-      if (list.length === 0) {
-        dropdown.innerHTML = '<div style="padding:10px 14px;color:#888;font-size:0.82rem;">Belum ada data nasabah</div>';
+      if (customers.length === 0) {
+        dropdown.innerHTML = '<div style="padding:10px 14px;color:#888;font-size:0.82rem;">Belum ada data nasabah (loading...)</div>';
       } else {
-        dropdown.innerHTML = list.map(c =>
-          `<div class="client-option" onclick="selectClient('${c.client_id}')" style="padding:10px 14px;cursor:pointer;font-size:0.82rem;border-bottom:1px solid #f0f0f5;transition:background 0.1s;" onmouseover="this.style.background='#fffbf3'" onmouseout="this.style.background='#fff'">
-            <strong>${c.client_id}</strong> — ${c.client_name || ''}
-          </div>`
-        ).join('');
+        const list = customers.slice(0, 20);
+        dropdown.innerHTML = list.map(c => {
+          const cid = c.client_id || '';
+          const cname = c.client_name || '';
+          return `<div onclick="selectClient('${cid}')" style="padding:10px 14px;cursor:pointer;font-size:0.82rem;border-bottom:1px solid #f0f0f5;transition:background 0.1s;" onmouseover="this.style.background='#fffbf3'" onmouseout="this.style.background='#fff'">
+            <strong>${cid}</strong> — ${cname}
+          </div>`;
+        }).join('');
       }
       dropdown.style.display = 'block';
     }
@@ -763,7 +771,7 @@
     if (c) {
       document.getElementById('fClientId').value = c.client_id;
       document.getElementById('fClientName').value = c.client_name || '';
-      document.getElementById('fSalesName').value = c.sales_person_name || c.sales_name || c.sales || '';
+      document.getElementById('fSalesName').value = c.sales_person_name || c.sales_name || '';
     }
     document.getElementById('clientDropdown').style.display = 'none';
   }
