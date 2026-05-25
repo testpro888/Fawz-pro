@@ -6,6 +6,9 @@
   <title>Fawz Pro | Transaksi Saham</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 
+  <script src="saham-holidays.js"></script>
+  <script src="saham-aggregation.js"></script>
+  <script src="saham-validation.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script>
     const SUPABASE_URL = 'https://yhmrfluehibfapvtxcfi.supabase.co';
@@ -99,9 +102,47 @@
   </style>
 
   <script>
+    // Access Control IIFE - validates session and role before any data rendering
+    // Requirements: 6.1, 6.2, 6.3, 6.4, 6.6, 6.7
     (function() {
-      const raw = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember');
-      if (!raw) { window.location.replace('login.html'); return; }
+      var raw = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember');
+
+      // No session data found → redirect to login
+      if (!raw) {
+        window.location.replace('login.html');
+        return;
+      }
+
+      // Attempt to parse JSON - invalid JSON → treat as unauthenticated
+      var user;
+      try {
+        user = JSON.parse(raw);
+      } catch (e) {
+        sessionStorage.removeItem('fawz_user');
+        window.location.replace('login.html');
+        return;
+      }
+
+      // Validate required fields (name, username, role) exist and are non-empty
+      if (!user || typeof user !== 'object' || !user.name || !user.username || !user.role) {
+        sessionStorage.removeItem('fawz_user');
+        window.location.replace('login.html');
+        return;
+      }
+
+      // Role-based access: "sales" → redirect to dashboard
+      if (user.role === 'sales') {
+        window.location.replace('dashboard.html');
+        return;
+      }
+
+      // Only allow "admin" and "head_account" roles
+      if (user.role !== 'admin' && user.role !== 'head_account') {
+        window.location.replace('dashboard.html');
+        return;
+      }
+
+      // Valid session - persist in sessionStorage for page use
       sessionStorage.setItem('fawz_user', raw);
     })();
   </script>
@@ -118,8 +159,12 @@
       <div class="page-subtitle">Input harian: volume transaksi & fee per nasabah</div>
       <div class="title-underline"></div>
     </div>
-    <div style="display:flex;gap:10px;flex-wrap:wrap;">
-      <input type="month" id="filterMonth" onchange="applyFilter()" style="height:38px;border:1px solid var(--border);border-radius:8px;padding:0 12px;font-family:'Inter',sans-serif;font-size:0.82rem;"/>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+      <input type="month" id="filterMonth" onchange="onFilterChange()" style="height:38px;border:1px solid var(--border);border-radius:8px;padding:0 12px;font-family:'Inter',sans-serif;font-size:0.82rem;"/>
+      <select id="filterClient" onchange="onFilterChange()" style="height:38px;border:1px solid var(--border);border-radius:8px;padding:0 12px;font-family:'Inter',sans-serif;font-size:0.82rem;min-width:180px;">
+        <option value="">Semua Nasabah</option>
+      </select>
+      <a href="saham-ranking.html" class="btn btn-outline">🏆 Ranking Saham</a>
       <button class="btn btn-primary" onclick="openAddModal()">+ Input Transaksi</button>
     </div>
   </div>
@@ -130,6 +175,40 @@
     <div class="stat-box"><div class="stat-box-label">Total Fee</div><div class="stat-box-val" id="statFee">Rp 0</div></div>
     <div class="stat-box"><div class="stat-box-label">Jumlah Transaksi</div><div class="stat-box-val" id="statCount">0</div></div>
     <div class="stat-box"><div class="stat-box-label">Nasabah Aktif</div><div class="stat-box-val" id="statNasabah">0</div></div>
+  </div>
+
+  <!-- YTD and Monthly Summary Section -->
+  <div class="summary-section" id="summarySection" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;animation:fadeUp 0.4s 0.1s ease both;">
+    <div class="stat-box">
+      <div class="stat-box-label" style="font-size:0.82rem;font-weight:700;margin-bottom:12px;">📅 Monthly Summary</div>
+      <div class="rekap-row" style="display:flex;justify-content:space-between;font-size:0.82rem;margin-bottom:6px;">
+        <span style="color:var(--gray);">Total Volume</span>
+        <span style="font-weight:600;" id="summaryMonthlyVolume">Rp 0</span>
+      </div>
+      <div class="rekap-row" style="display:flex;justify-content:space-between;font-size:0.82rem;margin-bottom:6px;">
+        <span style="color:var(--gray);">Total Fee</span>
+        <span style="font-weight:600;color:var(--green);" id="summaryMonthlyFee">Rp 0</span>
+      </div>
+      <div class="rekap-row" style="display:flex;justify-content:space-between;font-size:0.82rem;">
+        <span style="color:var(--gray);">Nasabah Aktif</span>
+        <span style="font-weight:600;" id="summaryMonthlyClients">0</span>
+      </div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-box-label" style="font-size:0.82rem;font-weight:700;margin-bottom:12px;">📈 YTD Summary</div>
+      <div class="rekap-row" style="display:flex;justify-content:space-between;font-size:0.82rem;margin-bottom:6px;">
+        <span style="color:var(--gray);">Total Volume</span>
+        <span style="font-weight:600;" id="summaryYTDVolume">Rp 0</span>
+      </div>
+      <div class="rekap-row" style="display:flex;justify-content:space-between;font-size:0.82rem;margin-bottom:6px;">
+        <span style="color:var(--gray);">Total Fee</span>
+        <span style="font-weight:600;color:var(--green);" id="summaryYTDFee">Rp 0</span>
+      </div>
+      <div class="rekap-row" style="display:flex;justify-content:space-between;font-size:0.82rem;">
+        <span style="color:var(--gray);">Nasabah Aktif</span>
+        <span style="font-weight:600;" id="summaryYTDClients">0</span>
+      </div>
+    </div>
   </div>
 
   <!-- Table -->
@@ -156,6 +235,14 @@
     </div>
   </div>
 
+  <!-- Calendar Grid View -->
+  <div class="rekap-section">
+    <div class="rekap-title">📅 Calendar Grid View</div>
+    <div class="table-wrapper" style="margin-top:12px;">
+      <div style="overflow-x:auto;" id="calendarGridContainer"></div>
+    </div>
+  </div>
+
   <!-- Rekap Bulanan -->
   <div class="rekap-section">
     <div class="rekap-title">📊 Rekap Bulanan per Nasabah</div>
@@ -177,12 +264,17 @@
       </div>
       <div class="form-group">
         <label class="form-label">Client ID</label>
-        <input class="form-input" id="fClientId" placeholder="C001234" list="clientList"/>
-        <datalist id="clientList"></datalist>
+        <select class="form-input" id="fClientId" onchange="onClientSelect()" style="cursor:pointer;">
+          <option value="">-- Pilih Nasabah --</option>
+        </select>
       </div>
       <div class="form-group">
         <label class="form-label">Nama Nasabah</label>
-        <input class="form-input" id="fClientName" placeholder="Nama nasabah"/>
+        <input class="form-input" id="fClientName" placeholder="Nama nasabah" readonly/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Sales Person</label>
+        <input class="form-input" id="fSalesName" placeholder="Nama sales" readonly/>
       </div>
       <div class="form-group">
         <label class="form-label">Volume Transaksi (Rp)</label>
@@ -195,6 +287,9 @@
       <div class="form-group full">
         <label class="form-label">Catatan</label>
         <input class="form-input" id="fCatatan" placeholder="Opsional"/>
+      </div>
+      <div class="form-group full" id="validationErrorContainer" style="display:none;">
+        <div id="validationErrors" style="background:#fff0f0;border:1px solid #ffcccc;border-radius:8px;padding:12px 16px;color:#c0392b;font-size:0.82rem;"></div>
       </div>
     </div>
     <div class="modal-footer">
@@ -219,7 +314,7 @@
 
   async function initPage() {
     curUser = getCurUser();
-    // Set default month filter to current month
+    // Set default month filter to current month (Req 3.1)
     const now = new Date();
     document.getElementById('filterMonth').value = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
 
@@ -229,11 +324,12 @@
 
   async function loadCustomers() {
     try {
-      const { data, error } = await supabase.from('customers').select('client_id, client_name').order('client_name');
+      const { data, error } = await supabase.from('customers').select('client_id, client_name, sales_person_name').order('client_name');
       if (!error && data) {
         customers = data;
-        const dl = document.getElementById('clientList');
-        dl.innerHTML = data.map(c => `<option value="${c.client_id}">${c.client_name}</option>`).join('');
+        const sel = document.getElementById('fClientId');
+        sel.innerHTML = '<option value="">-- Pilih Nasabah --</option>' +
+          data.map(c => `<option value="${c.client_id}">${c.client_id} — ${c.client_name}</option>`).join('');
       }
     } catch(e) { console.warn('Load customers:', e); }
   }
@@ -246,6 +342,7 @@
         .order('tanggal', { ascending: false });
       if (error) throw error;
       allData = data || [];
+      populateClientDropdown();
       applyFilter();
     } catch(e) {
       console.error('Load error:', e);
@@ -253,22 +350,121 @@
     }
   }
 
-  function applyFilter() {
-    const month = document.getElementById('filterMonth').value;
+  /**
+   * Filters transactions by month and optionally by client_id.
+   * Requirements: 3.2, 3.4, 3.5
+   *
+   * @param {Array} allTransactions - All transaction records
+   * @param {string} month - Month in 'YYYY-MM' format
+   * @param {string|null} clientId - Client ID to filter by, or null/empty for all clients
+   * @returns {Array} Filtered transactions
+   */
+  function getFilteredTransactions(allTransactions, month, clientId) {
+    var result = allTransactions;
+
+    // Filter by month: only rows where tanggal falls within selected month (Req 3.2)
     if (month) {
-      filteredData = allData.filter(r => r.tanggal && r.tanggal.startsWith(month));
-    } else {
-      filteredData = [...allData];
+      result = result.filter(function(r) {
+        return r.tanggal && r.tanggal.startsWith(month);
+      });
     }
+
+    // Filter by client: only rows matching selected client_id (Req 3.4)
+    if (clientId) {
+      result = result.filter(function(r) {
+        return r.client_id === clientId;
+      });
+    }
+
+    return result;
+  }
+
+  /**
+   * Returns distinct clients that have transactions in the given month.
+   * Requirements: 3.3
+   *
+   * @param {Array} transactions - All transaction records
+   * @param {string} month - Month in 'YYYY-MM' format
+   * @returns {Array} Array of { client_id, client_name } objects, sorted by client_name
+   */
+  function getClientsForMonth(transactions, month) {
+    var monthTransactions = transactions.filter(function(r) {
+      return r.tanggal && r.tanggal.startsWith(month);
+    });
+
+    var clientMap = {};
+    for (var i = 0; i < monthTransactions.length; i++) {
+      var tx = monthTransactions[i];
+      if (tx.client_id && !clientMap[tx.client_id]) {
+        clientMap[tx.client_id] = { client_id: tx.client_id, client_name: tx.client_name || tx.client_id };
+      }
+    }
+
+    var clients = Object.keys(clientMap).map(function(key) { return clientMap[key]; });
+    clients.sort(function(a, b) {
+      return (a.client_name || '').localeCompare(b.client_name || '');
+    });
+
+    return clients;
+  }
+
+  /**
+   * Populates the client dropdown with distinct clients from the selected month's data.
+   * Requirements: 3.3
+   */
+  function populateClientDropdown() {
+    var month = document.getElementById('filterMonth').value;
+    var clientSelect = document.getElementById('filterClient');
+    var currentValue = clientSelect.value;
+
+    var clients = getClientsForMonth(allData, month);
+
+    // Rebuild options: "Semua Nasabah" + distinct clients for this month
+    clientSelect.innerHTML = '<option value="">Semua Nasabah</option>';
+    for (var i = 0; i < clients.length; i++) {
+      var opt = document.createElement('option');
+      opt.value = clients[i].client_id;
+      opt.textContent = clients[i].client_name + ' (' + clients[i].client_id + ')';
+      clientSelect.appendChild(opt);
+    }
+
+    // Restore previous selection if still valid
+    if (currentValue) {
+      var stillExists = clients.some(function(c) { return c.client_id === currentValue; });
+      if (stillExists) {
+        clientSelect.value = currentValue;
+      } else {
+        clientSelect.value = '';
+      }
+    }
+  }
+
+  /**
+   * Handler for filter changes (month or client).
+   * Re-populates client dropdown and re-renders within 2 seconds (Req 3.6).
+   */
+  function onFilterChange() {
+    populateClientDropdown();
+    applyFilter();
+  }
+
+  function applyFilter() {
+    var month = document.getElementById('filterMonth').value;
+    var clientId = document.getElementById('filterClient').value;
+
+    filteredData = getFilteredTransactions(allData, month, clientId);
+
     renderTable();
     renderStats();
     renderRekap();
+    renderSummary();
+    renderCalendarGridView();
   }
 
   function renderTable() {
     const tbody = document.getElementById('tableBody');
     if (!filteredData.length) {
-      tbody.innerHTML = '<tr><td colspan="9"><div class="empty-state">📭 Belum ada data transaksi saham</div></td></tr>';
+      tbody.innerHTML = '<tr><td colspan="9"><div class="empty-state">📭 Tidak ada data transaksi untuk filter yang dipilih</div></td></tr>';
       return;
     }
     tbody.innerHTML = filteredData.map((r, i) => `
@@ -320,6 +516,27 @@
     `).join('');
   }
 
+  /**
+   * Renders the YTD and Monthly Summary section.
+   * Uses window.SahamAggregation.calculateMonthlySummary() and calculateYTDSummary().
+   * Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6
+   */
+  function renderSummary() {
+    var month = document.getElementById('filterMonth').value;
+
+    // Monthly Summary: uses filteredData (already filtered to selected month)
+    var monthlySummary = window.SahamAggregation.calculateMonthlySummary(filteredData);
+    document.getElementById('summaryMonthlyVolume').textContent = formatRp(monthlySummary.totalVolume);
+    document.getElementById('summaryMonthlyFee').textContent = formatRp(monthlySummary.totalFee);
+    document.getElementById('summaryMonthlyClients').textContent = String(monthlySummary.activeClients);
+
+    // YTD Summary: uses allData (unfiltered) + selectedMonth for date range filtering
+    var ytdSummary = window.SahamAggregation.calculateYTDSummary(allData, month);
+    document.getElementById('summaryYTDVolume').textContent = formatRp(ytdSummary.totalVolume);
+    document.getElementById('summaryYTDFee').textContent = formatRp(ytdSummary.totalFee);
+    document.getElementById('summaryYTDClients').textContent = String(ytdSummary.activeClients);
+  }
+
   function openAddModal() {
     document.getElementById('fTanggal').value = new Date().toISOString().split('T')[0];
     document.getElementById('addModal').classList.add('open');
@@ -327,21 +544,83 @@
 
   function closeModal() {
     document.getElementById('addModal').classList.remove('open');
-    ['fTanggal','fClientId','fClientName','fVolume','fFee','fCatatan'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('fTanggal').value = '';
+    document.getElementById('fClientId').value = '';
+    document.getElementById('fClientName').value = '';
+    document.getElementById('fSalesName').value = '';
+    document.getElementById('fVolume').value = '';
+    document.getElementById('fFee').value = '';
+    document.getElementById('fCatatan').value = '';
+    // Clear validation errors on close
+    document.getElementById('validationErrorContainer').style.display = 'none';
+    document.getElementById('validationErrors').innerHTML = '';
   }
 
   async function saveTransaction() {
     const tanggal = document.getElementById('fTanggal').value;
     const client_id = document.getElementById('fClientId').value.trim();
     const client_name = document.getElementById('fClientName').value.trim();
-    const volume = parseFloat(document.getElementById('fVolume').value) || 0;
-    const fee = parseFloat(document.getElementById('fFee').value) || 0;
+    const volumeRaw = document.getElementById('fVolume').value;
+    const feeRaw = document.getElementById('fFee').value;
     const catatan = document.getElementById('fCatatan').value.trim();
+    const sales_name = document.getElementById('fSalesName').value.trim();
 
-    if (!tanggal || !client_id || !client_name) {
-      showToast('Tanggal, Client ID, dan Nama wajib diisi', 'error');
+    // Clear previous validation errors
+    var errorContainer = document.getElementById('validationErrorContainer');
+    var errorDiv = document.getElementById('validationErrors');
+    errorContainer.style.display = 'none';
+    errorDiv.innerHTML = '';
+
+    // Validate using SahamValidation module (Requirements: 2.3, 2.4, 2.7)
+    var validationResult = window.SahamValidation.validateTransactionInput({
+      tanggal: tanggal,
+      client_id: client_id,
+      client_name: client_name,
+      volume: volumeRaw === '' ? '' : volumeRaw,
+      fee: feeRaw === '' ? '' : feeRaw
+    });
+
+    if (!validationResult.valid) {
+      // Display specific error messages, retain form data, don't close modal
+      var errorMessages = validationResult.errors.map(function(err) {
+        // Map generic validation errors to requirement-specific messages
+        if (err === 'Field tanggal wajib diisi') return 'Field tanggal wajib diisi';
+        if (err === 'Field client_id wajib diisi') return 'Field client_id wajib diisi';
+        if (err === 'Field client_name wajib diisi') return 'Field client_name wajib diisi';
+        return err;
+      });
+
+      // Check which specific numeric field failed and provide specific messages
+      var errors = [];
+      // Required field errors
+      if (!tanggal || tanggal.trim() === '') {
+        errors.push('Field tanggal wajib diisi');
+      }
+      if (!client_id || client_id.trim() === '') {
+        errors.push('Field client_id wajib diisi');
+      }
+      if (!client_name || client_name.trim() === '') {
+        errors.push('Field client_name wajib diisi');
+      }
+      // Numeric validation with specific field names (Req 2.3, 2.4)
+      var volumeVal = volumeRaw === '' ? '' : volumeRaw;
+      var feeVal = feeRaw === '' ? '' : feeRaw;
+      if (volumeVal === '' || isNaN(Number(volumeVal)) || Number(volumeVal) < 0 || Number(volumeVal) > 999999999999.99) {
+        errors.push('Volume harus berupa angka antara 0 dan 999.999.999.999,99');
+      }
+      if (feeVal === '' || isNaN(Number(feeVal)) || Number(feeVal) < 0 || Number(feeVal) > 999999999999.99) {
+        errors.push('Fee harus berupa angka antara 0 dan 999.999.999.999,99');
+      }
+
+      // Only show errors that actually apply (use the specific errors we computed)
+      var displayErrors = errors.length > 0 ? errors : errorMessages;
+      errorDiv.innerHTML = displayErrors.map(function(e) { return '<div style="margin-bottom:4px;">⚠️ ' + e + '</div>'; }).join('');
+      errorContainer.style.display = 'block';
       return;
     }
+
+    const volume = parseFloat(volumeRaw) || 0;
+    const fee = parseFloat(feeRaw) || 0;
 
     const btn = document.getElementById('btnSave');
     btn.disabled = true; btn.textContent = 'Menyimpan...';
@@ -349,13 +628,15 @@
     try {
       const { data: inserted, error } = await supabase.from('saham_transaksi').insert({
         tanggal, client_id, client_name, volume, fee, catatan,
-        sales_name: curUser?.name || '',
+        sales_name: sales_name || '',
         created_by: curUser?.name || ''
       }).select().single();
 
       if (error) throw error;
 
+      // On success: refresh table and statistics without full page reload (Req 2.5)
       allData.unshift(inserted);
+      populateClientDropdown();
       applyFilter();
       closeModal();
       showToast('Transaksi berhasil disimpan!', 'success');
@@ -366,23 +647,67 @@
     btn.disabled = false; btn.textContent = 'Simpan';
   }
 
+  /**
+   * Deletes a transaction record after user confirmation.
+   * Requirements: 10.1, 10.2, 10.3, 10.4, 10.5, 10.6
+   *
+   * - Req 10.1: Display confirmation dialog asking user to confirm or cancel deletion
+   * - Req 10.2: On cancel/dismiss, take no action, record remains unchanged
+   * - Req 10.3: On confirm, remove from saham_transaksi table AND local data set
+   * - Req 10.4: On network/database error, show error notification, record remains visible and unchanged
+   * - Req 10.5: On success, refresh transaction table, summary stats, and Rekap Bulanan section
+   * - Req 10.6: On success, display success notification confirming record removed
+   *
+   * @param {string} id - The UUID of the transaction record to delete
+   */
   async function deleteRow(id) {
-    if (!confirm('Hapus transaksi ini?')) return;
+    // Req 10.1: Show confirmation dialog
+    if (!confirm('Apakah Anda yakin ingin menghapus transaksi ini? Data yang dihapus tidak dapat dikembalikan.')) {
+      // Req 10.2: User cancelled - take no action, record remains unchanged
+      return;
+    }
+
     try {
-      await supabase.from('saham_transaksi').delete().eq('id', id);
+      // Req 10.3: Remove from saham_transaksi table
+      const { error } = await supabase.from('saham_transaksi').delete().eq('id', id);
+
+      // Req 10.4: Check for database error from Supabase response
+      if (error) {
+        throw new Error(error.message || 'Database error');
+      }
+
+      // Req 10.3: Remove from local data set
       allData = allData.filter(r => r.id !== id);
-      applyFilter();
-      showToast('Data dihapus', 'success');
-    } catch(e) { showToast('Gagal menghapus', 'error'); }
+
+      // Req 10.5: Refresh transaction table, summary stats (Total Volume, Total Fee,
+      // Jumlah Transaksi, Nasabah Aktif), and Rekap Bulanan per Nasabah section
+      populateClientDropdown();
+      applyFilter(); // This calls renderTable(), renderStats(), renderRekap(), renderSummary(), renderCalendarGridView()
+
+      // Req 10.6: Display success notification confirming record removed
+      showToast('Transaksi berhasil dihapus.', 'success');
+    } catch(e) {
+      // Req 10.4: On network/database error, show error notification
+      // Record remains visible and unchanged (no local data modification occurred before this point on error)
+      console.error('Delete error:', e);
+      showToast('Gagal menghapus transaksi: ' + (e.message || 'Terjadi kesalahan jaringan'), 'error');
+    }
   }
 
-  // Auto-fill nama from client_id
-  document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('fClientId').addEventListener('change', function() {
-      const c = customers.find(x => x.client_id === this.value);
-      if (c) document.getElementById('fClientName').value = c.client_name;
-    });
-  });
+  // Auto-fill nama and sales_name from client_id (Req 2.2)
+  function onClientSelect() {
+    const clientId = document.getElementById('fClientId').value;
+    if (!clientId) {
+      document.getElementById('fClientName').value = '';
+      document.getElementById('fSalesName').value = '';
+      return;
+    }
+    const c = customers.find(x => x.client_id === clientId);
+    if (c) {
+      document.getElementById('fClientName').value = c.client_name;
+      document.getElementById('fSalesName').value = c.sales_person_name || '';
+    }
+  }
 
   function formatRp(n) {
     return 'Rp ' + (n || 0).toLocaleString('id-ID');
@@ -397,7 +722,141 @@
     setTimeout(() => t.remove(), 3500);
   }
 
+  /**
+   * Renders the calendar grid HTML table.
+   * Columns: No, Client_Code, Customer Name, Sales_Code, Date 1-N (days in month), Total
+   * Each client gets two sub-rows: Volume row and Fee row.
+   * Non-trading day column headers get red background.
+   * Empty cells for dates with no transactions.
+   * Total column = sum of all daily values per row.
+   *
+   * Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 4.4
+   *
+   * @param {Map|Array} clientRows - Map or iterable of ClientRow objects from aggregateByClientAndDate
+   * @param {number} year - The year (e.g. 2026)
+   * @param {number} month - The month (1-12)
+   * @param {number[]} nonTradingDays - Array of day numbers that are non-trading days
+   * @returns {string} HTML string of the calendar grid table
+   */
+  function renderCalendarGrid(clientRows, year, month, nonTradingDays) {
+    var daysInMonth = new Date(year, month, 0).getDate();
+    var nonTradingSet = new Set(nonTradingDays);
+
+    // Build header row
+    var html = '<table style="min-width:100%;border-collapse:collapse;font-size:0.75rem;">';
+    html += '<thead><tr>';
+    html += '<th style="padding:8px 6px;background:var(--navy);color:#fff;white-space:nowrap;">No</th>';
+    html += '<th style="padding:8px 6px;background:var(--navy);color:#fff;white-space:nowrap;">Client_Code</th>';
+    html += '<th style="padding:8px 6px;background:var(--navy);color:#fff;white-space:nowrap;">Customer Name</th>';
+    html += '<th style="padding:8px 6px;background:var(--navy);color:#fff;white-space:nowrap;">Sales_Code</th>';
+
+    for (var d = 1; d <= daysInMonth; d++) {
+      var bgStyle = nonTradingSet.has(d) ? 'background:#e74c3c;color:#fff;' : 'background:var(--navy);color:#fff;';
+      html += '<th style="padding:8px 4px;text-align:center;white-space:nowrap;' + bgStyle + '">' + d + '</th>';
+    }
+
+    html += '<th style="padding:8px 6px;background:var(--navy);color:#fff;white-space:nowrap;">Total</th>';
+    html += '</tr></thead>';
+
+    // Build body rows
+    html += '<tbody>';
+
+    // Convert Map to array if needed
+    var rows = [];
+    if (clientRows instanceof Map) {
+      clientRows.forEach(function(row) { rows.push(row); });
+    } else if (Array.isArray(clientRows)) {
+      rows = clientRows;
+    } else {
+      // Iterable
+      for (var key in clientRows) {
+        if (clientRows.hasOwnProperty(key)) rows.push(clientRows[key]);
+      }
+    }
+
+    if (rows.length === 0) {
+      html += '<tr><td colspan="' + (daysInMonth + 5) + '" style="text-align:center;padding:40px 20px;color:#bbb;">Tidak ada data transaksi untuk bulan ini</td></tr>';
+    } else {
+      for (var i = 0; i < rows.length; i++) {
+        var row = rows[i];
+        var no = i + 1;
+
+        // Volume sub-row
+        html += '<tr style="border-bottom:none;">';
+        html += '<td rowspan="2" style="padding:8px 6px;text-align:center;vertical-align:middle;border-bottom:1px solid #f0f0f5;font-weight:600;">' + no + '</td>';
+        html += '<td rowspan="2" style="padding:8px 6px;vertical-align:middle;border-bottom:1px solid #f0f0f5;font-weight:600;">' + (row.client_id || '') + '</td>';
+        html += '<td rowspan="2" style="padding:8px 6px;vertical-align:middle;border-bottom:1px solid #f0f0f5;">' + (row.client_name || '') + '</td>';
+        html += '<td rowspan="2" style="padding:8px 6px;vertical-align:middle;border-bottom:1px solid #f0f0f5;">' + (row.sales_name || '') + '</td>';
+
+        var totalVolume = 0;
+        for (var d = 1; d <= daysInMonth; d++) {
+          var dayData = row.days instanceof Map ? row.days.get(d) : (row.days && row.days[d]);
+          if (dayData && dayData.volume) {
+            html += '<td style="padding:6px 4px;text-align:right;font-size:0.7rem;white-space:nowrap;">' + formatRp(dayData.volume) + '</td>';
+            totalVolume += dayData.volume;
+          } else {
+            html += '<td style="padding:6px 4px;"></td>';
+          }
+        }
+        html += '<td style="padding:8px 6px;text-align:right;font-weight:700;white-space:nowrap;background:#f9f9ff;">' + formatRp(totalVolume) + '</td>';
+        html += '</tr>';
+
+        // Fee sub-row
+        html += '<tr style="border-bottom:1px solid #f0f0f5;">';
+        var totalFee = 0;
+        for (var d = 1; d <= daysInMonth; d++) {
+          var dayData = row.days instanceof Map ? row.days.get(d) : (row.days && row.days[d]);
+          if (dayData && dayData.fee) {
+            html += '<td style="padding:6px 4px;text-align:right;font-size:0.7rem;color:var(--green);white-space:nowrap;">' + formatRp(dayData.fee) + '</td>';
+            totalFee += dayData.fee;
+          } else {
+            html += '<td style="padding:6px 4px;"></td>';
+          }
+        }
+        html += '<td style="padding:8px 6px;text-align:right;font-weight:700;color:var(--green);white-space:nowrap;background:#f9f9ff;">' + formatRp(totalFee) + '</td>';
+        html += '</tr>';
+      }
+    }
+
+    html += '</tbody></table>';
+    return html;
+  }
+
+  /**
+   * Renders the calendar grid into the page using current filtered data.
+   * Uses SahamAggregation.aggregateByClientAndDate and SahamHolidays.getNonTradingDaysInMonth.
+   */
+  function renderCalendarGridView() {
+    var container = document.getElementById('calendarGridContainer');
+    if (!container) return;
+
+    var monthVal = document.getElementById('filterMonth').value;
+    if (!monthVal) {
+      container.innerHTML = '<div style="text-align:center;padding:40px;color:#bbb;">Pilih bulan untuk menampilkan calendar grid</div>';
+      return;
+    }
+
+    var parts = monthVal.split('-');
+    var year = parseInt(parts[0], 10);
+    var month = parseInt(parts[1], 10);
+
+    // Get non-trading days from the Holiday Calendar module
+    var nonTradingDays = window.SahamHolidays.getNonTradingDaysInMonth(year, month);
+
+    // Aggregate filtered data by client and date
+    var clientRows = window.SahamAggregation.aggregateByClientAndDate(filteredData);
+
+    // Render the grid
+    container.innerHTML = renderCalendarGrid(clientRows, year, month, nonTradingDays);
+  }
+
   window.addEventListener('DOMContentLoaded', initPage);
+
+  // Export filter functions globally for use by other modules and testing
+  window.SahamFilter = {
+    getFilteredTransactions: getFilteredTransactions,
+    getClientsForMonth: getClientsForMonth
+  };
 </script>
 </body>
 </html>

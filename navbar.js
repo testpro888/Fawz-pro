@@ -95,6 +95,7 @@
       'reksadana-order.html'         : ['head_account', 'admin', 'treasury', 'sales'],
       'waran-terstruktur.html'       : ['head_account', 'admin', 'treasury', 'sales'],
       'saham.html'                   : ['head_account', 'admin', 'treasury', 'sales'],
+      'saham-ranking.html'           : ['head_account', 'admin'],
 
       // Revenue dropdown
       'revenue-data.html'      : ['head_account', 'admin'],

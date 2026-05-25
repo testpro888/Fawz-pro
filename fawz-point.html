@@ -48,41 +48,20 @@
     .filter-bar input:focus { border-color: var(--gold); }
     .filter-spacer { flex: 1; }
 
-    /* Leaderboard */
-    .leaderboard { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; animation: fadeUp 0.4s 0.12s ease both; }
-    .point-card {
-      background: #fff; border-radius: 16px; padding: 22px 24px;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-      display: flex; align-items: center; gap: 16px;
-      transition: transform 0.2s, box-shadow 0.2s;
-      position: relative; overflow: hidden;
-    }
-    .point-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.1); }
-    .point-card.top-1 { border: 2px solid var(--gold); }
-    .point-card.top-2 { border: 2px solid #c0c0c0; }
-    .point-card.top-3 { border: 2px solid #cd7f32; }
-
-    .rank-badge {
-      width: 42px; height: 42px; border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 1rem; font-weight: 700; flex-shrink: 0;
-    }
-    .rank-1 { background: linear-gradient(135deg, var(--gold), #e8931a); color: #fff; }
-    .rank-2 { background: linear-gradient(135deg, #c0c0c0, #a0a0a0); color: #fff; }
-    .rank-3 { background: linear-gradient(135deg, #cd7f32, #a0622a); color: #fff; }
-    .rank-default { background: #f0f0f5; color: var(--navy); }
-
-    .point-info { flex: 1; }
-    .point-name { font-weight: 700; color: var(--navy); font-size: 0.95rem; margin-bottom: 4px; }
-    .point-client-id { font-size: 0.72rem; color: var(--gray); }
-    .point-detail { font-size: 0.78rem; color: var(--gray); margin-top: 6px; }
-
-    .point-value {
-      text-align: right; flex-shrink: 0;
-    }
-    .point-number { font-size: 1.6rem; font-weight: 800; color: var(--purple); line-height: 1; }
-    .point-label { font-size: 0.68rem; color: var(--gray); text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
-    .point-volume { font-size: 0.72rem; color: var(--gray); margin-top: 4px; }
+    /* Leaderboard Table */
+    .leaderboard-section { animation: fadeUp 0.4s 0.12s ease both; }
+    .table-wrapper { background: #fff; border-radius: 14px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); overflow: hidden; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+    thead th { background: var(--navy); color: #fff; padding: 14px 16px; text-align: left; font-weight: 600; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
+    tbody tr { border-bottom: 1px solid var(--border); transition: background 0.15s; }
+    tbody tr:hover { background: #f8f9ff; }
+    tbody td { padding: 12px 16px; vertical-align: middle; }
+    .rank-cell { font-weight: 700; text-align: center; width: 50px; }
+    .rank-1 { color: #f5a623; }
+    .rank-2 { color: #a0a0a0; }
+    .rank-3 { color: #cd7f32; }
+    .points-cell { font-weight: 800; color: var(--purple); font-size: 1rem; text-align: center; }
+    .volume-cell { font-weight: 500; color: var(--navy); }
 
     /* Summary */
     .summary-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; animation: fadeUp 0.4s 0.1s ease both; }
@@ -92,17 +71,110 @@
 
     .empty-state { text-align: center; padding: 60px 20px; color: #bbb; font-size: 0.9rem; }
 
+    /* Redemption Section */
+    .redeem-section {
+      background: #fff; border-radius: 14px; padding: 24px 28px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06); margin-top: 28px;
+      animation: fadeUp 0.4s 0.15s ease both;
+    }
+    .redeem-title { font-size: 1.1rem; font-weight: 700; color: var(--navy); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+    .redeem-form { display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
+    .redeem-field { display: flex; flex-direction: column; gap: 4px; }
+    .redeem-field label { font-size: 0.72rem; color: var(--gray); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+    .redeem-field select, .redeem-field input {
+      height: 40px; border: 1px solid var(--border); border-radius: 8px;
+      padding: 0 12px; font-family: 'Inter', sans-serif; font-size: 0.82rem;
+      color: var(--text); outline: none; min-width: 180px;
+    }
+    .redeem-field select:focus, .redeem-field input:focus { border-color: var(--gold); }
+    .redeem-btn {
+      height: 40px; padding: 0 24px; background: linear-gradient(135deg, var(--purple), #5b21b6);
+      color: #fff; border: none; border-radius: 8px; font-family: 'Inter', sans-serif;
+      font-size: 0.82rem; font-weight: 600; cursor: pointer; transition: opacity 0.2s;
+      white-space: nowrap;
+    }
+    .redeem-btn:hover { opacity: 0.9; }
+    .redeem-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .redeem-error {
+      margin-top: 10px; padding: 10px 14px; background: #fef2f2; border: 1px solid #fecaca;
+      border-radius: 8px; color: #dc2626; font-size: 0.8rem; display: none;
+    }
+    .redeem-success {
+      margin-top: 10px; padding: 10px 14px; background: #f0fdf4; border: 1px solid #bbf7d0;
+      border-radius: 8px; color: #16a34a; font-size: 0.8rem; display: none;
+    }
+    .available-info {
+      font-size: 0.75rem; color: var(--gray); margin-top: 4px;
+    }
+    .available-cell { font-weight: 600; color: var(--green); text-align: center; }
+    .redeemed-cell { font-weight: 500; color: #dc2626; text-align: center; font-size: 0.78rem; }
+
+    /* Redemption History Section */
+    .history-section {
+      background: #fff; border-radius: 14px; padding: 24px 28px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06); margin-top: 28px;
+      animation: fadeUp 0.4s 0.18s ease both;
+    }
+    .history-title { font-size: 1.1rem; font-weight: 700; color: var(--navy); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+    .history-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+    .history-table thead th { background: var(--navy); color: #fff; padding: 12px 16px; text-align: left; font-weight: 600; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
+    .history-table tbody tr { border-bottom: 1px solid var(--border); transition: background 0.15s; }
+    .history-table tbody tr:hover { background: #f8f9ff; }
+    .history-table tbody td { padding: 10px 16px; vertical-align: middle; }
+    .history-empty { text-align: center; padding: 40px 20px; color: #bbb; font-size: 0.85rem; }
+
     @media (max-width: 768px) {
-      .leaderboard { grid-template-columns: 1fr; }
       .summary-row { grid-template-columns: 1fr; }
       .page-container { padding: 24px 16px; }
+      table { font-size: 0.75rem; }
+      thead th, tbody td { padding: 10px 10px; }
+      .redeem-form { flex-direction: column; align-items: stretch; }
+      .redeem-field select, .redeem-field input { min-width: unset; width: 100%; }
     }
   </style>
 
   <script>
+    // Access Control IIFE - validates session and role before any data rendering
+    // Requirements: 6.5 (same access rules as saham.html: admin/head_account only)
     (function() {
-      const raw = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember');
-      if (!raw) { window.location.replace('login.html'); return; }
+      var raw = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember');
+
+      // No session data found → redirect to login
+      if (!raw) {
+        window.location.replace('login.html');
+        return;
+      }
+
+      // Attempt to parse JSON - invalid JSON → treat as unauthenticated
+      var user;
+      try {
+        user = JSON.parse(raw);
+      } catch (e) {
+        sessionStorage.removeItem('fawz_user');
+        window.location.replace('login.html');
+        return;
+      }
+
+      // Validate required fields (name, username, role) exist and are non-empty
+      if (!user || typeof user !== 'object' || !user.name || !user.username || !user.role) {
+        sessionStorage.removeItem('fawz_user');
+        window.location.replace('login.html');
+        return;
+      }
+
+      // Role-based access: "sales" → redirect to dashboard
+      if (user.role === 'sales') {
+        window.location.replace('dashboard.html');
+        return;
+      }
+
+      // Only allow "admin" and "head_account" roles
+      if (user.role !== 'admin' && user.role !== 'head_account') {
+        window.location.replace('dashboard.html');
+        return;
+      }
+
+      // Valid session - persist in sessionStorage for page use
       sessionStorage.setItem('fawz_user', raw);
     })();
   </script>
@@ -145,33 +217,280 @@
     </div>
     <div class="summary-box">
       <div class="summary-val" id="sumNasabah">0</div>
-      <div class="summary-label">Nasabah Aktif</div>
+      <div class="summary-label">Jumlah Nasabah</div>
     </div>
   </div>
 
   <!-- Filter -->
   <div class="filter-bar">
-    <input type="text" id="searchInput" placeholder="🔍 Cari nama nasabah..." oninput="renderLeaderboard()"/>
+    <input type="text" id="searchInput" placeholder="🔍 Cari nama nasabah atau Client Code..." oninput="renderLeaderboard()"/>
     <div class="filter-spacer"></div>
     <span style="font-size:0.78rem;color:var(--gray);">Rumus: Volume ÷ Rp 10.000.000 = Point</span>
   </div>
 
-  <!-- Leaderboard -->
-  <div class="leaderboard" id="leaderboard">
-    <div class="empty-state">⏳ Memuat data...</div>
+  <!-- Leaderboard Table -->
+  <div class="leaderboard-section">
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th style="text-align:center;">Rank</th>
+            <th>Client Code</th>
+            <th>Customer Name</th>
+            <th>Volume (Rp)</th>
+            <th style="text-align:center;">Earned</th>
+            <th style="text-align:center;">Redeemed</th>
+            <th style="text-align:center;">Available</th>
+          </tr>
+        </thead>
+        <tbody id="leaderboardBody">
+          <tr><td colspan="7"><div class="empty-state">⏳ Memuat data...</div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Redeem Point Section -->
+  <div class="redeem-section" id="redeemSection">
+    <div class="redeem-title">🎁 Redeem Point</div>
+    <div class="redeem-form">
+      <div class="redeem-field">
+        <label for="redeemClient">Nasabah</label>
+        <select id="redeemClient" onchange="updateAvailableInfo()">
+          <option value="">-- Pilih Nasabah --</option>
+        </select>
+        <div class="available-info" id="availableInfo"></div>
+      </div>
+      <div class="redeem-field">
+        <label for="redeemPoints">Jumlah Point</label>
+        <input type="number" id="redeemPoints" min="1" step="1" placeholder="Min. 1 point"/>
+      </div>
+      <button class="redeem-btn" id="redeemBtn" onclick="handleRedeem()">Redeem Point</button>
+    </div>
+    <div class="redeem-error" id="redeemError"></div>
+    <div class="redeem-success" id="redeemSuccess"></div>
+  </div>
+
+  <!-- Redemption History Section -->
+  <div class="history-section" id="historySection">
+    <div class="history-title">📋 Riwayat Redemption</div>
+    <div class="table-wrapper">
+      <table class="history-table">
+        <thead>
+          <tr>
+            <th>Client Name</th>
+            <th>Points Redeemed</th>
+            <th>Redeemed By</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody id="historyBody">
+          <tr><td colspan="4"><div class="history-empty">⏳ Memuat riwayat...</div></td></tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </div>
 
 <script>
   const POINT_DIVISOR = 10000000; // Rp 10jt = 1 point
   let pointsData = [];
+  let redemptionsData = [];
 
-  async function initPage() {
-    const now = new Date();
-    document.getElementById('filterMonth').value = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
-    await loadPoints();
+  /**
+   * Calculate points from total volume.
+   * Requirements: 8.1 - points = Math.floor(total_volume / 10000000)
+   * @param {number} totalVolume - Total transaction volume
+   * @returns {number} Calculated points
+   */
+  function calculatePoints(totalVolume) {
+    return Math.floor(totalVolume / POINT_DIVISOR);
   }
 
+  /**
+   * Validate a redemption request.
+   * Requirements: 9.2, 9.3, 9.6
+   * @param {number} requestedPoints - Points the user wants to redeem
+   * @param {number} availablePoints - Points currently available for the client
+   * @returns {{ valid: boolean, error: string|null }}
+   */
+  function validateRedemption(requestedPoints, availablePoints) {
+    // Req 9.6: Redemption < 1 → reject
+    if (!requestedPoints || requestedPoints < 1 || !Number.isInteger(requestedPoints)) {
+      return { valid: false, error: 'Jumlah point minimal 1. Masukkan angka bulat minimal 1 point.' };
+    }
+    // Req 9.2, 9.3: Insufficient points → reject with balance info
+    if (requestedPoints > availablePoints) {
+      return { valid: false, error: 'Point tidak mencukupi. Saldo point tersedia saat ini: ' + availablePoints + ' point.' };
+    }
+    return { valid: true, error: null };
+  }
+
+  /**
+   * Process a point redemption: record in point_redemptions table.
+   * Requirements: 9.4 - Record client_id, points_redeemed, redeemed_by, redemption_date
+   * @param {string} clientId - Client ID
+   * @param {string} clientName - Client name
+   * @param {number} points - Points to redeem
+   * @param {string} redeemedBy - User performing the redemption
+   * @returns {Promise<{ success: boolean, error: string|null }>}
+   */
+  async function processRedemption(clientId, clientName, points, redeemedBy) {
+    try {
+      const { data, error } = await supabase
+        .from('point_redemptions')
+        .insert({
+          client_id: clientId,
+          client_name: clientName,
+          points_redeemed: points,
+          redeemed_by: redeemedBy,
+          redemption_date: new Date().toISOString().split('T')[0]
+        })
+        .select();
+
+      if (error) throw error;
+      return { success: true, error: null };
+    } catch (e) {
+      console.error('Redemption error:', e);
+      return { success: false, error: 'Gagal menyimpan redemption: ' + (e.message || 'Unknown error') };
+    }
+  }
+
+  /**
+   * Build leaderboard from transactions and redemptions.
+   * Requirements: 8.2, 8.3, 8.4, 8.8, 9.2, 9.5
+   * - Accumulates volume from all transaction types
+   * - Ranks by points descending, ties broken by higher volume
+   * - Includes clients with 0 points
+   * - Calculates available points = earned - redeemed
+   * @param {Array} transactions - Array of transaction records
+   * @param {Array} redemptions - Array of redemption records
+   * @returns {Array} Sorted leaderboard entries with available points
+   */
+  function buildLeaderboard(transactions, redemptions) {
+    // Aggregate volume per client
+    const map = {};
+    (transactions || []).forEach(function(r) {
+      const key = r.client_id || 'unknown';
+      if (!map[key]) {
+        map[key] = { client_id: key, client_name: r.client_name || '—', volume: 0 };
+      }
+      map[key].volume += parseFloat(r.volume) || 0;
+      // Keep the most recent non-empty client_name
+      if (r.client_name && r.client_name !== '—') {
+        map[key].client_name = r.client_name;
+      }
+    });
+
+    // Aggregate redeemed points per client
+    const redeemedMap = {};
+    (redemptions || []).forEach(function(r) {
+      const key = r.client_id || 'unknown';
+      if (!redeemedMap[key]) redeemedMap[key] = 0;
+      redeemedMap[key] += parseInt(r.points_redeemed) || 0;
+    });
+
+    // Calculate points and available balance
+    var leaderboard = Object.values(map).map(function(d) {
+      var earnedPoints = calculatePoints(d.volume);
+      var redeemedPoints = redeemedMap[d.client_id] || 0;
+      var availablePoints = earnedPoints - redeemedPoints;
+      return {
+        client_id: d.client_id,
+        client_name: d.client_name,
+        volume: d.volume,
+        points: earnedPoints,
+        earnedPoints: earnedPoints,
+        redeemedPoints: redeemedPoints,
+        availablePoints: Math.max(0, availablePoints)
+      };
+    });
+
+    // Sort: points descending, then volume descending for ties
+    leaderboard.sort(function(a, b) {
+      if (b.points !== a.points) return b.points - a.points;
+      return b.volume - a.volume;
+    });
+
+    // Assign ranks
+    leaderboard.forEach(function(entry, index) {
+      entry.rank = index + 1;
+    });
+
+    return leaderboard;
+  }
+
+  /**
+   * Load and render redemption history.
+   * Requirements: 9.7 - Display redemption history sorted by most recent first
+   * Fetches all records from point_redemptions table ordered by redemption_date descending.
+   */
+  async function loadRedemptionHistory() {
+    const tbody = document.getElementById('historyBody');
+    try {
+      const { data, error } = await supabase
+        .from('point_redemptions')
+        .select('client_name, points_redeemed, redeemed_by, redemption_date')
+        .order('redemption_date', { ascending: false });
+
+      if (error) throw error;
+
+      renderRedemptionHistory(data || []);
+    } catch (e) {
+      console.error('Load redemption history error:', e);
+      tbody.innerHTML = '<tr><td colspan="4"><div class="history-empty">❌ Gagal memuat riwayat redemption</div></td></tr>';
+    }
+  }
+
+  /**
+   * Render redemption history table.
+   * Requirements: 9.7 - Show client name, points redeemed, redeemed_by, redemption_date
+   * @param {Array} records - Array of redemption records sorted by redemption_date desc
+   */
+  function renderRedemptionHistory(records) {
+    const tbody = document.getElementById('historyBody');
+
+    if (!records || records.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="4"><div class="history-empty">📭 Belum ada riwayat redemption</div></td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = records.map(function(r) {
+      var dateStr = r.redemption_date || '—';
+      // Format date to locale string if valid
+      if (dateStr && dateStr !== '—') {
+        try {
+          var d = new Date(dateStr + 'T00:00:00');
+          dateStr = d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+        } catch (e) {
+          // Keep original string if parsing fails
+        }
+      }
+
+      return '<tr>' +
+        '<td>' + escapeHtml(r.client_name || '—') + '</td>' +
+        '<td style="font-weight:600;color:var(--purple);">' + (parseInt(r.points_redeemed) || 0).toLocaleString('id-ID') + '</td>' +
+        '<td>' + escapeHtml(r.redeemed_by || '—') + '</td>' +
+        '<td>' + escapeHtml(dateStr) + '</td>' +
+        '</tr>';
+    }).join('');
+  }
+
+  /**
+   * Initialize page: set default month filter and load data.
+   * Requirements: 8.6 - Default month filter to current month on page load
+   */
+  async function initPage() {
+    const now = new Date();
+    document.getElementById('filterMonth').value = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+    await loadPoints();
+    await loadRedemptionHistory();
+  }
+
+  /**
+   * Load transaction data and redemptions for selected month and build leaderboard.
+   * Requirements: 8.1, 8.2, 8.5, 9.2
+   */
   async function loadPoints() {
     const month = document.getElementById('filterMonth').value;
     if (!month) return;
@@ -179,8 +498,12 @@
     try {
       const startDate = month + '-01';
       const [year, mon] = month.split('-').map(Number);
-      const endDate = year + '-' + String(mon).padStart(2,'0') + '-31';
+      // Calculate last day of month
+      const lastDay = new Date(year, mon, 0).getDate();
+      const endDate = year + '-' + String(mon).padStart(2, '0') + '-' + String(lastDay).padStart(2, '0');
 
+      // Fetch all transactions for the selected month (all transaction types)
+      // Requirements: 8.2 - Accumulate volume from all transaction types
       const { data, error } = await supabase
         .from('saham_transaksi')
         .select('client_id, client_name, volume')
@@ -189,74 +512,229 @@
 
       if (error) throw error;
 
-      // Aggregate per client
-      const map = {};
-      (data || []).forEach(r => {
-        const key = r.client_id || 'unknown';
-        if (!map[key]) map[key] = { client_id: key, client_name: r.client_name || '—', volume: 0 };
-        map[key].volume += parseFloat(r.volume) || 0;
-      });
+      // Fetch all redemptions (not filtered by month - total lifetime redemptions)
+      // Requirements: 9.2 - available = earned - previously redeemed (all time)
+      const { data: redemptions, error: redemError } = await supabase
+        .from('point_redemptions')
+        .select('client_id, points_redeemed');
 
-      pointsData = Object.values(map).map(d => ({
-        ...d,
-        points: Math.floor(d.volume / POINT_DIVISOR)
-      })).sort((a, b) => b.points - a.points || b.volume - a.volume);
+      if (redemError) throw redemError;
+
+      redemptionsData = redemptions || [];
+
+      // Build leaderboard from transactions and redemptions
+      pointsData = buildLeaderboard(data, redemptionsData);
 
       renderSummary();
       renderLeaderboard();
-    } catch(e) {
+      populateRedeemClientSelector();
+    } catch (e) {
       console.error('Load points error:', e);
-      document.getElementById('leaderboard').innerHTML = '<div class="empty-state">❌ Gagal memuat data</div>';
+      document.getElementById('leaderboardBody').innerHTML = '<tr><td colspan="7"><div class="empty-state">❌ Gagal memuat data</div></td></tr>';
     }
   }
 
+  /**
+   * Render summary statistics.
+   */
   function renderSummary() {
-    const totalVol = pointsData.reduce((s, d) => s + d.volume, 0);
-    const totalPts = pointsData.reduce((s, d) => s + d.points, 0);
+    const totalVol = pointsData.reduce(function(s, d) { return s + d.volume; }, 0);
+    const totalPts = pointsData.reduce(function(s, d) { return s + d.points; }, 0);
     document.getElementById('sumTotalPoints').textContent = totalPts.toLocaleString('id-ID');
     document.getElementById('sumTotalVolume').textContent = formatRp(totalVol);
     document.getElementById('sumNasabah').textContent = pointsData.length;
   }
 
+  /**
+   * Render leaderboard table with earned, redeemed, and available columns.
+   * Requirements: 8.4, 8.7, 8.8, 9.5
+   */
   function renderLeaderboard() {
     const search = (document.getElementById('searchInput').value || '').toLowerCase();
-    let filtered = pointsData;
+    var filtered = pointsData;
     if (search) {
-      filtered = pointsData.filter(d =>
-        d.client_name.toLowerCase().includes(search) ||
-        d.client_id.toLowerCase().includes(search)
-      );
+      filtered = pointsData.filter(function(d) {
+        return d.client_name.toLowerCase().includes(search) ||
+               d.client_id.toLowerCase().includes(search);
+      });
     }
 
-    const container = document.getElementById('leaderboard');
+    const tbody = document.getElementById('leaderboardBody');
+
+    // Requirements: 8.7 - Empty state when no data for selected month
     if (!filtered.length) {
-      container.innerHTML = '<div class="empty-state">📭 Belum ada data point untuk periode ini</div>';
+      tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state">📭 Belum ada data point untuk periode ini</div></td></tr>';
       return;
     }
 
-    container.innerHTML = filtered.map((d, i) => {
-      const rank = i + 1;
-      const rankClass = rank === 1 ? 'rank-1' : rank === 2 ? 'rank-2' : rank === 3 ? 'rank-3' : 'rank-default';
-      const cardClass = rank <= 3 ? `top-${rank}` : '';
-      return `
-        <div class="point-card ${cardClass}">
-          <div class="rank-badge ${rankClass}">${rank <= 3 ? ['🥇','🥈','🥉'][rank-1] : rank}</div>
-          <div class="point-info">
-            <div class="point-name">${d.client_name}</div>
-            <div class="point-client-id">${d.client_id}</div>
-            <div class="point-detail">Volume: ${formatRp(d.volume)}</div>
-          </div>
-          <div class="point-value">
-            <div class="point-number">${d.points.toLocaleString('id-ID')}</div>
-            <div class="point-label">Point</div>
-          </div>
-        </div>
-      `;
+    tbody.innerHTML = filtered.map(function(d) {
+      var rankClass = '';
+      if (d.rank === 1) rankClass = 'rank-1';
+      else if (d.rank === 2) rankClass = 'rank-2';
+      else if (d.rank === 3) rankClass = 'rank-3';
+
+      var rankDisplay = d.rank <= 3 ? ['🥇', '🥈', '🥉'][d.rank - 1] + ' ' + d.rank : d.rank;
+
+      return '<tr>' +
+        '<td class="rank-cell ' + rankClass + '">' + rankDisplay + '</td>' +
+        '<td>' + escapeHtml(d.client_id) + '</td>' +
+        '<td>' + escapeHtml(d.client_name) + '</td>' +
+        '<td class="volume-cell">' + formatRp(d.volume) + '</td>' +
+        '<td class="points-cell">' + d.earnedPoints.toLocaleString('id-ID') + '</td>' +
+        '<td class="redeemed-cell">' + (d.redeemedPoints > 0 ? '-' + d.redeemedPoints.toLocaleString('id-ID') : '0') + '</td>' +
+        '<td class="available-cell">' + d.availablePoints.toLocaleString('id-ID') + '</td>' +
+        '</tr>';
     }).join('');
   }
 
+  /**
+   * Populate the redeem client selector from leaderboard data.
+   * Requirements: 9.1 - Client selector in redeem interface
+   */
+  function populateRedeemClientSelector() {
+    const select = document.getElementById('redeemClient');
+    // Keep the default option
+    select.innerHTML = '<option value="">-- Pilih Nasabah --</option>';
+
+    // Only show clients that have available points > 0
+    pointsData.forEach(function(d) {
+      var opt = document.createElement('option');
+      opt.value = d.client_id;
+      opt.textContent = d.client_id + ' - ' + d.client_name + ' (' + d.availablePoints + ' pts)';
+      opt.dataset.available = d.availablePoints;
+      opt.dataset.clientName = d.client_name;
+      select.appendChild(opt);
+    });
+
+    // Reset available info
+    document.getElementById('availableInfo').textContent = '';
+  }
+
+  /**
+   * Update available point info when client is selected.
+   */
+  function updateAvailableInfo() {
+    const select = document.getElementById('redeemClient');
+    const infoEl = document.getElementById('availableInfo');
+    const selectedOpt = select.options[select.selectedIndex];
+
+    if (!select.value) {
+      infoEl.textContent = '';
+      return;
+    }
+
+    var available = parseInt(selectedOpt.dataset.available) || 0;
+    infoEl.textContent = 'Saldo tersedia: ' + available + ' point';
+    // Update max attribute on input
+    document.getElementById('redeemPoints').max = available;
+  }
+
+  /**
+   * Handle redeem button click.
+   * Requirements: 9.1, 9.2, 9.3, 9.4, 9.5, 9.6
+   */
+  async function handleRedeem() {
+    const errorEl = document.getElementById('redeemError');
+    const successEl = document.getElementById('redeemSuccess');
+    const btn = document.getElementById('redeemBtn');
+
+    // Hide previous messages
+    errorEl.style.display = 'none';
+    successEl.style.display = 'none';
+
+    const clientId = document.getElementById('redeemClient').value;
+    const pointsInput = document.getElementById('redeemPoints').value;
+    const requestedPoints = parseInt(pointsInput);
+
+    // Validate client selection
+    if (!clientId) {
+      errorEl.textContent = 'Pilih nasabah terlebih dahulu.';
+      errorEl.style.display = 'block';
+      return;
+    }
+
+    // Find client in leaderboard data
+    var clientEntry = pointsData.find(function(d) { return d.client_id === clientId; });
+    if (!clientEntry) {
+      errorEl.textContent = 'Nasabah tidak ditemukan dalam leaderboard.';
+      errorEl.style.display = 'block';
+      return;
+    }
+
+    // Validate redemption
+    var validation = validateRedemption(requestedPoints, clientEntry.availablePoints);
+    if (!validation.valid) {
+      errorEl.textContent = validation.error;
+      errorEl.style.display = 'block';
+      return;
+    }
+
+    // Get current user
+    var currentUser = '';
+    try {
+      var userRaw = sessionStorage.getItem('fawz_user');
+      var userObj = JSON.parse(userRaw);
+      currentUser = userObj.name || userObj.username || 'unknown';
+    } catch (e) {
+      currentUser = 'unknown';
+    }
+
+    // Disable button during processing
+    btn.disabled = true;
+    btn.textContent = 'Memproses...';
+
+    // Process redemption
+    var result = await processRedemption(clientId, clientEntry.client_name, requestedPoints, currentUser);
+
+    if (result.success) {
+      // Req 9.5: Update leaderboard display within 2 seconds
+      successEl.textContent = '✅ Berhasil redeem ' + requestedPoints + ' point untuk ' + clientEntry.client_name;
+      successEl.style.display = 'block';
+
+      // Reset form
+      document.getElementById('redeemClient').value = '';
+      document.getElementById('redeemPoints').value = '';
+      document.getElementById('availableInfo').textContent = '';
+
+      // Reload data to update leaderboard (within 2 seconds)
+      await loadPoints();
+      // Refresh redemption history to show the new entry
+      await loadRedemptionHistory();
+    } else {
+      errorEl.textContent = result.error;
+      errorEl.style.display = 'block';
+    }
+
+    // Re-enable button
+    btn.disabled = false;
+    btn.textContent = 'Redeem Point';
+  }
+
+  /**
+   * Format number as Rupiah.
+   */
   function formatRp(n) {
     return 'Rp ' + (n || 0).toLocaleString('id-ID');
+  }
+
+  /**
+   * Escape HTML to prevent XSS.
+   */
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  // Expose functions globally for testing
+  if (typeof window !== 'undefined') {
+    window.FawzPoint = {
+      calculatePoints: calculatePoints,
+      buildLeaderboard: buildLeaderboard,
+      validateRedemption: validateRedemption,
+      processRedemption: processRedemption,
+      loadRedemptionHistory: loadRedemptionHistory,
+      renderRedemptionHistory: renderRedemptionHistory
+    };
   }
 
   window.addEventListener('DOMContentLoaded', initPage);
