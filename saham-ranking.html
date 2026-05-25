@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Fawz Pro | Ranking Bulanan Saham</title>
+  <title>Fawz Pro | Rekap Transaksi Saham</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script>
     const SUPABASE_URL = 'https://yhmrfluehibfapvtxcfi.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlobXJmbHVlaGliZmFwdnR4Y2ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNjEzODUsImV4cCI6MjA5NDczNzM4NX0.se_H4n_eLsf81d_1GH5sqsPCpX89MHewlPuuNkY6qcU';
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const _sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   </script>
 
   <style>
@@ -21,7 +21,6 @@
       --nav-h: 68px; --green: #27ae60; --red: #e74c3c;
     }
     body { font-family: 'Inter', sans-serif; background: var(--bg); min-height: 100vh; padding-top: var(--nav-h); color: var(--text); }
-
     @keyframes fadeUp { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
 
     .page-container { max-width: 1300px; margin: 0 auto; padding: 36px 28px; }
@@ -30,14 +29,21 @@
     .page-subtitle { font-size: 0.88rem; color: var(--gray); margin-top: 4px; }
     .title-underline { width: 48px; height: 3px; background: linear-gradient(90deg, var(--gold), var(--gold-light)); border-radius: 2px; margin-top: 8px; }
 
-    /* Filter */
+    .btn { display: inline-flex; align-items: center; gap: 7px; padding: 11px 20px; border-radius: 10px; font-family: 'Inter', sans-serif; font-size: 0.875rem; font-weight: 600; cursor: pointer; transition: all 0.2s; border: none; text-decoration: none; }
+    .btn-outline { background: #fff; color: var(--navy); border: 1.5px solid var(--border); }
+    .btn-outline:hover { border-color: var(--gold); color: var(--gold); }
+
+    .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; animation: fadeUp 0.4s 0.05s ease both; }
+    .stat-box { background: #fff; border-radius: 14px; padding: 18px 22px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+    .stat-box-label { font-size: 0.72rem; color: var(--gray); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+    .stat-box-val { font-size: 1.5rem; font-weight: 700; color: var(--navy); }
+
     .filter-bar { background: #fff; border-radius: 14px; padding: 14px 18px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 18px; animation: fadeUp 0.4s 0.08s ease both; }
     .filter-bar input, .filter-bar select { height: 36px; border: 1px solid var(--border); border-radius: 8px; padding: 0 12px; font-family: 'Inter', sans-serif; font-size: 0.8rem; color: var(--text); outline: none; }
     .filter-bar input:focus, .filter-bar select:focus { border-color: var(--gold); }
     .filter-bar label { font-size: 0.78rem; font-weight: 600; color: var(--navy); }
 
-    /* Table */
-    .table-wrapper { background: #fff; border-radius: 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); overflow: hidden; animation: fadeUp 0.4s 0.12s ease both; margin-bottom: 28px; }
+    .table-wrapper { background: #fff; border-radius: 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); overflow: hidden; animation: fadeUp 0.4s 0.12s ease both; }
     table { width: 100%; border-collapse: collapse; font-size: 0.84rem; }
     thead { background: var(--navy); }
     thead th { padding: 13px 14px; text-align: left; font-weight: 600; color: #fff; font-size: 0.76rem; letter-spacing: 0.3px; white-space: nowrap; }
@@ -46,56 +52,24 @@
     tbody td { padding: 11px 14px; color: #333; vertical-align: middle; }
     .empty-state { text-align: center; padding: 60px 20px; color: #bbb; }
 
-    /* Section title */
-    .section-title { font-size: 1.1rem; font-weight: 700; color: var(--navy); margin-bottom: 14px; animation: fadeUp 0.4s 0.1s ease both; }
+    .section-title { font-size: 1.1rem; font-weight: 700; color: var(--navy); margin-bottom: 14px; margin-top: 28px; animation: fadeUp 0.4s 0.1s ease both; }
 
     @media (max-width: 768px) {
       .page-container { padding: 24px 16px; }
+      .stats-row { grid-template-columns: 1fr 1fr; }
     }
   </style>
 
   <script>
-    // Access Control IIFE - validates session and role before any data rendering
-    // Requirements: 6.1, 6.2, 6.3, 6.5, 6.6, 7.3
+    // Access Control IIFE
     (function() {
       var raw = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember');
-
-      // No session data found → redirect to login
-      if (!raw) {
-        window.location.replace('login.html');
-        return;
-      }
-
-      // Attempt to parse JSON - invalid JSON → treat as unauthenticated
+      if (!raw) { window.location.replace('login.html'); return; }
       var user;
-      try {
-        user = JSON.parse(raw);
-      } catch (e) {
-        sessionStorage.removeItem('fawz_user');
-        window.location.replace('login.html');
-        return;
-      }
-
-      // Validate required fields (name, username, role) exist and are non-empty
-      if (!user || typeof user !== 'object' || !user.name || !user.username || !user.role) {
-        sessionStorage.removeItem('fawz_user');
-        window.location.replace('login.html');
-        return;
-      }
-
-      // Role-based access: "sales" → redirect to dashboard
-      if (user.role === 'sales') {
-        window.location.replace('dashboard.html');
-        return;
-      }
-
-      // Only allow "admin" and "head_account" roles
-      if (user.role !== 'admin' && user.role !== 'head_account') {
-        window.location.replace('dashboard.html');
-        return;
-      }
-
-      // Valid session - persist in sessionStorage for page use
+      try { user = JSON.parse(raw); } catch (e) { sessionStorage.removeItem('fawz_user'); window.location.replace('login.html'); return; }
+      if (!user || typeof user !== 'object' || !user.name || !user.username || !user.role) { sessionStorage.removeItem('fawz_user'); window.location.replace('login.html'); return; }
+      if (user.role === 'sales') { window.location.replace('dashboard.html'); return; }
+      if (user.role !== 'admin' && user.role !== 'head_account') { window.location.replace('dashboard.html'); return; }
       sessionStorage.setItem('fawz_user', raw);
     })();
   </script>
@@ -108,261 +82,193 @@
 <div class="page-container">
   <div class="page-header">
     <div>
-      <div class="page-title">Ranking Bulanan Saham</div>
-      <div class="page-subtitle">Peringkat nasabah berdasarkan volume dan fee per bulan</div>
+      <div class="page-title">Rekap Transaksi Saham</div>
+      <div class="page-subtitle">Daftar seluruh transaksi saham per bulan</div>
       <div class="title-underline"></div>
     </div>
-    <div>
-      <a href="saham.html" style="display:inline-flex;align-items:center;gap:7px;padding:11px 20px;border-radius:10px;font-family:'Inter',sans-serif;font-size:0.875rem;font-weight:600;cursor:pointer;transition:all 0.2s;border:1.5px solid var(--border);background:#fff;color:var(--navy);text-decoration:none;">← Transaksi Saham</a>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <a href="saham.html" class="btn btn-outline">← Transaksi Saham</a>
+      <a href="fawz-point.html" class="btn btn-outline">⭐ Fawz Point</a>
     </div>
   </div>
 
-  <!-- Month Filter -->
+  <!-- Filter -->
   <div class="filter-bar">
     <label for="monthFilter">Bulan:</label>
-    <input type="month" id="monthFilter" />
+    <input type="month" id="monthFilter" onchange="loadTransactions()"/>
+    <select id="sortBy" onchange="loadTransactions()" style="min-width:160px;">
+      <option value="tanggal_desc">Tanggal (Terbaru)</option>
+      <option value="tanggal_asc">Tanggal (Terlama)</option>
+      <option value="volume_desc">Volume (Terbesar)</option>
+      <option value="fee_desc">Fee (Terbesar)</option>
+      <option value="client_asc">Client ID (A-Z)</option>
+    </select>
   </div>
 
-  <!-- Ranking by Volume -->
-  <div class="section-title">Ranking Volume</div>
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="stat-box"><div class="stat-box-label">Total Volume</div><div class="stat-box-val" id="statVolume">Rp 0</div></div>
+    <div class="stat-box"><div class="stat-box-label">Total Fee</div><div class="stat-box-val" id="statFee">Rp 0</div></div>
+    <div class="stat-box"><div class="stat-box-label">Jumlah Transaksi</div><div class="stat-box-val" id="statCount">0</div></div>
+    <div class="stat-box"><div class="stat-box-label">Nasabah Aktif</div><div class="stat-box-val" id="statClients">0</div></div>
+  </div>
+
+  <!-- Transaction Table -->
+  <div class="section-title">📋 Daftar Transaksi</div>
   <div class="table-wrapper">
-    <table id="volumeRankingTable">
-      <thead>
-        <tr>
-          <th>Rank</th>
-          <th>Client Code</th>
-          <th>Customer Name</th>
-          <th>Sales Code</th>
-          <th>Total Volume</th>
-          <th>Total Fee</th>
-        </tr>
-      </thead>
-      <tbody id="volumeRankingBody">
-        <tr><td colspan="6" class="empty-state">Memuat data ranking...</td></tr>
-      </tbody>
+    <div style="overflow-x:auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Tanggal</th>
+            <th>Client ID</th>
+            <th>Nama Nasabah</th>
+            <th>Volume (Rp)</th>
+            <th>Fee (Rp)</th>
+            <th>Sales</th>
+            <th>Catatan</th>
+          </tr>
+        </thead>
+        <tbody id="transactionBody">
+          <tr><td colspan="8"><div class="empty-state">⏳ Memuat data...</div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Ranking Section -->
+  <div class="section-title">🏆 Ranking Volume</div>
+  <div class="table-wrapper">
+    <table>
+      <thead><tr><th>Rank</th><th>Client Code</th><th>Customer Name</th><th>Sales</th><th>Total Volume</th><th>Total Fee</th></tr></thead>
+      <tbody id="volumeRankingBody"><tr><td colspan="6" class="empty-state">Memuat...</td></tr></tbody>
     </table>
   </div>
 
-  <!-- Ranking by Fee -->
-  <div class="section-title">Ranking Fee</div>
+  <div class="section-title">🏆 Ranking Fee</div>
   <div class="table-wrapper">
-    <table id="feeRankingTable">
-      <thead>
-        <tr>
-          <th>Rank</th>
-          <th>Client Code</th>
-          <th>Customer Name</th>
-          <th>Sales Code</th>
-          <th>Total Volume</th>
-          <th>Total Fee</th>
-        </tr>
-      </thead>
-      <tbody id="feeRankingBody">
-        <tr><td colspan="6" class="empty-state">Memuat data ranking...</td></tr>
-      </tbody>
+    <table>
+      <thead><tr><th>Rank</th><th>Client Code</th><th>Customer Name</th><th>Sales</th><th>Total Volume</th><th>Total Fee</th></tr></thead>
+      <tbody id="feeRankingBody"><tr><td colspan="6" class="empty-state">Memuat...</td></tr></tbody>
     </table>
   </div>
 </div>
 
 <script>
-  // Ranking Module - Implements ranking logic and display
-  // Requirements: 7.1, 7.2, 7.3, 7.4, 7.5, 7.6
+  // Set default month
   (function() {
-    'use strict';
-
-    var monthFilter = document.getElementById('monthFilter');
-    var volumeRankingBody = document.getElementById('volumeRankingBody');
-    var feeRankingBody = document.getElementById('feeRankingBody');
-
-    // Set month filter to current month on page load (Req 7.3)
     var now = new Date();
-    var currentYear = now.getFullYear();
-    var currentMonth = String(now.getMonth() + 1).padStart(2, '0');
-    monthFilter.value = currentYear + '-' + currentMonth;
-
-    /**
-     * Format number as Indonesian Rupiah.
-     * Displays with "Rp" prefix and Indonesian locale thousand separators (Req 7.5).
-     * @param {number} value
-     * @returns {string}
-     */
-    function formatRupiah(value) {
-      if (value === 0) return 'Rp 0';
-      return 'Rp ' + value.toLocaleString('id-ID');
-    }
-
-    /**
-     * Ranks clients by a given field (volume or fee).
-     * Sorted descending by field value, ties broken by client_id ascending alphabetical (Req 7.1, 7.2).
-     *
-     * @param {Array} transactions - Array of transaction objects from saham_transaksi
-     * @param {'volume'|'fee'} field - The field to rank by
-     * @returns {Array<RankedClient>} Sorted array with rank assigned
-     */
-    function rankClients(transactions, field) {
-      // Aggregate by client: sum volume and sum fee
-      var clientMap = {};
-
-      for (var i = 0; i < transactions.length; i++) {
-        var tx = transactions[i];
-        var clientId = tx.client_id;
-
-        if (!clientMap[clientId]) {
-          clientMap[clientId] = {
-            client_id: clientId,
-            client_name: tx.client_name || '',
-            sales_name: tx.sales_name || '',
-            totalVolume: 0,
-            totalFee: 0
-          };
-        }
-
-        clientMap[clientId].totalVolume += Number(tx.volume) || 0;
-        clientMap[clientId].totalFee += Number(tx.fee) || 0;
-      }
-
-      // Convert to array
-      var clients = Object.keys(clientMap).map(function(key) {
-        return clientMap[key];
-      });
-
-      // Sort: descending by field, ties broken by client_id ascending
-      clients.sort(function(a, b) {
-        var fieldA = field === 'volume' ? a.totalVolume : a.totalFee;
-        var fieldB = field === 'volume' ? b.totalVolume : b.totalFee;
-
-        if (fieldB !== fieldA) {
-          return fieldB - fieldA; // Descending by field value
-        }
-        // Tie-breaker: client_id ascending alphabetical
-        return a.client_id.localeCompare(b.client_id);
-      });
-
-      // Assign ranks
-      var ranked = [];
-      for (var j = 0; j < clients.length; j++) {
-        ranked.push({
-          rank: j + 1,
-          client_id: clients[j].client_id,
-          client_name: clients[j].client_name,
-          sales_name: clients[j].sales_name,
-          totalVolume: clients[j].totalVolume,
-          totalFee: clients[j].totalFee
-        });
-      }
-
-      return ranked;
-    }
-
-    /**
-     * Renders a ranked list into a table body element.
-     * Shows rank, Client_Code, Customer Name, Sales_Code, Volume (Rp), Fee (Rp) (Req 7.5).
-     *
-     * @param {HTMLElement} tbody - The tbody element to render into
-     * @param {Array<RankedClient>} rankedClients - The ranked client array
-     */
-    function renderRanking(tbody, rankedClients) {
-      if (rankedClients.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="empty-state">Tidak ada data ranking untuk bulan yang dipilih</td></tr>';
-        return;
-      }
-
-      var html = '';
-      for (var i = 0; i < rankedClients.length; i++) {
-        var client = rankedClients[i];
-        html += '<tr>' +
-          '<td>' + client.rank + '</td>' +
-          '<td>' + escapeHtml(client.client_id) + '</td>' +
-          '<td>' + escapeHtml(client.client_name) + '</td>' +
-          '<td>' + escapeHtml(client.sales_name) + '</td>' +
-          '<td>' + formatRupiah(client.totalVolume) + '</td>' +
-          '<td>' + formatRupiah(client.totalFee) + '</td>' +
-          '</tr>';
-      }
-      tbody.innerHTML = html;
-    }
-
-    /**
-     * Escapes HTML special characters to prevent XSS.
-     * @param {string} str
-     * @returns {string}
-     */
-    function escapeHtml(str) {
-      if (!str) return '';
-      return str.replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#039;');
-    }
-
-    /**
-     * Fetches transactions for the selected month and renders both rankings.
-     * Called on page load and on month filter change (Req 7.4).
-     */
-    async function loadRankings() {
-      var selectedMonth = monthFilter.value;
-      if (!selectedMonth) return;
-
-      var parts = selectedMonth.split('-');
-      var year = parseInt(parts[0], 10);
-      var month = parseInt(parts[1], 10);
-
-      // Calculate date range for the selected month
-      var startDate = year + '-' + String(month).padStart(2, '0') + '-01';
-      var lastDay = new Date(year, month, 0).getDate();
-      var endDate = year + '-' + String(month).padStart(2, '0') + '-' + String(lastDay).padStart(2, '0');
-
-      // Show loading state
-      volumeRankingBody.innerHTML = '<tr><td colspan="6" class="empty-state">Memuat data ranking...</td></tr>';
-      feeRankingBody.innerHTML = '<tr><td colspan="6" class="empty-state">Memuat data ranking...</td></tr>';
-
-      try {
-        // Fetch transactions for the selected month from saham_transaksi
-        var { data, error } = await supabase
-          .from('saham_transaksi')
-          .select('client_id, client_name, sales_name, volume, fee, tanggal')
-          .gte('tanggal', startDate)
-          .lte('tanggal', endDate);
-
-        if (error) {
-          console.error('Error fetching ranking data:', error);
-          volumeRankingBody.innerHTML = '<tr><td colspan="6" class="empty-state">Gagal memuat data. Silakan coba lagi.</td></tr>';
-          feeRankingBody.innerHTML = '<tr><td colspan="6" class="empty-state">Gagal memuat data. Silakan coba lagi.</td></tr>';
-          return;
-        }
-
-        var transactions = data || [];
-
-        // Rank by volume (Req 7.1) and render
-        var volumeRanking = rankClients(transactions, 'volume');
-        renderRanking(volumeRankingBody, volumeRanking);
-
-        // Rank by fee (Req 7.2) and render
-        var feeRanking = rankClients(transactions, 'fee');
-        renderRanking(feeRankingBody, feeRanking);
-
-      } catch (err) {
-        console.error('Unexpected error loading rankings:', err);
-        volumeRankingBody.innerHTML = '<tr><td colspan="6" class="empty-state">Terjadi kesalahan. Silakan coba lagi.</td></tr>';
-        feeRankingBody.innerHTML = '<tr><td colspan="6" class="empty-state">Terjadi kesalahan. Silakan coba lagi.</td></tr>';
-      }
-    }
-
-    // Load rankings on page load
-    loadRankings();
-
-    // Re-render on month change (Req 7.4)
-    monthFilter.addEventListener('change', function() {
-      loadRankings();
-    });
-
-    // Export rankClients for testing purposes
-    window.SahamRanking = {
-      rankClients: rankClients
-    };
+    document.getElementById('monthFilter').value = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
   })();
-</script>
 
+  function formatRp(n) { return 'Rp ' + (n || 0).toLocaleString('id-ID'); }
+  function esc(s) { if (!s) return ''; return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  async function loadTransactions() {
+    var month = document.getElementById('monthFilter').value;
+    if (!month) return;
+
+    var parts = month.split('-');
+    var year = parseInt(parts[0],10), mon = parseInt(parts[1],10);
+    var startDate = month + '-01';
+    var lastDay = new Date(year, mon, 0).getDate();
+    var endDate = year + '-' + String(mon).padStart(2,'0') + '-' + String(lastDay).padStart(2,'0');
+
+    try {
+      var { data, error } = await _sb
+        .from('saham_transaksi')
+        .select('*')
+        .gte('tanggal', startDate)
+        .lte('tanggal', endDate);
+
+      if (error) throw error;
+      var transactions = data || [];
+
+      // Sort
+      var sortBy = document.getElementById('sortBy').value;
+      transactions.sort(function(a, b) {
+        switch(sortBy) {
+          case 'tanggal_asc': return (a.tanggal||'').localeCompare(b.tanggal||'');
+          case 'volume_desc': return (parseFloat(b.volume)||0) - (parseFloat(a.volume)||0);
+          case 'fee_desc': return (parseFloat(b.fee)||0) - (parseFloat(a.fee)||0);
+          case 'client_asc': return (a.client_id||'').localeCompare(b.client_id||'');
+          default: return (b.tanggal||'').localeCompare(a.tanggal||''); // tanggal_desc
+        }
+      });
+
+      // Stats
+      var totalVol = 0, totalFee = 0, clients = new Set();
+      transactions.forEach(function(r) {
+        totalVol += parseFloat(r.volume) || 0;
+        totalFee += parseFloat(r.fee) || 0;
+        clients.add(r.client_id);
+      });
+      document.getElementById('statVolume').textContent = formatRp(totalVol);
+      document.getElementById('statFee').textContent = formatRp(totalFee);
+      document.getElementById('statCount').textContent = transactions.length;
+      document.getElementById('statClients').textContent = clients.size;
+
+      // Render transaction table
+      var tbody = document.getElementById('transactionBody');
+      if (!transactions.length) {
+        tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state">📭 Tidak ada transaksi untuk bulan ini</div></td></tr>';
+      } else {
+        tbody.innerHTML = transactions.map(function(r, i) {
+          return '<tr>' +
+            '<td>' + (i+1) + '</td>' +
+            '<td>' + esc(r.tanggal) + '</td>' +
+            '<td><strong>' + esc(r.client_id) + '</strong></td>' +
+            '<td>' + esc(r.client_name) + '</td>' +
+            '<td style="font-weight:600;">' + formatRp(r.volume) + '</td>' +
+            '<td style="color:var(--green);font-weight:600;">' + formatRp(r.fee) + '</td>' +
+            '<td>' + esc(r.sales_name) + '</td>' +
+            '<td style="font-size:0.78rem;color:#888;">' + esc(r.catatan || '—') + '</td>' +
+            '</tr>';
+        }).join('');
+      }
+
+      // Render rankings
+      renderRankings(transactions);
+
+    } catch(e) {
+      console.error('Load error:', e);
+      document.getElementById('transactionBody').innerHTML = '<tr><td colspan="8"><div class="empty-state">❌ Gagal memuat data</div></td></tr>';
+    }
+  }
+
+  function renderRankings(transactions) {
+    // Aggregate by client
+    var map = {};
+    transactions.forEach(function(tx) {
+      var id = tx.client_id;
+      if (!map[id]) map[id] = { client_id: id, client_name: tx.client_name||'', sales_name: tx.sales_name||'', vol: 0, fee: 0 };
+      map[id].vol += parseFloat(tx.volume)||0;
+      map[id].fee += parseFloat(tx.fee)||0;
+    });
+    var clients = Object.values(map);
+
+    // Volume ranking
+    var volSorted = clients.slice().sort(function(a,b) { return b.vol !== a.vol ? b.vol - a.vol : a.client_id.localeCompare(b.client_id); });
+    renderRankTable('volumeRankingBody', volSorted);
+
+    // Fee ranking
+    var feeSorted = clients.slice().sort(function(a,b) { return b.fee !== a.fee ? b.fee - a.fee : a.client_id.localeCompare(b.client_id); });
+    renderRankTable('feeRankingBody', feeSorted);
+  }
+
+  function renderRankTable(tbodyId, sorted) {
+    var tbody = document.getElementById(tbodyId);
+    if (!sorted.length) {
+      tbody.innerHTML = '<tr><td colspan="6" class="empty-state">Tidak ada data</td></tr>';
+      return;
+    }
+    tbody.innerHTML = sorted.map(function(c, i) {
+      return '<tr><td>' + (i+1) + '</td><td>' + esc(c.client_id) + '</td><td>' + esc(c.client_name) + '</td><td>' + esc(c.sales_name) + '</td><td>' + formatRp(c.vol) + '</td><td>' + formatRp(c.fee) + '</td></tr>';
+    }).join('');
+  }
+
+  window.addEventListener('DOMContentLoaded', loadTransactions);
+</script>
 </body>
 </html>
