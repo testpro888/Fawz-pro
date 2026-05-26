@@ -1106,20 +1106,49 @@
     const batchSize = 50;
 
     for (let i = 0; i < csvRows.length; i += batchSize) {
-      const batch = csvRows.slice(i, i + batchSize).map(r => ({
-        tanggal: r.tanggal,
-        client_id: r.client_id,
-        client_name: r.client_name,
-        volume: Number(r.volume) || 0,
-        fee: Number(r.fee) || 0,
-        sales_name: r.sales_name,
-        created_by: curUser?.name || 'CSV Import'
-      }));
+      const batch = csvRows.slice(i, i + batchSize);
 
       try {
-        const { error } = await _sb.from('saham_transaksi').insert(batch);
-        if (error) { errors += batch.length; console.error('Batch error:', error); }
-        else { success += batch.length; }
+        // For each row, check if existing record exists for same client_id + tanggal
+        // If exists, update only the relevant field (fee or volume) without overwriting the other
+        for (const r of batch) {
+          const { data: existing } = await _sb.from('saham_transaksi')
+            .select('id, volume, fee')
+            .eq('client_id', r.client_id)
+            .eq('tanggal', r.tanggal)
+            .maybeSingle();
+
+          if (existing) {
+            // Update existing row — merge fee/volume without overwriting the other field
+            const updateData = {};
+            if (uploadType === 'fee') {
+              updateData.fee = Number(r.fee) || 0;
+            } else {
+              updateData.volume = Number(r.volume) || 0;
+            }
+            updateData.client_name = r.client_name || existing.client_name;
+            updateData.sales_name = r.sales_name;
+
+            const { error } = await _sb.from('saham_transaksi')
+              .update(updateData)
+              .eq('id', existing.id);
+            if (error) { errors++; console.error('Update error:', error); }
+            else { success++; }
+          } else {
+            // No existing record — insert new row
+            const { error } = await _sb.from('saham_transaksi').insert({
+              tanggal: r.tanggal,
+              client_id: r.client_id,
+              client_name: r.client_name,
+              volume: Number(r.volume) || 0,
+              fee: Number(r.fee) || 0,
+              sales_name: r.sales_name,
+              created_by: curUser?.name || 'CSV Import'
+            });
+            if (error) { errors++; console.error('Insert error:', error); }
+            else { success++; }
+          }
+        }
       } catch(e) { errors += batch.length; console.error('Upload error:', e); }
 
       btn.textContent = `Mengupload... (${success + errors}/${csvRows.length})`;
