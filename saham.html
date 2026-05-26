@@ -597,19 +597,20 @@
       var totalVolume = 0, totalFee = 0, clientIds = new Set();
       var pageSize = 1000;
       var offset = 0;
-      var hasMore = true;
+      var keepFetching = true;
 
-      while (hasMore) {
-        var { data: ytdPage, error } = await _sb
+      while (keepFetching) {
+        var result = await _sb
           .from('saham_transaksi')
           .select('volume, fee, client_id')
           .gte('tanggal', startDate)
           .lte('tanggal', endDate)
           .range(offset, offset + pageSize - 1);
 
-        if (error) throw error;
+        if (result.error) { console.error('YTD page error:', result.error); break; }
 
-        var rows = ytdPage || [];
+        var rows = result.data || [];
+        console.log('YTD fetch page offset=' + offset + ' rows=' + rows.length);
         for (var j = 0; j < rows.length; j++) {
           totalVolume += Number(rows[j].volume) || 0;
           totalFee += Number(rows[j].fee) || 0;
@@ -617,12 +618,13 @@
         }
 
         if (rows.length < pageSize) {
-          hasMore = false;
+          keepFetching = false;
         } else {
           offset += pageSize;
         }
       }
 
+      console.log('YTD total: volume=' + totalVolume + ' fee=' + totalFee + ' clients=' + clientIds.size);
       document.getElementById('summaryYTDVolume').textContent = formatRp(totalVolume);
       document.getElementById('summaryYTDFee').textContent = formatRp(totalFee);
       document.getElementById('summaryYTDClients').textContent = String(clientIds.size);
