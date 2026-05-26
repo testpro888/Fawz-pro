@@ -189,11 +189,14 @@
 
   <!-- Tabel Volume -->
   <div class="rekap-section" style="margin-top:0;">
-    <div class="rekap-title">Tabel Volume</div>
+    <div class="rekap-title" style="display:flex;align-items:center;justify-content:space-between;">
+      Tabel Volume
+      <button class="btn btn-outline" style="padding:6px 14px;font-size:0.75rem;color:var(--red);border-color:#ffcccc;" onclick="bulkDeleteByType('volume')">Hapus Semua Volume Bulan Ini</button>
+    </div>
     <div class="table-wrapper">
-      <div style="overflow-x:auto;">
+      <div style="overflow-x:auto;max-height:440px;overflow-y:auto;">
         <table>
-          <thead>
+          <thead style="position:sticky;top:0;z-index:1;">
             <tr>
               <th>#</th>
               <th>Tanggal</th>
@@ -215,11 +218,14 @@
 
   <!-- Tabel Fee -->
   <div class="rekap-section">
-    <div class="rekap-title">Tabel Fee</div>
+    <div class="rekap-title" style="display:flex;align-items:center;justify-content:space-between;">
+      Tabel Fee
+      <button class="btn btn-outline" style="padding:6px 14px;font-size:0.75rem;color:var(--red);border-color:#ffcccc;" onclick="bulkDeleteByType('fee')">Hapus Semua Fee Bulan Ini</button>
+    </div>
     <div class="table-wrapper">
-      <div style="overflow-x:auto;">
+      <div style="overflow-x:auto;max-height:440px;overflow-y:auto;">
         <table>
-          <thead>
+          <thead style="position:sticky;top:0;z-index:1;">
             <tr>
               <th>#</th>
               <th>Tanggal</th>
@@ -679,6 +685,41 @@
     } catch(e) {
       console.error('Delete error:', e);
       showToast('Gagal menghapus transaksi: ' + (e.message || 'Terjadi kesalahan jaringan'), 'error');
+    }
+  }
+
+  // Bulk delete all records of a type for the selected month
+  async function bulkDeleteByType(type) {
+    var month = document.getElementById('filterMonth').value;
+    if (!month) { showToast('Pilih bulan terlebih dahulu', 'error'); return; }
+
+    var dataToDelete = type === 'volume' ? volumeData : feeData;
+    if (!dataToDelete.length) { showToast('Tidak ada data ' + type + ' untuk dihapus', 'error'); return; }
+
+    if (!confirm('Hapus SEMUA ' + dataToDelete.length + ' data ' + type + ' untuk bulan ' + month + '? Tindakan ini tidak dapat dibatalkan.')) return;
+
+    var ids = dataToDelete.map(r => r.id);
+    var batchSize = 50;
+    var success = 0, errors = 0;
+
+    for (var i = 0; i < ids.length; i += batchSize) {
+      var batch = ids.slice(i, i + batchSize);
+      try {
+        var { error } = await _sb.from('saham_transaksi').delete().in('id', batch);
+        if (error) { errors += batch.length; } else { success += batch.length; }
+      } catch(e) { errors += batch.length; }
+    }
+
+    // Remove from local data
+    var idSet = new Set(ids);
+    allData = allData.filter(r => !idSet.has(r.id));
+    populateClientDropdown();
+    applyFilter();
+
+    if (errors === 0) {
+      showToast(success + ' data ' + type + ' berhasil dihapus', 'success');
+    } else {
+      showToast(success + ' berhasil, ' + errors + ' gagal dihapus', 'error');
     }
   }
 
