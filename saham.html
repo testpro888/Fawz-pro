@@ -988,11 +988,16 @@
       if (h === 'client code' || h === 'client_code' || h === 'clientid' || h === 'client_id') clientCodeIdx = i;
       else if (h === 'nama customer' || h === 'nama_customer' || h === 'client_name' || h.includes('nama')) clientNameIdx = i;
       else if (h === 'sales code' || h === 'sales_code' || h.includes('sales')) salesCodeIdx = i;
-      else if (h === '1' && dayStartIdx === -1) dayStartIdx = i;
+      else if ((h === '1' || h === ' 1' || h === '1 ') && dayStartIdx === -1) dayStartIdx = i;
     }
 
-    if (clientCodeIdx === -1) { showToast('Kolom CLIENT CODE tidak ditemukan di header', 'error'); return; }
-    if (dayStartIdx === -1) { showToast('Kolom tanggal (1,2,3...) tidak ditemukan di header', 'error'); return; }
+    // Fallback: if day column "1" not found, assume it starts at column index 4 (5th column)
+    if (dayStartIdx === -1) dayStartIdx = 4;
+
+    if (clientCodeIdx === -1) {
+      // Fallback: assume column 1 is CLIENT CODE
+      clientCodeIdx = 1;
+    }
 
     // Parse each row and expand into individual transactions per day
     csvRows = [];
@@ -1008,7 +1013,7 @@
       const salesName = salesCodeIdx >= 0 ? (cols[salesCodeIdx] || '').trim() : '';
 
       // Skip empty rows, total rows, or rows without client_id
-      if (!clientId || clientId.toLowerCase() === 'total fee' || clientId.toLowerCase() === 'total transaksi') continue;
+      if (!clientId || clientId.toLowerCase().startsWith('total')) continue;
 
       let hasData = false;
 
