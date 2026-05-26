@@ -1008,6 +1008,7 @@
     csvRows = [];
     var clientCount = 0;
     console.log('CSV Parse - Type:', uploadType, 'Month:', uploadMonth, 'dayStartIdx:', dayStartIdx);
+    console.log('CSV Parse - First 3 data lines:', lines.slice(1, 4));
 
     for (let i = 1; i < lines.length; i++) {
       // Handle quoted values with commas inside (e.g. "7,101")
@@ -1109,8 +1110,8 @@
         tanggal: r.tanggal,
         client_id: r.client_id,
         client_name: r.client_name,
-        volume: r.volume,
-        fee: r.fee,
+        volume: Number(r.volume) || 0,
+        fee: Number(r.fee) || 0,
         sales_name: r.sales_name,
         created_by: curUser?.name || 'CSV Import'
       }));
