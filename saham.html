@@ -94,6 +94,12 @@
     .toast-success { background: #f0fff8; border: 1px solid #a8e6c1; color: #1e7e4e; }
     .toast-error { background: #fff0f0; border: 1px solid #ffcccc; color: #c0392b; }
 
+    /* Type selector */
+    .type-selector { display: flex; gap: 12px; margin-bottom: 4px; }
+    .type-selector label { display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 600; color: var(--navy); padding: 8px 16px; border-radius: 8px; border: 1.5px solid var(--border); transition: all 0.2s; }
+    .type-selector input[type="radio"] { accent-color: var(--gold); }
+    .type-selector label:has(input:checked) { border-color: var(--gold); background: #fffbf3; }
+
     @media (max-width: 768px) {
       .stats-row { grid-template-columns: 1fr 1fr; }
       .form-grid { grid-template-columns: 1fr; }
@@ -103,46 +109,14 @@
 
   <script>
     // Access Control IIFE - validates session and role before any data rendering
-    // Requirements: 6.1, 6.2, 6.3, 6.4, 6.6, 6.7
     (function() {
       var raw = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember');
-
-      // No session data found → redirect to login
-      if (!raw) {
-        window.location.replace('login.html');
-        return;
-      }
-
-      // Attempt to parse JSON - invalid JSON → treat as unauthenticated
+      if (!raw) { window.location.replace('login.html'); return; }
       var user;
-      try {
-        user = JSON.parse(raw);
-      } catch (e) {
-        sessionStorage.removeItem('fawz_user');
-        window.location.replace('login.html');
-        return;
-      }
-
-      // Validate required fields (name, username, role) exist and are non-empty
-      if (!user || typeof user !== 'object' || !user.name || !user.username || !user.role) {
-        sessionStorage.removeItem('fawz_user');
-        window.location.replace('login.html');
-        return;
-      }
-
-      // Role-based access: "sales" → redirect to dashboard
-      if (user.role === 'sales') {
-        window.location.replace('dashboard.html');
-        return;
-      }
-
-      // Only allow "admin" and "head_account" roles
-      if (user.role !== 'admin' && user.role !== 'head_account') {
-        window.location.replace('dashboard.html');
-        return;
-      }
-
-      // Valid session - persist in sessionStorage for page use
+      try { user = JSON.parse(raw); } catch (e) { sessionStorage.removeItem('fawz_user'); window.location.replace('login.html'); return; }
+      if (!user || typeof user !== 'object' || !user.name || !user.username || !user.role) { sessionStorage.removeItem('fawz_user'); window.location.replace('login.html'); return; }
+      if (user.role === 'sales') { window.location.replace('dashboard.html'); return; }
+      if (user.role !== 'admin' && user.role !== 'head_account') { window.location.replace('dashboard.html'); return; }
       sessionStorage.setItem('fawz_user', raw);
     })();
   </script>
@@ -213,35 +187,71 @@
     </div>
   </div>
 
-  <!-- Table -->
-  <div class="table-wrapper">
-    <div style="overflow-x:auto;">
-      <table>
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Tanggal</th>
-            <th>Client ID</th>
-            <th>Nama Nasabah</th>
-            <th>Volume (Rp)</th>
-            <th>Fee (Rp)</th>
-            <th>Sales</th>
-            <th>Catatan</th>
-            <th>Aksi</th>
-          </tr>
-        </thead>
-        <tbody id="tableBody">
-          <tr><td colspan="9"><div class="empty-state">⏳ Memuat data...</div></td></tr>
-        </tbody>
-      </table>
+  <!-- Tabel Volume -->
+  <div class="rekap-section" style="margin-top:0;">
+    <div class="rekap-title">📊 Tabel Volume</div>
+    <div class="table-wrapper">
+      <div style="overflow-x:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Tanggal</th>
+              <th>Client ID</th>
+              <th>Nama</th>
+              <th>Volume (Rp)</th>
+              <th>Sales</th>
+              <th>Catatan</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="tableBodyVolume">
+            <tr><td colspan="8"><div class="empty-state">⏳ Memuat data...</div></td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 
-  <!-- Calendar Grid View -->
+  <!-- Tabel Fee -->
   <div class="rekap-section">
-    <div class="rekap-title">📅 Calendar Grid View</div>
+    <div class="rekap-title">📊 Tabel Fee</div>
+    <div class="table-wrapper">
+      <div style="overflow-x:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Tanggal</th>
+              <th>Client ID</th>
+              <th>Nama</th>
+              <th>Fee (Rp)</th>
+              <th>Sales</th>
+              <th>Catatan</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="tableBodyFee">
+            <tr><td colspan="8"><div class="empty-state">⏳ Memuat data...</div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Calendar Grid View - Volume -->
+  <div class="rekap-section">
+    <div class="rekap-title">📅 Calendar Grid - Volume</div>
     <div class="table-wrapper" style="margin-top:12px;">
-      <div style="overflow-x:auto;" id="calendarGridContainer"></div>
+      <div style="overflow-x:auto;" id="calendarGridContainerVolume"></div>
+    </div>
+  </div>
+
+  <!-- Calendar Grid View - Fee -->
+  <div class="rekap-section">
+    <div class="rekap-title">📅 Calendar Grid - Fee</div>
+    <div class="table-wrapper" style="margin-top:12px;">
+      <div style="overflow-x:auto;" id="calendarGridContainerFee"></div>
     </div>
   </div>
 
@@ -260,6 +270,13 @@
       <button class="modal-close" onclick="closeModal()">✕</button>
     </div>
     <div class="form-grid">
+      <div class="form-group full">
+        <label class="form-label">Tipe Transaksi</label>
+        <div class="type-selector">
+          <label><input type="radio" name="fType" value="volume" checked onchange="onTypeChange()"/> Volume</label>
+          <label><input type="radio" name="fType" value="fee" onchange="onTypeChange()"/> Fee</label>
+        </div>
+      </div>
       <div class="form-group">
         <label class="form-label">Tanggal</label>
         <input class="form-input" type="date" id="fTanggal"/>
@@ -277,11 +294,11 @@
         <label class="form-label">Sales Person</label>
         <input class="form-input" id="fSalesName" placeholder="Nama sales" readonly/>
       </div>
-      <div class="form-group">
+      <div class="form-group" id="fVolumeGroup">
         <label class="form-label">Volume Transaksi (Rp)</label>
         <input class="form-input" type="number" id="fVolume" placeholder="0"/>
       </div>
-      <div class="form-group">
+      <div class="form-group" id="fFeeGroup" style="display:none;">
         <label class="form-label">Fee (Rp)</label>
         <input class="form-input" type="number" id="fFee" placeholder="0"/>
       </div>
@@ -309,23 +326,30 @@
       <div class="modal-title">⬆️ Upload CSV Transaksi Saham</div>
       <button class="modal-close" onclick="closeUploadModal()">✕</button>
     </div>
+    <div class="form-group full" style="margin-bottom:16px;">
+      <label class="form-label">Tipe Upload</label>
+      <div class="type-selector">
+        <label><input type="radio" name="uploadType" value="volume" checked onchange="onUploadTypeChange()"/> Upload Volume</label>
+        <label><input type="radio" name="uploadType" value="fee" onchange="onUploadTypeChange()"/> Upload Fee</label>
+      </div>
+    </div>
     <div style="margin-bottom:16px;">
-      <p style="font-size:0.82rem;color:var(--gray);line-height:1.6;">
-        Format CSV yang didukung:<br>
-        <strong>tanggal,client_id,client_name,volume,fee,sales_name</strong><br>
-        Contoh: <code>2026-05-25,RW028N,ROOS WE,100000000,20000,ZURAINA</code>
+      <p id="csvFormatHint" style="font-size:0.82rem;color:var(--gray);line-height:1.6;">
+        Format CSV:<br>
+        <strong>tanggal,client_id,client_name,volume,sales_name</strong><br>
+        Contoh: <code>2026-05-25,RW028N,ROOS WE,100000000,ZURAINA</code>
       </p>
     </div>
     <div style="border:2px dashed var(--border);border-radius:14px;padding:36px;text-align:center;cursor:pointer;transition:all 0.2s;background:#fafafa;" id="csvDropZone" onclick="document.getElementById('csvFileInput').click()">
       <div style="font-size:2.5rem;margin-bottom:10px;">📂</div>
       <div style="font-weight:600;color:var(--navy);">Klik atau drag & drop file CSV</div>
-      <div style="font-size:0.8rem;color:var(--gray);margin-top:6px;">Mendukung header: tanggal, client_id, client_name, volume, fee, sales_name</div>
+      <div style="font-size:0.8rem;color:var(--gray);margin-top:6px;" id="csvDropHint">Format: tanggal, client_id, client_name, volume, sales_name</div>
     </div>
     <input type="file" id="csvFileInput" accept=".csv" style="display:none;" onchange="handleCSVFile(this.files[0])"/>
     <div id="csvPreviewWrap" style="display:none;margin-top:16px;">
       <div style="font-size:0.82rem;font-weight:600;color:var(--navy);margin-bottom:8px;">Preview (<span id="csvRowCount">0</span> baris):</div>
       <div style="max-height:200px;overflow-y:auto;border:1px solid var(--border);border-radius:10px;overflow-x:auto;">
-        <table style="font-size:0.75rem;"><thead><tr><th>Tanggal</th><th>Client ID</th><th>Nama</th><th>Volume</th><th>Fee</th><th>Sales</th></tr></thead><tbody id="csvPreviewBody"></tbody></table>
+        <table style="font-size:0.75rem;"><thead id="csvPreviewHead"><tr><th>Tanggal</th><th>Client ID</th><th>Nama</th><th>Volume</th><th>Sales</th></tr></thead><tbody id="csvPreviewBody"></tbody></table>
       </div>
     </div>
     <div id="uploadStatus" style="display:none;margin-top:12px;padding:10px 14px;border-radius:8px;font-size:0.82rem;"></div>
@@ -339,6 +363,8 @@
 <script>
   let allData = [];
   let filteredData = [];
+  let volumeData = [];
+  let feeData = [];
   let curUser = null;
   let customers = [];
 
@@ -349,10 +375,8 @@
 
   async function initPage() {
     curUser = getCurUser();
-    // Set default month filter to current month (Req 3.1)
     const now = new Date();
     document.getElementById('filterMonth').value = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
-
     await loadCustomers();
     await loadData();
   }
@@ -360,75 +384,34 @@
   async function loadCustomers() {
     try {
       const { data, error } = await _sb.from('customers').select('*').order('client_name');
-      if (error) {
-        console.error('Load customers error:', error.message, error);
-        return;
-      }
+      if (error) { console.error('Load customers error:', error.message, error); return; }
       customers = data || [];
-      console.log('Loaded customers:', customers.length);
-    } catch(e) {
-      console.error('Load customers exception:', e);
-    }
+    } catch(e) { console.error('Load customers exception:', e); }
   }
 
   async function loadData() {
     try {
-      const { data, error } = await _sb
-        .from('saham_transaksi')
-        .select('*')
-        .order('tanggal', { ascending: false });
+      const { data, error } = await _sb.from('saham_transaksi').select('*').order('tanggal', { ascending: false });
       if (error) throw error;
       allData = data || [];
       populateClientDropdown();
       applyFilter();
     } catch(e) {
       console.error('Load error:', e);
-      document.getElementById('tableBody').innerHTML = '<tr><td colspan="9"><div class="empty-state">❌ Gagal memuat data</div></td></tr>';
+      document.getElementById('tableBodyVolume').innerHTML = '<tr><td colspan="8"><div class="empty-state">❌ Gagal memuat data</div></td></tr>';
+      document.getElementById('tableBodyFee').innerHTML = '<tr><td colspan="8"><div class="empty-state">❌ Gagal memuat data</div></td></tr>';
     }
   }
 
-  /**
-   * Filters transactions by month and optionally by client_id.
-   * Requirements: 3.2, 3.4, 3.5
-   *
-   * @param {Array} allTransactions - All transaction records
-   * @param {string} month - Month in 'YYYY-MM' format
-   * @param {string|null} clientId - Client ID to filter by, or null/empty for all clients
-   * @returns {Array} Filtered transactions
-   */
   function getFilteredTransactions(allTransactions, month, clientId) {
     var result = allTransactions;
-
-    // Filter by month: only rows where tanggal falls within selected month (Req 3.2)
-    if (month) {
-      result = result.filter(function(r) {
-        return r.tanggal && r.tanggal.startsWith(month);
-      });
-    }
-
-    // Filter by client: only rows matching selected client_id (Req 3.4)
-    if (clientId) {
-      result = result.filter(function(r) {
-        return r.client_id === clientId;
-      });
-    }
-
+    if (month) { result = result.filter(function(r) { return r.tanggal && r.tanggal.startsWith(month); }); }
+    if (clientId) { result = result.filter(function(r) { return r.client_id === clientId; }); }
     return result;
   }
 
-  /**
-   * Returns distinct clients that have transactions in the given month.
-   * Requirements: 3.3
-   *
-   * @param {Array} transactions - All transaction records
-   * @param {string} month - Month in 'YYYY-MM' format
-   * @returns {Array} Array of { client_id, client_name } objects, sorted by client_name
-   */
   function getClientsForMonth(transactions, month) {
-    var monthTransactions = transactions.filter(function(r) {
-      return r.tanggal && r.tanggal.startsWith(month);
-    });
-
+    var monthTransactions = transactions.filter(function(r) { return r.tanggal && r.tanggal.startsWith(month); });
     var clientMap = {};
     for (var i = 0; i < monthTransactions.length; i++) {
       var tx = monthTransactions[i];
@@ -436,27 +419,16 @@
         clientMap[tx.client_id] = { client_id: tx.client_id, client_name: tx.client_name || tx.client_id };
       }
     }
-
     var clients = Object.keys(clientMap).map(function(key) { return clientMap[key]; });
-    clients.sort(function(a, b) {
-      return (a.client_name || '').localeCompare(b.client_name || '');
-    });
-
+    clients.sort(function(a, b) { return (a.client_name || '').localeCompare(b.client_name || ''); });
     return clients;
   }
 
-  /**
-   * Populates the client dropdown with distinct clients from the selected month's data.
-   * Requirements: 3.3
-   */
   function populateClientDropdown() {
     var month = document.getElementById('filterMonth').value;
     var clientSelect = document.getElementById('filterClient');
     var currentValue = clientSelect.value;
-
     var clients = getClientsForMonth(allData, month);
-
-    // Rebuild options: "Semua Nasabah" + distinct clients for this month
     clientSelect.innerHTML = '<option value="">Semua Nasabah</option>';
     for (var i = 0; i < clients.length; i++) {
       var opt = document.createElement('option');
@@ -464,22 +436,12 @@
       opt.textContent = clients[i].client_name + ' (' + clients[i].client_id + ')';
       clientSelect.appendChild(opt);
     }
-
-    // Restore previous selection if still valid
     if (currentValue) {
       var stillExists = clients.some(function(c) { return c.client_id === currentValue; });
-      if (stillExists) {
-        clientSelect.value = currentValue;
-      } else {
-        clientSelect.value = '';
-      }
+      if (stillExists) { clientSelect.value = currentValue; } else { clientSelect.value = ''; }
     }
   }
 
-  /**
-   * Handler for filter changes (month or client).
-   * Re-populates client dropdown and re-renders within 2 seconds (Req 3.6).
-   */
   function onFilterChange() {
     populateClientDropdown();
     applyFilter();
@@ -488,9 +450,10 @@
   function applyFilter() {
     var month = document.getElementById('filterMonth').value;
     var clientId = document.getElementById('filterClient').value;
-
     filteredData = getFilteredTransactions(allData, month, clientId);
-
+    // Separate into volume and fee data
+    volumeData = filteredData.filter(function(r) { return parseFloat(r.volume) > 0; });
+    feeData = filteredData.filter(function(r) { return parseFloat(r.fee) > 0; });
     renderTable();
     renderStats();
     renderRekap();
@@ -499,24 +462,43 @@
   }
 
   function renderTable() {
-    const tbody = document.getElementById('tableBody');
-    if (!filteredData.length) {
-      tbody.innerHTML = '<tr><td colspan="9"><div class="empty-state">📭 Tidak ada data transaksi untuk filter yang dipilih</div></td></tr>';
-      return;
+    // Render Volume table
+    const tbodyVol = document.getElementById('tableBodyVolume');
+    if (!volumeData.length) {
+      tbodyVol.innerHTML = '<tr><td colspan="8"><div class="empty-state">📭 Tidak ada data volume untuk filter yang dipilih</div></td></tr>';
+    } else {
+      tbodyVol.innerHTML = volumeData.map((r, i) => `
+        <tr>
+          <td>${i+1}</td>
+          <td>${r.tanggal || '—'}</td>
+          <td><strong>${r.client_id || '—'}</strong></td>
+          <td>${r.client_name || '—'}</td>
+          <td style="font-weight:600;">${formatRp(r.volume)}</td>
+          <td>${r.sales_name || '—'}</td>
+          <td style="font-size:0.78rem;color:#888;">${r.catatan || '—'}</td>
+          <td><button onclick="deleteRow('${r.id}')" style="border:none;background:#fff0f0;color:var(--red);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:0.75rem;">🗑</button> <button onclick="editRow('${r.id}')" style="border:none;background:#f0f8ff;color:#2d4abf;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:0.75rem;">✏️</button></td>
+        </tr>
+      `).join('');
     }
-    tbody.innerHTML = filteredData.map((r, i) => `
-      <tr>
-        <td>${i+1}</td>
-        <td>${r.tanggal || '—'}</td>
-        <td><strong>${r.client_id || '—'}</strong></td>
-        <td>${r.client_name || '—'}</td>
-        <td style="font-weight:600;">${formatRp(r.volume)}</td>
-        <td style="color:var(--green);font-weight:600;">${formatRp(r.fee)}</td>
-        <td>${r.sales_name || '—'}</td>
-        <td style="font-size:0.78rem;color:#888;">${r.catatan || '—'}</td>
-        <td><button onclick="deleteRow('${r.id}')" style="border:none;background:#fff0f0;color:var(--red);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:0.75rem;">🗑</button> <button onclick="editRow('${r.id}')" style="border:none;background:#f0f8ff;color:#2d4abf;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:0.75rem;">✏️</button></td>
-      </tr>
-    `).join('');
+
+    // Render Fee table
+    const tbodyFee = document.getElementById('tableBodyFee');
+    if (!feeData.length) {
+      tbodyFee.innerHTML = '<tr><td colspan="8"><div class="empty-state">📭 Tidak ada data fee untuk filter yang dipilih</div></td></tr>';
+    } else {
+      tbodyFee.innerHTML = feeData.map((r, i) => `
+        <tr>
+          <td>${i+1}</td>
+          <td>${r.tanggal || '—'}</td>
+          <td><strong>${r.client_id || '—'}</strong></td>
+          <td>${r.client_name || '—'}</td>
+          <td style="color:var(--green);font-weight:600;">${formatRp(r.fee)}</td>
+          <td>${r.sales_name || '—'}</td>
+          <td style="font-size:0.78rem;color:#888;">${r.catatan || '—'}</td>
+          <td><button onclick="deleteRow('${r.id}')" style="border:none;background:#fff0f0;color:var(--red);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:0.75rem;">🗑</button> <button onclick="editRow('${r.id}')" style="border:none;background:#f0f8ff;color:#2d4abf;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:0.75rem;">✏️</button></td>
+        </tr>
+      `).join('');
+    }
   }
 
   function renderStats() {
@@ -538,11 +520,9 @@
       map[key].fee += parseFloat(r.fee) || 0;
       map[key].count++;
     });
-
     const grid = document.getElementById('rekapGrid');
     const entries = Object.entries(map).sort((a, b) => b[1].volume - a[1].volume);
     if (!entries.length) { grid.innerHTML = '<div style="color:#bbb;font-size:0.85rem;">Belum ada data.</div>'; return; }
-
     grid.innerHTML = entries.map(([id, d]) => `
       <div class="rekap-card">
         <div class="rekap-name">${d.name} <span style="font-size:0.72rem;color:var(--gray);">(${id})</span></div>
@@ -553,29 +533,60 @@
     `).join('');
   }
 
-  /**
-   * Renders the YTD and Monthly Summary section.
-   * Uses window.SahamAggregation.calculateMonthlySummary() and calculateYTDSummary().
-   * Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6
-   */
   function renderSummary() {
     var month = document.getElementById('filterMonth').value;
-
-    // Monthly Summary: uses filteredData (already filtered to selected month)
     var monthlySummary = window.SahamAggregation.calculateMonthlySummary(filteredData);
     document.getElementById('summaryMonthlyVolume').textContent = formatRp(monthlySummary.totalVolume);
     document.getElementById('summaryMonthlyFee').textContent = formatRp(monthlySummary.totalFee);
     document.getElementById('summaryMonthlyClients').textContent = String(monthlySummary.activeClients);
-
-    // YTD Summary: uses allData (unfiltered) + selectedMonth for date range filtering
     var ytdSummary = window.SahamAggregation.calculateYTDSummary(allData, month);
     document.getElementById('summaryYTDVolume').textContent = formatRp(ytdSummary.totalVolume);
     document.getElementById('summaryYTDFee').textContent = formatRp(ytdSummary.totalFee);
     document.getElementById('summaryYTDClients').textContent = String(ytdSummary.activeClients);
   }
 
+  // Type selector logic for input modal
+  function onTypeChange() {
+    var type = document.querySelector('input[name="fType"]:checked').value;
+    if (type === 'volume') {
+      document.getElementById('fVolumeGroup').style.display = '';
+      document.getElementById('fFeeGroup').style.display = 'none';
+      document.getElementById('fFee').value = '';
+    } else {
+      document.getElementById('fVolumeGroup').style.display = 'none';
+      document.getElementById('fFeeGroup').style.display = '';
+      document.getElementById('fVolume').value = '';
+    }
+  }
+
+  // Upload type selector logic
+  function onUploadTypeChange() {
+    var type = document.querySelector('input[name="uploadType"]:checked').value;
+    var hint = document.getElementById('csvFormatHint');
+    var dropHint = document.getElementById('csvDropHint');
+    var previewHead = document.getElementById('csvPreviewHead');
+    if (type === 'volume') {
+      hint.innerHTML = 'Format CSV:<br><strong>tanggal,client_id,client_name,volume,sales_name</strong><br>Contoh: <code>2026-05-25,RW028N,ROOS WE,100000000,ZURAINA</code>';
+      dropHint.textContent = 'Format: tanggal, client_id, client_name, volume, sales_name';
+      previewHead.innerHTML = '<tr><th>Tanggal</th><th>Client ID</th><th>Nama</th><th>Volume</th><th>Sales</th></tr>';
+    } else {
+      hint.innerHTML = 'Format CSV:<br><strong>tanggal,client_id,client_name,fee,sales_name</strong><br>Contoh: <code>2026-05-25,RW028N,ROOS WE,20000,ZURAINA</code>';
+      dropHint.textContent = 'Format: tanggal, client_id, client_name, fee, sales_name';
+      previewHead.innerHTML = '<tr><th>Tanggal</th><th>Client ID</th><th>Nama</th><th>Fee</th><th>Sales</th></tr>';
+    }
+    // Reset preview when type changes
+    csvRows = [];
+    document.getElementById('csvFileInput').value = '';
+    document.getElementById('csvPreviewWrap').style.display = 'none';
+    document.getElementById('csvPreviewBody').innerHTML = '';
+    document.getElementById('btnUpload').disabled = true;
+  }
+
   function openAddModal() {
     document.getElementById('fTanggal').value = new Date().toISOString().split('T')[0];
+    // Reset type to volume
+    document.querySelector('input[name="fType"][value="volume"]').checked = true;
+    onTypeChange();
     document.getElementById('addModal').classList.add('open');
   }
 
@@ -590,7 +601,6 @@
     document.getElementById('fCatatan').value = '';
     document.getElementById('clientDropdown').style.display = 'none';
     editingId = null;
-    // Clear validation errors on close
     document.getElementById('validationErrorContainer').style.display = 'none';
     document.getElementById('validationErrors').innerHTML = '';
   }
@@ -599,8 +609,9 @@
     const tanggal = document.getElementById('fTanggal').value;
     const client_id = document.getElementById('fClientId').value.trim();
     const client_name = document.getElementById('fClientName').value.trim();
-    const volumeRaw = document.getElementById('fVolume').value;
-    const feeRaw = document.getElementById('fFee').value;
+    const type = document.querySelector('input[name="fType"]:checked').value;
+    const volumeRaw = type === 'volume' ? document.getElementById('fVolume').value : '0';
+    const feeRaw = type === 'fee' ? document.getElementById('fFee').value : '0';
     const catatan = document.getElementById('fCatatan').value.trim();
     const sales_name = document.getElementById('fSalesName').value.trim();
 
@@ -610,56 +621,32 @@
     errorContainer.style.display = 'none';
     errorDiv.innerHTML = '';
 
-    // Validate using SahamValidation module (Requirements: 2.3, 2.4, 2.7)
-    var validationResult = window.SahamValidation.validateTransactionInput({
-      tanggal: tanggal,
-      client_id: client_id,
-      client_name: client_name,
-      volume: volumeRaw === '' ? '' : volumeRaw,
-      fee: feeRaw === '' ? '' : feeRaw
-    });
+    // Validate
+    var errors = [];
+    if (!tanggal || tanggal.trim() === '') errors.push('Field tanggal wajib diisi');
+    if (!client_id || client_id.trim() === '') errors.push('Field client_id wajib diisi');
+    if (!client_name || client_name.trim() === '') errors.push('Field client_name wajib diisi');
 
-    if (!validationResult.valid) {
-      // Display specific error messages, retain form data, don't close modal
-      var errorMessages = validationResult.errors.map(function(err) {
-        // Map generic validation errors to requirement-specific messages
-        if (err === 'Field tanggal wajib diisi') return 'Field tanggal wajib diisi';
-        if (err === 'Field client_id wajib diisi') return 'Field client_id wajib diisi';
-        if (err === 'Field client_name wajib diisi') return 'Field client_name wajib diisi';
-        return err;
-      });
-
-      // Check which specific numeric field failed and provide specific messages
-      var errors = [];
-      // Required field errors
-      if (!tanggal || tanggal.trim() === '') {
-        errors.push('Field tanggal wajib diisi');
-      }
-      if (!client_id || client_id.trim() === '') {
-        errors.push('Field client_id wajib diisi');
-      }
-      if (!client_name || client_name.trim() === '') {
-        errors.push('Field client_name wajib diisi');
-      }
-      // Numeric validation with specific field names (Req 2.3, 2.4)
+    if (type === 'volume') {
       var volumeVal = volumeRaw === '' ? '' : volumeRaw;
-      var feeVal = feeRaw === '' ? '' : feeRaw;
       if (volumeVal === '' || isNaN(Number(volumeVal)) || Number(volumeVal) < 0 || Number(volumeVal) > 999999999999.99) {
         errors.push('Volume harus berupa angka antara 0 dan 999.999.999.999,99');
       }
+    } else {
+      var feeVal = feeRaw === '' ? '' : feeRaw;
       if (feeVal === '' || isNaN(Number(feeVal)) || Number(feeVal) < 0 || Number(feeVal) > 999999999999.99) {
         errors.push('Fee harus berupa angka antara 0 dan 999.999.999.999,99');
       }
+    }
 
-      // Only show errors that actually apply (use the specific errors we computed)
-      var displayErrors = errors.length > 0 ? errors : errorMessages;
-      errorDiv.innerHTML = displayErrors.map(function(e) { return '<div style="margin-bottom:4px;">⚠️ ' + e + '</div>'; }).join('');
+    if (errors.length > 0) {
+      errorDiv.innerHTML = errors.map(function(e) { return '<div style="margin-bottom:4px;">⚠️ ' + e + '</div>'; }).join('');
       errorContainer.style.display = 'block';
       return;
     }
 
-    const volume = parseFloat(volumeRaw) || 0;
-    const fee = parseFloat(feeRaw) || 0;
+    const volume = type === 'volume' ? (parseFloat(volumeRaw) || 0) : 0;
+    const fee = type === 'fee' ? (parseFloat(feeRaw) || 0) : 0;
 
     const btn = document.getElementById('btnSave');
     btn.disabled = true; btn.textContent = 'Menyimpan...';
@@ -673,16 +660,13 @@
 
       let result;
       if (editingId) {
-        // Update existing record
         const { data: updated, error } = await _sb.from('saham_transaksi')
           .update(rowData).eq('id', editingId).select().single();
         if (error) throw error;
         result = updated;
-        // Replace in local data
         const idx = allData.findIndex(r => r.id === editingId);
         if (idx >= 0) allData[idx] = result;
       } else {
-        // Insert new record
         const { data: inserted, error } = await _sb.from('saham_transaksi')
           .insert(rowData).select().single();
         if (error) throw error;
@@ -690,7 +674,6 @@
         allData.unshift(result);
       }
 
-      // On success: refresh table and statistics without full page reload
       populateClientDropdown();
       applyFilter();
       closeModal();
@@ -702,54 +685,21 @@
     btn.disabled = false; btn.textContent = 'Simpan';
   }
 
-  /**
-   * Deletes a transaction record after user confirmation.
-   * Requirements: 10.1, 10.2, 10.3, 10.4, 10.5, 10.6
-   *
-   * - Req 10.1: Display confirmation dialog asking user to confirm or cancel deletion
-   * - Req 10.2: On cancel/dismiss, take no action, record remains unchanged
-   * - Req 10.3: On confirm, remove from saham_transaksi table AND local data set
-   * - Req 10.4: On network/database error, show error notification, record remains visible and unchanged
-   * - Req 10.5: On success, refresh transaction table, summary stats, and Rekap Bulanan section
-   * - Req 10.6: On success, display success notification confirming record removed
-   *
-   * @param {string} id - The UUID of the transaction record to delete
-   */
   async function deleteRow(id) {
-    // Req 10.1: Show confirmation dialog
-    if (!confirm('Apakah Anda yakin ingin menghapus transaksi ini? Data yang dihapus tidak dapat dikembalikan.')) {
-      // Req 10.2: User cancelled - take no action, record remains unchanged
-      return;
-    }
-
+    if (!confirm('Apakah Anda yakin ingin menghapus transaksi ini? Data yang dihapus tidak dapat dikembalikan.')) return;
     try {
-      // Req 10.3: Remove from saham_transaksi table
       const { error } = await _sb.from('saham_transaksi').delete().eq('id', id);
-
-      // Req 10.4: Check for database error from Supabase response
-      if (error) {
-        throw new Error(error.message || 'Database error');
-      }
-
-      // Req 10.3: Remove from local data set
+      if (error) throw new Error(error.message || 'Database error');
       allData = allData.filter(r => r.id !== id);
-
-      // Req 10.5: Refresh transaction table, summary stats (Total Volume, Total Fee,
-      // Jumlah Transaksi, Nasabah Aktif), and Rekap Bulanan per Nasabah section
       populateClientDropdown();
-      applyFilter(); // This calls renderTable(), renderStats(), renderRekap(), renderSummary(), renderCalendarGridView()
-
-      // Req 10.6: Display success notification confirming record removed
+      applyFilter();
       showToast('Transaksi berhasil dihapus.', 'success');
     } catch(e) {
-      // Req 10.4: On network/database error, show error notification
-      // Record remains visible and unchanged (no local data modification occurred before this point on error)
       console.error('Delete error:', e);
       showToast('Gagal menghapus transaksi: ' + (e.message || 'Terjadi kesalahan jaringan'), 'error');
     }
   }
 
-  // Edit transaction - open modal with pre-filled data
   let editingId = null;
   function editRow(id) {
     const row = allData.find(r => r.id === id);
@@ -759,20 +709,25 @@
     document.getElementById('fClientId').value = row.client_id || '';
     document.getElementById('fClientName').value = row.client_name || '';
     document.getElementById('fSalesName').value = row.sales_name || '';
-    document.getElementById('fVolume').value = row.volume || 0;
-    document.getElementById('fFee').value = row.fee || 0;
     document.getElementById('fCatatan').value = row.catatan || '';
+
+    // Determine type based on record data
+    if (parseFloat(row.volume) > 0) {
+      document.querySelector('input[name="fType"][value="volume"]').checked = true;
+      document.getElementById('fVolume').value = row.volume || 0;
+      document.getElementById('fFee').value = '';
+    } else {
+      document.querySelector('input[name="fType"][value="fee"]').checked = true;
+      document.getElementById('fFee').value = row.fee || 0;
+      document.getElementById('fVolume').value = '';
+    }
+    onTypeChange();
     document.getElementById('addModal').classList.add('open');
   }
 
-  // Auto-fill nama and sales_name from client_id (Req 2.2)
   function onClientSelect() {
     const clientId = document.getElementById('fClientId').value;
-    if (!clientId) {
-      document.getElementById('fClientName').value = '';
-      document.getElementById('fSalesName').value = '';
-      return;
-    }
+    if (!clientId) { document.getElementById('fClientName').value = ''; document.getElementById('fSalesName').value = ''; return; }
     const c = customers.find(x => x.client_id === clientId);
     if (c) {
       document.getElementById('fClientName').value = c.client_name || '';
@@ -785,20 +740,17 @@
     const input = document.getElementById('fClientId');
     const query = input.value.toUpperCase();
     const dropdown = document.getElementById('clientDropdown');
-
     if (!query) {
       dropdown.style.display = 'none';
       document.getElementById('fClientName').value = '';
       document.getElementById('fSalesName').value = '';
       return;
     }
-
     const filtered = customers.filter(c => {
       const cid = (c.client_id || '').toUpperCase();
       const cname = (c.client_name || '').toUpperCase();
       return cid.includes(query) || cname.includes(query);
     });
-
     if (filtered.length === 0) {
       dropdown.innerHTML = '<div style="padding:10px 14px;color:#888;font-size:0.82rem;">Tidak ditemukan</div>';
     } else {
@@ -815,24 +767,21 @@
 
   function showClientDropdown() {
     const input = document.getElementById('fClientId');
-    if (input.value) {
-      filterClientDropdown();
+    if (input.value) { filterClientDropdown(); return; }
+    const dropdown = document.getElementById('clientDropdown');
+    if (customers.length === 0) {
+      dropdown.innerHTML = '<div style="padding:10px 14px;color:#888;font-size:0.82rem;">Belum ada data nasabah (loading...)</div>';
     } else {
-      const dropdown = document.getElementById('clientDropdown');
-      if (customers.length === 0) {
-        dropdown.innerHTML = '<div style="padding:10px 14px;color:#888;font-size:0.82rem;">Belum ada data nasabah (loading...)</div>';
-      } else {
-        const list = customers.slice(0, 20);
-        dropdown.innerHTML = list.map(c => {
-          const cid = c.client_id || '';
-          const cname = c.client_name || '';
-          return `<div onclick="selectClient('${cid}')" style="padding:10px 14px;cursor:pointer;font-size:0.82rem;border-bottom:1px solid #f0f0f5;transition:background 0.1s;" onmouseover="this.style.background='#fffbf3'" onmouseout="this.style.background='#fff'">
-            <strong>${cid}</strong> — ${cname}
-          </div>`;
-        }).join('');
-      }
-      dropdown.style.display = 'block';
+      const list = customers.slice(0, 20);
+      dropdown.innerHTML = list.map(c => {
+        const cid = c.client_id || '';
+        const cname = c.client_name || '';
+        return `<div onclick="selectClient('${cid}')" style="padding:10px 14px;cursor:pointer;font-size:0.82rem;border-bottom:1px solid #f0f0f5;transition:background 0.1s;" onmouseover="this.style.background='#fffbf3'" onmouseout="this.style.background='#fff'">
+          <strong>${cid}</strong> — ${cname}
+        </div>`;
+      }).join('');
     }
+    dropdown.style.display = 'block';
   }
 
   function selectClient(clientId) {
@@ -845,18 +794,13 @@
     document.getElementById('clientDropdown').style.display = 'none';
   }
 
-  // Close dropdown when clicking outside
   document.addEventListener('click', function(e) {
     const dropdown = document.getElementById('clientDropdown');
     const input = document.getElementById('fClientId');
-    if (dropdown && !dropdown.contains(e.target) && e.target !== input) {
-      dropdown.style.display = 'none';
-    }
+    if (dropdown && !dropdown.contains(e.target) && e.target !== input) { dropdown.style.display = 'none'; }
   });
 
-  function formatRp(n) {
-    return 'Rp ' + (n || 0).toLocaleString('id-ID');
-  }
+  function formatRp(n) { return 'Rp ' + (n || 0).toLocaleString('id-ID'); }
 
   function showToast(msg, type) {
     const c = document.getElementById('toastContainer');
@@ -868,26 +812,20 @@
   }
 
   /**
-   * Renders the calendar grid HTML table.
-   * Columns: No, Client_Code, Customer Name, Sales_Code, Date 1-N (days in month), Total
-   * Each client gets two sub-rows: Volume row and Fee row.
-   * Non-trading day column headers get red background.
-   * Empty cells for dates with no transactions.
-   * Total column = sum of all daily values per row.
-   *
-   * Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 4.4
-   *
-   * @param {Map|Array} clientRows - Map or iterable of ClientRow objects from aggregateByClientAndDate
-   * @param {number} year - The year (e.g. 2026)
-   * @param {number} month - The month (1-12)
-   * @param {number[]} nonTradingDays - Array of day numbers that are non-trading days
-   * @returns {string} HTML string of the calendar grid table
+   * Renders a calendar grid HTML table for a single metric (volume or fee).
+   * @param {Map|Array} clientRows - aggregated client data
+   * @param {number} year
+   * @param {number} month (1-12)
+   * @param {number[]} nonTradingDays
+   * @param {string} metric - 'volume' or 'fee'
+   * @returns {string} HTML
    */
-  function renderCalendarGrid(clientRows, year, month, nonTradingDays) {
+  function renderCalendarGrid(clientRows, year, month, nonTradingDays, metric) {
     var daysInMonth = new Date(year, month, 0).getDate();
     var nonTradingSet = new Set(nonTradingDays);
+    var label = metric === 'volume' ? 'Volume' : 'Fee';
+    var colorStyle = metric === 'fee' ? 'color:var(--green);' : '';
 
-    // Build header row
     var html = '<table style="min-width:100%;border-collapse:collapse;font-size:0.75rem;">';
     html += '<thead><tr>';
     html += '<th style="padding:8px 6px;background:var(--navy);color:#fff;white-space:nowrap;">No</th>';
@@ -899,100 +837,72 @@
       var bgStyle = nonTradingSet.has(d) ? 'background:#e74c3c;color:#fff;' : 'background:var(--navy);color:#fff;';
       html += '<th style="padding:8px 4px;text-align:center;white-space:nowrap;' + bgStyle + '">' + d + '</th>';
     }
-
     html += '<th style="padding:8px 6px;background:var(--navy);color:#fff;white-space:nowrap;">Total</th>';
     html += '</tr></thead>';
-
-    // Build body rows
     html += '<tbody>';
 
-    // Convert Map to array if needed
     var rows = [];
-    if (clientRows instanceof Map) {
-      clientRows.forEach(function(row) { rows.push(row); });
-    } else if (Array.isArray(clientRows)) {
-      rows = clientRows;
-    } else {
-      // Iterable
-      for (var key in clientRows) {
-        if (clientRows.hasOwnProperty(key)) rows.push(clientRows[key]);
-      }
-    }
+    if (clientRows instanceof Map) { clientRows.forEach(function(row) { rows.push(row); }); }
+    else if (Array.isArray(clientRows)) { rows = clientRows; }
+    else { for (var key in clientRows) { if (clientRows.hasOwnProperty(key)) rows.push(clientRows[key]); } }
 
     if (rows.length === 0) {
-      html += '<tr><td colspan="' + (daysInMonth + 5) + '" style="text-align:center;padding:40px 20px;color:#bbb;">Tidak ada data transaksi untuk bulan ini</td></tr>';
+      html += '<tr><td colspan="' + (daysInMonth + 5) + '" style="text-align:center;padding:40px 20px;color:#bbb;">Tidak ada data ' + label.toLowerCase() + ' untuk bulan ini</td></tr>';
     } else {
       for (var i = 0; i < rows.length; i++) {
         var row = rows[i];
-        var no = i + 1;
-
-        // Volume sub-row
-        html += '<tr style="border-bottom:none;">';
-        html += '<td rowspan="2" style="padding:8px 6px;text-align:center;vertical-align:middle;border-bottom:1px solid #f0f0f5;font-weight:600;">' + no + '</td>';
-        html += '<td rowspan="2" style="padding:8px 6px;vertical-align:middle;border-bottom:1px solid #f0f0f5;font-weight:600;">' + (row.client_id || '') + '</td>';
-        html += '<td rowspan="2" style="padding:8px 6px;vertical-align:middle;border-bottom:1px solid #f0f0f5;">' + (row.client_name || '') + '</td>';
-        html += '<td rowspan="2" style="padding:8px 6px;vertical-align:middle;border-bottom:1px solid #f0f0f5;">' + (row.sales_name || '') + '</td>';
-
-        var totalVolume = 0;
-        for (var d = 1; d <= daysInMonth; d++) {
-          var dayData = row.days instanceof Map ? row.days.get(d) : (row.days && row.days[d]);
-          if (dayData && dayData.volume) {
-            html += '<td style="padding:6px 4px;text-align:right;font-size:0.7rem;white-space:nowrap;">' + formatRp(dayData.volume) + '</td>';
-            totalVolume += dayData.volume;
-          } else {
-            html += '<td style="padding:6px 4px;"></td>';
-          }
-        }
-        html += '<td style="padding:8px 6px;text-align:right;font-weight:700;white-space:nowrap;background:#f9f9ff;">' + formatRp(totalVolume) + '</td>';
-        html += '</tr>';
-
-        // Fee sub-row
         html += '<tr style="border-bottom:1px solid #f0f0f5;">';
-        var totalFee = 0;
+        html += '<td style="padding:8px 6px;text-align:center;font-weight:600;">' + (i+1) + '</td>';
+        html += '<td style="padding:8px 6px;font-weight:600;">' + (row.client_id || '') + '</td>';
+        html += '<td style="padding:8px 6px;">' + (row.client_name || '') + '</td>';
+        html += '<td style="padding:8px 6px;">' + (row.sales_name || '') + '</td>';
+
+        var total = 0;
         for (var d = 1; d <= daysInMonth; d++) {
           var dayData = row.days instanceof Map ? row.days.get(d) : (row.days && row.days[d]);
-          if (dayData && dayData.fee) {
-            html += '<td style="padding:6px 4px;text-align:right;font-size:0.7rem;color:var(--green);white-space:nowrap;">' + formatRp(dayData.fee) + '</td>';
-            totalFee += dayData.fee;
+          var val = dayData ? (dayData[metric] || 0) : 0;
+          if (val > 0) {
+            html += '<td style="padding:6px 4px;text-align:right;font-size:0.7rem;white-space:nowrap;' + colorStyle + '">' + formatRp(val) + '</td>';
+            total += val;
           } else {
             html += '<td style="padding:6px 4px;"></td>';
           }
         }
-        html += '<td style="padding:8px 6px;text-align:right;font-weight:700;color:var(--green);white-space:nowrap;background:#f9f9ff;">' + formatRp(totalFee) + '</td>';
+        html += '<td style="padding:8px 6px;text-align:right;font-weight:700;white-space:nowrap;background:#f9f9ff;' + colorStyle + '">' + formatRp(total) + '</td>';
         html += '</tr>';
       }
     }
-
     html += '</tbody></table>';
     return html;
   }
 
   /**
-   * Renders the calendar grid into the page using current filtered data.
-   * Uses SahamAggregation.aggregateByClientAndDate and SahamHolidays.getNonTradingDaysInMonth.
+   * Renders both calendar grids (volume and fee) using current filtered data.
    */
   function renderCalendarGridView() {
-    var container = document.getElementById('calendarGridContainer');
-    if (!container) return;
+    var containerVol = document.getElementById('calendarGridContainerVolume');
+    var containerFee = document.getElementById('calendarGridContainerFee');
+    if (!containerVol || !containerFee) return;
 
     var monthVal = document.getElementById('filterMonth').value;
     if (!monthVal) {
-      container.innerHTML = '<div style="text-align:center;padding:40px;color:#bbb;">Pilih bulan untuk menampilkan calendar grid</div>';
+      containerVol.innerHTML = '<div style="text-align:center;padding:40px;color:#bbb;">Pilih bulan untuk menampilkan calendar grid</div>';
+      containerFee.innerHTML = '<div style="text-align:center;padding:40px;color:#bbb;">Pilih bulan untuk menampilkan calendar grid</div>';
       return;
     }
 
     var parts = monthVal.split('-');
     var year = parseInt(parts[0], 10);
     var month = parseInt(parts[1], 10);
-
-    // Get non-trading days from the Holiday Calendar module
     var nonTradingDays = window.SahamHolidays.getNonTradingDaysInMonth(year, month);
 
-    // Aggregate filtered data by client and date
-    var clientRows = window.SahamAggregation.aggregateByClientAndDate(filteredData);
+    // Aggregate volume data
+    var volumeClientRows = window.SahamAggregation.aggregateByClientAndDate(volumeData);
+    containerVol.innerHTML = renderCalendarGrid(volumeClientRows, year, month, nonTradingDays, 'volume');
 
-    // Render the grid
-    container.innerHTML = renderCalendarGrid(clientRows, year, month, nonTradingDays);
+    // Aggregate fee data
+    var feeClientRows = window.SahamAggregation.aggregateByClientAndDate(feeData);
+    containerFee.innerHTML = renderCalendarGrid(feeClientRows, year, month, nonTradingDays, 'fee');
   }
 
   window.addEventListener('DOMContentLoaded', initPage);
@@ -1007,6 +917,9 @@
     document.getElementById('csvPreviewBody').innerHTML = '';
     document.getElementById('uploadStatus').style.display = 'none';
     document.getElementById('btnUpload').disabled = true;
+    // Reset to volume type
+    document.querySelector('input[name="uploadType"][value="volume"]').checked = true;
+    onUploadTypeChange();
     document.getElementById('uploadModal').classList.add('open');
   }
 
@@ -1017,14 +930,12 @@
   function handleCSVFile(file) {
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = function(e) {
-      const text = e.target.result;
-      parseCSV(text);
-    };
+    reader.onload = function(e) { parseCSV(e.target.result); };
     reader.readAsText(file);
   }
 
   function parseCSV(text) {
+    const uploadType = document.querySelector('input[name="uploadType"]:checked').value;
     const lines = text.split(/\r?\n/).filter(l => l.trim());
     if (lines.length < 2) { showToast('File CSV kosong atau tidak valid', 'error'); return; }
 
@@ -1037,10 +948,13 @@
       if (h.includes('tanggal') || h.includes('date')) colMap.tanggal = i;
       else if (h.includes('client_id') || h.includes('client code') || h.includes('clientid') || h.includes('kode')) colMap.client_id = i;
       else if (h.includes('client_name') || h.includes('nama') || h.includes('customer')) colMap.client_name = i;
-      else if (h.includes('volume') || h.includes('amount')) colMap.volume = i;
-      else if (h.includes('fee')) colMap.fee = i;
+      else if (h.includes('volume') || h.includes('amount')) colMap.value = i;
+      else if (h.includes('fee')) colMap.value = i;
       else if (h.includes('sales')) colMap.sales_name = i;
     });
+
+    // If no explicit value column found, try 4th column (index 3)
+    if (colMap.value === undefined && header.length >= 4) colMap.value = 3;
 
     if (colMap.tanggal === undefined || colMap.client_id === undefined) {
       showToast('Header CSV harus mengandung kolom tanggal dan client_id', 'error');
@@ -1051,12 +965,13 @@
     csvRows = [];
     for (let i = 1; i < lines.length; i++) {
       const cols = lines[i].split(',').map(c => c.trim().replace(/^["']|["']$/g, ''));
+      const val = parseFloat(cols[colMap.value]) || 0;
       const row = {
         tanggal: cols[colMap.tanggal] || '',
         client_id: cols[colMap.client_id] || '',
         client_name: cols[colMap.client_name] || '',
-        volume: parseFloat(cols[colMap.volume]) || 0,
-        fee: parseFloat(cols[colMap.fee]) || 0,
+        volume: uploadType === 'volume' ? val : 0,
+        fee: uploadType === 'fee' ? val : 0,
         sales_name: cols[colMap.sales_name] || ''
       };
       if (row.tanggal && row.client_id) csvRows.push(row);
@@ -1065,9 +980,10 @@
     // Show preview
     document.getElementById('csvRowCount').textContent = csvRows.length;
     const previewBody = document.getElementById('csvPreviewBody');
+    const valLabel = uploadType === 'volume' ? 'volume' : 'fee';
     previewBody.innerHTML = csvRows.slice(0, 10).map(r =>
-      `<tr><td>${r.tanggal}</td><td>${r.client_id}</td><td>${r.client_name}</td><td>${formatRp(r.volume)}</td><td>${formatRp(r.fee)}</td><td>${r.sales_name}</td></tr>`
-    ).join('') + (csvRows.length > 10 ? `<tr><td colspan="6" style="text-align:center;color:#888;">... dan ${csvRows.length - 10} baris lainnya</td></tr>` : '');
+      `<tr><td>${r.tanggal}</td><td>${r.client_id}</td><td>${r.client_name}</td><td>${formatRp(r[valLabel])}</td><td>${r.sales_name}</td></tr>`
+    ).join('') + (csvRows.length > 10 ? `<tr><td colspan="5" style="text-align:center;color:#888;">... dan ${csvRows.length - 10} baris lainnya</td></tr>` : '');
 
     document.getElementById('csvPreviewWrap').style.display = 'block';
     document.getElementById('btnUpload').disabled = csvRows.length === 0;
