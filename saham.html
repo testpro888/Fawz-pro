@@ -994,10 +994,15 @@
     // Fallback: if day column "1" not found, assume it starts at column index 4 (5th column)
     if (dayStartIdx === -1) dayStartIdx = 4;
 
+    // Always use index 4 as day start (NO=0, CLIENT CODE=1, NAMA=2, SALES=3, day1=4)
+    dayStartIdx = 4;
+
     if (clientCodeIdx === -1) {
       // Fallback: assume column 1 is CLIENT CODE
       clientCodeIdx = 1;
     }
+    if (clientNameIdx === -1) clientNameIdx = 2;
+    if (salesCodeIdx === -1) salesCodeIdx = 3;
 
     // Parse each row and expand into individual transactions per day
     csvRows = [];
