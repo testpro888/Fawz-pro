@@ -138,9 +138,9 @@
       <select id="filterClient" onchange="onFilterChange()" style="height:38px;border:1px solid var(--border);border-radius:8px;padding:0 12px;font-family:'Inter',sans-serif;font-size:0.82rem;min-width:180px;">
         <option value="">Semua Nasabah</option>
       </select>
-      <a href="saham-ranking.html" class="btn btn-outline">📊 Rekap Transaksi</a>
-      <a href="fawz-point.html" class="btn btn-outline">⭐ Fawz Point</a>
-      <button class="btn btn-outline" onclick="openUploadModal()">⬆️ Upload CSV</button>
+      <a href="saham-ranking.html" class="btn btn-outline">Rekap Transaksi</a>
+      <a href="fawz-point.html" class="btn btn-outline">Fawz Point</a>
+      <button class="btn btn-outline" onclick="openUploadModal()">Upload CSV</button>
       <button class="btn btn-primary" onclick="openAddModal()">+ Input Transaksi</button>
     </div>
   </div>
@@ -156,7 +156,7 @@
   <!-- YTD and Monthly Summary Section -->
   <div class="summary-section" id="summarySection" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;animation:fadeUp 0.4s 0.1s ease both;">
     <div class="stat-box">
-      <div class="stat-box-label" style="font-size:0.82rem;font-weight:700;margin-bottom:12px;">📅 Monthly Summary</div>
+      <div class="stat-box-label" style="font-size:0.82rem;font-weight:700;margin-bottom:12px;">Monthly Summary</div>
       <div class="rekap-row" style="display:flex;justify-content:space-between;font-size:0.82rem;margin-bottom:6px;">
         <span style="color:var(--gray);">Total Volume</span>
         <span style="font-weight:600;" id="summaryMonthlyVolume">Rp 0</span>
@@ -171,7 +171,7 @@
       </div>
     </div>
     <div class="stat-box">
-      <div class="stat-box-label" style="font-size:0.82rem;font-weight:700;margin-bottom:12px;">📈 YTD Summary</div>
+      <div class="stat-box-label" style="font-size:0.82rem;font-weight:700;margin-bottom:12px;">YTD Summary</div>
       <div class="rekap-row" style="display:flex;justify-content:space-between;font-size:0.82rem;margin-bottom:6px;">
         <span style="color:var(--gray);">Total Volume</span>
         <span style="font-weight:600;" id="summaryYTDVolume">Rp 0</span>
@@ -189,7 +189,7 @@
 
   <!-- Tabel Volume -->
   <div class="rekap-section" style="margin-top:0;">
-    <div class="rekap-title">📊 Tabel Volume</div>
+    <div class="rekap-title">Tabel Volume</div>
     <div class="table-wrapper">
       <div style="overflow-x:auto;">
         <table>
@@ -206,7 +206,7 @@
             </tr>
           </thead>
           <tbody id="tableBodyVolume">
-            <tr><td colspan="8"><div class="empty-state">⏳ Memuat data...</div></td></tr>
+            <tr><td colspan="8"><div class="empty-state">Memuat data...</div></td></tr>
           </tbody>
         </table>
       </div>
@@ -215,7 +215,7 @@
 
   <!-- Tabel Fee -->
   <div class="rekap-section">
-    <div class="rekap-title">📊 Tabel Fee</div>
+    <div class="rekap-title">Tabel Fee</div>
     <div class="table-wrapper">
       <div style="overflow-x:auto;">
         <table>
@@ -232,7 +232,7 @@
             </tr>
           </thead>
           <tbody id="tableBodyFee">
-            <tr><td colspan="8"><div class="empty-state">⏳ Memuat data...</div></td></tr>
+            <tr><td colspan="8"><div class="empty-state">Memuat data...</div></td></tr>
           </tbody>
         </table>
       </div>
@@ -241,7 +241,7 @@
 
   <!-- Calendar Grid View - Volume -->
   <div class="rekap-section">
-    <div class="rekap-title">📅 Calendar Grid - Volume</div>
+    <div class="rekap-title">Calendar Grid - Volume</div>
     <div class="table-wrapper" style="margin-top:12px;">
       <div style="overflow-x:auto;" id="calendarGridContainerVolume"></div>
     </div>
@@ -249,7 +249,7 @@
 
   <!-- Calendar Grid View - Fee -->
   <div class="rekap-section">
-    <div class="rekap-title">📅 Calendar Grid - Fee</div>
+    <div class="rekap-title">Calendar Grid - Fee</div>
     <div class="table-wrapper" style="margin-top:12px;">
       <div style="overflow-x:auto;" id="calendarGridContainerFee"></div>
     </div>
@@ -257,7 +257,7 @@
 
   <!-- Rekap Bulanan -->
   <div class="rekap-section">
-    <div class="rekap-title">📊 Rekap Bulanan per Nasabah</div>
+    <div class="rekap-title">Rekap Bulanan per Nasabah</div>
     <div class="rekap-grid" id="rekapGrid"></div>
   </div>
 </div>
@@ -323,7 +323,7 @@
 <div class="modal-overlay" id="uploadModal" onclick="if(event.target===this)closeUploadModal()">
   <div class="modal">
     <div class="modal-header">
-      <div class="modal-title">⬆️ Upload CSV Transaksi Saham</div>
+      <div class="modal-title">Upload CSV Transaksi Saham</div>
       <button class="modal-close" onclick="closeUploadModal()">✕</button>
     </div>
     <div class="form-group full" style="margin-bottom:16px;">
@@ -341,7 +341,7 @@
       </p>
     </div>
     <div style="border:2px dashed var(--border);border-radius:14px;padding:36px;text-align:center;cursor:pointer;transition:all 0.2s;background:#fafafa;" id="csvDropZone" onclick="document.getElementById('csvFileInput').click()">
-      <div style="font-size:2.5rem;margin-bottom:10px;">📂</div>
+      <div style="font-size:2.5rem;margin-bottom:10px;"></div>
       <div style="font-weight:600;color:var(--navy);">Klik atau drag & drop file CSV</div>
       <div style="font-size:0.8rem;color:var(--gray);margin-top:6px;" id="csvDropHint">Format: tanggal, client_id, client_name, volume, sales_name</div>
     </div>
@@ -398,8 +398,8 @@
       applyFilter();
     } catch(e) {
       console.error('Load error:', e);
-      document.getElementById('tableBodyVolume').innerHTML = '<tr><td colspan="8"><div class="empty-state">❌ Gagal memuat data</div></td></tr>';
-      document.getElementById('tableBodyFee').innerHTML = '<tr><td colspan="8"><div class="empty-state">❌ Gagal memuat data</div></td></tr>';
+      document.getElementById('tableBodyVolume').innerHTML = '<tr><td colspan="8"><div class="empty-state">Gagal memuat data</div></td></tr>';
+      document.getElementById('tableBodyFee').innerHTML = '<tr><td colspan="8"><div class="empty-state">Gagal memuat data</div></td></tr>';
     }
   }
 
@@ -465,7 +465,7 @@
     // Render Volume table
     const tbodyVol = document.getElementById('tableBodyVolume');
     if (!volumeData.length) {
-      tbodyVol.innerHTML = '<tr><td colspan="8"><div class="empty-state">📭 Tidak ada data volume untuk filter yang dipilih</div></td></tr>';
+      tbodyVol.innerHTML = '<tr><td colspan="8"><div class="empty-state">Tidak ada data volume untuk filter yang dipilih</div></td></tr>';
     } else {
       tbodyVol.innerHTML = volumeData.map((r, i) => `
         <tr>
@@ -476,7 +476,7 @@
           <td style="font-weight:600;">${formatRp(r.volume)}</td>
           <td>${r.sales_name || '—'}</td>
           <td style="font-size:0.78rem;color:#888;">${r.catatan || '—'}</td>
-          <td><button onclick="deleteRow('${r.id}')" style="border:none;background:#fff0f0;color:var(--red);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:0.75rem;">🗑</button> <button onclick="editRow('${r.id}')" style="border:none;background:#f0f8ff;color:#2d4abf;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:0.75rem;">✏️</button></td>
+          <td><button onclick="deleteRow('${r.id}')" style="border:none;background:#fff0f0;color:var(--red);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:0.75rem;">Hapus</button> <button onclick="editRow('${r.id}')" style="border:none;background:#f0f8ff;color:#2d4abf;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:0.75rem;">Edit</button></td>
         </tr>
       `).join('');
     }
@@ -484,7 +484,7 @@
     // Render Fee table
     const tbodyFee = document.getElementById('tableBodyFee');
     if (!feeData.length) {
-      tbodyFee.innerHTML = '<tr><td colspan="8"><div class="empty-state">📭 Tidak ada data fee untuk filter yang dipilih</div></td></tr>';
+      tbodyFee.innerHTML = '<tr><td colspan="8"><div class="empty-state">Tidak ada data fee untuk filter yang dipilih</div></td></tr>';
     } else {
       tbodyFee.innerHTML = feeData.map((r, i) => `
         <tr>
@@ -495,7 +495,7 @@
           <td style="color:var(--green);font-weight:600;">${formatRp(r.fee)}</td>
           <td>${r.sales_name || '—'}</td>
           <td style="font-size:0.78rem;color:#888;">${r.catatan || '—'}</td>
-          <td><button onclick="deleteRow('${r.id}')" style="border:none;background:#fff0f0;color:var(--red);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:0.75rem;">🗑</button> <button onclick="editRow('${r.id}')" style="border:none;background:#f0f8ff;color:#2d4abf;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:0.75rem;">✏️</button></td>
+          <td><button onclick="deleteRow('${r.id}')" style="border:none;background:#fff0f0;color:var(--red);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:0.75rem;">Hapus</button> <button onclick="editRow('${r.id}')" style="border:none;background:#f0f8ff;color:#2d4abf;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:0.75rem;">Edit</button></td>
         </tr>
       `).join('');
     }
@@ -640,7 +640,7 @@
     }
 
     if (errors.length > 0) {
-      errorDiv.innerHTML = errors.map(function(e) { return '<div style="margin-bottom:4px;">⚠️ ' + e + '</div>'; }).join('');
+      errorDiv.innerHTML = errors.map(function(e) { return '<div style="margin-bottom:4px;">' + e + '</div>'; }).join('');
       errorContainer.style.display = 'block';
       return;
     }
@@ -1025,13 +1025,13 @@
       statusEl.style.background = '#f0fff8';
       statusEl.style.border = '1px solid #a8e6c1';
       statusEl.style.color = '#1e7e4e';
-      statusEl.textContent = `✅ Berhasil upload ${success} transaksi!`;
+      statusEl.textContent = `Berhasil upload ${success} transaksi!`;
       await loadData();
     } else {
       statusEl.style.background = '#fff0f0';
       statusEl.style.border = '1px solid #ffcccc';
       statusEl.style.color = '#c0392b';
-      statusEl.textContent = `⚠️ ${success} berhasil, ${errors} gagal.`;
+      statusEl.textContent = `${success} berhasil, ${errors} gagal.`;
       if (success > 0) await loadData();
     }
 
