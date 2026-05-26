@@ -249,7 +249,7 @@
   <div class="rekap-section">
     <div class="rekap-title">Calendar Grid - Volume</div>
     <div class="table-wrapper" style="margin-top:12px;">
-      <div style="overflow-x:auto;" id="calendarGridContainerVolume"></div>
+      <div style="overflow-x:auto;max-height:440px;overflow-y:auto;" id="calendarGridContainerVolume"></div>
     </div>
   </div>
 
@@ -257,14 +257,16 @@
   <div class="rekap-section">
     <div class="rekap-title">Calendar Grid - Fee</div>
     <div class="table-wrapper" style="margin-top:12px;">
-      <div style="overflow-x:auto;" id="calendarGridContainerFee"></div>
+      <div style="overflow-x:auto;max-height:440px;overflow-y:auto;" id="calendarGridContainerFee"></div>
     </div>
   </div>
 
   <!-- Rekap Bulanan -->
   <div class="rekap-section">
     <div class="rekap-title">Rekap Bulanan per Nasabah</div>
-    <div class="rekap-grid" id="rekapGrid"></div>
+    <div style="max-height:400px;overflow-y:auto;overflow-x:auto;">
+      <div class="rekap-grid" id="rekapGrid"></div>
+    </div>
   </div>
 </div>
 
