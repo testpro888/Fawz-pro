@@ -1018,11 +1018,11 @@
         if (colIdx >= cols.length) break;
 
         let rawVal = (cols[colIdx] || '').trim();
-        // Remove quotes, spaces, and handle formatted numbers like "7,101" or "  7,101 "
-        rawVal = rawVal.replace(/['"]/g, '').replace(/\s/g, '').replace(/,/g, '');
+        // Remove quotes, spaces, commas, and dots (thousand separators)
+        rawVal = rawVal.replace(/['"]/g, '').replace(/\s/g, '').replace(/,/g, '').replace(/\./g, '');
         if (rawVal === '' || rawVal === '-' || rawVal === '0') continue;
 
-        const val = parseFloat(rawVal);
+        const val = parseInt(rawVal, 10);
         if (!val || val <= 0) continue;
 
         // Check if this day is valid for the month
