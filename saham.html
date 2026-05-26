@@ -564,12 +564,11 @@
     document.getElementById('summaryMonthlyFee').textContent = formatRp(monthlySummary.totalFee);
     document.getElementById('summaryMonthlyClients').textContent = String(monthlySummary.activeClients);
 
-    // YTD: fetch from Jan 1 of selected year until today
+    // YTD: fetch from Jan 1 to Dec 31 of selected year
     try {
       var year = month.split('-')[0];
       var startDate = year + '-01-01';
-      var today = new Date();
-      var endDate = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
+      var endDate = year + '-12-31';
 
       var { data: ytdData, error } = await _sb
         .from('saham_transaksi')
