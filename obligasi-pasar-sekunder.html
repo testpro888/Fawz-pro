@@ -10,9 +10,18 @@
   <script>
     const SUPABASE_URL = 'https://yhmrfluehibfapvtxcfi.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlobXJmbHVlaGliZmFwdnR4Y2ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNjEzODUsImV4cCI6MjA5NDczNzM4NX0.se_H4n_eLsf81d_1GH5sqsPCpX89MHewlPuuNkY6qcU';
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-    window._supabase = supabase;
-    window.addEventListener('DOMContentLoaded', () => { loadAllData(); });
+    try {
+      window._supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    } catch(e) {
+      console.error('Supabase init failed:', e);
+    }
+    window.addEventListener('DOMContentLoaded', () => {
+      // Retry init if failed on first attempt
+      if (!window._supabase && window.supabase) {
+        window._supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      }
+      loadAllData();
+    });
   </script>
 
   <style>
@@ -630,6 +639,12 @@
   function closeFormModal(e) { if (e.target === document.getElementById('formModal')) { document.getElementById('fCategory').disabled = false; document.getElementById('formModal').classList.remove('open'); } }
 
   async function saveObligasi() {
+    // Pastikan Supabase client tersedia
+    if (!window._supabase) {
+      try { window._supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); }
+      catch(e) { showToast('Koneksi database gagal. Refresh halaman.', 'error'); return; }
+    }
+
     const docId = document.getElementById('editDocId').value;
     const cat = docId ? document.getElementById('editCategory').value : document.getElementById('fCategory').value;
     const seri = document.getElementById('fSeri').value.trim();
