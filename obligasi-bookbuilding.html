@@ -10,9 +10,14 @@
   <script>
     const SUPABASE_URL = 'https://yhmrfluehibfapvtxcfi.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlobXJmbHVlaGliZmFwdnR4Y2ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNjEzODUsImV4cCI6MjA5NDczNzM4NX0.se_H4n_eLsf81d_1GH5sqsPCpX89MHewlPuuNkY6qcU';
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-    window._supabase = supabase;
-    window.addEventListener('DOMContentLoaded', () => { loadAll(); });
+    try { window._supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); }
+    catch(e) { console.error('Supabase init error:', e); }
+    window.addEventListener('DOMContentLoaded', () => {
+      if (!window._supabase && window.supabase) {
+        window._supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      }
+      loadAll();
+    });
   </script>
 
   <style>
@@ -308,6 +313,76 @@
 
 </div><!-- /page-container -->
 
+<!-- MODAL: ORDER OBLIGASI -->
+<div class="modal-overlay" id="orderModal" onclick="closeModal('orderModal',event)">
+  <div class="modal" style="width:720px;">
+    <div class="modal-header">
+      <div class="modal-title">🛒 Order Obligasi</div>
+      <button class="modal-close" onclick="closeModal('orderModal')">✕</button>
+    </div>
+
+    <!-- Info Obligasi (otomatis) -->
+    <div style="background:#f8f9ff;border-radius:12px;padding:16px 20px;margin-bottom:20px;border:1px solid #e8e8f5;">
+      <div style="font-size:.68rem;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Data Obligasi</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px 16px;font-size:.82rem;">
+        <div><span style="color:#888;">Series:</span> <strong id="ordSeri">—</strong></div>
+        <div><span style="color:#888;">Coupon:</span> <strong id="ordKupon">—</strong></div>
+        <div><span style="color:#888;">YTM:</span> <strong id="ordYtm">—</strong></div>
+        <div><span style="color:#888;">Bid:</span> <strong id="ordBid">—</strong></div>
+        <div><span style="color:#888;">Offer:</span> <strong id="ordOffer">—</strong></div>
+        <div><span style="color:#888;">Jatuh Tempo:</span> <strong id="ordJatuhTempo">—</strong></div>
+      </div>
+    </div>
+
+    <input type="hidden" id="ordCategory"/>
+    <input type="hidden" id="ordPsId"/>
+
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label">Client Code <span class="req">*</span></label>
+        <select class="form-select" id="ordClientCode" onchange="onClientSelect()">
+          <option value="">-- Pilih Client --</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Nama Client</label>
+        <input class="form-input" id="ordClientName" readonly style="background:#f5f5f5;"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Amount (Nominal) <span class="req">*</span></label>
+        <input class="form-input" id="ordAmount" type="number" step="100" min="100" placeholder="Kelipatan 100" oninput="calcUnit()"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Unit <span style="font-size:.65rem;color:#888;">(Otomatis)</span></label>
+        <input class="form-input" id="ordUnit" readonly style="background:#f5f5f5;"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Tgl. Settlement <span style="font-size:.65rem;color:#888;">(T+2)</span></label>
+        <input class="form-input" id="ordSettlement" type="date" readonly style="background:#f5f5f5;"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Next Coupon Date <span style="font-size:.65rem;color:#888;">(Otomatis)</span></label>
+        <input class="form-input" id="ordNextCoupon" type="date" readonly style="background:#f5f5f5;"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Sekuritas <span class="req">*</span></label>
+        <select class="form-select" id="ordSekuritas">
+          <option value="">-- Pilih Sekuritas --</option>
+        </select>
+      </div>
+      <div class="form-group" id="ordCatatanGroup">
+        <label class="form-label">Catatan <span style="font-size:.65rem;color:#888;">(Admin/Treasury/Head)</span></label>
+        <textarea class="form-textarea" id="ordCatatan" placeholder="Catatan order..." rows="2"></textarea>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('orderModal')">Batal</button>
+      <button class="btn btn-order" id="ordSubmitBtn" onclick="submitOrder()">🛒 Submit Order</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL: PICKER (pilih dari pasar sekunder) -->
 <div class="modal-overlay" id="pickerModal" onclick="closeModal('pickerModal',event)">
   <div class="modal" style="width:760px;">
@@ -357,10 +432,10 @@
   }
   // ===== LOAD ALL =====
   async function loadAll() {
-    // Load pasar sekunder (all 4 categories)
+    // Load pasar sekunder from obligasi_products (single table with category)
     for (const cat of CATEGORIES) {
       try {
-        const { data, error } = await window._supabase.from(COL_PS[cat]).select('*').order('seri', { ascending: true });
+        const { data, error } = await window._supabase.from('obligasi_products').select('*').eq('category', cat).order('seri', { ascending: true });
         if (error) throw error;
         psData[cat] = (data || []).map(d => ({ ...d, category: cat }));
       } catch(e) { psData[cat] = []; }
@@ -368,7 +443,7 @@
 
     // Load recommendations
     try {
-      const { data, error } = await window._supabase.from(COL_REC).select('*').order('addedAt', { ascending: true });
+      const { data, error } = await window._supabase.from('bb_recommendations').select('*').order('added_at', { ascending: true });
       if (error) throw error;
       recItems = data || [];
     } catch(e) { recItems = []; }
@@ -695,8 +770,203 @@
 
   // ===== NAVIGATE TO ORDER PAGE =====
   function goOrder(seri, category) {
-    const params = new URLSearchParams({ seri, category, autoOrder: '1' });
-    window.location.href = `obligasi-order.html?${params.toString()}`;
+    openOrderModal(seri, category);
+  }
+
+  // ===== ORDER MODAL LOGIC =====
+  let orderObligasi = null;
+  let myClients = [];
+
+  async function openOrderModal(seri, category) {
+    orderObligasi = null;
+
+    // Find the obligasi data
+    const allPs = [];
+    CATEGORIES.forEach(cat => psData[cat].forEach(item => allPs.push({ ...item, category: cat })));
+    const found = allPs.find(i => i.seri === seri && i.category === category);
+    if (!found) { showToast('Data obligasi tidak ditemukan', 'error'); return; }
+    orderObligasi = found;
+
+    // Fill obligasi info
+    document.getElementById('ordSeri').textContent = found.seri || '—';
+    document.getElementById('ordKupon').textContent = found.kupon != null ? Number(found.kupon).toFixed(3) + '%' : '—';
+    document.getElementById('ordYtm').textContent = found.yield != null ? Number(found.yield).toFixed(4) + '%' : '—';
+    document.getElementById('ordBid').textContent = found.harga_jual != null ? Number(found.harga_jual).toFixed(2).replace('.',',') : (found.hargaJual != null ? Number(found.hargaJual).toFixed(2).replace('.',',') : '—');
+    document.getElementById('ordOffer').textContent = found.harga_beli != null ? Number(found.harga_beli).toFixed(2).replace('.',',') : (found.hargaBeli != null ? Number(found.hargaBeli).toFixed(2).replace('.',',') : '—');
+    document.getElementById('ordJatuhTempo').textContent = fmtDate(found.jatuh_tempo || found.jatuhTempo);
+    document.getElementById('ordCategory').value = category;
+    document.getElementById('ordPsId').value = found.id;
+
+    // Calculate T+2 settlement (skip weekends)
+    const settlement = calcT2();
+    document.getElementById('ordSettlement').value = settlement;
+
+    // Next coupon date from obligasi data
+    const nextCoupon = found.next_coupon_date || found.nextCouponDate || found.kupon_berikut || '';
+    document.getElementById('ordNextCoupon').value = nextCoupon || '';
+
+    // Reset form
+    document.getElementById('ordClientCode').value = '';
+    document.getElementById('ordClientName').value = '';
+    document.getElementById('ordAmount').value = '';
+    document.getElementById('ordUnit').value = '';
+    document.getElementById('ordSekuritas').innerHTML = '<option value="">-- Pilih Sekuritas --</option>';
+    document.getElementById('ordCatatan').value = '';
+
+    // Catatan hanya untuk admin/treasury/head_account
+    const canNote = curUser && ['head_account','admin','treasury'].includes(curUser.role);
+    document.getElementById('ordCatatan').disabled = !canNote;
+    document.getElementById('ordCatatan').placeholder = canNote ? 'Catatan order...' : 'Hanya Admin/Treasury/Head Account';
+
+    // Load clients for this sales
+    await loadMyClients();
+
+    document.getElementById('orderModal').classList.add('open');
+  }
+
+  function calcT2() {
+    let date = new Date();
+    let businessDays = 0;
+    while (businessDays < 2) {
+      date.setDate(date.getDate() + 1);
+      const day = date.getDay();
+      if (day !== 0 && day !== 6) businessDays++;
+    }
+    return date.toISOString().slice(0, 10);
+  }
+
+  function calcUnit() {
+    const amount = parseInt(document.getElementById('ordAmount').value) || 0;
+    const unit = Math.floor(amount / 100);
+    document.getElementById('ordUnit').value = unit > 0 ? unit : '';
+  }
+
+  async function loadMyClients() {
+    const select = document.getElementById('ordClientCode');
+    select.innerHTML = '<option value="">-- Memuat client... --</option>';
+
+    try {
+      let query = window._supabase.from('customers').select('client_id, client_name, sales_person_name').eq('client_status', 'Aktif');
+
+      // Filter by sales name if user is sales role
+      if (curUser && curUser.role === 'sales') {
+        query = query.eq('sales_person_name', curUser.name);
+      }
+
+      const { data, error } = await query.order('client_name', { ascending: true });
+      if (error) throw error;
+
+      myClients = data || [];
+      select.innerHTML = '<option value="">-- Pilih Client --</option>';
+      myClients.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.client_id;
+        opt.textContent = c.client_id + ' — ' + c.client_name;
+        opt.dataset.name = c.client_name;
+        select.appendChild(opt);
+      });
+    } catch(e) {
+      console.error('Load clients error:', e);
+      select.innerHTML = '<option value="">-- Gagal memuat client --</option>';
+    }
+  }
+
+  async function onClientSelect() {
+    const clientId = document.getElementById('ordClientCode').value;
+    const client = myClients.find(c => c.client_id === clientId);
+    document.getElementById('ordClientName').value = client ? client.client_name : '';
+
+    // Load sekuritas for this client
+    const sekSelect = document.getElementById('ordSekuritas');
+    sekSelect.innerHTML = '<option value="">-- Memuat sekuritas... --</option>';
+
+    if (!clientId) {
+      sekSelect.innerHTML = '<option value="">-- Pilih Client dulu --</option>';
+      return;
+    }
+
+    try {
+      // Get customer UUID first
+      const { data: custData } = await window._supabase.from('customers').select('id').eq('client_id', clientId).single();
+      if (!custData) { sekSelect.innerHTML = '<option value="">-- Client tidak ditemukan --</option>'; return; }
+
+      // Get securities for this customer
+      const { data: secData, error } = await window._supabase.from('customer_securities').select('sekuritas_name').eq('customer_id', custData.id);
+      if (error) throw error;
+
+      sekSelect.innerHTML = '<option value="">-- Pilih Sekuritas --</option>';
+      if (secData && secData.length > 0) {
+        secData.forEach(s => {
+          const opt = document.createElement('option');
+          opt.value = s.sekuritas_name;
+          opt.textContent = s.sekuritas_name;
+          sekSelect.appendChild(opt);
+        });
+      } else {
+        sekSelect.innerHTML = '<option value="">-- Tidak ada sekuritas terdaftar --</option>';
+      }
+    } catch(e) {
+      console.error('Load sekuritas error:', e);
+      sekSelect.innerHTML = '<option value="">-- Gagal memuat --</option>';
+    }
+  }
+
+  async function submitOrder() {
+    const clientId = document.getElementById('ordClientCode').value;
+    const clientName = document.getElementById('ordClientName').value;
+    const amount = parseInt(document.getElementById('ordAmount').value) || 0;
+    const unit = parseInt(document.getElementById('ordUnit').value) || 0;
+    const settlement = document.getElementById('ordSettlement').value;
+    const nextCoupon = document.getElementById('ordNextCoupon').value;
+    const sekuritas = document.getElementById('ordSekuritas').value;
+    const catatan = document.getElementById('ordCatatan').value.trim();
+
+    if (!clientId) { showToast('Pilih client terlebih dahulu', 'error'); return; }
+    if (amount < 100) { showToast('Amount minimal 100', 'error'); return; }
+    if (!sekuritas) { showToast('Pilih sekuritas', 'error'); return; }
+
+    const btn = document.getElementById('ordSubmitBtn');
+    btn.textContent = 'Menyimpan...'; btn.disabled = true;
+
+    try {
+      const ob = orderObligasi;
+      const orderData = {
+        jenis_transaksi: 'Beli',
+        category: document.getElementById('ordCategory').value,
+        seri: ob.seri,
+        kupon: ob.kupon,
+        jatuh_tempo: ob.jatuh_tempo || ob.jatuhTempo,
+        harga_beli: ob.harga_beli || ob.hargaBeli,
+        harga_jual: ob.harga_jual || ob.hargaJual,
+        ytm: ob.yield,
+        client_id: clientId,
+        customer_name: clientName,
+        sekuritas_dipakai: sekuritas,
+        nominal: amount,
+        unit_amount: unit,
+        face_amount: amount,
+        deal_amount: amount,
+        settlement: settlement,
+        kupon_berikut: nextCoupon,
+        tanggal_order: new Date().toISOString().slice(0, 10),
+        sales_pic: curUser?.name || '',
+        sales_code: curUser?.username || '',
+        catatan: catatan || null,
+        status: 'pending',
+        created_by: curUser?.name || '',
+      };
+
+      const { error } = await window._supabase.from('bb_orders').insert(orderData);
+      if (error) throw error;
+
+      closeModal('orderModal');
+      showToast(`Order ${ob.seri} untuk ${clientName} berhasil disubmit`, 'success');
+    } catch(e) {
+      console.error('Submit order error:', e);
+      showToast('Gagal submit order: ' + (e.message || ''), 'error');
+    } finally {
+      btn.textContent = '🛒 Submit Order'; btn.disabled = false;
+    }
   }
 
   // ===== BOOT =====
