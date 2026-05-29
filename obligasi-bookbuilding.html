@@ -819,12 +819,6 @@
     document.getElementById('ordAmount').value = '';
     document.getElementById('ordUnit').value = '';
     document.getElementById('ordSekuritas').innerHTML = '<option value="">-- Pilih Sekuritas --</option>';
-    document.getElementById('ordCatatan').value = '';
-
-    // Catatan hanya untuk admin/treasury/head_account
-    const canNote = curUser && ['head_account','admin','treasury'].includes(curUser.role);
-    document.getElementById('ordCatatan').disabled = !canNote;
-    document.getElementById('ordCatatan').placeholder = canNote ? 'Catatan order...' : 'Hanya Admin/Treasury/Head Account';
 
     // Load clients for this sales
     await loadMyClients();
