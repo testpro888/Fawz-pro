@@ -486,25 +486,46 @@
   }
 
   /**
+   * Fetch all rows from a Supabase table (handles pagination beyond 1000 row limit).
+   */
+  async function fetchAllRows(table, selectCols) {
+    const PAGE_SIZE = 1000;
+    let allRows = [];
+    let from = 0;
+    let hasMore = true;
+
+    while (hasMore) {
+      const { data, error } = await _sb
+        .from(table)
+        .select(selectCols)
+        .range(from, from + PAGE_SIZE - 1);
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        allRows = allRows.concat(data);
+        from += PAGE_SIZE;
+        if (data.length < PAGE_SIZE) hasMore = false;
+      } else {
+        hasMore = false;
+      }
+    }
+    return allRows;
+  }
+
+  /**
    * Load all transaction data and redemptions, build leaderboard from total volume.
    * Points = total volume keseluruhan / 10.000.000
    */
   async function loadPoints() {
     try {
-      // Fetch ALL transactions (no date filter - total keseluruhan)
-      const { data, error } = await _sb
-        .from('saham_transaksi')
-        .select('client_id, client_name, volume');
-
-      if (error) throw error;
+      // Fetch ALL transactions (no date filter - total keseluruhan, paginated)
+      const data = await fetchAllRows('saham_transaksi', 'client_id, client_name, volume');
 
       // Fetch all redemptions (total lifetime redemptions)
       let redemptions = [];
       try {
-        const { data: redemData, error: redemError } = await _sb
-          .from('point_redemptions')
-          .select('client_id, points_redeemed');
-        if (!redemError) redemptions = redemData || [];
+        redemptions = await fetchAllRows('point_redemptions', 'client_id, points_redeemed');
       } catch(e) { console.warn('point_redemptions table may not exist yet:', e); }
 
       redemptionsData = redemptions;
