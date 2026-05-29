@@ -875,17 +875,37 @@
     select.innerHTML = '<option value="">-- Memuat client... --</option>';
 
     try {
-      let query = window._supabase.from('customers').select('client_id, client_name, sales_person_name').eq('client_status', 'Aktif');
+      let clients = [];
 
-      // Filter by sales name if user is sales role
       if (curUser && curUser.role === 'sales') {
-        query = query.eq('sales_person_name', curUser.name);
+        // Get clients where user is sales OR tagged as referral agent
+        const { data: d1 } = await window._supabase.from('customers')
+          .select('client_id, client_name, sales_person_name, referral_agents')
+          .eq('client_status', 'Aktif')
+          .eq('sales_person_name', curUser.name);
+
+        const { data: d2 } = await window._supabase.from('customers')
+          .select('client_id, client_name, sales_person_name, referral_agents')
+          .eq('client_status', 'Aktif')
+          .ilike('referral_agents', '%' + curUser.name + '%');
+
+        // Merge and deduplicate
+        const map = new Map();
+        (d1 || []).forEach(c => map.set(c.client_id, c));
+        (d2 || []).forEach(c => map.set(c.client_id, c));
+        clients = [...map.values()];
+      } else {
+        // Admin/Head Account/Treasury see all
+        const { data, error } = await window._supabase.from('customers')
+          .select('client_id, client_name, sales_person_name, referral_agents')
+          .eq('client_status', 'Aktif')
+          .order('client_name', { ascending: true });
+        if (error) throw error;
+        clients = data || [];
       }
 
-      const { data, error } = await query.order('client_name', { ascending: true });
-      if (error) throw error;
-
-      myClients = data || [];
+      clients.sort((a, b) => (a.client_name || '').localeCompare(b.client_name || ''));
+      myClients = clients;
       select.innerHTML = '<option value="">-- Pilih Client --</option>';
       myClients.forEach(c => {
         const opt = document.createElement('option');

@@ -409,6 +409,7 @@
       <div class="form-grid">
         <div class="form-group"><label class="form-label">Sales Person ID</label><input class="form-input mono" id="fSalesPersonID" placeholder="ID Sales"/></div>
         <div class="form-group"><label class="form-label">Nama Sales <span class="req">*</span></label><input class="form-input" id="fSalesPersonName" placeholder="Nama sales PIC"/></div>
+        <div class="form-group full"><label class="form-label">Referral Agent <span style="font-size:.65rem;color:#888;">(Tag ke sales/agent lain, pisahkan dengan koma)</span></label><input class="form-input" id="fReferralAgents" placeholder="Contoh: Petik Profit, Andi Sales"/></div>
         <div class="form-group"><label class="form-label">Office ID</label><input class="form-input mono" id="fOfficeID" placeholder="ID Kantor"/></div>
         <div class="form-group"><label class="form-label">Nama Kantor</label><input class="form-input" id="fOfficeName" placeholder="Nama cabang"/></div>
         <div class="form-group"><label class="form-label">Department ID</label><input class="form-input mono" id="fDepartmentID" placeholder="ID Departemen"/></div>
@@ -519,6 +520,7 @@
       stpKPEISubAccountNo: r.stp_kpei_sub_account_no || '',
       salesPersonName: r.sales_person_name || '',
       salesPersonID: r.sales_person_id_legacy || '',
+      referralAgents: r.referral_agents || '',
       officeName: r.office_name || '',
       officeID: r.office_id || '',
       departmentID: r.department_id || '',
@@ -601,6 +603,7 @@
         stp_ksei_sub_account_no: data.stpKSEISubAccountNo || data.stp_ksei_sub_account_no || null,
         stp_kpei_sub_account_no: data.stpKPEISubAccountNo || data.stp_kpei_sub_account_no || null,
         sales_person_name: data.salesPersonName || data.sales_person_name || null,
+        referral_agents: data.referralAgents || data.referral_agents || null,
         office_name: data.officeName || data.office_name || null,
         client_status: data.clientStatus || data.client_status || 'Aktif',
         client_status_description: data.clientStatusDescription || data.client_status_description || null,
@@ -675,6 +678,7 @@
       // new array
       securities,
       salesPersonID: v('fSalesPersonID'), salesPersonName: v('fSalesPersonName'),
+      referralAgents: v('fReferralAgents'),
       officeID: v('fOfficeID'), officeName: v('fOfficeName'), departmentID: v('fDepartmentID'),
       clientStatus: v('fClientStatus'), clientStatusDescription: v('fClientStatusDescription'),
       createdDate: v('fCreatedDate'), activeDate: v('fActiveDate'), closedDate: v('fClosedDate'),
@@ -685,7 +689,7 @@
     ['fClientID','fClientName','fBirthDate','fKTPNumber','fNPWP','fEmail','fPhone',
      'fOccupation','fCompanyName','fNatureOfBusiness','fPosition','fAddress',
      'fKSEISingleID','fKSEISubAccountNo','fKPEISubAccountNo','fSTPKSEISubAccountNo','fSTPKPEISubAccountNo',
-     'fSalesPersonID','fSalesPersonName','fOfficeID','fOfficeName','fDepartmentID',
+     'fSalesPersonID','fSalesPersonName','fReferralAgents','fOfficeID','fOfficeName','fDepartmentID',
      'fClientStatusDescription','fCreatedDate','fActiveDate','fClosedDate'].forEach(id => {
        const el = document.getElementById(id); if (el) el.value = '';
      });
@@ -704,6 +708,7 @@
     s('fKSEISingleID', c.kseiSingleID); s('fKSEISubAccountNo', c.kseiSubAccountNo);
     s('fKPEISubAccountNo', c.kpeiSubAccountNo); s('fSTPKSEISubAccountNo', c.stpKSEISubAccountNo); s('fSTPKPEISubAccountNo', c.stpKPEISubAccountNo);
     s('fSalesPersonID', c.salesPersonID); s('fSalesPersonName', c.salesPersonName);
+    s('fReferralAgents', c.referralAgents);
     s('fOfficeID', c.officeID); s('fOfficeName', c.officeName); s('fDepartmentID', c.departmentID);
     s('fClientStatus', c.clientStatus || 'Aktif'); s('fClientStatusDescription', c.clientStatusDescription);
     s('fCreatedDate', c.createdDate); s('fActiveDate', c.activeDate); s('fClosedDate', c.closedDate);
