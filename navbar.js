@@ -234,6 +234,15 @@
     document.getElementById('mobileDrawer')?.classList.toggle('open');
   };
 
+  /* ── 5b. GLOBAL MODAL ESCAPE — tutup semua modal overlay saat tekan Escape ── */
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      document.querySelectorAll('.modal-overlay.open, .detail-modal-overlay.open').forEach(function(el) {
+        el.classList.remove('open');
+      });
+    }
+  });
+
   /* ── 6. FETCH & INJECT NAVBAR HTML, LALU INIT ── */
   fetch('navbar.html')
     .then(r => r.text())
