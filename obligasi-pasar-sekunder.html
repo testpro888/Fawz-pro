@@ -541,16 +541,16 @@
       <tr>
         <td><strong class="mono">${esc(r.seri||'—')}</strong></td>
         ${isKorp ? `<td style="font-size:0.78rem;color:#444;max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${esc(r.penerbit||'')}">${esc(r.penerbit||'—')}</td>` : ''}
-        <td style="color:#555;">${fmtDate(r.jatuhTempo)}</td>
+        <td style="color:#555;">${fmtDate(r.jatuh_tempo)}</td>
         ${isKorp ? `<td><span style="background:#f0f4ff;padding:2px 8px;border-radius:6px;font-size:0.78rem;font-weight:700;color:#2d4abf;">${esc(r.rating||'—')}</span></td>` : ''}
         <td style="color:#1a7a4a;">${r.kupon != null ? Number(r.kupon).toFixed(3) + '%' : '—'}</td>
-        <td style="font-size:0.8rem;color:#666;">${fmtDate(r.lastCouponDate)}</td>
-        <td style="font-size:0.8rem;color:#666;">${fmtDate(r.nextCouponDate)}</td>
-        <td style="font-weight:600;color:#27ae60;">${fmtHarga(r.hargaJual, idr)}</td>
-        <td style="font-weight:600;color:#e74c3c;">${fmtHarga(r.hargaBeli, idr)}</td>
+        <td style="font-size:0.8rem;color:#666;">${fmtDate(r.last_coupon_date)}</td>
+        <td style="font-size:0.8rem;color:#666;">${fmtDate(r.next_coupon_date)}</td>
+        <td style="font-weight:600;color:#27ae60;">${fmtHarga(r.harga_jual, idr)}</td>
+        <td style="font-weight:600;color:#e74c3c;">${fmtHarga(r.harga_beli, idr)}</td>
         <td style="color:#7159c1;font-weight:600;">${r.yield != null ? Number(r.yield).toFixed(4) + '%' : '—'}</td>
-        <td style="font-size:0.8rem;color:#555;">${fmtDate(r.dueDate)}</td>
-        <td style="font-size:0.8rem;color:#888;">${fmtDate(r.tanggalUpdate)}</td>
+        <td style="font-size:0.8rem;color:#555;">${fmtDate(r.due_date)}</td>
+        <td style="font-size:0.8rem;color:#888;">${fmtDate(r.tanggal_update)}</td>
         <td>
           <div class="action-btns">
             <button class="btn-icon" title="Edit" onclick="openEditModal('${cat}','${r.id}')">✏️</button>
@@ -608,16 +608,16 @@
     document.getElementById('fCategory').disabled = true;
     document.getElementById('fSeri').value = item.seri || '';
     document.getElementById('fKupon').value = item.kupon != null ? item.kupon : '';
-    document.getElementById('fJatuhTempo').value = item.jatuhTempo || '';
+    document.getElementById('fJatuhTempo').value = item.jatuh_tempo || '';
     document.getElementById('fRating').value = item.rating || '';
     document.getElementById('fPenerbit').value = item.penerbit || '';
-    document.getElementById('fLastCoupon').value = item.lastCouponDate || '';
-    document.getElementById('fNextCoupon').value = item.nextCouponDate || '';
-    document.getElementById('fHargaJual').value = item.hargaJual != null ? item.hargaJual : '';
-    document.getElementById('fHargaBeli').value = item.hargaBeli != null ? item.hargaBeli : '';
+    document.getElementById('fLastCoupon').value = item.last_coupon_date || '';
+    document.getElementById('fNextCoupon').value = item.next_coupon_date || '';
+    document.getElementById('fHargaJual').value = item.harga_jual != null ? item.harga_jual : '';
+    document.getElementById('fHargaBeli').value = item.harga_beli != null ? item.harga_beli : '';
     document.getElementById('fYield').value = item.yield != null ? item.yield : '';
-    document.getElementById('fDueDate').value = item.dueDate || '';
-    document.getElementById('fTanggalUpdate').value = item.tanggalUpdate || '';
+    document.getElementById('fDueDate').value = item.due_date || '';
+    document.getElementById('fTanggalUpdate').value = item.tanggal_update || '';
     toggleRatingField();
     document.getElementById('formModal').classList.add('open');
   }
@@ -651,15 +651,15 @@
     const data = {
       seri,
       kupon:          parseFloat(document.getElementById('fKupon').value) || null,
-      jatuhTempo:     document.getElementById('fJatuhTempo').value || null,
-      hargaJual:      parseFloat(document.getElementById('fHargaJual').value) || null,
-      hargaBeli:      parseFloat(document.getElementById('fHargaBeli').value) || null,
+      jatuh_tempo:    document.getElementById('fJatuhTempo').value || null,
+      harga_jual:     parseFloat(document.getElementById('fHargaJual').value) || null,
+      harga_beli:     parseFloat(document.getElementById('fHargaBeli').value) || null,
       yield:          parseFloat(document.getElementById('fYield').value) || null,
-      tanggalUpdate:  document.getElementById('fTanggalUpdate').value || new Date().toISOString().slice(0,10),
+      tanggal_update: document.getElementById('fTanggalUpdate').value || new Date().toISOString().slice(0,10),
       category:       cat,
     };
 
-    // Kolom baru — hanya kirim jika ada nilainya (agar tidak error jika kolom belum ada di DB)
+    // Kolom baru — hanya kirim jika ada nilainya
     const rating = isKorp ? (document.getElementById('fRating').value.trim() || null) : null;
     const penerbit = isKorp ? (document.getElementById('fPenerbit').value.trim() || null) : null;
     const lastCouponDate = document.getElementById('fLastCoupon').value || null;
@@ -668,9 +668,9 @@
 
     if (rating !== null) data.rating = rating;
     if (penerbit !== null) data.penerbit = penerbit;
-    if (lastCouponDate !== null) data.lastCouponDate = lastCouponDate;
-    if (nextCouponDate !== null) data.nextCouponDate = nextCouponDate;
-    if (dueDate !== null) data.dueDate = dueDate;
+    if (lastCouponDate !== null) data.last_coupon_date = lastCouponDate;
+    if (nextCouponDate !== null) data.next_coupon_date = nextCouponDate;
+    if (dueDate !== null) data.due_date = dueDate;
 
     const btn = document.getElementById('formSaveBtn');
     btn.textContent = 'Menyimpan...'; btn.disabled = true;
@@ -760,17 +760,17 @@
     const ticker = extractTicker(seri);
     return {
       seri,
-      kupon:          parseFloat(g('kupon','coupon')) || null,
-      jatuhTempo:     g('jatuhtempo','jatuh_tempo','maturity','maturitydate'),
-      rating:         g('rating') || null,
-      penerbit:       g('penerbit','issuer','emiten') || (ISSUER_MAP[ticker] || null),
-      lastCouponDate: g('lastcoupondate','last_coupon_date','lastcoupon','last_coupon') || null,
-      nextCouponDate: g('nextcoupondate','next_coupon_date','nextcoupon','next_coupon') || null,
-      hargaJual:      parseFloat(g('hargajual','harga_jual','bid','bidprice')) || null,
-      hargaBeli:      parseFloat(g('hargabeli','harga_beli','offer','offerprice','ask','askprice')) || null,
-      yield:          parseFloat(g('yield','ytm')) || null,
-      dueDate:        g('duedate','due_date') || null,
-      tanggalUpdate:  g('tanggalupdate','tanggal_update','updatedate','date') || new Date().toISOString().slice(0,10),
+      kupon:            parseFloat(g('kupon','coupon')) || null,
+      jatuh_tempo:      g('jatuhtempo','jatuh_tempo','maturity','maturitydate'),
+      rating:           g('rating') || null,
+      penerbit:         g('penerbit','issuer','emiten') || (ISSUER_MAP[ticker] || null),
+      last_coupon_date: g('lastcoupondate','last_coupon_date','lastcoupon','last_coupon') || null,
+      next_coupon_date: g('nextcoupondate','next_coupon_date','nextcoupon','next_coupon') || null,
+      harga_jual:       parseFloat(g('hargajual','harga_jual','bid','bidprice')) || null,
+      harga_beli:       parseFloat(g('hargabeli','harga_beli','offer','offerprice','ask','askprice')) || null,
+      yield:            parseFloat(g('yield','ytm')) || null,
+      due_date:         g('duedate','due_date') || null,
+      tanggal_update:   g('tanggalupdate','tanggal_update','updatedate','date') || new Date().toISOString().slice(0,10),
     };
   }
 
@@ -789,7 +789,7 @@
     document.getElementById('csvPreviewInfo').textContent = `${csvRows.length} data ditemukan. Preview 5 baris pertama:`;
     document.getElementById('csvPreview').innerHTML = `<table>
       <thead><tr><th>Series</th><th>Coupon</th><th>Rating</th><th>Last Coupon</th><th>Next Coupon</th><th>Bid</th><th>Offer</th><th>YTM</th><th>Due Date</th></tr></thead>
-      <tbody>${csvRows.slice(0,5).map(r=>`<tr><td>${esc(r.seri)}</td><td>${r.kupon??''}</td><td>${esc(r.rating||'')}</td><td>${r.lastCouponDate||''}</td><td>${r.nextCouponDate||''}</td><td>${r.hargaJual??''}</td><td>${r.hargaBeli??''}</td><td>${r.yield??''}</td><td>${r.dueDate||''}</td></tr>`).join('')}</tbody>
+      <tbody>${csvRows.slice(0,5).map(r=>`<tr><td>${esc(r.seri)}</td><td>${r.kupon??''}</td><td>${esc(r.rating||'')}</td><td>${r.last_coupon_date||''}</td><td>${r.next_coupon_date||''}</td><td>${r.harga_jual??''}</td><td>${r.harga_beli??''}</td><td>${r.yield??''}</td><td>${r.due_date||''}</td></tr>`).join('')}</tbody>
     </table>`;
     document.getElementById('csvPreviewWrap').style.display = 'block';
   }
@@ -832,7 +832,7 @@
     const data = allData[cat];
     if (!data.length) { showToast('Tidak ada data untuk diexport', 'error'); return; }
     const H = 'Seri,Kupon,JatuhTempo,Rating,LastCouponDate,NextCouponDate,Bid,Offer,YTM,DueDate,TanggalUpdate';
-    const rows = data.map(r => [r.seri,r.kupon??'',r.jatuhTempo??'',r.rating??'',r.lastCouponDate??'',r.nextCouponDate??'',r.hargaJual??'',r.hargaBeli??'',r.yield??'',r.dueDate??'',r.tanggalUpdate??''].map(v=>`"${v}"`).join(','));
+    const rows = data.map(r => [r.seri,r.kupon??'',r.jatuh_tempo??'',r.rating??'',r.last_coupon_date??'',r.next_coupon_date??'',r.harga_jual??'',r.harga_beli??'',r.yield??'',r.due_date??'',r.tanggal_update??''].map(v=>`"${v}"`).join(','));
     const blob = new Blob([H+'\n'+rows.join('\n')], {type:'text/csv;charset=utf-8;'});
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
     a.download = `obligasi_${cat}_${new Date().toISOString().slice(0,10)}.csv`; a.click();
