@@ -45,7 +45,6 @@
 
     setTxt('navUserName',  user.name || 'User');
     setTxt('navUserRole',  roleName);
-    setTxt('navRoleBadge', roleName);
     setTxt('ddUserName',   user.name || 'User');
     setTxt('ddUserEmail',  user.username || '');
 
