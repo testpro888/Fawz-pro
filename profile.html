@@ -11,8 +11,8 @@
   <script>
     const SUPABASE_URL = 'https://yhmrfluehibfapvtxcfi.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlobXJmbHVlaGliZmFwdnR4Y2ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNjEzODUsImV4cCI6MjA5NDczNzM4NX0.se_H4n_eLsf81d_1GH5sqsPCpX89MHewlPuuNkY6qcU';
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-    window._supabase = supabase;
+    const _sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    window._supabase = _sbClient;
     window._supabaseReady = true;
   </script>
 
@@ -285,11 +285,20 @@
   // ===== WAIT SUPABASE =====
   async function waitSupabase(ms = 6000) {
     let waited = 0;
-    while (!window._supabaseReady && waited < ms) {
+    while ((!window._supabaseReady || !window._supabase) && waited < ms) {
       await new Promise(r => setTimeout(r, 100));
       waited += 100;
     }
-    return window._supabaseReady;
+    if (!window._supabase) {
+      // Last resort: try to create client now
+      try {
+        const SUPABASE_URL = 'https://yhmrfluehibfapvtxcfi.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlobXJmbHVlaGliZmFwdnR4Y2ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNjEzODUsImV4cCI6MjA5NDczNzM4NX0.se_H4n_eLsf81d_1GH5sqsPCpX89MHewlPuuNkY6qcU';
+        window._supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        window._supabaseReady = true;
+      } catch(e) { console.error('Failed to init Supabase:', e); }
+    }
+    return !!window._supabase;
   }
 
   // ===== INIT =====
