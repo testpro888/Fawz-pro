@@ -10,9 +10,14 @@
   <script>
     const SUPABASE_URL = 'https://yhmrfluehibfapvtxcfi.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlobXJmbHVlaGliZmFwdnR4Y2ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNjEzODUsImV4cCI6MjA5NDczNzM4NX0.se_H4n_eLsf81d_1GH5sqsPCpX89MHewlPuuNkY6qcU';
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-    window._supabase = supabase;
-    window.addEventListener('DOMContentLoaded', () => boot());
+    try { window._supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); }
+    catch(e) { console.error('Supabase init error:', e); }
+    window.addEventListener('DOMContentLoaded', () => {
+      if (!window._supabase && window.supabase) {
+        window._supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      }
+      boot();
+    });
   </script>
 
   <style>
@@ -547,7 +552,7 @@
   // CONSTANTS & STATE
   // =====================================================================
   const COL_ORDERS = 'bb_orders';
-  const COL_PS = { 'gov-idr':'obligasi_gov_idr','gov-usd':'obligasi_gov_usd','korp-idr':'obligasi_korp_idr','korp-usd':'obligasi_korp_usd' };
+  const COL_PS = 'obligasi_products';
   const CAT_LABEL = { 'gov-idr':'Pemerintah IDR','gov-usd':'Pemerintah USD','korp-idr':'Korporasi IDR','korp-usd':'Korporasi USD' };
   const CAT_SHORT = { 'gov-idr':'Gov IDR','gov-usd':'Gov USD','korp-idr':'Korp IDR','korp-usd':'Korp USD' };
   const CATEGORIES = ['gov-idr','gov-usd','korp-idr','korp-usd'];
@@ -596,7 +601,7 @@
   async function loadPsData() {
     for (const cat of CATEGORIES) {
       try {
-        const { data, error } = await window._supabase.from(COL_PS[cat]).select('*').order('seri', { ascending: true });
+        const { data, error } = await window._supabase.from('obligasi_products').select('*').eq('category', cat).order('seri', { ascending: true });
         if (error) throw error;
         psData[cat] = (data || []).map(d => ({ ...d, _cat: cat }));
       } catch(e) { psData[cat] = []; }
@@ -605,7 +610,7 @@
 
   async function loadCustomers() {
     try {
-      const { data, error } = await window._supabase.from('customers').select('*').order('clientName', { ascending: true });
+      const { data, error } = await window._supabase.from('customers').select('*').order('client_name', { ascending: true });
       if (error) throw error;
       customers = data || [];
     } catch(e) { customers = []; }
@@ -613,10 +618,15 @@
 
   async function loadOrders() {
     try {
-      const { data, error } = await window._supabase.from(COL_ORDERS).select('*').order('created_at', { ascending: false });
+      let query = window._supabase.from('bb_orders').select('*').order('created_at', { ascending: false });
+      // Sales hanya lihat order miliknya
+      if (curUser && curUser.role === 'sales') {
+        query = query.eq('sales_pic', curUser.name);
+      }
+      const { data, error } = await query;
       if (error) throw error;
       orders = data || [];
-    } catch(e) { orders = []; }
+    } catch(e) { console.error('Load orders error:', e); orders = []; }
     renderStats();
   }
 
