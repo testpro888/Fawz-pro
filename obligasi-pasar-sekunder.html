@@ -639,18 +639,26 @@
     const data = {
       seri,
       kupon:          parseFloat(document.getElementById('fKupon').value) || null,
-      jatuhTempo:     document.getElementById('fJatuhTempo').value || '',
-      rating:         isKorp ? (document.getElementById('fRating').value.trim() || null) : null,
-      penerbit:       isKorp ? (document.getElementById('fPenerbit').value.trim() || null) : null,
-      lastCouponDate: document.getElementById('fLastCoupon').value || null,
-      nextCouponDate: document.getElementById('fNextCoupon').value || null,
+      jatuhTempo:     document.getElementById('fJatuhTempo').value || null,
       hargaJual:      parseFloat(document.getElementById('fHargaJual').value) || null,
       hargaBeli:      parseFloat(document.getElementById('fHargaBeli').value) || null,
       yield:          parseFloat(document.getElementById('fYield').value) || null,
-      dueDate:        document.getElementById('fDueDate').value || null,
       tanggalUpdate:  document.getElementById('fTanggalUpdate').value || new Date().toISOString().slice(0,10),
       category:       cat,
     };
+
+    // Kolom baru — hanya kirim jika ada nilainya (agar tidak error jika kolom belum ada di DB)
+    const rating = isKorp ? (document.getElementById('fRating').value.trim() || null) : null;
+    const penerbit = isKorp ? (document.getElementById('fPenerbit').value.trim() || null) : null;
+    const lastCouponDate = document.getElementById('fLastCoupon').value || null;
+    const nextCouponDate = document.getElementById('fNextCoupon').value || null;
+    const dueDate = document.getElementById('fDueDate').value || null;
+
+    if (rating !== null) data.rating = rating;
+    if (penerbit !== null) data.penerbit = penerbit;
+    if (lastCouponDate !== null) data.lastCouponDate = lastCouponDate;
+    if (nextCouponDate !== null) data.nextCouponDate = nextCouponDate;
+    if (dueDate !== null) data.dueDate = dueDate;
 
     const btn = document.getElementById('formSaveBtn');
     btn.textContent = 'Menyimpan...'; btn.disabled = true;
@@ -673,7 +681,7 @@
       document.getElementById('formModal').classList.remove('open');
       filtered[cat] = [...allData[cat]];
       renderTable(cat);
-    } catch(e) { console.error(e); showToast('Gagal menyimpan data', 'error'); }
+    } catch(e) { console.error('Save error:', e); showToast('Gagal menyimpan: ' + (e.message || e.details || JSON.stringify(e)), 'error'); }
     finally { btn.textContent = 'Simpan'; btn.disabled = false; }
   }
 
