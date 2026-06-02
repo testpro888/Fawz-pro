@@ -32,7 +32,7 @@
     head_account : 'Head Account',
     admin        : 'Admin',
     sales        : 'Sales',
-    treasury     : 'Treasury'
+    treasury     : 'Bonds Dealer'
   };
 
   /* ── 3. INIT USER INFO ── */
@@ -90,6 +90,7 @@
       'obligasi-bookbuilding.html'   : ['head_account', 'admin', 'treasury', 'sales'],
       'obligasi-pasar-sekunder.html' : ['head_account', 'admin', 'treasury', 'sales'],
       'obligasi-ipo.html'            : ['head_account', 'admin', 'treasury', 'sales'],
+      'bond-transaction.html'        : ['head_account', 'admin', 'treasury', 'sales'],
       'reksadana-data.html'          : ['head_account', 'admin', 'treasury', 'sales'],
       'reksadana-order.html'         : ['head_account', 'admin', 'treasury', 'sales'],
       'waran-terstruktur.html'       : ['head_account', 'admin', 'treasury', 'sales'],

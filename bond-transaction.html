@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Fawz Pro | Bond Transactions</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script>
+    const SUPABASE_URL = 'https://yhmrfluehibfapvtxcfi.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlobXJmbHVlaGliZmFwdnR4Y2ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNjEzODUsImV4cCI6MjA5NDczNzM4NX0.se_H4n_eLsf81d_1GH5sqsPCpX89MHewlPuuNkY6qcU';
+    try { window._supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); }
+    catch(e) { console.error('Supabase init:', e); }
+    window.addEventListener('DOMContentLoaded', () => {
+      if (!window._supabase && window.supabase)
+        window._supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      initPage();
+    });
+  </script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --navy:#0d0d2b; --purple:#1e1252; --gold:#f5a623; --gold-light:#ffc857;
+      --bg:#f4f5fb; --border:#e0e0ef; --text:#1a1a3a; --gray:#888;
+      --green:#27ae60; --red:#e74c3c; --blue:#2980b9; --nav-h:68px;
+    }
+    body { font-family:'Inter',sans-serif; background:var(--bg); min-height:100vh; padding-top:var(--nav-h); color:var(--text); }
+    .page-container { max-width:1300px; margin:0 auto; padding:36px 28px; }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)} }
+
+    .page-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:28px; flex-wrap:wrap; gap:16px; animation:fadeUp .4s ease both; }
+    .page-title { font-size:2rem; font-weight:900; color:var(--navy); }
+    .page-subtitle { font-size:.88rem; color:var(--gray); margin-top:4px; }
+    .title-underline { width:48px; height:3px; background:linear-gradient(90deg,var(--gold),var(--gold-light)); border-radius:2px; margin-top:8px; }
+
+    .btn { display:inline-flex; align-items:center; gap:7px; padding:10px 18px; border-radius:10px; font-family:'Inter',sans-serif; font-size:.85rem; font-weight:600; cursor:pointer; border:none; transition:all .2s; }
+    .btn-outline { background:#fff; color:var(--navy); border:1.5px solid var(--border); }
+    .btn-outline:hover { border-color:var(--gold); color:var(--gold); }
+    .btn-sm { padding:7px 14px; font-size:.78rem; }
+    .btn-approve { background:linear-gradient(135deg,var(--green),#1e9c3a); color:#fff; box-shadow:0 4px 12px rgba(39,174,96,.3); }
+    .btn-approve:hover { transform:translateY(-1px); box-shadow:0 6px 18px rgba(39,174,96,.4); }
+    .btn-reject { background:linear-gradient(135deg,var(--red),#c0392b); color:#fff; }
+    .btn-reject:hover { transform:translateY(-1px); }
+
+    .stats-row { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:24px; animation:fadeUp .4s .05s ease both; }
+    .stat-card { background:#fff; border-radius:14px; padding:18px 22px; box-shadow:0 2px 10px rgba(0,0,0,.05); border-left:4px solid transparent; }
+    .stat-card.c1{border-color:var(--gold);} .stat-card.c2{border-color:var(--green);} .stat-card.c3{border-color:var(--red);} .stat-card.c4{border-color:var(--blue);}
+    .stat-label { font-size:.68rem; color:var(--gray); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px; }
+    .stat-value { font-size:1.4rem; font-weight:700; color:var(--navy); }
+    .stat-value.gold{color:var(--gold);} .stat-value.green{color:var(--green);} .stat-value.red{color:var(--red);} .stat-value.blue{color:var(--blue);}
+
+    .toolbar { background:#fff; border-radius:14px; padding:14px 18px; display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:20px; box-shadow:0 2px 10px rgba(0,0,0,.05); animation:fadeUp .4s .08s ease both; }
+    .search-wrap { position:relative; flex:1; min-width:200px; }
+    .search-wrap input { width:100%; padding:9px 14px 9px 14px; border:1.5px solid var(--border); border-radius:10px; font-family:'Inter',sans-serif; font-size:.875rem; outline:none; transition:border .2s; }
+    .search-wrap input:focus { border-color:var(--gold); }
+    .filter-select { padding:9px 13px; border:1.5px solid var(--border); border-radius:10px; font-family:'Inter',sans-serif; font-size:.85rem; outline:none; background:#fff; cursor:pointer; }
+    .filter-select:focus { border-color:var(--gold); }
+
+    .table-card { background:#fff; border-radius:16px; box-shadow:0 2px 12px rgba(0,0,0,.06); overflow:hidden; animation:fadeUp .4s .1s ease both; }
+    .table-wrap { overflow-x:auto; }
+    table { width:100%; border-collapse:collapse; font-size:.855rem; }
+    thead { background:linear-gradient(135deg,var(--navy),var(--purple)); }
+    thead th { padding:13px 14px; text-align:left; font-size:.7rem; font-weight:700; color:rgba(255,255,255,.8); text-transform:uppercase; letter-spacing:1px; white-space:nowrap; }
+    tbody tr { border-bottom:1px solid #f5f5fa; transition:background .12s; }
+    tbody tr:last-child { border-bottom:none; }
+    tbody tr:hover { background:#fffbf3; }
+    tbody td { padding:12px 14px; vertical-align:middle; }
+    .table-footer { padding:12px 18px; display:flex; align-items:center; justify-content:space-between; border-top:1px solid #f0f0f5; font-size:.82rem; color:var(--gray); flex-wrap:wrap; gap:8px; }
+    .pagination { display:flex; gap:4px; }
+    .pg-btn { width:30px; height:30px; border-radius:7px; display:flex; align-items:center; justify-content:center; font-size:.8rem; cursor:pointer; border:1.5px solid var(--border); background:#fff; color:var(--text); transition:all .15s; }
+    .pg-btn.active { background:var(--gold); border-color:var(--gold); color:#fff; font-weight:700; }
+    .pg-btn:hover:not(.active) { border-color:var(--gold); }
+
+    .badge { display:inline-block; font-size:.67rem; font-weight:700; padding:3px 10px; border-radius:20px; white-space:nowrap; }
+    .badge-approved { background:#e8f8f0; color:#1e7e4e; border:1px solid rgba(39,174,96,.25); }
+    .badge-pending  { background:#fff8e8; color:#b8860b; border:1px solid rgba(243,156,18,.3); }
+    .badge-rejected { background:#fff0f0; color:#c0392b; border:1px solid rgba(231,76,60,.2); }
+    .badge-buy  { background:#e8f5e9; color:#2e7d32; }
+    .badge-sell { background:#fce4ec; color:#c62828; }
+
+    .seri-cell { font-weight:700; font-size:.88rem; color:var(--navy); font-family:'Courier New',monospace; }
+    .sales-cell { font-weight:600; font-size:.85rem; color:var(--navy); }
+    .client-cell { font-size:.82rem; }
+    .nominal-cell { font-weight:700; color:var(--navy); text-align:right; }
+    .action-btns { display:flex; gap:5px; }
+
+    .empty-state { text-align:center; padding:60px 20px; color:#bbb; }
+    .loading-wrap { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:60px; gap:14px; color:#aaa; }
+    .spinner { width:32px; height:32px; border:3px solid #f0f0f5; border-top-color:var(--gold); border-radius:50%; animation:spin .7s linear infinite; }
+    @keyframes spin { to{transform:rotate(360deg)} }
+
+    .modal-overlay { display:none; position:fixed; inset:0; background:rgba(13,13,43,.55); backdrop-filter:blur(4px); z-index:2000; align-items:center; justify-content:center; }
+    .modal-overlay.open { display:flex; }
+    .modal { background:#fff; border-radius:20px; padding:32px; width:640px; max-width:96vw; max-height:92vh; overflow-y:auto; box-shadow:0 24px 80px rgba(0,0,0,.2); animation:fadeUp .25s ease; }
+    .modal-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
+    .modal-title { font-size:1.2rem; font-weight:700; color:var(--navy); }
+    .modal-close { width:32px; height:32px; border-radius:8px; border:1.5px solid var(--border); background:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:1rem; color:var(--gray); transition:all .15s; }
+    .modal-close:hover { border-color:#ffcccc; color:var(--red); background:#fff0f0; }
+    .modal-footer { display:flex; gap:10px; justify-content:flex-end; margin-top:20px; padding-top:16px; border-top:1px solid #f0f0f5; }
+
+    .detail-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px; }
+    .detail-item label { display:block; font-size:.62rem; color:#aaa; text-transform:uppercase; letter-spacing:.8px; margin-bottom:3px; }
+    .detail-item .val { font-size:.88rem; font-weight:600; color:var(--text); }
+    .detail-item.full { grid-column:1/-1; }
+    .detail-section-title { font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:var(--gold); margin-bottom:10px; margin-top:16px; }
+
+    .toast-container { position:fixed; bottom:28px; right:28px; z-index:9999; display:flex; flex-direction:column; gap:10px; }
+    .toast { padding:14px 20px; border-radius:12px; font-size:.875rem; font-weight:500; box-shadow:0 6px 24px rgba(0,0,0,.15); animation:toastIn .3s ease; max-width:320px; }
+    @keyframes toastIn { from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)} }
+    .toast-success{background:#f0fff8;border:1px solid #a8e6c1;color:#1e7e4e;}
+    .toast-error{background:#fff0f0;border:1px solid #ffcccc;color:#c0392b;}
+    .toast-info{background:#f0f4ff;border:1px solid #c5d3ff;color:#2d4abf;}
+
+    @media(max-width:900px){.stats-row{grid-template-columns:repeat(2,1fr);}}
+    @media(max-width:600px){.stats-row{grid-template-columns:1fr;}.page-container{padding:20px 14px;}}
+  </style>
+</head>
+<body>
+<div id="navbar-placeholder"></div>
+<script src="navbar.js"></script>
+
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <div class="page-title">Bond Transactions</div>
+      <div class="page-subtitle">Transaksi obligasi yang telah disetujui oleh Bonds Dealer</div>
+      <div class="title-underline"></div>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;">
+      <button class="btn btn-outline btn-sm" onclick="exportCSV()">Export CSV</button>
+    </div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card c1"><div class="stat-label">Total Transaksi</div><div class="stat-value gold" id="sTotal">—</div></div>
+    <div class="stat-card c2"><div class="stat-label">Approved</div><div class="stat-value green" id="sApproved">—</div></div>
+    <div class="stat-card c3"><div class="stat-label">Pending</div><div class="stat-value red" id="sPending">—</div></div>
+    <div class="stat-card c4"><div class="stat-label">Total Nominal</div><div class="stat-value blue" id="sNominal" style="font-size:1.1rem;">—</div></div>
+  </div>
+
+  <div class="toolbar">
+    <div class="search-wrap">
+      <input type="text" id="searchInput" placeholder="Cari seri, sales, nasabah..." oninput="applyFilter()"/>
+    </div>
+    <select class="filter-select" id="filterStatus" onchange="applyFilter()">
+      <option value="">Semua Status</option>
+      <option value="approved">Approved</option>
+      <option value="pending">Pending</option>
+      <option value="rejected">Rejected</option>
+    </select>
+    <select class="filter-select" id="filterJenis" onchange="applyFilter()">
+      <option value="">Semua Jenis</option>
+      <option value="Beli">Beli</option>
+      <option value="Jual">Jual</option>
+    </select>
+    <input type="month" class="filter-select" id="filterMonth" onchange="applyFilter()"/>
+    <button class="btn btn-outline btn-sm" onclick="resetFilter()">Reset</button>
+  </div>
+
+  <div class="table-card">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Tanggal</th>
+            <th>Seri Obligasi</th>
+            <th>Jenis</th>
+            <th>Sales</th>
+            <th>Nasabah</th>
+            <th>Sekuritas</th>
+            <th style="text-align:right;">Nominal</th>
+            <th>Status</th>
+            <th id="thAction" style="text-align:center;">Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          <tr><td colspan="10"><div class="loading-wrap"><div class="spinner"></div><div style="font-size:.85rem;">Memuat data...</div></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="table-footer">
+      <div id="tableInfo"></div>
+      <div class="pagination" id="pagination"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Detail Modal -->
+<div class="modal-overlay" id="detailModal" onclick="if(event.target===this)closeDetail()">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Detail Transaksi Obligasi</div>
+      <button class="modal-close" onclick="closeDetail()">✕</button>
+    </div>
+    <div id="detailContent"></div>
+    <div class="modal-footer" id="detailFooter"></div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+  const PAGE_SIZE = 20;
+  let curUser = null;
+  let isBondsDealer = false;
+  let isAdmin = false;
+  let allRows = [];
+  let filtered = [];
+  let curPage = 1;
+  let curDetailId = null;
+
+  function getDb() {
+    if (!window._supabase) {
+      try { window._supabase = window.supabase.createClient('https://yhmrfluehibfapvtxcfi.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlobXJmbHVlaGliZmFwdnR4Y2ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNjEzODUsImV4cCI6MjA5NDczNzM4NX0.se_H4n_eLsf81d_1GH5sqsPCpX89MHewlPuuNkY6qcU'); }
+      catch(e) { throw new Error('DB tidak tersedia'); }
+    }
+    return window._supabase;
+  }
+
+  async function initPage() {
+    const raw = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember');
+    if (!raw) { window.location.replace('login.html'); return; }
+    curUser = JSON.parse(raw);
+    isBondsDealer = curUser.role === 'treasury';
+    isAdmin = ['head_account','admin'].includes(curUser.role);
+
+    // Sembunyikan kolom Aksi jika bukan Bonds Dealer / Admin
+    if (!isBondsDealer && !isAdmin) {
+      document.getElementById('thAction').style.display = 'none';
+    }
+
+    // Set default month filter
+    const now = new Date();
+    document.getElementById('filterMonth').value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+
+    await loadData();
+  }
+
+  async function loadData() {
+    try {
+      // Load dari bb_orders (bookbuilding) - semua jenis transaksi obligasi
+      let q = getDb().from('bb_orders').select('*').order('created_at', { ascending: false });
+
+      // Sales hanya lihat miliknya
+      if (curUser.role === 'sales') {
+        q = q.eq('sales_pic', curUser.name || '');
+      }
+
+      const { data, error } = await q;
+      if (error) throw error;
+
+      allRows = (data || []).map(r => ({
+        id:           r.id,
+        tanggal:      r.tanggal_order || (r.created_at ? r.created_at.slice(0,10) : ''),
+        seri:         r.seri || '—',
+        jenis:        r.jenis_transaksi || 'Beli',
+        category:     r.category || '',
+        salesNama:    r.sales_pic || '—',
+        salesKode:    r.sales_code || '',
+        nasabah:      r.customer_name || '—',
+        clientId:     r.client_id || '',
+        sekuritas:    r.sekuritas_dipakai || '—',
+        nominal:      Number(r.nominal) || 0,
+        unit:         Number(r.unit_amount) || 0,
+        settlement:   r.settlement || '',
+        kupon:        r.kupon,
+        ytm:          r.ytm,
+        jatuhTempo:   r.jatuh_tempo || '',
+        status:       r.status || 'pending',
+        approvedBy:   r.approved_by || '',
+        approvedAt:   r.approved_at || '',
+        rejectedBy:   r.rejected_by || '',
+        rejectedAt:   r.rejected_at || '',
+        catatan:      r.catatan || '',
+      }));
+
+      applyFilter();
+      updateStats();
+    } catch(e) {
+      console.error(e);
+      document.getElementById('tableBody').innerHTML = `<tr><td colspan="10"><div class="empty-state" style="color:#e74c3c;">Gagal memuat data: ${esc(e.message)}</div></td></tr>`;
+    }
+  }
+
+  function applyFilter() {
+    const q       = document.getElementById('searchInput').value.toLowerCase();
+    const status  = document.getElementById('filterStatus').value;
+    const jenis   = document.getElementById('filterJenis').value;
+    const month   = document.getElementById('filterMonth').value;
+
+    filtered = allRows.filter(r => {
+      const matchQ      = !q || [r.seri, r.salesNama, r.nasabah, r.clientId].some(v => (v||'').toLowerCase().includes(q));
+      const matchStatus = !status || r.status === status;
+      const matchJenis  = !jenis  || r.jenis === jenis;
+      const matchMonth  = !month  || (r.tanggal||'').startsWith(month);
+      return matchQ && matchStatus && matchJenis && matchMonth;
+    });
+
+    curPage = 1;
+    renderTable();
+  }
+
+  function resetFilter() {
+    document.getElementById('searchInput').value = '';
+    document.getElementById('filterStatus').value = '';
+    document.getElementById('filterJenis').value = '';
+    const now = new Date();
+    document.getElementById('filterMonth').value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+    applyFilter();
+  }
+
+  function updateStats() {
+    document.getElementById('sTotal').textContent     = allRows.length;
+    document.getElementById('sApproved').textContent  = allRows.filter(r => r.status === 'approved' || r.status === 'verified').length;
+    document.getElementById('sPending').textContent   = allRows.filter(r => r.status === 'pending').length;
+    const totalNom = allRows.reduce((s,r) => s + r.nominal, 0);
+    document.getElementById('sNominal').textContent   = 'Rp ' + totalNom.toLocaleString('id-ID');
+  }
+
+  function renderTable() {
+    const tbody = document.getElementById('tableBody');
+    const canAct = isBondsDealer || isAdmin;
+
+    if (!filtered.length) {
+      tbody.innerHTML = `<tr><td colspan="10"><div class="empty-state">Tidak ada data transaksi</div></td></tr>`;
+      document.getElementById('tableInfo').textContent = '';
+      document.getElementById('pagination').innerHTML = '';
+      return;
+    }
+
+    const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+    curPage = Math.min(curPage, totalPages);
+    const slice = filtered.slice((curPage-1)*PAGE_SIZE, curPage*PAGE_SIZE);
+
+    tbody.innerHTML = slice.map((r, i) => {
+      const rowNum = (curPage-1)*PAGE_SIZE + i + 1;
+      const statusBadge = r.status === 'approved' || r.status === 'verified'
+        ? `<span class="badge badge-approved">Approved</span>`
+        : r.status === 'rejected'
+        ? `<span class="badge badge-rejected">Rejected</span>`
+        : `<span class="badge badge-pending">Pending</span>`;
+      const jenisBadge = r.jenis === 'Jual'
+        ? `<span class="badge badge-sell">Jual</span>`
+        : `<span class="badge badge-buy">Beli</span>`;
+      const isPending = r.status === 'pending';
+      const actionCell = canAct
+        ? `<div class="action-btns" style="justify-content:center;">
+            ${isPending ? `<button class="btn btn-approve btn-sm" onclick="event.stopPropagation();approve('${r.id}')">Approve</button>` : ''}
+            ${isPending ? `<button class="btn btn-reject btn-sm" onclick="event.stopPropagation();reject('${r.id}')">Reject</button>` : ''}
+            ${!isPending ? `<span style="font-size:.75rem;color:#bbb;">—</span>` : ''}
+           </div>`
+        : '';
+      return `<tr style="cursor:pointer;" onclick="showDetail('${r.id}')">
+        <td style="color:#bbb;font-size:.75rem;">${rowNum}</td>
+        <td style="font-size:.8rem;color:var(--gray);white-space:nowrap;">${fmtDate(r.tanggal)}</td>
+        <td class="seri-cell">${esc(r.seri)}</td>
+        <td>${jenisBadge}</td>
+        <td class="sales-cell">${esc(r.salesNama)}</td>
+        <td class="client-cell">${esc(r.nasabah)}<br><span style="font-size:.72rem;color:#bbb;">${esc(r.clientId)}</span></td>
+        <td style="font-size:.8rem;">${esc(r.sekuritas)}</td>
+        <td class="nominal-cell">Rp ${r.nominal.toLocaleString('id-ID')}</td>
+        <td>${statusBadge}</td>
+        ${canAct ? `<td onclick="event.stopPropagation()">${actionCell}</td>` : ''}
+      </tr>`;
+    }).join('');
+
+    document.getElementById('tableInfo').textContent =
+      `Menampilkan ${(curPage-1)*PAGE_SIZE+1}–${Math.min(curPage*PAGE_SIZE,filtered.length)} dari ${filtered.length} transaksi`;
+
+    let pg = '';
+    for (let i = 1; i <= totalPages; i++) {
+      pg += `<div class="pg-btn ${i===curPage?'active':''}" onclick="goPage(${i})">${i}</div>`;
+    }
+    document.getElementById('pagination').innerHTML = pg;
+  }
+
+  function goPage(n) { curPage = n; renderTable(); }
+
+  function showDetail(id) {
+    const r = allRows.find(x => x.id === id);
+    if (!r) return;
+    curDetailId = id;
+    const canAct = (isBondsDealer || isAdmin) && r.status === 'pending';
+
+    document.getElementById('detailContent').innerHTML = `
+      <div class="detail-section-title">Informasi Obligasi</div>
+      <div class="detail-grid">
+        <div class="detail-item"><label>Seri</label><div class="val" style="font-family:'Courier New',monospace;">${esc(r.seri)}</div></div>
+        <div class="detail-item"><label>Jenis Transaksi</label><div class="val">${esc(r.jenis)}</div></div>
+        <div class="detail-item"><label>Kategori</label><div class="val">${esc(r.category)}</div></div>
+        <div class="detail-item"><label>Tanggal Order</label><div class="val">${fmtDate(r.tanggal)}</div></div>
+        <div class="detail-item"><label>Kupon</label><div class="val">${r.kupon != null ? Number(r.kupon).toFixed(3)+'%' : '—'}</div></div>
+        <div class="detail-item"><label>YTM</label><div class="val">${r.ytm != null ? Number(r.ytm).toFixed(4)+'%' : '—'}</div></div>
+        <div class="detail-item"><label>Jatuh Tempo</label><div class="val">${fmtDate(r.jatuhTempo)}</div></div>
+        <div class="detail-item"><label>Settlement</label><div class="val">${fmtDate(r.settlement)}</div></div>
+      </div>
+      <div class="detail-section-title">Informasi Transaksi</div>
+      <div class="detail-grid">
+        <div class="detail-item"><label>Sales</label><div class="val">${esc(r.salesNama)}</div></div>
+        <div class="detail-item"><label>Sales Code</label><div class="val">${esc(r.salesKode||'—')}</div></div>
+        <div class="detail-item"><label>Nasabah</label><div class="val">${esc(r.nasabah)}</div></div>
+        <div class="detail-item"><label>Client ID</label><div class="val">${esc(r.clientId)}</div></div>
+        <div class="detail-item"><label>Nominal</label><div class="val" style="color:var(--green);">Rp ${r.nominal.toLocaleString('id-ID')}</div></div>
+        <div class="detail-item"><label>Unit</label><div class="val">${r.unit.toLocaleString('id-ID')}</div></div>
+        <div class="detail-item"><label>Sekuritas</label><div class="val">${esc(r.sekuritas)}</div></div>
+        <div class="detail-item"><label>Status</label><div class="val">${r.status}</div></div>
+        ${r.approvedBy ? `<div class="detail-item full"><label>Disetujui Oleh</label><div class="val">${esc(r.approvedBy)} — ${fmtDate(r.approvedAt)}</div></div>` : ''}
+        ${r.rejectedBy ? `<div class="detail-item full"><label>Ditolak Oleh</label><div class="val" style="color:var(--red);">${esc(r.rejectedBy)} — ${fmtDate(r.rejectedAt)}</div></div>` : ''}
+      </div>`;
+
+    document.getElementById('detailFooter').innerHTML = `
+      <button class="btn btn-outline btn-sm" onclick="closeDetail()">Tutup</button>
+      ${canAct ? `<button class="btn btn-reject btn-sm" onclick="reject('${id}');closeDetail()">Reject</button>` : ''}
+      ${canAct ? `<button class="btn btn-approve btn-sm" onclick="approve('${id}');closeDetail()">Approve</button>` : ''}`;
+
+    document.getElementById('detailModal').classList.add('open');
+  }
+
+  function closeDetail() { document.getElementById('detailModal').classList.remove('open'); }
+
+  async function approve(id) {
+    if (!confirm('Approve transaksi ini?')) return;
+    try {
+      const now = new Date().toISOString();
+      const { error } = await getDb().from('bb_orders').update({
+        status: 'verified',
+        approved_by: curUser.name || '',
+        approved_at: now,
+      }).eq('id', id);
+      if (error) throw error;
+      const r = allRows.find(x => x.id === id);
+      if (r) { r.status = 'verified'; r.approvedBy = curUser.name; r.approvedAt = now; }
+      applyFilter(); updateStats();
+      showToast('Transaksi berhasil di-approve', 'success');
+    } catch(e) { showToast('Gagal approve: ' + e.message, 'error'); }
+  }
+
+  async function reject(id) {
+    if (!confirm('Reject transaksi ini?')) return;
+    try {
+      const now = new Date().toISOString();
+      const { error } = await getDb().from('bb_orders').update({
+        status: 'rejected',
+        rejected_by: curUser.name || '',
+        rejected_at: now,
+      }).eq('id', id);
+      if (error) throw error;
+      const r = allRows.find(x => x.id === id);
+      if (r) { r.status = 'rejected'; r.rejectedBy = curUser.name; r.rejectedAt = now; }
+      applyFilter(); updateStats();
+      showToast('Transaksi ditolak', 'info');
+    } catch(e) { showToast('Gagal reject: ' + e.message, 'error'); }
+  }
+
+  function exportCSV() {
+    const headers = ['Tanggal','Seri','Jenis','Sales','Nasabah','Client ID','Sekuritas','Nominal','Status'];
+    const rows = filtered.map(r => [r.tanggal,r.seri,r.jenis,r.salesNama,r.nasabah,r.clientId,r.sekuritas,r.nominal,r.status]
+      .map(v => `"${String(v||'').replace(/"/g,'""')}"`).join(','));
+    const csv = [headers.join(','), ...rows].join('\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'}));
+    a.download = `bond-transactions-${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    showToast('CSV berhasil diexport', 'success');
+  }
+
+  function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function fmtDate(d) {
+    if (!d) return '—';
+    try { return new Date(d.includes('T') ? d : d + 'T00:00:00').toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}); }
+    catch { return d; }
+  }
+  function showToast(msg, type='info') {
+    const t = document.createElement('div'); t.className = `toast toast-${type}`; t.textContent = msg;
+    document.getElementById('toastContainer').appendChild(t);
+    setTimeout(() => t.remove(), 3500);
+  }
+</script>
+</body>
+</html>
