@@ -244,28 +244,16 @@
     </div>
   </div>
 
-  <!-- Calendar Grid View - Volume -->
-  <div class="rekap-section">
-    <div class="rekap-title">Calendar Grid - Volume</div>
-    <div class="table-wrapper" style="margin-top:12px;">
-      <div style="overflow-x:auto;max-height:440px;overflow-y:auto;" id="calendarGridContainerVolume"></div>
-    </div>
-  </div>
-
-  <!-- Calendar Grid View - Fee -->
-  <div class="rekap-section">
-    <div class="rekap-title">Calendar Grid - Fee</div>
-    <div class="table-wrapper" style="margin-top:12px;">
-      <div style="overflow-x:auto;max-height:440px;overflow-y:auto;" id="calendarGridContainerFee"></div>
-    </div>
-  </div>
-
   <!-- Rekap Bulanan -->
   <div class="rekap-section">
-    <div class="rekap-title">Rekap Bulanan per Nasabah</div>
-    <div style="max-height:400px;overflow-y:auto;overflow-x:auto;">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
+      <div class="rekap-title" style="margin-bottom:0;">Rekap Bulanan per Nasabah</div>
+      <input type="text" id="rekapSearch" placeholder="🔍 Cari nama / client ID..." oninput="filterRekap()" style="height:36px;border:1px solid var(--border);border-radius:8px;padding:0 14px;font-family:'Inter',sans-serif;font-size:0.82rem;color:var(--text);outline:none;min-width:220px;" onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor='var(--border)'"/>
+    </div>
+    <div style="max-height:480px;overflow-y:auto;overflow-x:auto;">
       <div class="rekap-grid" id="rekapGrid"></div>
     </div>
+    <div id="rekapEmpty" style="display:none;text-align:center;padding:32px;color:#bbb;font-size:0.85rem;">Tidak ada nasabah yang cocok dengan pencarian.</div>
   </div>
 </div>
 
@@ -515,7 +503,6 @@
     renderStats();
     renderRekap();
     renderSummary();
-    renderCalendarGridView();
   }
 
   function renderTable() {
@@ -571,26 +558,61 @@
     document.getElementById('statNasabah').textContent = uniqueClients;
   }
 
+  // Store rekap entries globally for search filtering
+  let rekapEntries = [];
+
   function renderRekap() {
     const map = {};
     filteredData.forEach(r => {
       const key = r.client_id || 'unknown';
-      if (!map[key]) map[key] = { name: r.client_name || '—', volume: 0, fee: 0, count: 0 };
+      if (!map[key]) map[key] = { id: key, name: r.client_name || '—', volume: 0, fee: 0, count: 0 };
       map[key].volume += parseFloat(r.volume) || 0;
       map[key].fee += parseFloat(r.fee) || 0;
       map[key].count++;
     });
+    // Sort by volume descending (terbesar ke terkecil)
+    rekapEntries = Object.values(map).sort((a, b) => b.volume - a.volume);
+
+    // Reset search input
+    const searchInput = document.getElementById('rekapSearch');
+    if (searchInput) searchInput.value = '';
+
+    renderRekapCards(rekapEntries);
+  }
+
+  function renderRekapCards(entries) {
     const grid = document.getElementById('rekapGrid');
-    const entries = Object.entries(map).sort((a, b) => b[1].volume - a[1].volume);
-    if (!entries.length) { grid.innerHTML = '<div style="color:#bbb;font-size:0.85rem;">Belum ada data.</div>'; return; }
-    grid.innerHTML = entries.map(([id, d]) => `
+    const emptyMsg = document.getElementById('rekapEmpty');
+    if (!entries.length) {
+      grid.innerHTML = '';
+      if (emptyMsg) emptyMsg.style.display = rekapEntries.length ? 'block' : 'none';
+      if (!rekapEntries.length) grid.innerHTML = '<div style="color:#bbb;font-size:0.85rem;">Belum ada data.</div>';
+      return;
+    }
+    if (emptyMsg) emptyMsg.style.display = 'none';
+    grid.innerHTML = entries.map((d, i) => `
       <div class="rekap-card">
-        <div class="rekap-name">${d.name} <span style="font-size:0.72rem;color:var(--gray);">(${id})</span></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <div class="rekap-name" style="margin-bottom:0;">${d.name} <span style="font-size:0.72rem;color:var(--gray);">(${d.id})</span></div>
+          <span style="font-size:0.7rem;font-weight:700;color:#fff;background:var(--navy);border-radius:20px;padding:2px 8px;">#${i+1}</span>
+        </div>
         <div class="rekap-row"><span>Total Volume</span><span>${formatRp(d.volume)}</span></div>
         <div class="rekap-row"><span>Total Fee</span><span style="color:var(--green);">${formatRp(d.fee)}</span></div>
         <div class="rekap-row"><span>Jumlah Transaksi</span><span>${d.count}x</span></div>
       </div>
     `).join('');
+  }
+
+  function filterRekap() {
+    const query = (document.getElementById('rekapSearch').value || '').trim().toLowerCase();
+    if (!query) {
+      renderRekapCards(rekapEntries);
+      return;
+    }
+    const filtered = rekapEntries.filter(d =>
+      d.name.toLowerCase().includes(query) || d.id.toLowerCase().includes(query)
+    );
+    renderRekapCards(filtered);
   }
 
   async function renderSummary() {
@@ -915,100 +937,6 @@
     t.textContent = msg;
     c.appendChild(t);
     setTimeout(() => t.remove(), 3500);
-  }
-
-  /**
-   * Renders a calendar grid HTML table for a single metric (volume or fee).
-   * @param {Map|Array} clientRows - aggregated client data
-   * @param {number} year
-   * @param {number} month (1-12)
-   * @param {number[]} nonTradingDays
-   * @param {string} metric - 'volume' or 'fee'
-   * @returns {string} HTML
-   */
-  function renderCalendarGrid(clientRows, year, month, nonTradingDays, metric) {
-    var daysInMonth = new Date(year, month, 0).getDate();
-    var nonTradingSet = new Set(nonTradingDays);
-    var label = metric === 'volume' ? 'Volume' : 'Fee';
-    var colorStyle = metric === 'fee' ? 'color:var(--green);' : '';
-
-    var html = '<table style="min-width:100%;border-collapse:collapse;font-size:0.75rem;">';
-    html += '<thead><tr>';
-    html += '<th style="padding:8px 6px;background:var(--navy);color:#fff;white-space:nowrap;">No</th>';
-    html += '<th style="padding:8px 6px;background:var(--navy);color:#fff;white-space:nowrap;">Client_Code</th>';
-    html += '<th style="padding:8px 6px;background:var(--navy);color:#fff;white-space:nowrap;">Customer Name</th>';
-    html += '<th style="padding:8px 6px;background:var(--navy);color:#fff;white-space:nowrap;">Sales_Code</th>';
-
-    for (var d = 1; d <= daysInMonth; d++) {
-      var bgStyle = nonTradingSet.has(d) ? 'background:#e74c3c;color:#fff;' : 'background:var(--navy);color:#fff;';
-      html += '<th style="padding:8px 4px;text-align:center;white-space:nowrap;' + bgStyle + '">' + d + '</th>';
-    }
-    html += '<th style="padding:8px 6px;background:var(--navy);color:#fff;white-space:nowrap;">Total</th>';
-    html += '</tr></thead>';
-    html += '<tbody>';
-
-    var rows = [];
-    if (clientRows instanceof Map) { clientRows.forEach(function(row) { rows.push(row); }); }
-    else if (Array.isArray(clientRows)) { rows = clientRows; }
-    else { for (var key in clientRows) { if (clientRows.hasOwnProperty(key)) rows.push(clientRows[key]); } }
-
-    if (rows.length === 0) {
-      html += '<tr><td colspan="' + (daysInMonth + 5) + '" style="text-align:center;padding:40px 20px;color:#bbb;">Tidak ada data ' + label.toLowerCase() + ' untuk bulan ini</td></tr>';
-    } else {
-      for (var i = 0; i < rows.length; i++) {
-        var row = rows[i];
-        html += '<tr style="border-bottom:1px solid #f0f0f5;">';
-        html += '<td style="padding:8px 6px;text-align:center;font-weight:600;">' + (i+1) + '</td>';
-        html += '<td style="padding:8px 6px;font-weight:600;">' + (row.client_id || '') + '</td>';
-        html += '<td style="padding:8px 6px;">' + (row.client_name || '') + '</td>';
-        html += '<td style="padding:8px 6px;">' + (row.sales_name || '') + '</td>';
-
-        var total = 0;
-        for (var d = 1; d <= daysInMonth; d++) {
-          var dayData = row.days instanceof Map ? row.days.get(d) : (row.days && row.days[d]);
-          var val = dayData ? (dayData[metric] || 0) : 0;
-          if (val > 0) {
-            html += '<td style="padding:6px 4px;text-align:right;font-size:0.7rem;white-space:nowrap;' + colorStyle + '">' + formatRp(val) + '</td>';
-            total += val;
-          } else {
-            html += '<td style="padding:6px 4px;"></td>';
-          }
-        }
-        html += '<td style="padding:8px 6px;text-align:right;font-weight:700;white-space:nowrap;background:#f9f9ff;' + colorStyle + '">' + formatRp(total) + '</td>';
-        html += '</tr>';
-      }
-    }
-    html += '</tbody></table>';
-    return html;
-  }
-
-  /**
-   * Renders both calendar grids (volume and fee) using current filtered data.
-   */
-  function renderCalendarGridView() {
-    var containerVol = document.getElementById('calendarGridContainerVolume');
-    var containerFee = document.getElementById('calendarGridContainerFee');
-    if (!containerVol || !containerFee) return;
-
-    var monthVal = document.getElementById('filterMonth').value;
-    if (!monthVal) {
-      containerVol.innerHTML = '<div style="text-align:center;padding:40px;color:#bbb;">Pilih bulan untuk menampilkan calendar grid</div>';
-      containerFee.innerHTML = '<div style="text-align:center;padding:40px;color:#bbb;">Pilih bulan untuk menampilkan calendar grid</div>';
-      return;
-    }
-
-    var parts = monthVal.split('-');
-    var year = parseInt(parts[0], 10);
-    var month = parseInt(parts[1], 10);
-    var nonTradingDays = window.SahamHolidays.getNonTradingDaysInMonth(year, month);
-
-    // Aggregate volume data
-    var volumeClientRows = window.SahamAggregation.aggregateByClientAndDate(volumeData);
-    containerVol.innerHTML = renderCalendarGrid(volumeClientRows, year, month, nonTradingDays, 'volume');
-
-    // Aggregate fee data
-    var feeClientRows = window.SahamAggregation.aggregateByClientAndDate(feeData);
-    containerFee.innerHTML = renderCalendarGrid(feeClientRows, year, month, nonTradingDays, 'fee');
   }
 
   window.addEventListener('DOMContentLoaded', initPage);
