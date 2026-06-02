@@ -34,9 +34,114 @@
       } catch(e) { console.error('Gagal load obligasi count:', e); }
     }
 
+    function getUserRole() {
+      try {
+        const raw = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember');
+        if (!raw) return '';
+        const u = JSON.parse(raw);
+        return (u.role || u.userRole || u.jabatan || u.tipe || '').toLowerCase();
+      } catch(e) { return ''; }
+    }
+
+    function getUserId() {
+      try {
+        const raw = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember');
+        if (!raw) return null;
+        const u = JSON.parse(raw);
+        return u.id || u.userId || u.user_id || null;
+      } catch(e) { return null; }
+    }
+
+    async function loadSalesStats() {
+      const userId = getUserId();
+      const now = new Date();
+      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+      const lastDay  = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).toISOString();
+
+      try {
+        // Obligasi Terjual - jumlah order obligasi bulan ini oleh sales ini
+        let qObl = supabase
+          .from('obligasi_orders')
+          .select('nominal', { count: 'exact' })
+          .gte('created_at', firstDay)
+          .lte('created_at', lastDay);
+        if (userId) qObl = qObl.eq('sales_id', userId);
+        const { data: oblData, count: oblCount, error: oblErr } = await qObl;
+        if (!oblErr) {
+          const totalObl = (oblData || []).reduce((s, r) => s + (parseFloat(r.nominal) || 0), 0);
+          const elVal = document.getElementById('statObligasiTerjual');
+          const elSub = document.getElementById('statObligasiTerjualSub');
+          if (elVal) elVal.textContent = 'Rp ' + totalObl.toLocaleString('id-ID');
+          if (elSub) elSub.textContent = (oblCount || 0) + ' Transaksi bulan ini';
+        }
+      } catch(e) { console.error('Gagal load obligasi terjual:', e); }
+
+      try {
+        // Reksadana Terjual
+        let qReks = supabase
+          .from('reksadana_orders')
+          .select('nominal', { count: 'exact' })
+          .gte('created_at', firstDay)
+          .lte('created_at', lastDay);
+        if (userId) qReks = qReks.eq('sales_id', userId);
+        const { data: reksData, count: reksCount, error: reksErr } = await qReks;
+        if (!reksErr) {
+          const totalReks = (reksData || []).reduce((s, r) => s + (parseFloat(r.nominal) || 0), 0);
+          const elVal = document.getElementById('statReksadanaTerjual');
+          const elSub = document.getElementById('statReksadanaTerjualSub');
+          if (elVal) elVal.textContent = 'Rp ' + totalReks.toLocaleString('id-ID');
+          if (elSub) elSub.textContent = (reksCount || 0) + ' Transaksi bulan ini';
+        }
+      } catch(e) { console.error('Gagal load reksadana terjual:', e); }
+
+      try {
+        // Waran Terstruktur Terjual
+        let qWar = supabase
+          .from('waran_orders')
+          .select('nominal', { count: 'exact' })
+          .gte('created_at', firstDay)
+          .lte('created_at', lastDay);
+        if (userId) qWar = qWar.eq('sales_id', userId);
+        const { data: warData, count: warCount, error: warErr } = await qWar;
+        if (!warErr) {
+          const totalWar = (warData || []).reduce((s, r) => s + (parseFloat(r.nominal) || 0), 0);
+          const elVal = document.getElementById('statWaranTerjual');
+          const elSub = document.getElementById('statWaranTerjualSub');
+          if (elVal) elVal.textContent = 'Rp ' + totalWar.toLocaleString('id-ID');
+          if (elSub) elSub.textContent = (warCount || 0) + ' Transaksi bulan ini';
+        }
+      } catch(e) { console.error('Gagal load waran terjual:', e); }
+
+      try {
+        // Komisi Berjalan Bulan Ini
+        let qKom = supabase
+          .from('commissions')
+          .select('amount')
+          .gte('created_at', firstDay)
+          .lte('created_at', lastDay);
+        if (userId) qKom = qKom.eq('sales_id', userId);
+        const { data: komData, error: komErr } = await qKom;
+        if (!komErr) {
+          const totalKom = (komData || []).reduce((s, r) => s + (parseFloat(r.amount) || 0), 0);
+          const elVal = document.getElementById('statKomisi');
+          const elSub = document.getElementById('statKomisiSub');
+          if (elVal) elVal.textContent = 'Rp ' + totalKom.toLocaleString('id-ID');
+          if (elSub) elSub.textContent = 'Bulan ' + now.toLocaleString('id-ID', { month: 'long', year: 'numeric' });
+        }
+      } catch(e) { console.error('Gagal load komisi:', e); }
+    }
+
     window.addEventListener('DOMContentLoaded', () => {
-      loadStats();
-      loadObligasiCount();
+      const role = getUserRole();
+      if (role === 'sales') {
+        // Tampilkan stat cards versi sales, sembunyikan versi admin
+        document.getElementById('statsAdmin').style.display = 'none';
+        document.getElementById('statsSales').style.display = '';
+        loadSalesStats();
+      } else {
+        loadStats();
+        loadObligasiCount();
+      }
     });
   </script>
 
@@ -338,8 +443,8 @@
     </div>
   </div>
 
-  <!-- Stats Cards -->
-  <div class="stats-grid">
+  <!-- Stats Cards: Admin View -->
+  <div id="statsAdmin" class="stats-grid">
     <div class="stat-card obligasi" onclick="window.location.href='obligasi-pasar-sekunder.html'">
       <div class="card-header">
         <div><div class="card-title">Total Obligasi</div><div class="card-divider"></div></div>
@@ -381,6 +486,53 @@
       <div class="card-body">
         <div class="card-number">0<span class="card-unit">Unit</span></div>
         <div class="card-trend">Lihat detail waran →</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats Cards: Sales View -->
+  <div id="statsSales" class="stats-grid" style="display:none;">
+    <div class="stat-card obligasi">
+      <div class="card-header">
+        <div><div class="card-title">Obligasi Terjual</div><div class="card-divider"></div></div>
+        <div class="card-arrow">📈</div>
+      </div>
+      <div class="card-body">
+        <div class="card-number" id="statObligasiTerjual" style="font-size:26px;letter-spacing:-0.5px;">—</div>
+        <div class="card-trend" id="statObligasiTerjualSub">Memuat data...</div>
+      </div>
+    </div>
+
+    <div class="stat-card reksadana">
+      <div class="card-header">
+        <div><div class="card-title">Reksadana Terjual</div><div class="card-divider"></div></div>
+        <div class="card-arrow">📈</div>
+      </div>
+      <div class="card-body">
+        <div class="card-number" id="statReksadanaTerjual" style="font-size:26px;letter-spacing:-0.5px;">—</div>
+        <div class="card-trend" id="statReksadanaTerjualSub">Memuat data...</div>
+      </div>
+    </div>
+
+    <div class="stat-card saham">
+      <div class="card-header">
+        <div><div class="card-title">Waran Terstruktur Terjual</div><div class="card-divider"></div></div>
+        <div class="card-arrow">📈</div>
+      </div>
+      <div class="card-body">
+        <div class="card-number" id="statWaranTerjual" style="font-size:26px;letter-spacing:-0.5px;">—</div>
+        <div class="card-trend" id="statWaranTerjualSub">Memuat data...</div>
+      </div>
+    </div>
+
+    <div class="stat-card waran">
+      <div class="card-header">
+        <div><div class="card-title">Komisi Berjalan Bulan Ini</div><div class="card-divider"></div></div>
+        <div class="card-arrow">🏆</div>
+      </div>
+      <div class="card-body">
+        <div class="card-number" id="statKomisi" style="font-size:26px;letter-spacing:-0.5px;">—</div>
+        <div class="card-trend" id="statKomisiSub">Memuat data...</div>
       </div>
     </div>
   </div>
