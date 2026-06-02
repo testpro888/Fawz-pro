@@ -228,25 +228,9 @@
   <!-- Summary Banner -->
   <div class="summary-banner">
     <div>
-      <div class="banner-label">Total Komisi Keseluruhan</div>
+      <div class="banner-label">Komisi Berjalan Bulan Ini</div>
       <div class="banner-total" id="bannerTotal">Rp 0</div>
       <div class="banner-sub" id="bannerSub">Memuat data…</div>
-    </div>
-    <div class="banner-right">
-      <div class="banner-stat">
-        <div class="banner-stat-val green" id="bannerPaid">Rp 0</div>
-        <div class="banner-stat-label">Sudah Dibayar</div>
-      </div>
-      <div class="banner-divider"></div>
-      <div class="banner-stat">
-        <div class="banner-stat-val red" id="bannerUnpaid">Rp 0</div>
-        <div class="banner-stat-label">Belum Dibayar</div>
-      </div>
-      <div class="banner-divider"></div>
-      <div class="banner-stat">
-        <div class="banner-stat-val" id="bannerSalesCount">0</div>
-        <div class="banner-stat-label">Total Sales</div>
-      </div>
     </div>
   </div>
 
@@ -258,19 +242,19 @@
       <div class="stat-sub" id="sTotalTx">0 transaksi</div>
     </div>
     <div class="stat-card paid">
-      <div class="stat-label">Sudah Dibayar</div>
-      <div class="stat-value green" id="sPaid" style="font-size:1.15rem;">—</div>
-      <div class="stat-sub" id="sPaidTx">0 transaksi</div>
+      <div class="stat-label">Komisi Obligasi</div>
+      <div class="stat-value green" id="sKomisiObligasi" style="font-size:1.15rem;">—</div>
+      <div class="stat-sub" id="sKomisiObligasiTx">0 transaksi</div>
     </div>
     <div class="stat-card unpaid">
-      <div class="stat-label">Belum Dibayar</div>
-      <div class="stat-value red" id="sUnpaid" style="font-size:1.15rem;">—</div>
-      <div class="stat-sub" id="sUnpaidTx">0 transaksi</div>
+      <div class="stat-label">Komisi Reksadana</div>
+      <div class="stat-value red" id="sKomisiReksadana" style="font-size:1.15rem;">—</div>
+      <div class="stat-sub" id="sKomisiReksadanaTx">0 transaksi</div>
     </div>
     <div class="stat-card sales-n">
-      <div class="stat-label">Jumlah Sales Aktif</div>
-      <div class="stat-value blue" id="sSalesCount">—</div>
-      <div class="stat-sub">Berdasarkan filter</div>
+      <div class="stat-label">Komisi Waran Terstruktur</div>
+      <div class="stat-value blue" id="sKomisiWaran" style="font-size:1.15rem;">—</div>
+      <div class="stat-sub" id="sKomisiWaranTx">0 transaksi</div>
     </div>
   </div>
 
@@ -610,32 +594,36 @@
 
   // ─── STATS ───────────────────────────────────────────────
   function renderStats() {
-    const paidRows   = filtered.filter(r => r.statusPaid === 'paid');
-    const unpaidRows = filtered.filter(r => r.statusPaid === 'unpaid');
     const total  = filtered.reduce((s,r) => s + r.komisi, 0);
-    const paid   = paidRows.reduce((s,r) => s + r.komisi, 0);
-    const unpaid = unpaidRows.reduce((s,r) => s + r.komisi, 0);
-    const salesSet = new Set(filtered.map(r => r.salesNama));
 
     document.getElementById('sTotal').textContent    = fmtRp(total);
     document.getElementById('sTotalTx').textContent  = `${filtered.length} transaksi`;
-    document.getElementById('sPaid').textContent     = fmtRp(paid);
-    document.getElementById('sPaidTx').textContent   = `${paidRows.length} transaksi`;
-    document.getElementById('sUnpaid').textContent   = fmtRp(unpaid);
-    document.getElementById('sUnpaidTx').textContent = `${unpaidRows.length} transaksi`;
-    document.getElementById('sSalesCount').textContent = salesSet.size;
+
+    const oblRows    = filtered.filter(r => r.sumber === 'obligasi');
+    const reksRows   = filtered.filter(r => r.sumber === 'reksadana');
+    const waranRows  = filtered.filter(r => r.sumber === 'waran');
+    const komisiObl  = oblRows.reduce((s,r) => s + r.komisi, 0);
+    const komisiReks = reksRows.reduce((s,r) => s + r.komisi, 0);
+    const komisiWar  = waranRows.reduce((s,r) => s + r.komisi, 0);
+
+    document.getElementById('sKomisiObligasi').textContent     = fmtRp(komisiObl);
+    document.getElementById('sKomisiObligasiTx').textContent   = `${oblRows.length} transaksi`;
+    document.getElementById('sKomisiReksadana').textContent    = fmtRp(komisiReks);
+    document.getElementById('sKomisiReksadanaTx').textContent  = `${reksRows.length} transaksi`;
+    document.getElementById('sKomisiWaran').textContent        = fmtRp(komisiWar);
+    document.getElementById('sKomisiWaranTx').textContent      = `${waranRows.length} transaksi`;
   }
 
   function updateBanner() {
-    const total  = allRows.reduce((s,r) => s + r.komisi, 0);
-    const paid   = allRows.filter(r => r.statusPaid==='paid').reduce((s,r) => s + r.komisi, 0);
-    const unpaid = allRows.filter(r => r.statusPaid==='unpaid').reduce((s,r) => s + r.komisi, 0);
-    const salesN = new Set(allRows.map(r => r.salesNama)).size;
-    document.getElementById('bannerTotal').textContent      = fmtRpFull(total);
-    document.getElementById('bannerPaid').textContent       = fmtRp(paid);
-    document.getElementById('bannerUnpaid').textContent     = fmtRp(unpaid);
-    document.getElementById('bannerSalesCount').textContent = salesN;
-    document.getElementById('bannerSub').textContent        = `${allRows.length} transaksi · per ${new Date().toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})}`;
+    // Komisi Berjalan = hanya transaksi bulan ini (reset tiap tanggal 1)
+    const now = new Date();
+    const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0,10);
+    const bulanIni = allRows.filter(r => (r.tanggal || '') >= firstOfMonth);
+    const totalBerjalan = bulanIni.reduce((s,r) => s + r.komisi, 0);
+    const bulanLabel = now.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+
+    document.getElementById('bannerTotal').textContent = fmtRpFull(totalBerjalan);
+    document.getElementById('bannerSub').textContent   = `${bulanIni.length} transaksi · ${bulanLabel}`;
   }
 
   // ─── LEADERBOARD ─────────────────────────────────────────
