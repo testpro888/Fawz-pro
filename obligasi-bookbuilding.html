@@ -269,6 +269,7 @@
     </div>
     <div>
       <a class="btn btn-outline" href="obligasi-order.html">📋 Lihat Semua Order</a>
+      <button class="btn btn-danger" onclick="openSellModal()" style="margin-left:8px;">💸 Sell Obligasi</button>
     </div>
   </div>
 
@@ -313,7 +314,7 @@
 
 </div><!-- /page-container -->
 
-<!-- MODAL: ORDER OBLIGASI -->
+<!-- MODAL: ORDER OBLIGASI (BUY) -->
 <div class="modal-overlay" id="orderModal" onclick="closeModal('orderModal',event)">
   <div class="modal" style="width:720px;">
     <div class="modal-header">
@@ -375,6 +376,132 @@
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('orderModal')">Batal</button>
       <button class="btn btn-order" id="ordSubmitBtn" onclick="submitOrder()">🛒 Submit Order</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: SELL OBLIGASI -->
+<div class="modal-overlay" id="sellModal" onclick="closeModal('sellModal',event)">
+  <div class="modal" style="width:740px;">
+    <div class="modal-header">
+      <div class="modal-title">💸 Sell Obligasi</div>
+      <button class="modal-close" onclick="closeModal('sellModal')">✕</button>
+    </div>
+
+    <!-- Toggle: Pilih dari list vs Manual -->
+    <div style="display:flex;gap:8px;margin-bottom:18px;">
+      <button class="tab-btn active" id="sellToggleList" onclick="setSellMode('list')">📋 Pilih dari Daftar</button>
+      <button class="tab-btn" id="sellToggleManual" onclick="setSellMode('manual')">✏️ Input Manual</button>
+    </div>
+
+    <!-- MODE: PILIH DARI LIST -->
+    <div id="sellPanelList">
+      <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+        <button class="picker-filter-btn active" onclick="sellPickerFilter('all',this)">Semua</button>
+        <button class="picker-filter-btn" onclick="sellPickerFilter('gov-idr',this)">Pemerintah IDR</button>
+        <button class="picker-filter-btn" onclick="sellPickerFilter('gov-usd',this)">Pemerintah USD</button>
+        <button class="picker-filter-btn" onclick="sellPickerFilter('korp-idr',this)">Korporasi IDR</button>
+        <button class="picker-filter-btn" onclick="sellPickerFilter('korp-usd',this)">Korporasi USD</button>
+      </div>
+      <input class="picker-search" id="sellSearch" placeholder="Cari seri obligasi..." oninput="renderSellList()"/>
+      <div class="picker-list" id="sellPickerList" style="max-height:200px;margin-bottom:16px;"></div>
+
+      <!-- Info obligasi terpilih -->
+      <div id="sellObligasiInfo" style="display:none;background:#f8f9ff;border-radius:12px;padding:14px 18px;margin-bottom:16px;border:1px solid #e8e8f5;">
+        <div style="font-size:.68rem;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Data Obligasi Terpilih</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px 16px;font-size:.82rem;">
+          <div><span style="color:#888;">Seri:</span> <strong id="sellInfoSeri">—</strong></div>
+          <div><span style="color:#888;">Kupon:</span> <strong id="sellInfoKupon">—</strong></div>
+          <div><span style="color:#888;">YTM:</span> <strong id="sellInfoYtm">—</strong></div>
+          <div><span style="color:#888;">Offer:</span> <strong id="sellInfoOffer">—</strong></div>
+          <div><span style="color:#888;">Jatuh Tempo:</span> <strong id="sellInfoJatuhTempo">—</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODE: INPUT MANUAL -->
+    <div id="sellPanelManual" style="display:none;">
+      <div class="form-grid" style="margin-bottom:16px;">
+        <div class="form-group">
+          <label class="form-label">Seri Obligasi <span class="req">*</span></label>
+          <input class="form-input" id="sellManualSeri" placeholder="Contoh: FR0100" oninput="calcSellUnit()"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Kupon (%) <span class="req">*</span></label>
+          <input class="form-input" id="sellManualKupon" type="number" step="0.001" placeholder="6.500"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">YTM (%) <span class="req">*</span></label>
+          <input class="form-input" id="sellManualYtm" type="number" step="0.0001" placeholder="6.7500"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Jatuh Tempo <span class="req">*</span></label>
+          <input class="form-input" id="sellManualJatuhTempo" type="date"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Offer (Harga) <span class="req">*</span></label>
+          <input class="form-input" id="sellManualOffer" type="number" step="0.0001" placeholder="101.5000"/>
+        </div>
+      </div>
+    </div>
+
+    <!-- FORM SELL (shared) -->
+    <div class="form-grid">
+      <!-- Client Code -->
+      <div class="form-group" style="position:relative;">
+        <label class="form-label">Client Code <span class="req">*</span></label>
+        <select class="form-select" id="sellClientCode" onchange="onSellClientSelect()">
+          <option value="">-- Pilih Client --</option>
+        </select>
+        <div style="margin-top:5px;">
+          <label style="font-size:.7rem;color:#888;cursor:pointer;">
+            <input type="checkbox" id="sellClientManualToggle" onchange="toggleSellClientManual()"/> 
+            Client code tidak ada di list? Input manual
+          </label>
+        </div>
+      </div>
+      <!-- Nama Client -->
+      <div class="form-group">
+        <label class="form-label">Nama Client</label>
+        <input class="form-input" id="sellClientName" placeholder="Otomatis terisi"/>
+      </div>
+      <!-- Manual client code input (hidden by default) -->
+      <div class="form-group full" id="sellClientManualGroup" style="display:none;">
+        <label class="form-label">Client Code Manual <span class="req">*</span></label>
+        <input class="form-input" id="sellClientCodeManual" placeholder="Ketik client code manual"/>
+      </div>
+      <!-- Amount -->
+      <div class="form-group">
+        <label class="form-label">Amount (Nominal) <span class="req">*</span></label>
+        <input class="form-input" id="sellAmount" type="text" inputmode="numeric" placeholder="10.000.000" oninput="formatSellAmountInput(this)"/>
+      </div>
+      <!-- Unit -->
+      <div class="form-group">
+        <label class="form-label">Unit <span style="font-size:.65rem;color:#888;">(Otomatis)</span></label>
+        <input class="form-input" id="sellUnit" readonly style="background:#f5f5f5;"/>
+      </div>
+      <!-- Sekuritas -->
+      <div class="form-group">
+        <label class="form-label">Sekuritas <span class="req">*</span></label>
+        <select class="form-select" id="sellSekuritas">
+          <option value="">-- Pilih Sekuritas --</option>
+        </select>
+      </div>
+      <!-- Settlement -->
+      <div class="form-group">
+        <label class="form-label">Tgl. Settlement <span style="font-size:.65rem;color:#888;">(H+2 hari kerja)</span></label>
+        <input class="form-input" id="sellSettlement" type="date"/>
+      </div>
+      <!-- Next Coupon Date -->
+      <div class="form-group">
+        <label class="form-label">Next Coupon Date</label>
+        <input class="form-input" id="sellNextCoupon" type="date"/>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('sellModal')">Batal</button>
+      <button class="btn btn-danger" id="sellSubmitBtn" onclick="submitSell()">💸 Submit Sell</button>
     </div>
   </div>
 </div>
@@ -523,7 +650,8 @@
       <div class="rec-card-footer">
         <div class="rc-tgl">Update: ${fmtDate(item.tanggal_update||item.tanggalUpdate)}</div>
         <div style="display:flex;gap:6px;align-items:center;">
-          <button class="btn btn-sm btn-order" onclick="event.stopPropagation();goOrder('${esc(item.seri||'')}','${esc(item.category||'')}')">🛒 Order</button>
+          <button class="btn btn-sm btn-order" onclick="event.stopPropagation();goOrder('${esc(item.seri||'')}','${esc(item.category||'')}')">🛒 Beli</button>
+          <button class="btn btn-sm btn-danger" onclick="event.stopPropagation();goSell('${esc(item.seri||'')}','${esc(item.category||'')}')">💸 Jual</button>
           ${canManageRec() ? `<button class="btn-rc-remove" onclick="removeRecommendation('${item.id}')">× Hapus</button>` : ''}
         </div>
       </div>
@@ -595,7 +723,10 @@
           <td style="font-size:.8rem;color:var(--gray)">${fmtDate(item.jatuh_tempo||item.jatuhTempo)}</td>
           <td style="font-size:.75rem;color:#bbb">${fmtDate(item.tanggal_update||item.tanggalUpdate)}</td>
           <td onclick="event.stopPropagation()">
-            <button class="btn btn-sm btn-order" onclick="goOrder('${esc(item.seri||'')}','${esc(item.category||'')}')">🛒 Order</button>
+            <div style="display:flex;gap:4px;">
+              <button class="btn btn-sm btn-order" onclick="goOrder('${esc(item.seri||'')}','${esc(item.category||'')}')">🛒 Beli</button>
+              <button class="btn btn-sm btn-danger" onclick="goSell('${esc(item.seri||'')}','${esc(item.category||'')}')">💸 Jual</button>
+            </div>
           </td>
           <td style="text-align:center"><span class="toggle-icon" id="otr-icon-${idx}">&#9660;</span></td>
         </tr>
@@ -1015,6 +1146,310 @@
       showToast('Gagal submit order: ' + (e.message || ''), 'error');
     } finally {
       btn.textContent = '🛒 Submit Order'; btn.disabled = false;
+    }
+  }
+
+  // ===== NAVIGATE TO SELL =====
+  function goSell(seri, category) {
+    openSellModal(seri, category);
+  }
+
+  // ===== SELL MODAL STATE =====
+  let sellMode = 'list';        // 'list' | 'manual'
+  let sellPickerCat = 'all';
+  let sellSelectedObl = null;   // selected from list
+  let sellClients = [];
+
+  async function openSellModal(seri, category) {
+    // Reset state
+    sellMode = 'list';
+    sellSelectedObl = null;
+    setSellMode('list');
+    document.getElementById('sellSearch').value = '';
+    document.getElementById('sellClientManualToggle').checked = false;
+    toggleSellClientManual();
+    document.getElementById('sellAmount').value = '';
+    document.getElementById('sellUnit').value = '';
+    document.getElementById('sellNextCoupon').value = '';
+    document.getElementById('sellObligasiInfo').style.display = 'none';
+    document.getElementById('sellClientName').value = '';
+    document.getElementById('sellClientCodeManual').value = '';
+
+    // Reset sell picker filters
+    document.querySelectorAll('#sellModal .picker-filter-btn').forEach((b,i) => b.classList.toggle('active', i===0));
+    sellPickerCat = 'all';
+    renderSellList();
+
+    // If seri/category given (clicked from table), pre-select it
+    if (seri && category) {
+      const found = psData[category] && psData[category].find(i => i.seri === seri);
+      if (found) {
+        sellSelectedObl = { ...found, category };
+        updateSellObligasiInfo();
+      }
+    }
+
+    // Auto-fill settlement T+2
+    document.getElementById('sellSettlement').value = calcT2();
+
+    // Load clients
+    await loadSellClients();
+
+    document.getElementById('sellModal').classList.add('open');
+  }
+
+  function setSellMode(mode) {
+    sellMode = mode;
+    document.getElementById('sellToggleList').classList.toggle('active', mode === 'list');
+    document.getElementById('sellToggleManual').classList.toggle('active', mode === 'manual');
+    document.getElementById('sellPanelList').style.display = mode === 'list' ? '' : 'none';
+    document.getElementById('sellPanelManual').style.display = mode === 'manual' ? '' : 'none';
+    if (mode === 'manual') {
+      sellSelectedObl = null;
+      document.getElementById('sellObligasiInfo').style.display = 'none';
+    }
+    calcSellUnit();
+  }
+
+  function sellPickerFilter(cat, btn) {
+    sellPickerCat = cat;
+    document.querySelectorAll('#sellModal .picker-filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderSellList();
+  }
+
+  function renderSellList() {
+    const q = (document.getElementById('sellSearch').value || '').toLowerCase();
+    let items = [];
+    const cats = sellPickerCat === 'all' ? CATEGORIES : [sellPickerCat];
+    cats.forEach(cat => {
+      (psData[cat] || []).forEach(item => items.push({ ...item, category: cat }));
+    });
+    if (q) items = items.filter(i => (i.seri||'').toLowerCase().includes(q));
+    items.sort((a,b) => (a.seri||'').localeCompare(b.seri||''));
+
+    const list = document.getElementById('sellPickerList');
+    if (!items.length) { list.innerHTML = `<div class="picker-empty">Tidak ada data ditemukan</div>`; return; }
+
+    list.innerHTML = items.map(item => {
+      const isUsd = item.category.endsWith('usd');
+      const isSelected = sellSelectedObl && sellSelectedObl.id === item.id;
+      return `<div class="picker-item${isSelected?' selected':''}" data-id="${item.id}" data-cat="${item.category}">
+        <div class="pi-seri">${esc(item.seri||'')}</div>
+        <div class="pi-info">
+          <span class="pi-stat"><strong>${item.kupon!=null?Number(item.kupon).toFixed(3)+'%':'—'}</strong> Kupon</span>
+          <span class="pi-stat"><strong>${fmtHarga(item.harga_jual||item.hargaJual,!isUsd)}</strong> Offer</span>
+          <span class="pi-stat"><strong>${item.yield!=null?Number(item.yield).toFixed(4)+'%':'—'}</strong> YTM</span>
+          <span class="pi-stat">${fmtDate(item.jatuh_tempo||item.jatuhTempo)}</span>
+        </div>
+        <span class="picker-type ${isUsd?'badge-usd':'badge-idr'}">${CAT_SHORT[item.category]||''}</span>
+        <div class="pi-check">${isSelected?'✓':''}</div>
+      </div>`;
+    }).join('');
+  }
+
+  // Delegation for sell picker list
+  document.getElementById('sellPickerList').addEventListener('click', function(e) {
+    const item = e.target.closest('.picker-item');
+    if (!item) return;
+    const id = item.dataset.id;
+    const cat = item.dataset.cat;
+    const found = psData[cat] && psData[cat].find(r => r.id === id);
+    if (!found) return;
+    sellSelectedObl = { ...found, category: cat };
+    updateSellObligasiInfo();
+    renderSellList();
+    calcSellUnit();
+  });
+
+  function updateSellObligasiInfo() {
+    const obl = sellSelectedObl;
+    if (!obl) { document.getElementById('sellObligasiInfo').style.display = 'none'; return; }
+    const isUsd = obl.category && obl.category.endsWith('usd');
+    document.getElementById('sellInfoSeri').textContent = obl.seri || '—';
+    document.getElementById('sellInfoKupon').textContent = obl.kupon != null ? Number(obl.kupon).toFixed(3) + '%' : '—';
+    document.getElementById('sellInfoYtm').textContent = obl.yield != null ? Number(obl.yield).toFixed(4) + '%' : '—';
+    document.getElementById('sellInfoOffer').textContent = fmtHarga(obl.harga_jual || obl.hargaJual, !isUsd);
+    document.getElementById('sellInfoJatuhTempo').textContent = fmtDate(obl.jatuh_tempo || obl.jatuhTempo);
+
+    // Auto-fill next coupon from obligasi data
+    const nextCoupon = obl.next_coupon_date || obl.nextCouponDate || obl.kupon_berikut || '';
+    if (nextCoupon) document.getElementById('sellNextCoupon').value = nextCoupon;
+
+    document.getElementById('sellObligasiInfo').style.display = '';
+  }
+
+  function formatSellAmountInput(el) {
+    let raw = el.value.replace(/[^0-9]/g, '');
+    el.value = raw ? Number(raw).toLocaleString('id-ID') : '';
+    calcSellUnit();
+  }
+
+  function getSellAmountRaw() {
+    return parseInt((document.getElementById('sellAmount').value || '').replace(/[^0-9]/g, '')) || 0;
+  }
+
+  function calcSellUnit() {
+    const amount = getSellAmountRaw();
+    document.getElementById('sellUnit').value = amount >= 100 ? Math.floor(amount / 100).toLocaleString('id-ID') : '';
+  }
+
+  function toggleSellClientManual() {
+    const isManual = document.getElementById('sellClientManualToggle').checked;
+    document.getElementById('sellClientManualGroup').style.display = isManual ? '' : 'none';
+    document.getElementById('sellClientCode').disabled = isManual;
+    if (isManual) {
+      document.getElementById('sellClientCode').value = '';
+      document.getElementById('sellSekuritas').innerHTML = '<option value="">-- Pilih Sekuritas --</option>';
+    }
+  }
+
+  async function loadSellClients() {
+    const select = document.getElementById('sellClientCode');
+    select.innerHTML = '<option value="">-- Memuat client... --</option>';
+    try {
+      let clients = [];
+      if (curUser && curUser.role === 'sales') {
+        const { data: d1 } = await window._supabase.from('customers').select('client_id,client_name').eq('client_status','Aktif').eq('sales_person_name',curUser.name);
+        const { data: d2 } = await window._supabase.from('customers').select('client_id,client_name').eq('client_status','Aktif').ilike('referral_agents','%'+curUser.name+'%');
+        const map = new Map();
+        (d1||[]).forEach(c=>map.set(c.client_id,c));
+        (d2||[]).forEach(c=>map.set(c.client_id,c));
+        clients = [...map.values()];
+      } else {
+        const { data } = await window._supabase.from('customers').select('client_id,client_name').eq('client_status','Aktif').order('client_name',{ascending:true});
+        clients = data || [];
+      }
+      clients.sort((a,b)=>(a.client_name||'').localeCompare(b.client_name||''));
+      sellClients = clients;
+      select.innerHTML = '<option value="">-- Pilih Client --</option>';
+      clients.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.client_id;
+        opt.textContent = c.client_id + ' — ' + c.client_name;
+        opt.dataset.name = c.client_name;
+        select.appendChild(opt);
+      });
+    } catch(e) {
+      select.innerHTML = '<option value="">-- Gagal memuat --</option>';
+    }
+  }
+
+  async function onSellClientSelect() {
+    const clientId = document.getElementById('sellClientCode').value;
+    const client = sellClients.find(c => c.client_id === clientId);
+    document.getElementById('sellClientName').value = client ? client.client_name : '';
+
+    const sekSelect = document.getElementById('sellSekuritas');
+    sekSelect.innerHTML = '<option value="">-- Memuat sekuritas... --</option>';
+    if (!clientId) { sekSelect.innerHTML = '<option value="">-- Pilih Client dulu --</option>'; return; }
+
+    try {
+      const { data: custData } = await window._supabase.from('customers').select('id').eq('client_id', clientId).single();
+      if (!custData) { sekSelect.innerHTML = '<option value="">-- Tidak ditemukan --</option>'; return; }
+      const { data: secData } = await window._supabase.from('customer_securities').select('sekuritas_name').eq('customer_id', custData.id);
+      sekSelect.innerHTML = '<option value="">-- Pilih Sekuritas --</option>';
+      (secData || []).forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s.sekuritas_name; opt.textContent = s.sekuritas_name;
+        sekSelect.appendChild(opt);
+      });
+      if (!secData || !secData.length) sekSelect.innerHTML = '<option value="">-- Tidak ada sekuritas terdaftar --</option>';
+    } catch(e) { sekSelect.innerHTML = '<option value="">-- Gagal memuat --</option>'; }
+  }
+
+  async function submitSell() {
+    // Validate obligasi data
+    let seri, kupon, ytm, jatuhTempo, offer, category;
+    if (sellMode === 'list') {
+      if (!sellSelectedObl) { showToast('Pilih obligasi terlebih dahulu', 'error'); return; }
+      seri = sellSelectedObl.seri;
+      kupon = sellSelectedObl.kupon;
+      ytm = sellSelectedObl.yield;
+      jatuhTempo = sellSelectedObl.jatuh_tempo || sellSelectedObl.jatuhTempo;
+      offer = sellSelectedObl.harga_jual || sellSelectedObl.hargaJual;
+      category = sellSelectedObl.category;
+    } else {
+      seri = document.getElementById('sellManualSeri').value.trim();
+      kupon = parseFloat(document.getElementById('sellManualKupon').value) || null;
+      ytm = parseFloat(document.getElementById('sellManualYtm').value) || null;
+      jatuhTempo = document.getElementById('sellManualJatuhTempo').value || null;
+      offer = parseFloat(document.getElementById('sellManualOffer').value) || null;
+      category = null;
+      if (!seri) { showToast('Isi Seri Obligasi', 'error'); return; }
+      if (!kupon) { showToast('Isi Kupon', 'error'); return; }
+      if (!offer) { showToast('Isi Offer (Harga)', 'error'); return; }
+    }
+
+    // Client
+    const isManualClient = document.getElementById('sellClientManualToggle').checked;
+    let clientId, clientName;
+    if (isManualClient) {
+      clientId = document.getElementById('sellClientCodeManual').value.trim();
+      clientName = document.getElementById('sellClientName').value.trim();
+      if (!clientId) { showToast('Isi Client Code manual', 'error'); return; }
+    } else {
+      clientId = document.getElementById('sellClientCode').value;
+      clientName = document.getElementById('sellClientName').value;
+      if (!clientId) { showToast('Pilih client', 'error'); return; }
+    }
+
+    const amount = getSellAmountRaw();
+    if (amount < 100) { showToast('Amount minimal 100', 'error'); return; }
+    const unit = Math.floor(amount / 100);
+
+    const sekuritas = document.getElementById('sellSekuritas').value;
+    if (!sekuritas) { showToast('Pilih sekuritas', 'error'); return; }
+
+    const settlement = document.getElementById('sellSettlement').value;
+    const nextCoupon = document.getElementById('sellNextCoupon').value;
+
+    const btn = document.getElementById('sellSubmitBtn');
+    btn.textContent = 'Menyimpan...'; btn.disabled = true;
+
+    try {
+      const isUsd = category ? category.endsWith('usd') : false;
+      const isKorp = category ? category.startsWith('korp') : false;
+      const isGov = category ? category.startsWith('gov') : false;
+
+      const orderData = {
+        jenis_transaksi: 'Jual',
+        category: category || null,
+        seri: seri,
+        mata_uang: isUsd ? 'USD' : 'IDR',
+        jenis_obligasi: isKorp ? 'Korporasi' : (isGov ? 'Pemerintah' : null),
+        rating: (sellMode === 'list' && sellSelectedObl) ? (sellSelectedObl.rating || '-') : '-',
+        kupon: kupon,
+        jatuh_tempo: jatuhTempo || null,
+        kupon_berikut: nextCoupon || null,
+        harga_jual: offer || null,
+        harga_jual_sales: offer || null,
+        ytm: ytm || null,
+        client_id: clientId,
+        customer_name: clientName,
+        sekuritas_dipakai: sekuritas,
+        nominal: amount,
+        unit_amount: unit,
+        face_amount: amount,
+        deal_amount: amount,
+        settlement: settlement || null,
+        tanggal_order: new Date().toISOString().slice(0, 10),
+        sales_pic: curUser?.name || '',
+        sales_code: curUser?.username || '',
+        status: 'pending',
+        created_by: curUser?.name || '',
+      };
+
+      const { error } = await window._supabase.from('bb_orders').insert(orderData);
+      if (error) throw error;
+
+      closeModal('sellModal');
+      showToast(`Sell order ${seri} untuk ${clientName} berhasil disubmit`, 'success');
+    } catch(e) {
+      console.error('Submit sell error:', e);
+      showToast('Gagal submit sell: ' + (e.message || ''), 'error');
+    } finally {
+      btn.textContent = '💸 Submit Sell'; btn.disabled = false;
     }
   }
 
