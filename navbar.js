@@ -227,11 +227,14 @@
     const drawer = document.getElementById('mobileDrawer');
     const overlay = document.getElementById('drawerOverlay');
     const hamburger = document.getElementById('hamburger');
+    const waFloat = document.querySelector('.wa-float');
     const isOpen = drawer?.classList.contains('open');
     drawer?.classList.toggle('open');
     overlay?.classList.toggle('open');
     hamburger?.classList.toggle('active');
     document.body.style.overflow = isOpen ? '' : 'hidden';
+    // Sembunyikan WA float saat drawer terbuka
+    if (waFloat) waFloat.style.display = isOpen ? '' : 'none';
   };
 
   window.toggleDrawerGroup = function (header) {
