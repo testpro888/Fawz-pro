@@ -374,16 +374,34 @@
         <input class="form-input" id="fRating" placeholder="AAA, AA+, A, BBB+"/>
       </div>
       <div class="form-group">
+        <label class="form-label">Tanggal Listing</label>
+        <input class="form-input" id="fTanggalListing" type="date" onchange="autoCalcCouponDates()"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Tanggal Terakhir Jatuh Tempo <span style="font-size:0.65rem;color:#888;">(Final Maturity)</span></label>
+        <input class="form-input" id="fFinalMaturity" type="date"/>
+      </div>
+      <div class="form-group">
         <label class="form-label">Coupon (%)</label>
         <input class="form-input" id="fKupon" type="number" step="0.001" placeholder="6.375"/>
       </div>
       <div class="form-group">
-        <label class="form-label">Last Coupon Date</label>
-        <input class="form-input" id="fLastCoupon" type="date"/>
+        <label class="form-label">Frekuensi Kupon</label>
+        <select class="form-select" id="fKuponFreq" onchange="autoCalcCouponDates()">
+          <option value="">— Pilih Frekuensi —</option>
+          <option value="1">Setiap 1 Bulan</option>
+          <option value="3">Setiap 3 Bulan</option>
+          <option value="6">Setiap 6 Bulan</option>
+          <option value="12">Setiap 12 Bulan</option>
+        </select>
       </div>
       <div class="form-group">
-        <label class="form-label">Next Coupon Date</label>
-        <input class="form-input" id="fNextCoupon" type="date"/>
+        <label class="form-label">Last Coupon Date <span style="font-size:0.65rem;color:#27ae60;">(Otomatis)</span></label>
+        <input class="form-input" id="fLastCoupon" type="date" style="background:#f8fff8;"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Next Coupon Date <span style="font-size:0.65rem;color:#27ae60;">(Otomatis)</span></label>
+        <input class="form-input" id="fNextCoupon" type="date" style="background:#f8fff8;"/>
       </div>
       <div class="form-group">
         <label class="form-label">Bid (Harga Jual)</label>
@@ -611,6 +629,10 @@
     document.getElementById('fPenerbit').value = item.penerbit || '';
     document.getElementById('fLastCoupon').value = item.last_coupon_date || '';
     document.getElementById('fNextCoupon').value = item.next_coupon_date || '';
+    document.getElementById('fTanggalListing').value = item.tanggal_listing || '';
+    document.getElementById('fFinalMaturity').value = item.final_maturity || '';
+    const freqEl = document.getElementById('fKuponFreq');
+    if (freqEl) freqEl.value = item.kupon_freq || '';
     document.getElementById('fHargaJual').value = item.harga_jual != null ? Number(item.harga_jual).toFixed(2).replace('.', ',') : '';
     document.getElementById('fHargaBeli').value = item.harga_beli != null ? Number(item.harga_beli).toFixed(2).replace('.', ',') : '';
     document.getElementById('fYield').value = item.yield != null ? item.yield : '';
@@ -621,9 +643,11 @@
   }
 
   function clearForm() {
-    ['fSeri','fKupon','fJatuhTempo','fHargaJual','fHargaBeli','fYield','fTanggalUpdate','fRating','fLastCoupon','fNextCoupon','fDueDate','fPenerbit'].forEach(id => {
+    ['fSeri','fKupon','fJatuhTempo','fHargaJual','fHargaBeli','fYield','fTanggalUpdate','fRating','fLastCoupon','fNextCoupon','fDueDate','fPenerbit','fTanggalListing','fFinalMaturity'].forEach(id => {
       const el = document.getElementById(id); if (el) el.value = '';
     });
+    const freqEl = document.getElementById('fKuponFreq');
+    if (freqEl) freqEl.value = '';
     document.getElementById('fCategory').disabled = false;
     document.getElementById('editDocId').value = '';
     document.getElementById('editCategory').value = '';
@@ -632,6 +656,55 @@
   }
 
   function closeFormModal(e) { if (e.target === document.getElementById('formModal')) { document.getElementById('fCategory').disabled = false; document.getElementById('formModal').classList.remove('open'); } }
+
+  // ===== AUTO KALKULASI TANGGAL KUPON =====
+  function autoCalcCouponDates() {
+    const listingVal = document.getElementById('fTanggalListing').value;
+    const freqVal    = document.getElementById('fKuponFreq').value;
+    if (!listingVal || !freqVal) return;
+
+    const freq    = parseInt(freqVal); // bulan (1, 3, 6, 12)
+    const listing = new Date(listingVal);
+    const today   = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Hasilkan semua tanggal kupon dari listing sampai 30 tahun ke depan
+    function addMonths(date, months) {
+      const d = new Date(date);
+      d.setMonth(d.getMonth() + months);
+      return d;
+    }
+
+    function toISODate(d) {
+      return d.getFullYear() + '-' +
+        String(d.getMonth()+1).padStart(2,'0') + '-' +
+        String(d.getDate()).padStart(2,'0');
+    }
+
+    // Cari tanggal kupon terakhir yang sudah lewat & kupon berikutnya
+    let lastCoupon = null;
+    let nextCoupon = null;
+    let cursor = addMonths(listing, freq); // kupon pertama = listing + freq
+
+    for (let i = 0; i < 500; i++) {
+      if (cursor > today) {
+        nextCoupon = cursor;
+        break;
+      }
+      lastCoupon = cursor;
+      cursor = addMonths(listing, freq * (i + 2));
+    }
+
+    // Kalau belum ada kupon yang lewat (listing masih di masa depan)
+    if (!lastCoupon && nextCoupon) {
+      document.getElementById('fLastCoupon').value = '';
+      document.getElementById('fNextCoupon').value = toISODate(nextCoupon);
+      return;
+    }
+
+    if (lastCoupon) document.getElementById('fLastCoupon').value = toISODate(lastCoupon);
+    if (nextCoupon) document.getElementById('fNextCoupon').value = toISODate(nextCoupon);
+  }
 
   async function saveObligasi() {
     // Pastikan Supabase client tersedia
@@ -663,12 +736,18 @@
     const lastCouponDate = document.getElementById('fLastCoupon').value || null;
     const nextCouponDate = document.getElementById('fNextCoupon').value || null;
     const dueDate = document.getElementById('fDueDate').value || null;
+    const tanggalListing = document.getElementById('fTanggalListing').value || null;
+    const finalMaturity  = document.getElementById('fFinalMaturity').value || null;
+    const kuponFreq      = document.getElementById('fKuponFreq').value || null;
 
     if (rating !== null) data.rating = rating;
     if (penerbit !== null) data.penerbit = penerbit;
     if (lastCouponDate !== null) data.last_coupon_date = lastCouponDate;
     if (nextCouponDate !== null) data.next_coupon_date = nextCouponDate;
     if (dueDate !== null) data.due_date = dueDate;
+    if (tanggalListing !== null) data.tanggal_listing = tanggalListing;
+    if (finalMaturity !== null) data.final_maturity = finalMaturity;
+    if (kuponFreq !== null) data.kupon_freq = parseInt(kuponFreq);
 
     const btn = document.getElementById('formSaveBtn');
     btn.textContent = 'Menyimpan...'; btn.disabled = true;
