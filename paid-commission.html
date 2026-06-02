@@ -298,7 +298,7 @@
 
     <!-- Leaderboard -->
     <div class="leaderboard-card">
-      <div class="card-title">🏆 Top Penerima Komisi</div>
+      <div class="card-title"> Top Penerima Komisi</div>
       <div class="lb-list" id="leaderboardList">
         <div class="loading-wrap" style="padding:40px;"><div class="spinner"></div></div>
       </div>
@@ -308,7 +308,7 @@
     <div>
       <div class="toolbar">
         <div class="search-wrap">
-          <span class="search-icon">🔍</span>
+          <span class="search-icon"></span>
           <input type="text" id="searchInput" placeholder="Cari sales, nasabah, produk…" oninput="applyFilter()"/>
         </div>
       </div>
@@ -624,7 +624,7 @@
 
     const list = document.getElementById('leaderboardList');
     if (!sorted.length) {
-      list.innerHTML = `<div class="empty-state" style="padding:32px 20px;"><div class="empty-icon">💰</div><div class="empty-text">Belum ada data</div></div>`;
+      list.innerHTML = `<div class="empty-state" style="padding:32px 20px;"><div class="empty-icon"></div><div class="empty-text">Belum ada data</div></div>`;
       return;
     }
 
@@ -672,8 +672,8 @@
     tbody.innerHTML = slice.map((r, i) => {
       const rowNum = (curPage-1)*PAGE_SIZE + i + 1;
       const sumberBadge = r.sumber === 'obligasi'
-        ? `<span class="badge badge-obligasi">📄 Obligasi</span>`
-        : `<span class="badge badge-reksadana">📈 Reksadana</span>`;
+        ? `<span class="badge badge-obligasi">Obligasi</span>`
+        : `<span class="badge badge-reksadana">Reksadana</span>`;
 
       return `<tr onclick="showDetail('${r.id}')" style="cursor:pointer;">
         <td style="color:var(--gray);font-size:.78rem;">${rowNum}</td>
@@ -735,7 +735,7 @@
         <div class="detail-section-title">Informasi Transaksi</div>
         <div class="detail-grid">
           <div class="detail-item"><label>Tanggal Transaksi</label><div class="val">${fmtDate(r.tanggal)}</div></div>
-          <div class="detail-item"><label>Sumber</label><div class="val">${r.sumber === 'obligasi' ? '📄 Obligasi' : '📈 Reksadana'}</div></div>
+          <div class="detail-item"><label>Sumber</label><div class="val">${r.sumber === 'obligasi' ? 'Obligasi' : 'Reksadana'}</div></div>
           <div class="detail-item"><label>Produk</label><div class="val" style="font-family:'Courier New',monospace;">${esc(r.produk)}</div></div>
           <div class="detail-item"><label>Kategori</label><div class="val">${esc(r.kategori||'—')}</div></div>
           <div class="detail-item"><label>Nasabah</label><div class="val">${esc(r.customerName)}</div></div>
