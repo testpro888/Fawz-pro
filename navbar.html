@@ -559,44 +559,6 @@
 
 </div>
 
-<script>
-  function toggleDrawerGroup(header) {
-    const items = header.nextElementSibling;
-    const isOpen = items.classList.contains('open');
-    // Tutup semua grup lain
-    document.querySelectorAll('.drawer-group-items.open').forEach(el => {
-      el.classList.remove('open');
-      el.previousElementSibling.classList.remove('active');
-    });
-    if (!isOpen) {
-      items.classList.add('open');
-      header.classList.add('active');
-    }
-  }
-
-  // Isi drawer avatar & user info dari session
-  (function() {
-    try {
-      const raw = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember');
-      if (!raw) return;
-      const u = JSON.parse(raw);
-      const ROLE_LABELS = { head_account:'Head Account', admin:'Admin', sales:'Sales', treasury:'Bonds Dealer' };
-      const nameEl = document.getElementById('drawerUserName');
-      const roleEl = document.getElementById('drawerUserRole');
-      const avatarEl = document.getElementById('drawerAvatar');
-      if (nameEl) nameEl.textContent = u.name || 'User';
-      if (roleEl) roleEl.textContent = ROLE_LABELS[u.role] || u.role || '';
-      if (avatarEl) {
-        if (u.photoURL) {
-          avatarEl.innerHTML = '<img src="' + u.photoURL + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.parentElement.textContent=\'' + (u.name||'U')[0].toUpperCase() + '\'">';
-        } else {
-          avatarEl.textContent = (u.name || 'U')[0].toUpperCase();
-        }
-      }
-    } catch(e) {}
-  })();
-</script>
-
 <!-- Script dipindah ke navbar.js — jangan tambahkan script di sini -->
 
 </body>

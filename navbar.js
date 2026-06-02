@@ -170,6 +170,21 @@
         }
       });
     }
+
+    // Isi drawer user info
+    const drawerNameEl   = document.getElementById('drawerUserName');
+    const drawerRoleEl   = document.getElementById('drawerUserRole');
+    const drawerAvatarEl = document.getElementById('drawerAvatar');
+    if (drawerNameEl) drawerNameEl.textContent = user.name || 'User';
+    if (drawerRoleEl) drawerRoleEl.textContent = roleName;
+    if (drawerAvatarEl) {
+      if (user.photoURL) {
+        const initial2 = initial;
+        drawerAvatarEl.innerHTML = '<img src="' + user.photoURL + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.parentElement.textContent=\'' + initial + '\'">';
+      } else {
+        drawerAvatarEl.textContent = initial;
+      }
+    }
   }
 
   /* ── 4. DROPDOWN HOVER ── */
@@ -230,8 +245,20 @@
     drawer?.classList.toggle('open');
     overlay?.classList.toggle('open');
     hamburger?.classList.toggle('active');
-    // prevent body scroll when drawer open
     document.body.style.overflow = isOpen ? '' : 'hidden';
+  };
+
+  window.toggleDrawerGroup = function (header) {
+    const items = header.nextElementSibling;
+    const isOpen = items.classList.contains('open');
+    document.querySelectorAll('.drawer-group-items.open').forEach(el => {
+      el.classList.remove('open');
+      el.previousElementSibling.classList.remove('active');
+    });
+    if (!isOpen) {
+      items.classList.add('open');
+      header.classList.add('active');
+    }
   };
 
   /* ── 5b. GLOBAL MODAL ESCAPE — tutup semua modal overlay saat tekan Escape ── */
