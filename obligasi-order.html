@@ -1400,7 +1400,18 @@
         bonds_updated_by: curUser?.name || '',
         bonds_updated_at: new Date().toISOString()
       }).eq('id', id);
-      if (error) throw error;
+      if (error) {
+        // Jika kolom belum ada, tampilkan instruksi migration
+        if (error.message && error.message.includes('bonds_status')) {
+          showToast('Kolom bonds_status belum ada. Jalankan migration-bonds-status.sql di Supabase SQL Editor terlebih dahulu.', 'error');
+        } else {
+          showToast('Gagal update bonds status: ' + (error.message||''), 'error');
+        }
+        // Revert select ke nilai sebelumnya
+        await loadOrders();
+        applyFilter();
+        return;
+      }
       // Update lokal tanpa reload penuh
       const idx = orders.findIndex(o => o.id === id);
       if (idx >= 0) orders[idx].bonds_status = newStatus;
