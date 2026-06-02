@@ -260,7 +260,6 @@
       header.classList.add('active');
     }
   };
-
   /* ── 5b. GLOBAL MODAL ESCAPE — tutup semua modal overlay saat tekan Escape ── */
   document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
@@ -295,6 +294,23 @@
       // karena semua logika sudah ada di file navbar.js ini
       initNavbar();
       setupDropdowns();
+
+      // Event delegation untuk drawer group accordion
+      document.addEventListener('click', function(e) {
+        const header = e.target.closest('.drawer-group-header');
+        if (!header) return;
+        const items = header.nextElementSibling;
+        if (!items || !items.classList.contains('drawer-group-items')) return;
+        const isOpen = items.classList.contains('open');
+        document.querySelectorAll('.drawer-group-items.open').forEach(el => {
+          el.classList.remove('open');
+          el.previousElementSibling.classList.remove('active');
+        });
+        if (!isOpen) {
+          items.classList.add('open');
+          header.classList.add('active');
+        }
+      });
     })
     .catch(err => console.warn('Navbar gagal dimuat:', err));
 

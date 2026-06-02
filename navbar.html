@@ -222,16 +222,16 @@
     /* ===== MOBILE DRAWER ===== */
     .mobile-drawer {
       position: fixed;
-      top: 0; left: 0;
+      top: 0; right: 0;
       width: 280px;
       height: 100vh;
       background: #0f0f2e;
       z-index: 998;
       display: flex;
       flex-direction: column;
-      transform: translateX(-100%);
+      transform: translateX(100%);
       transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      box-shadow: 4px 0 32px rgba(0,0,0,0.4);
+      box-shadow: -4px 0 32px rgba(0,0,0,0.4);
       overflow: hidden;
     }
     .mobile-drawer.open { transform: translateX(0); }
@@ -489,7 +489,7 @@
 
     <!-- Sales -->
     <div class="drawer-group" id="mobGroupSales">
-      <div class="drawer-group-header" onclick="toggleDrawerGroup(this)">
+      <div class="drawer-group-header">
         Sales
         <span class="drawer-chevron">▾</span>
       </div>
@@ -503,7 +503,7 @@
 
     <!-- Customer -->
     <div class="drawer-group" id="mobGroupCustomer">
-      <div class="drawer-group-header" onclick="toggleDrawerGroup(this)">
+      <div class="drawer-group-header">
         Customer
         <span class="drawer-chevron">▾</span>
       </div>
@@ -514,7 +514,7 @@
 
     <!-- Product -->
     <div class="drawer-group" id="mobGroupProduct">
-      <div class="drawer-group-header" onclick="toggleDrawerGroup(this)">
+      <div class="drawer-group-header">
         Product
         <span class="drawer-chevron">▾</span>
       </div>
@@ -533,7 +533,7 @@
 
     <!-- Revenue -->
     <div class="drawer-group" id="mobGroupRevenue">
-      <div class="drawer-group-header" onclick="toggleDrawerGroup(this)">
+      <div class="drawer-group-header">
         Revenue
         <span class="drawer-chevron">▾</span>
       </div>
