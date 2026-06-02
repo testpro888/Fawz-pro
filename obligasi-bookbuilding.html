@@ -268,8 +268,8 @@
       <div class="title-underline"></div>
     </div>
     <div>
-      <a class="btn btn-outline" href="obligasi-order.html">📋 Lihat Semua Order</a>
-      <button class="btn btn-danger" onclick="openSellModal()" style="margin-left:8px;">💸 Sell Obligasi</button>
+      <a class="btn btn-outline" href="obligasi-order.html">Lihat Semua Order</a>
+      <button class="btn btn-danger" onclick="openSellModal()" style="margin-left:8px;">Sell Obligasi</button>
     </div>
   </div>
 
@@ -318,7 +318,7 @@
 <div class="modal-overlay" id="orderModal" onclick="closeModal('orderModal',event)">
   <div class="modal" style="width:720px;">
     <div class="modal-header">
-      <div class="modal-title">🛒 Order Obligasi</div>
+      <div class="modal-title">Order Obligasi</div>
       <button class="modal-close" onclick="closeModal('orderModal')">✕</button>
     </div>
 
@@ -375,7 +375,7 @@
 
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('orderModal')">Batal</button>
-      <button class="btn btn-order" id="ordSubmitBtn" onclick="submitOrder()">🛒 Submit Order</button>
+      <button class="btn btn-order" id="ordSubmitBtn" onclick="submitOrder()">Submit Order</button>
     </div>
   </div>
 </div>
@@ -384,14 +384,14 @@
 <div class="modal-overlay" id="sellModal" onclick="closeModal('sellModal',event)">
   <div class="modal" style="width:740px;">
     <div class="modal-header">
-      <div class="modal-title">💸 Sell Obligasi</div>
+      <div class="modal-title">Sell Obligasi</div>
       <button class="modal-close" onclick="closeModal('sellModal')">✕</button>
     </div>
 
     <!-- Toggle: Pilih dari list vs Manual -->
     <div style="display:flex;gap:8px;margin-bottom:18px;">
-      <button class="tab-btn active" id="sellToggleList" onclick="setSellMode('list')">📋 Pilih dari Daftar</button>
-      <button class="tab-btn" id="sellToggleManual" onclick="setSellMode('manual')">✏️ Input Manual</button>
+      <button class="tab-btn active" id="sellToggleList" onclick="setSellMode('list')">Pilih dari Daftar</button>
+      <button class="tab-btn" id="sellToggleManual" onclick="setSellMode('manual')">Input Manual</button>
     </div>
 
     <!-- MODE: PILIH DARI LIST -->
@@ -501,7 +501,7 @@
 
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('sellModal')">Batal</button>
-      <button class="btn btn-danger" id="sellSubmitBtn" onclick="submitSell()">💸 Submit Sell</button>
+      <button class="btn btn-danger" id="sellSubmitBtn" onclick="submitSell()">Submit Sell</button>
     </div>
   </div>
 </div>
@@ -650,8 +650,8 @@
       <div class="rec-card-footer">
         <div class="rc-tgl">Update: ${fmtDate(item.tanggal_update||item.tanggalUpdate)}</div>
         <div style="display:flex;gap:6px;align-items:center;">
-          <button class="btn btn-sm btn-order" onclick="event.stopPropagation();goOrder('${esc(item.seri||'')}','${esc(item.category||'')}')">🛒 Beli</button>
-          <button class="btn btn-sm btn-danger" onclick="event.stopPropagation();goSell('${esc(item.seri||'')}','${esc(item.category||'')}')">💸 Jual</button>
+          <button class="btn btn-sm btn-order" onclick="event.stopPropagation();goOrder('${esc(item.seri||'')}','${esc(item.category||'')}')">Beli</button>
+          <button class="btn btn-sm btn-danger" onclick="event.stopPropagation();goSell('${esc(item.seri||'')}','${esc(item.category||'')}')">Jual</button>
           ${canManageRec() ? `<button class="btn-rc-remove" onclick="removeRecommendation('${item.id}')">× Hapus</button>` : ''}
         </div>
       </div>
@@ -724,8 +724,8 @@
           <td style="font-size:.75rem;color:#bbb">${fmtDate(item.tanggal_update||item.tanggalUpdate)}</td>
           <td onclick="event.stopPropagation()">
             <div style="display:flex;gap:4px;">
-              <button class="btn btn-sm btn-order" onclick="goOrder('${esc(item.seri||'')}','${esc(item.category||'')}')">🛒 Beli</button>
-              <button class="btn btn-sm btn-danger" onclick="goSell('${esc(item.seri||'')}','${esc(item.category||'')}')">💸 Jual</button>
+              <button class="btn btn-sm btn-order" onclick="goOrder('${esc(item.seri||'')}','${esc(item.category||'')}')">Beli</button>
+              <button class="btn btn-sm btn-danger" onclick="goSell('${esc(item.seri||'')}','${esc(item.category||'')}')">Jual</button>
             </div>
           </td>
           <td style="text-align:center"><span class="toggle-icon" id="otr-icon-${idx}">&#9660;</span></td>
@@ -1145,7 +1145,7 @@
       console.error('Submit order error:', e);
       showToast('Gagal submit order: ' + (e.message || ''), 'error');
     } finally {
-      btn.textContent = '🛒 Submit Order'; btn.disabled = false;
+      btn.textContent = 'Submit Order'; btn.disabled = false;
     }
   }
 
@@ -1449,7 +1449,7 @@
       console.error('Submit sell error:', e);
       showToast('Gagal submit sell: ' + (e.message || ''), 'error');
     } finally {
-      btn.textContent = '💸 Submit Sell'; btn.disabled = false;
+      btn.textContent = 'Submit Sell'; btn.disabled = false;
     }
   }
 
