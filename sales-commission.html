@@ -403,7 +403,7 @@
 
     // ── ROLE GUARD ──
     const _gu = JSON.parse(raw);
-    if (!['head_account', 'admin'].includes(_gu.role)) { window.location.replace('dashboard.html'); return; }
+    if (!['head_account', 'admin', 'sales'].includes(_gu.role)) { window.location.replace('dashboard.html'); return; }
     curUser = JSON.parse(raw);
     // Hanya head_account & treasury yang bisa mark paid
     canPay = ['head_account','treasury'].includes(curUser.role);
@@ -440,14 +440,14 @@
   // ─── LOAD ALL TRANSACTIONS ───────────────────────────────
   async function loadAllData() {
     allRows = [];
+    const isSales = curUser?.role === 'sales';
+    const salesName = curUser?.name || '';
 
     // 1. Bookbuilding Obligasi (verified only)
     try {
-      const { data, error } = await window._supabase
-        .from('bb_orders')
-        .select('*')
-        .eq('status', 'verified')
-        .order('created_at', { ascending: false });
+      let q = window._supabase.from('bb_orders').select('*').eq('status', 'verified').order('created_at', { ascending: false });
+      if (isSales) q = q.eq('sales_pic', salesName);
+      const { data, error } = await q;
       if (!error && data) {
         data.forEach(o => {
           const nominal = Number(o.nominal) || 0;
@@ -477,10 +477,9 @@
 
     // 2. Pasar Sekunder
     try {
-      const { data, error } = await window._supabase
-        .from('pasar_sekunder_orders')
-        .select('*')
-        .order('created_at', { ascending: false });
+      let q = window._supabase.from('pasar_sekunder_orders').select('*').order('created_at', { ascending: false });
+      if (isSales) q = q.eq('sales_name', salesName);
+      const { data, error } = await q;
       if (!error && data) {
         data.forEach(o => {
           const nominal = Number(o.nominal || 0);
@@ -510,10 +509,9 @@
 
     // 3. Reksadana
     try {
-      const { data, error } = await window._supabase
-        .from('reksadana_transactions')
-        .select('*')
-        .order('created_at', { ascending: false });
+      let q = window._supabase.from('reksadana_transactions').select('*').order('created_at', { ascending: false });
+      if (isSales) q = q.eq('sales_name', salesName);
+      const { data, error } = await q;
       if (!error && data) {
         data.forEach(o => {
           const nominal = Number(o.nominal || 0);

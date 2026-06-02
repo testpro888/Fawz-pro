@@ -73,7 +73,7 @@
       navSales   : ['head_account', 'admin', 'treasury', 'sales'],
       navCustomer: ['head_account', 'admin', 'treasury', 'sales'],
       navProduct : ['head_account', 'admin', 'treasury', 'sales'],
-      navRevenue : ['head_account', 'admin'],
+      navRevenue : ['head_account', 'admin', 'treasury', 'sales'],
 
       // Dropdown items — by href
       // Sales dropdown
@@ -97,10 +97,8 @@
       'saham-ranking.html'           : ['head_account', 'admin'],
 
       // Revenue dropdown
-      'revenue-data.html'      : ['head_account', 'admin'],
-      'sales-commission.html'  : ['head_account', 'admin'],
-      'paid-commission.html'   : ['head_account', 'admin'],
-      'log-commission.html'    : ['head_account', 'admin'],
+      'revenue-data.html'      : ['head_account', 'admin', 'sales'],
+      'sales-commission.html'  : ['head_account', 'admin', 'sales'],
 
       // User dropdown
       'manageAccountsLink'     : ['head_account'],  // Kelola Akun di profile
