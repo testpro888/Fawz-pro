@@ -236,33 +236,12 @@
     }
     .mobile-drawer.open { transform: translateX(0); }
 
-    /* Drawer Header — user info */
-    .drawer-header {
-      padding: 20px 20px 16px;
-      background: linear-gradient(135deg, #1a0e4a, #0d0d2b);
-      border-bottom: 1px solid rgba(255,255,255,0.07);
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-top: var(--nav-h);
-      flex-shrink: 0;
-    }
-    .drawer-avatar {
-      width: 42px; height: 42px; border-radius: 50%;
-      background: linear-gradient(135deg, var(--gold), var(--gold-light));
-      display: flex; align-items: center; justify-content: center;
-      font-size: 1rem; font-weight: 700; color: #fff;
-      flex-shrink: 0;
-    }
-    .drawer-user-info { flex: 1; min-width: 0; }
-    .drawer-user-name { font-size: 0.88rem; font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .drawer-user-role { font-size: 0.72rem; color: rgba(255,255,255,0.45); margin-top: 2px; }
-
     /* Drawer Body — scrollable */
     .drawer-body {
       flex: 1;
       overflow-y: auto;
       padding: 12px 0 8px;
+      margin-top: var(--nav-h);
       scrollbar-width: none;
     }
     .drawer-body::-webkit-scrollbar { display: none; }
@@ -469,17 +448,8 @@
 <!-- Mobile Drawer -->
 <div class="mobile-drawer" id="mobileDrawer">
 
-  <!-- Header: user info -->
-  <div class="drawer-header">
-    <div class="drawer-avatar" id="drawerAvatar">?</div>
-    <div class="drawer-user-info">
-      <div class="drawer-user-name" id="drawerUserName">—</div>
-      <div class="drawer-user-role" id="drawerUserRole">—</div>
-    </div>
-  </div>
-
   <!-- Body: nav links -->
-  <div class="drawer-body">
+  <div class="drawer-body" style="padding-top:8px;">
 
     <!-- Dashboard -->
     <a class="drawer-home mob-override" href="dashboard.html">

@@ -171,20 +171,6 @@
       });
     }
 
-    // Isi drawer user info
-    const drawerNameEl   = document.getElementById('drawerUserName');
-    const drawerRoleEl   = document.getElementById('drawerUserRole');
-    const drawerAvatarEl = document.getElementById('drawerAvatar');
-    if (drawerNameEl) drawerNameEl.textContent = user.name || 'User';
-    if (drawerRoleEl) drawerRoleEl.textContent = roleName;
-    if (drawerAvatarEl) {
-      if (user.photoURL) {
-        const initial2 = initial;
-        drawerAvatarEl.innerHTML = '<img src="' + user.photoURL + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.parentElement.textContent=\'' + initial + '\'">';
-      } else {
-        drawerAvatarEl.textContent = initial;
-      }
-    }
   }
 
   /* ── 4. DROPDOWN HOVER ── */
