@@ -577,12 +577,11 @@
 
     // Reset sales name: auto-fill dari user login
     const nameEl = document.getElementById('fSalesName');
+    nameEl.value = curUser?.name || '';
     if (['head_account','admin','treasury'].includes(curUser?.role)) {
-      nameEl.value = curUser?.name || '';
       nameEl.readOnly = false;
       nameEl.style.background = '';
     } else {
-      nameEl.value = curUser?.name || '';
       nameEl.readOnly = true;
       nameEl.style.background = '#f5f5f5';
     }
