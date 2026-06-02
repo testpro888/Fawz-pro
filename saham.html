@@ -133,9 +133,10 @@
       <div class="title-underline"></div>
     </div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
-      <select id="filterMonth" onchange="loadData()" style="height:38px;border:1px solid var(--border);border-radius:8px;padding:0 12px;font-family:'Inter',sans-serif;font-size:0.82rem;min-width:150px;">
-        <option value="">Semua Data</option>
-      </select>
+      <div style="display:flex;align-items:center;gap:4px;">
+        <input type="month" id="filterMonth" onchange="loadData()" style="height:38px;border:1px solid var(--border);border-radius:8px;padding:0 12px;font-family:'Inter',sans-serif;font-size:0.82rem;"/>
+        <button onclick="clearMonthFilter()" title="Lihat semua data" style="height:38px;width:38px;border:1px solid var(--border);border-radius:8px;background:#fff;cursor:pointer;font-size:1rem;color:var(--gray);display:flex;align-items:center;justify-content:center;" onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--gold)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--gray)'">✕</button>
+      </div>
       <select id="filterClient" onchange="onFilterChange()" style="height:38px;border:1px solid var(--border);border-radius:8px;padding:0 12px;font-family:'Inter',sans-serif;font-size:0.82rem;min-width:180px;">
         <option value="">Semua Nasabah</option>
       </select>
@@ -372,20 +373,8 @@
     curUser = getCurUser();
     const now = new Date();
 
-    // Populate month dropdown: last 24 months + current
-    const monthSelect = document.getElementById('filterMonth');
-    const currentMonth = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
-    const monthNames = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
-    for (let i = 0; i < 24; i++) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const val = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
-      const label = monthNames[d.getMonth()] + ' ' + d.getFullYear();
-      const opt = document.createElement('option');
-      opt.value = val;
-      opt.textContent = label;
-      monthSelect.appendChild(opt);
-    }
-    monthSelect.value = currentMonth;
+    // Set default to current month
+    document.getElementById('filterMonth').value = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
 
     // Sembunyikan kontrol manajemen data untuk sales (read-only)
     if (curUser?.role === 'sales') {
@@ -956,6 +945,11 @@
     t.textContent = msg;
     c.appendChild(t);
     setTimeout(() => t.remove(), 3500);
+  }
+
+  function clearMonthFilter() {
+    document.getElementById('filterMonth').value = '';
+    loadData();
   }
 
   window.addEventListener('DOMContentLoaded', initPage);
