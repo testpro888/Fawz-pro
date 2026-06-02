@@ -132,16 +132,8 @@
     }
 
     window.addEventListener('DOMContentLoaded', () => {
-      const role = getUserRole();
-      if (role === 'sales') {
-        // Tampilkan stat cards versi sales, sembunyikan versi admin
-        document.getElementById('statsAdmin').style.display = 'none';
-        document.getElementById('statsSales').style.display = '';
-        loadSalesStats();
-      } else {
-        loadStats();
-        loadObligasiCount();
-      }
+      loadStats();
+      loadObligasiCount();
     });
   </script>
 
@@ -444,101 +436,13 @@
   </div>
 
   <!-- Stats Cards: Admin View -->
-  <div id="statsAdmin" class="stats-grid">
-    <div class="stat-card obligasi" onclick="window.location.href='obligasi-pasar-sekunder.html'">
-      <div class="card-header">
-        <div><div class="card-title">Total Obligasi</div><div class="card-divider"></div></div>
-        <div class="card-arrow">▶</div>
-      </div>
-      <div class="card-body">
-        <div class="card-number"><span id="statObligasi">—</span><span class="card-unit">Seri</span></div>
-        <div class="card-trend">Lihat detail obligasi →</div>
-      </div>
-    </div>
-
-    <div class="stat-card reksadana" onclick="window.location.href='reksadana-data.html'">
-      <div class="card-header">
-        <div><div class="card-title">Total Reksadana</div><div class="card-divider"></div></div>
-        <div class="card-arrow">▶</div>
-      </div>
-      <div class="card-body">
-        <div class="card-number">0<span class="card-unit">Unit</span></div>
-        <div class="card-trend">Lihat detail reksadana →</div>
-      </div>
-    </div>
-
-    <div class="stat-card saham" onclick="window.location.href='saham.html'">
-      <div class="card-header">
-        <div><div class="card-title">Total Saham</div><div class="card-divider"></div></div>
-        <div class="card-arrow">▶</div>
-      </div>
-      <div class="card-body">
-        <div class="card-number">0<span class="card-unit">Unit</span></div>
-        <div class="card-trend">Lihat detail saham →</div>
-      </div>
-    </div>
-
-    <div class="stat-card waran" onclick="window.location.href='revenue-data.html'">
-      <div class="card-header">
-        <div><div class="card-title">Total Waran Terstruktur</div><div class="card-divider"></div></div>
-        <div class="card-arrow">▶</div>
-      </div>
-      <div class="card-body">
-        <div class="card-number">0<span class="card-unit">Unit</span></div>
-        <div class="card-trend">Lihat detail waran →</div>
-      </div>
-    </div>
-  </div>
+  <div id="statsAdmin" class="stats-grid" style="display:none;"></div>
 
   <!-- Stats Cards: Sales View -->
-  <div id="statsSales" class="stats-grid" style="display:none;">
-    <div class="stat-card obligasi">
-      <div class="card-header">
-        <div><div class="card-title">Obligasi Terjual</div><div class="card-divider"></div></div>
-        <div class="card-arrow">📈</div>
-      </div>
-      <div class="card-body">
-        <div class="card-number" id="statObligasiTerjual" style="font-size:26px;letter-spacing:-0.5px;">—</div>
-        <div class="card-trend" id="statObligasiTerjualSub">Memuat data...</div>
-      </div>
-    </div>
-
-    <div class="stat-card reksadana">
-      <div class="card-header">
-        <div><div class="card-title">Reksadana Terjual</div><div class="card-divider"></div></div>
-        <div class="card-arrow">📈</div>
-      </div>
-      <div class="card-body">
-        <div class="card-number" id="statReksadanaTerjual" style="font-size:26px;letter-spacing:-0.5px;">—</div>
-        <div class="card-trend" id="statReksadanaTerjualSub">Memuat data...</div>
-      </div>
-    </div>
-
-    <div class="stat-card saham">
-      <div class="card-header">
-        <div><div class="card-title">Waran Terstruktur Terjual</div><div class="card-divider"></div></div>
-        <div class="card-arrow">📈</div>
-      </div>
-      <div class="card-body">
-        <div class="card-number" id="statWaranTerjual" style="font-size:26px;letter-spacing:-0.5px;">—</div>
-        <div class="card-trend" id="statWaranTerjualSub">Memuat data...</div>
-      </div>
-    </div>
-
-    <div class="stat-card waran">
-      <div class="card-header">
-        <div><div class="card-title">Komisi Berjalan Bulan Ini</div><div class="card-divider"></div></div>
-        <div class="card-arrow">🏆</div>
-      </div>
-      <div class="card-body">
-        <div class="card-number" id="statKomisi" style="font-size:26px;letter-spacing:-0.5px;">—</div>
-        <div class="card-trend" id="statKomisiSub">Memuat data...</div>
-      </div>
-    </div>
-  </div>
+  <div id="statsSales" class="stats-grid" style="display:none;"></div>
 
   <!-- Summary Bar -->
-  <div class="summary-bar">
+  <div class="summary-bar" style="margin-bottom:24px;">
     <div class="summary-item">
       <div class="sum-label">Customer Aktif</div>
       <div class="sum-value" id="sumCustomerAktif">—</div>
@@ -555,7 +459,7 @@
       <div><span class="sum-badge badge-up">—</span></div>
     </div>
     <div class="summary-item">
-      <div class="sum-label">Komisi Terbayar</div>
+      <div class="sum-label">Komisi Berjalan</div>
       <div class="sum-value">Rp 0</div>
       <div><span class="sum-badge badge-neutral">—</span></div>
     </div>
