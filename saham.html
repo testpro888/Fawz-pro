@@ -123,7 +123,7 @@
 <body>
 
 <div id="navbar-placeholder"></div>
-<script src="navbar.js"></script>
+<script src="navbar.js?v=2"></script>
 
 <div class="page-container">
   <div class="page-header">
@@ -382,6 +382,17 @@
     curUser = getCurUser();
     const now = new Date();
     document.getElementById('filterMonth').value = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+
+    // Sembunyikan kontrol manajemen data untuk sales (read-only)
+    if (curUser?.role === 'sales') {
+      // Sembunyikan Upload CSV, Input Transaksi
+      document.querySelectorAll('button[onclick="openUploadModal()"], button[onclick="openAddModal()"]')
+        .forEach(el => el.style.display = 'none');
+      // Sembunyikan tombol Hapus Semua
+      document.querySelectorAll('button[onclick*="bulkDeleteByType"]')
+        .forEach(el => el.style.display = 'none');
+    }
+
     await loadCustomers();
     await loadData();
   }
@@ -397,7 +408,9 @@
   async function loadData() {
     try {
       const month = document.getElementById('filterMonth').value;
-      
+      const isSales = curUser?.role === 'sales';
+      const salesName = curUser?.name || '';
+
       // Filter by month at database level with pagination to get all rows
       if (month) {
         const [year, mon] = month.split('-').map(Number);
@@ -411,13 +424,15 @@
         var hasMore = true;
 
         while (hasMore) {
-          const { data, error } = await _sb
+          let q = _sb
             .from('saham_transaksi')
             .select('*')
             .gte('tanggal', startDate)
             .lte('tanggal', endDate)
             .order('tanggal', { ascending: false })
             .range(offset, offset + pageSize - 1);
+          if (isSales) q = q.eq('sales_name', salesName);
+          const { data, error } = await q;
 
           if (error) throw error;
           var rows = data || [];
@@ -430,7 +445,9 @@
           }
         }
       } else {
-        const { data, error } = await _sb.from('saham_transaksi').select('*').order('tanggal', { ascending: false });
+        let q = _sb.from('saham_transaksi').select('*').order('tanggal', { ascending: false });
+        if (isSales) q = q.eq('sales_name', salesName);
+        const { data, error } = await q;
         if (error) throw error;
         allData = data || [];
       }
@@ -502,6 +519,9 @@
   }
 
   function renderTable() {
+    const isSales = curUser?.role === 'sales';
+    const aksiCol = isSales ? '' : `<button onclick="deleteRow('ROWID')" style="border:none;background:#fff0f0;color:var(--red);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:0.75rem;">Hapus</button> <button onclick="editRow('ROWID')" style="border:none;background:#f0f8ff;color:#2d4abf;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:0.75rem;">Edit</button>`;
+
     // Render Volume table
     const tbodyVol = document.getElementById('tableBodyVolume');
     if (!volumeData.length) {
@@ -516,7 +536,7 @@
           <td style="font-weight:600;">${formatRp(r.volume)}</td>
           <td>${r.sales_name || '—'}</td>
           <td style="font-size:0.78rem;color:#888;">${r.catatan || '—'}</td>
-          <td><button onclick="deleteRow('${r.id}')" style="border:none;background:#fff0f0;color:var(--red);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:0.75rem;">Hapus</button> <button onclick="editRow('${r.id}')" style="border:none;background:#f0f8ff;color:#2d4abf;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:0.75rem;">Edit</button></td>
+          <td>${isSales ? '' : `<button onclick="deleteRow('${r.id}')" style="border:none;background:#fff0f0;color:var(--red);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:0.75rem;">Hapus</button> <button onclick="editRow('${r.id}')" style="border:none;background:#f0f8ff;color:#2d4abf;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:0.75rem;">Edit</button>`}</td>
         </tr>
       `).join('');
     }
@@ -535,7 +555,7 @@
           <td style="color:var(--green);font-weight:600;">${formatRp(r.fee)}</td>
           <td>${r.sales_name || '—'}</td>
           <td style="font-size:0.78rem;color:#888;">${r.catatan || '—'}</td>
-          <td><button onclick="deleteRow('${r.id}')" style="border:none;background:#fff0f0;color:var(--red);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:0.75rem;">Hapus</button> <button onclick="editRow('${r.id}')" style="border:none;background:#f0f8ff;color:#2d4abf;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:0.75rem;">Edit</button></td>
+          <td>${isSales ? '' : `<button onclick="deleteRow('${r.id}')" style="border:none;background:#fff0f0;color:var(--red);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:0.75rem;">Hapus</button> <button onclick="editRow('${r.id}')" style="border:none;background:#f0f8ff;color:#2d4abf;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:0.75rem;">Edit</button>`}</td>
         </tr>
       `).join('');
     }
@@ -598,6 +618,16 @@
           .gte('tanggal', startDate)
           .lte('tanggal', endDate)
           .range(offset, offset + pageSize - 1);
+        // Filter YTD by sales name if role is sales
+        if (curUser?.role === 'sales') {
+          result = await _sb
+            .from('saham_transaksi')
+            .select('volume, fee, client_id')
+            .gte('tanggal', startDate)
+            .lte('tanggal', endDate)
+            .eq('sales_name', curUser.name || '')
+            .range(offset, offset + pageSize - 1);
+        }
 
         if (result.error) { console.error('YTD page error:', result.error); break; }
 
