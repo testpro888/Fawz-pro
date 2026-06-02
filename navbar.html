@@ -180,36 +180,183 @@
     .user-dd-item.logout:hover { background: #fff5f5; }
 
     /* ===== HAMBURGER ===== */
-    .hamburger { display: none; flex-direction: column; gap: 4px; cursor: pointer; padding: 8px; }
-    .hamburger span { width: 22px; height: 2px; background: #fff; border-radius: 2px; transition: all 0.3s; }
+    .hamburger {
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 5px;
+      cursor: pointer;
+      padding: 8px;
+      width: 40px; height: 40px;
+      border-radius: 8px;
+      transition: background 0.2s;
+    }
+    .hamburger:hover { background: rgba(255,255,255,0.08); }
+    .hamburger span {
+      width: 20px; height: 2px;
+      background: #fff; border-radius: 2px;
+      transition: all 0.3s ease;
+      transform-origin: center;
+    }
+    /* Animasi hamburger → ✕ */
+    .hamburger.active span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    .hamburger.active span:nth-child(2) { opacity: 0; transform: scaleX(0); }
+    .hamburger.active span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
 
     @media (max-width: 1024px) { .nav-menu { display: none; } .hamburger { display: flex; } }
 
-    /* ===== MOBILE DRAWER ===== */
-    .mobile-drawer {
+    /* ===== MOBILE DRAWER OVERLAY ===== */
+    .drawer-overlay {
       display: none;
       position: fixed;
-      top: var(--nav-h); left: 0; right: 0;
-      background: var(--navy);
-      padding: 16px 20px;
-      z-index: 999;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.3);
-      max-height: calc(100vh - var(--nav-h));
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+      z-index: 997;
+      backdrop-filter: blur(2px);
+      animation: overlayFadeIn 0.25s ease;
+    }
+    .drawer-overlay.open { display: block; }
+    @keyframes overlayFadeIn { from { opacity:0; } to { opacity:1; } }
+
+    /* ===== MOBILE DRAWER ===== */
+    .mobile-drawer {
+      position: fixed;
+      top: 0; left: 0;
+      width: 280px;
+      height: 100vh;
+      background: #0f0f2e;
+      z-index: 998;
+      display: flex;
+      flex-direction: column;
+      transform: translateX(-100%);
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 4px 0 32px rgba(0,0,0,0.4);
+      overflow: hidden;
+    }
+    .mobile-drawer.open { transform: translateX(0); }
+
+    /* Drawer Header — user info */
+    .drawer-header {
+      padding: 20px 20px 16px;
+      background: linear-gradient(135deg, #1a0e4a, #0d0d2b);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: var(--nav-h);
+      flex-shrink: 0;
+    }
+    .drawer-avatar {
+      width: 42px; height: 42px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--gold), var(--gold-light));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem; font-weight: 700; color: #fff;
+      flex-shrink: 0;
+    }
+    .drawer-user-info { flex: 1; min-width: 0; }
+    .drawer-user-name { font-size: 0.88rem; font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .drawer-user-role { font-size: 0.72rem; color: rgba(255,255,255,0.45); margin-top: 2px; }
+
+    /* Drawer Body — scrollable */
+    .drawer-body {
+      flex: 1;
       overflow-y: auto;
+      padding: 12px 0 8px;
+      scrollbar-width: none;
     }
-    .mobile-drawer.open { display: block; }
+    .drawer-body::-webkit-scrollbar { display: none; }
+
+    /* Dashboard link (top level) */
+    .drawer-home {
+      display: flex; align-items: center; gap: 10px;
+      padding: 11px 20px;
+      color: rgba(255,255,255,0.85);
+      text-decoration: none;
+      font-size: 0.875rem; font-weight: 500;
+      transition: background 0.15s, color 0.15s;
+      margin: 0 8px 4px;
+      border-radius: 8px;
+    }
+    .drawer-home:hover, .drawer-home.active { background: rgba(245,166,35,0.12); color: var(--gold); }
+    .drawer-home svg { flex-shrink: 0; opacity: 0.6; }
+    .drawer-home:hover svg, .drawer-home.active svg { opacity: 1; }
+
+    /* Accordion group */
+    .drawer-group { margin: 0 8px 2px; }
+    .drawer-group-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 12px;
+      color: rgba(255,255,255,0.5);
+      font-size: 0.7rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 1.2px;
+      cursor: pointer;
+      border-radius: 6px;
+      transition: background 0.15s, color 0.15s;
+      user-select: none;
+    }
+    .drawer-group-header:hover { background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.7); }
+    .drawer-group-header.active { color: var(--gold); }
+    .drawer-chevron {
+      width: 14px; height: 14px;
+      display: flex; align-items: center; justify-content: center;
+      transition: transform 0.25s ease;
+      font-size: 0.65rem;
+      opacity: 0.6;
+    }
+    .drawer-group-header.active .drawer-chevron { transform: rotate(180deg); opacity: 1; }
+
+    .drawer-group-items {
+      overflow: hidden;
+      max-height: 0;
+      transition: max-height 0.3s ease;
+    }
+    .drawer-group-items.open { max-height: 500px; }
+
+    /* Individual link inside group */
     .mob-link {
-      display: block; padding: 12px 16px;
-      color: rgba(255,255,255,0.8); text-decoration: none;
-      font-size: 0.9rem; border-radius: 8px; margin-bottom: 4px;
-      transition: background 0.2s, color 0.2s; cursor: pointer;
+      display: flex; align-items: center; gap: 8px;
+      padding: 9px 12px 9px 16px;
+      color: rgba(255,255,255,0.7);
+      text-decoration: none;
+      font-size: 0.84rem; font-weight: 400;
+      border-radius: 7px;
+      margin: 1px 0;
+      transition: background 0.15s, color 0.15s;
+      cursor: pointer;
     }
-    .mob-link:hover { background: rgba(245,166,35,0.1); color: var(--gold); }
-    .mob-section-label {
-      font-size: 0.7rem; font-weight: 700; color: rgba(255,255,255,0.3);
-      text-transform: uppercase; letter-spacing: 1.5px;
-      padding: 12px 16px 4px;
+    .mob-link::before {
+      content: '';
+      width: 4px; height: 4px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.3);
+      flex-shrink: 0;
+      transition: background 0.15s;
     }
+    .mob-link:hover, .mob-link.active { background: rgba(245,166,35,0.1); color: var(--gold); }
+    .mob-link:hover::before, .mob-link.active::before { background: var(--gold); }
+    /* Sembunyikan section label lama — tidak dipakai */
+    .mob-section-label { display: none; }
+
+    /* Drawer Footer */
+    .drawer-footer {
+      border-top: 1px solid rgba(255,255,255,0.07);
+      padding: 10px 8px;
+      flex-shrink: 0;
+    }
+    .drawer-footer-link {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px;
+      color: rgba(255,255,255,0.65);
+      text-decoration: none;
+      font-size: 0.84rem; font-weight: 400;
+      border-radius: 8px;
+      transition: background 0.15s, color 0.15s;
+      cursor: pointer;
+    }
+    .drawer-footer-link:hover { background: rgba(255,255,255,0.05); color: #fff; }
+    .drawer-footer-link.danger { color: #f87171; }
+    .drawer-footer-link.danger:hover { background: rgba(239,68,68,0.1); color: #f87171; }
   </style>
 </head>
 <body>
@@ -316,35 +463,139 @@
   </div>
 </nav>
 
+<!-- Mobile Overlay -->
+<div class="drawer-overlay" id="drawerOverlay" onclick="toggleMobile()"></div>
+
 <!-- Mobile Drawer -->
 <div class="mobile-drawer" id="mobileDrawer">
-  <a class="mob-link" href="dashboard.html">Dashboard</a>
-  <div class="mob-section-label">Sales</div>
-  <a class="mob-link" href="sales.html">Sales</a>
-  <a class="mob-link" href="sales-activity.html">Activity Report</a>
-  <a class="mob-link" href="sales-transaction.html">Transaction Report</a>
-  <a class="mob-link" href="sales-tracker.html">Sales Tracker</a>
-  <div class="mob-section-label">Customer</div>
-  <a class="mob-link" href="customer.html">Data Customer</a>
-  <div class="mob-section-label">Product · Obligasi</div>
-  <a class="mob-link" href="obligasi-bookbuilding.html">Bookbuilding</a>
-  <a class="mob-link" href="obligasi-pasar-sekunder.html">Pasar Sekunder</a>
-  <a class="mob-link" href="obligasi-ipo.html">Pasar Perdana (IPO)</a>
-  <a class="mob-link" href="bond-transaction.html">Bond Transactions</a>
-  <div class="mob-section-label">Product · Reksadana</div>
-  <a class="mob-link" href="reksadana-data.html">Data Reksadana</a>
-  <a class="mob-link" href="reksadana-order.html">Order Reksadana</a>
-  <div class="mob-section-label">Product · Waran Terstruktur</div>
-  <a class="mob-link" href="waran-terstruktur.html">Waran Terstruktur</a>
-  <div class="mob-section-label">Product · Saham</div>
-  <a class="mob-link" href="saham.html">Transaksi Saham</a>
-  <a class="mob-link" href="saham-ranking.html">Rekap Transaksi</a>
-  <div class="mob-section-label">Revenue</div>
-  <a class="mob-link" href="revenue-data.html">Data Revenue</a>
-  <a class="mob-link" href="sales-commission.html">Sales Commission</a>
-  <a class="mob-link" href="profile.html">⚙️ Profil Saya</a>
-  <div class="mob-link" onclick="doLogout()" style="color:#e74c3c; margin-top:12px;">Keluar</div>
+
+  <!-- Header: user info -->
+  <div class="drawer-header">
+    <div class="drawer-avatar" id="drawerAvatar">?</div>
+    <div class="drawer-user-info">
+      <div class="drawer-user-name" id="drawerUserName">—</div>
+      <div class="drawer-user-role" id="drawerUserRole">—</div>
+    </div>
+  </div>
+
+  <!-- Body: nav links -->
+  <div class="drawer-body">
+
+    <!-- Dashboard -->
+    <a class="drawer-home mob-override" href="dashboard.html">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      Dashboard
+    </a>
+
+    <!-- Sales -->
+    <div class="drawer-group" id="mobGroupSales">
+      <div class="drawer-group-header" onclick="toggleDrawerGroup(this)">
+        Sales
+        <span class="drawer-chevron">▾</span>
+      </div>
+      <div class="drawer-group-items">
+        <a class="mob-link" href="sales.html">Sales</a>
+        <a class="mob-link" href="sales-activity.html">Activity Report</a>
+        <a class="mob-link" href="sales-transaction.html">Transaction Report</a>
+        <a class="mob-link" href="sales-tracker.html">Sales Tracker</a>
+      </div>
+    </div>
+
+    <!-- Customer -->
+    <div class="drawer-group" id="mobGroupCustomer">
+      <div class="drawer-group-header" onclick="toggleDrawerGroup(this)">
+        Customer
+        <span class="drawer-chevron">▾</span>
+      </div>
+      <div class="drawer-group-items">
+        <a class="mob-link" href="customer.html">Data Customer</a>
+      </div>
+    </div>
+
+    <!-- Product -->
+    <div class="drawer-group" id="mobGroupProduct">
+      <div class="drawer-group-header" onclick="toggleDrawerGroup(this)">
+        Product
+        <span class="drawer-chevron">▾</span>
+      </div>
+      <div class="drawer-group-items">
+        <a class="mob-link" href="obligasi-bookbuilding.html">Bookbuilding</a>
+        <a class="mob-link" href="obligasi-pasar-sekunder.html">Pasar Sekunder</a>
+        <a class="mob-link" href="obligasi-ipo.html">Pasar Perdana (IPO)</a>
+        <a class="mob-link" href="bond-transaction.html">Bond Transactions</a>
+        <a class="mob-link" href="reksadana-data.html">Data Reksadana</a>
+        <a class="mob-link" href="reksadana-order.html">Order Reksadana</a>
+        <a class="mob-link" href="waran-terstruktur.html">Waran Terstruktur</a>
+        <a class="mob-link" href="saham.html">Transaksi Saham</a>
+        <a class="mob-link" href="saham-ranking.html">Rekap Transaksi</a>
+      </div>
+    </div>
+
+    <!-- Revenue -->
+    <div class="drawer-group" id="mobGroupRevenue">
+      <div class="drawer-group-header" onclick="toggleDrawerGroup(this)">
+        Revenue
+        <span class="drawer-chevron">▾</span>
+      </div>
+      <div class="drawer-group-items">
+        <a class="mob-link" href="revenue-data.html">Data Revenue</a>
+        <a class="mob-link" href="sales-commission.html">Sales Commission</a>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Footer: profile & logout -->
+  <div class="drawer-footer">
+    <a class="drawer-footer-link" href="profile.html">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      Profil Saya
+    </a>
+    <div class="drawer-footer-link danger" onclick="doLogout()">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Keluar
+    </div>
+  </div>
+
 </div>
+
+<script>
+  function toggleDrawerGroup(header) {
+    const items = header.nextElementSibling;
+    const isOpen = items.classList.contains('open');
+    // Tutup semua grup lain
+    document.querySelectorAll('.drawer-group-items.open').forEach(el => {
+      el.classList.remove('open');
+      el.previousElementSibling.classList.remove('active');
+    });
+    if (!isOpen) {
+      items.classList.add('open');
+      header.classList.add('active');
+    }
+  }
+
+  // Isi drawer avatar & user info dari session
+  (function() {
+    try {
+      const raw = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember');
+      if (!raw) return;
+      const u = JSON.parse(raw);
+      const ROLE_LABELS = { head_account:'Head Account', admin:'Admin', sales:'Sales', treasury:'Bonds Dealer' };
+      const nameEl = document.getElementById('drawerUserName');
+      const roleEl = document.getElementById('drawerUserRole');
+      const avatarEl = document.getElementById('drawerAvatar');
+      if (nameEl) nameEl.textContent = u.name || 'User';
+      if (roleEl) roleEl.textContent = ROLE_LABELS[u.role] || u.role || '';
+      if (avatarEl) {
+        if (u.photoURL) {
+          avatarEl.innerHTML = '<img src="' + u.photoURL + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.parentElement.textContent=\'' + (u.name||'U')[0].toUpperCase() + '\'">';
+        } else {
+          avatarEl.textContent = (u.name || 'U')[0].toUpperCase();
+        }
+      }
+    } catch(e) {}
+  })();
+</script>
 
 <!-- Script dipindah ke navbar.js — jangan tambahkan script di sini -->
 

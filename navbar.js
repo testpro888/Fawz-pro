@@ -143,17 +143,11 @@
       if (allowed && !allowed.includes(role)) el.style.display = 'none';
     });
 
-    // Mobile drawer: sembunyikan section-label jika semua link di bawahnya hidden
-    const drawerChildren = [...document.querySelectorAll('.mobile-drawer > *')];
-    drawerChildren.forEach((el, i) => {
-      if (!el.classList.contains('mob-section-label')) return;
-      // Cek semua sibling berikutnya sampai section-label berikutnya
-      let allHidden = true;
-      for (let j = i + 1; j < drawerChildren.length; j++) {
-        if (drawerChildren[j].classList.contains('mob-section-label')) break;
-        if (drawerChildren[j].style.display !== 'none') { allHidden = false; break; }
-      }
-      if (allHidden) el.style.display = 'none';
+    // Mobile drawer: sembunyikan drawer-group jika semua mob-link di dalamnya hidden
+    document.querySelectorAll('.drawer-group').forEach(group => {
+      const visibleLinks = [...group.querySelectorAll('.mob-link[href]')]
+        .filter(l => l.style.display !== 'none');
+      if (visibleLinks.length === 0) group.style.display = 'none';
     });
 
     // Active link — highlight menu sesuai halaman aktif
@@ -229,7 +223,15 @@
   };
 
   window.toggleMobile = function () {
-    document.getElementById('mobileDrawer')?.classList.toggle('open');
+    const drawer = document.getElementById('mobileDrawer');
+    const overlay = document.getElementById('drawerOverlay');
+    const hamburger = document.getElementById('hamburger');
+    const isOpen = drawer?.classList.contains('open');
+    drawer?.classList.toggle('open');
+    overlay?.classList.toggle('open');
+    hamburger?.classList.toggle('active');
+    // prevent body scroll when drawer open
+    document.body.style.overflow = isOpen ? '' : 'hidden';
   };
 
   /* ── 5b. GLOBAL MODAL ESCAPE — tutup semua modal overlay saat tekan Escape ── */
