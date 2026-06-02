@@ -108,6 +108,17 @@
     .badge-rejected { background:#fff0f0; color:#c0392b; border:1px solid rgba(231,76,60,.3); }
     .badge-idr { background:#e8f8f0; color:#27ae60; }
     .badge-usd { background:#e8f0ff; color:#2d4abf; }
+    /* Bonds Status badges */
+    .badge-bonds-pending  { background:#eff6ff; color:#1d4ed8; border:1px solid rgba(59,130,246,.3); }
+    .badge-bonds-succeed  { background:#f0fdf4; color:#15803d; border:1px solid rgba(34,197,94,.3); }
+    .badge-bonds-cancel   { background:#fef2f2; color:#b91c1c; border:1px solid rgba(239,68,68,.3); }
+    /* Bonds status select inline */
+    .bonds-status-select {
+      font-size:.68rem; font-weight:700; border-radius:20px; border:1px solid #ddd;
+      padding:3px 8px; cursor:pointer; outline:none; font-family:'Inter',sans-serif;
+      background:#f9f9ff; color:#555; transition:border-color .15s;
+    }
+    .bonds-status-select:focus { border-color:var(--gold); }
 
     .nominal-val { font-weight:700; color:var(--navy); font-size:.9rem; }
     .nominal-unit { font-size:.72rem; color:var(--gray); }
@@ -294,6 +305,7 @@
             <th>Sales PIC</th>
             <th>Tgl Order</th>
             <th>Status</th>
+            <th>Bonds Status</th>
             <th>Aksi</th>
           </tr>
         </thead>
@@ -721,6 +733,24 @@
         rejected : '<span class="badge badge-rejected">Ditolak</span>',
       }[o.status] || '<span class="badge badge-pending">Pending</span>';
 
+      // Bonds status — hanya muncul kalau order sudah verified
+      const canBonds = curUser && ['head_account','treasury','admin'].includes(curUser.role);
+      let bondsStatusCell = '—';
+      if (o.status === 'verified') {
+        const bs = o.bonds_status || 'pending';
+        if (canBonds) {
+          bondsStatusCell = `<select class="bonds-status-select" onchange="updateBondsStatus('${o.id}', this.value)">
+            <option value="pending"  ${bs==='pending'  ? 'selected':''}>Pending</option>
+            <option value="succeed"  ${bs==='succeed'  ? 'selected':''}>Succeed</option>
+            <option value="cancel"   ${bs==='cancel'   ? 'selected':''}>Cancel</option>
+          </select>`;
+        } else {
+          const bondsLabel = { pending:'Pending', succeed:'Succeed', cancel:'Cancel' };
+          const bondsClass = { pending:'badge-bonds-pending', succeed:'badge-bonds-succeed', cancel:'badge-bonds-cancel' };
+          bondsStatusCell = `<span class="badge ${bondsClass[bs]||'badge-bonds-pending'}">${bondsLabel[bs]||'Pending'}</span>`;
+        }
+      }
+
       const canEdit = canManage();
       const jenisBadge2 = o.jenisTransaksi === 'Jual'
         ? '<span style="background:#fff0f0;color:var(--red);font-size:.72rem;font-weight:700;padding:2px 9px;border-radius:20px;">Jual</span>'
@@ -746,6 +776,7 @@
         <td style="font-size:.85rem;">${esc(o.sales_pic||o.salesPic||'—')}</td>
         <td style="font-size:.8rem;color:var(--gray);">${fmtDate(o.tanggal_order||o.tanggalOrder)}</td>
         <td>${statusBadge}</td>
+        <td style="font-size:.8rem;">${bondsStatusCell}</td>
         <td>
           <div class="action-btns">
             <button class="btn-icon" title="Detail" onclick="showDetail('${o.id}')">👁</button>
@@ -1351,6 +1382,7 @@
     try {
       const { error } = await window._supabase.from('bb_orders').update({
         status: 'verified',
+        bonds_status: 'pending',
         verified_by: curUser?.name || '',
         verified_at: new Date().toISOString()
       }).eq('id', id);
@@ -1359,6 +1391,24 @@
       await loadOrders();
       applyFilter();
     } catch(e) { showToast('Gagal approve: ' + (e.message||''), 'error'); }
+  }
+
+  async function updateBondsStatus(id, newStatus) {
+    try {
+      const { error } = await window._supabase.from('bb_orders').update({
+        bonds_status: newStatus,
+        bonds_updated_by: curUser?.name || '',
+        bonds_updated_at: new Date().toISOString()
+      }).eq('id', id);
+      if (error) throw error;
+      // Update lokal tanpa reload penuh
+      const idx = orders.findIndex(o => o.id === id);
+      if (idx >= 0) orders[idx].bonds_status = newStatus;
+      const filtered_idx = filtered.findIndex(o => o.id === id);
+      if (filtered_idx >= 0) filtered[filtered_idx].bonds_status = newStatus;
+      const label = { pending:'Pending', succeed:'Succeed', cancel:'Cancel' };
+      showToast('Bonds status diubah ke ' + (label[newStatus]||newStatus), 'success');
+    } catch(e) { showToast('Gagal update bonds status: ' + (e.message||''), 'error'); }
   }
 
   async function rejectOrder(id) {
