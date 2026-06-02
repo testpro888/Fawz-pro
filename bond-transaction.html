@@ -331,7 +331,8 @@
     document.getElementById('sTotal').textContent     = allRows.length;
     document.getElementById('sApproved').textContent  = allRows.filter(r => r.status === 'approved' || r.status === 'verified').length;
     document.getElementById('sPending').textContent   = allRows.filter(r => r.status === 'pending').length;
-    const totalNom = allRows.reduce((s,r) => s + r.nominal, 0);
+    const approvedRows = allRows.filter(r => r.status === 'approved' || r.status === 'verified');
+    const totalNom = approvedRows.reduce((s,r) => s + r.nominal, 0);
     document.getElementById('sNominal').textContent   = 'Rp ' + totalNom.toLocaleString('id-ID');
   }
 
@@ -439,15 +440,12 @@
   async function approve(id) {
     if (!confirm('Approve transaksi ini?')) return;
     try {
-      const now = new Date().toISOString();
       const { error } = await getDb().from('bb_orders').update({
         status: 'verified',
-        approved_by: curUser.name || '',
-        approved_at: now,
       }).eq('id', id);
       if (error) throw error;
       const r = allRows.find(x => x.id === id);
-      if (r) { r.status = 'verified'; r.approvedBy = curUser.name; r.approvedAt = now; }
+      if (r) { r.status = 'verified'; r.approvedBy = curUser.name; }
       applyFilter(); updateStats();
       showToast('Transaksi berhasil di-approve', 'success');
     } catch(e) { showToast('Gagal approve: ' + e.message, 'error'); }
@@ -456,15 +454,12 @@
   async function reject(id) {
     if (!confirm('Reject transaksi ini?')) return;
     try {
-      const now = new Date().toISOString();
       const { error } = await getDb().from('bb_orders').update({
         status: 'rejected',
-        rejected_by: curUser.name || '',
-        rejected_at: now,
       }).eq('id', id);
       if (error) throw error;
       const r = allRows.find(x => x.id === id);
-      if (r) { r.status = 'rejected'; r.rejectedBy = curUser.name; r.rejectedAt = now; }
+      if (r) { r.status = 'rejected'; r.rejectedBy = curUser.name; }
       applyFilter(); updateStats();
       showToast('Transaksi ditolak', 'info');
     } catch(e) { showToast('Gagal reject: ' + e.message, 'error'); }
