@@ -305,7 +305,6 @@
         <thead>
           <tr>
             <th>Date</th>
-            <th>Sales Code</th>
             <th>Sales Name</th>
             <th>Activity</th>
             <th>Client</th>
@@ -315,7 +314,7 @@
           </tr>
         </thead>
         <tbody id="activityBody">
-          <tr><td colspan="8"><div class="empty-state"><div class="empty-icon">📋</div><div class="empty-text">Memuat data...</div></div></td></tr>
+          <tr><td colspan="7"><div class="empty-state"><div class="empty-text">Memuat data...</div></div></td></tr>
         </tbody>
       </table>
     </div>
@@ -373,12 +372,8 @@
         </select>
       </div>
       <div class="form-group">
-        <label class="form-label">Sales Code <span class="req">*</span></label>
-        <input type="text" class="form-input" id="fSalesCode" placeholder="Mis. SLS-001"/>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Sales Name <span class="req">*</span></label>
-        <input type="text" class="form-input" id="fSalesName" placeholder="Nama sales..."/>
+        <label class="form-label">Sales Name</label>
+        <input type="text" class="form-input" id="fSalesName" placeholder="Nama sales..." readonly style="background:#f5f5f5;"/>
       </div>
       <div class="form-group full">
         <label class="form-label">Client <span class="req">*</span></label>
@@ -410,7 +405,6 @@
 <div class="toast-container" id="toastContainer"></div>
 
 <script>
-  const COL = 'sales_activities';
   const PAGE_SIZE = 10;
 
   let curUser = null;
@@ -426,26 +420,38 @@
     'Dibatalkan':   'badge-danger',
   };
 
+  // Normalisasi row dari Supabase (snake_case → camelCase konsisten)
+  function normalize(row) {
+    return {
+      id:        row.id,
+      date:      row.date || '',
+      activity:  row.tipe || row.activity || '',
+      salesName: row.sales_name || row.salesName || '',
+      client:    row.client_name || row.client || '',
+      status:    row.hasil || row.status || '',
+      notes:     row.keterangan || row.notes || '',
+      createdBy: row.created_by || '',
+    };
+  }
+
   // ===== INIT =====
   function initPage() {
     const raw = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember');
     if (!raw) { window.location.href = 'login.html'; return; }
     sessionStorage.setItem('fawz_user', raw);
     curUser = JSON.parse(raw);
-    // Semua role boleh — filter data per role sudah ada di bawah
 
-    // Pre-fill sales fields if sales role
-    if (['sales'].includes(curUser.role)) {
-      document.getElementById('fSalesName').value = curUser.name || '';
-      document.getElementById('fSalesName').disabled = true;
-      document.getElementById('fSalesCode').value = curUser.code || '';
-      document.getElementById('fSalesCode').disabled = true;
+    // Sales Name selalu auto-fill dari user yang login
+    const nameEl = document.getElementById('fSalesName');
+    nameEl.value = curUser.name || '';
+    // Admin/head_account boleh edit nama sales (bisa input untuk orang lain)
+    if (['head_account', 'admin', 'treasury'].includes(curUser.role)) {
+      nameEl.readOnly = false;
+      nameEl.style.background = '';
+      nameEl.placeholder = 'Nama sales...';
     }
 
-    // Set default date
     document.getElementById('fDate').value = new Date().toISOString().split('T')[0];
-
-    // Set default month filter
     const now = new Date();
     document.getElementById('filterMonth').value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
 
@@ -461,31 +467,28 @@
       }
       const { data, error } = await query.order('date', { ascending: false });
       if (error) throw error;
-      allData = data || [];
+      allData = (data || []).map(normalize);
       applyFilters();
       updateStats();
     } catch(e) {
       console.error(e);
-      document.getElementById('activityBody').innerHTML = `<tr><td colspan="8"><div class="empty-state" style="color:#e74c3c"><div class="empty-icon">⚠️</div><div class="empty-text">Gagal memuat data</div></div></td></tr>`;
+      document.getElementById('activityBody').innerHTML = `<tr><td colspan="7"><div class="empty-state" style="color:#e74c3c"><div class="empty-text">Gagal memuat data: ${esc(e.message)}</div></div></td></tr>`;
     }
   }
 
   // ===== FILTERS =====
   function applyFilters() {
-    const q = document.getElementById('filterSearch').value.toLowerCase();
-    const act = document.getElementById('filterActivity').value;
+    const q      = document.getElementById('filterSearch').value.toLowerCase();
+    const act    = document.getElementById('filterActivity').value;
     const status = document.getElementById('filterStatus').value;
-    const month = document.getElementById('filterMonth').value; // "YYYY-MM"
+    const month  = document.getElementById('filterMonth').value;
 
     filtered = allData.filter(item => {
-      // Paksa filter salesName untuk role sales (double protection)
       if (curUser?.role === 'sales' && item.salesName !== curUser.name) return false;
-
-      const matchQ = !q || [item.salesName, item.salesCode, item.client, item.activity, item.notes]
-        .some(f => (f||'').toLowerCase().includes(q));
-      const matchAct = !act || item.activity === act;
+      const matchQ      = !q || [item.salesName, item.client, item.activity, item.notes].some(f => (f||'').toLowerCase().includes(q));
+      const matchAct    = !act    || item.activity === act;
       const matchStatus = !status || item.status === status;
-      const matchMonth = !month || (item.date||'').startsWith(month);
+      const matchMonth  = !month  || (item.date||'').startsWith(month);
       return matchQ && matchAct && matchStatus && matchMonth;
     });
 
@@ -504,13 +507,13 @@
 
   // ===== RENDER TABLE =====
   function renderTable() {
-    const tbody = document.getElementById('activityBody');
-    const footer = document.getElementById('tableFooter');
-    const canEdit = curUser && ['head_account','admin','treasury'].includes(curUser.role);
-    const isSales = curUser && curUser.role === 'sales';
+    const tbody    = document.getElementById('activityBody');
+    const footer   = document.getElementById('tableFooter');
+    const canEdit  = curUser && ['head_account','admin','treasury'].includes(curUser.role);
+    const isSales  = curUser && curUser.role === 'sales';
 
     if (!filtered.length) {
-      tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="empty-icon">📋</div><div class="empty-text">Tidak ada data aktivitas</div><div class="empty-sub">Klik tombol + untuk menambah aktivitas baru</div></div></td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="empty-text">Tidak ada data aktivitas</div><div class="empty-sub">Klik tombol + untuk menambah aktivitas baru</div></div></td></tr>`;
       footer.style.display = 'none';
       return;
     }
@@ -524,26 +527,23 @@
       const canDo = canEdit || (isSales && item.salesName === curUser.name);
       return `<tr>
         <td class="date-cell">${fmtDate(item.date)}</td>
-        <td><span class="sales-code-cell">${esc(item.salesCode||'—')}</span></td>
         <td class="sales-name-cell">${esc(item.salesName||'—')}</td>
         <td class="activity-cell">${esc(item.activity||'—')}</td>
         <td class="client-cell">${esc(item.client||'—')}</td>
         <td><span class="badge ${badgeCls}">${esc(item.status||'—')}</span></td>
-        <td style="max-width:200px;font-size:.8rem;color:var(--gray);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(item.notes||'')}">${esc(item.notes||'—')}</td>
+        <td style="max-width:220px;font-size:.8rem;color:var(--gray);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(item.notes||'')}">${esc(item.notes||'—')}</td>
         <td>
           <div class="action-btns">
-            ${canDo ? `<button class="btn-icon" title="Edit" onclick="openEdit('${item.id}')">✏️</button>` : ''}
-            ${canEdit ? `<button class="btn-icon del" title="Hapus" onclick="deleteItem('${item.id}')">🗑</button>` : ''}
+            ${canDo ? `<button class="btn-icon" title="Edit" onclick="openEdit('${item.id}')">✏</button>` : ''}
+            ${canEdit ? `<button class="btn-icon del" title="Hapus" onclick="deleteItem('${item.id}')">✕</button>` : ''}
           </div>
         </td>
       </tr>`;
     }).join('');
 
-    // Footer
     footer.style.display = 'flex';
     document.getElementById('footerInfo').textContent = `Menampilkan ${start+1}–${Math.min(start+PAGE_SIZE, filtered.length)} dari ${filtered.length} data`;
 
-    // Pagination
     const pg = document.getElementById('pagination');
     let pgHtml = '';
     for (let i = 1; i <= totalPages; i++) {
@@ -559,10 +559,9 @@
     const now = new Date();
     const thisMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
     const ago30 = new Date(now - 30*24*60*60*1000).toISOString().split('T')[0];
-
     document.getElementById('statTotal').textContent = allData.length;
     document.getElementById('statMonth').textContent = allData.filter(d => (d.date||'').startsWith(thisMonth)).length;
-    document.getElementById('stat30d').textContent = allData.filter(d => (d.date||'') >= ago30).length;
+    document.getElementById('stat30d').textContent   = allData.filter(d => (d.date||'') >= ago30).length;
   }
 
   // ===== MODAL =====
@@ -576,11 +575,16 @@
     document.getElementById('fClient').value = '';
     document.getElementById('fNotes').value = '';
 
-    if (!['sales'].includes(curUser?.role)) {
-      document.getElementById('fSalesName').value = '';
-      document.getElementById('fSalesCode').value = '';
-      document.getElementById('fSalesName').disabled = false;
-      document.getElementById('fSalesCode').disabled = false;
+    // Reset sales name: auto-fill dari user login
+    const nameEl = document.getElementById('fSalesName');
+    if (['head_account','admin','treasury'].includes(curUser?.role)) {
+      nameEl.value = curUser?.name || '';
+      nameEl.readOnly = false;
+      nameEl.style.background = '';
+    } else {
+      nameEl.value = curUser?.name || '';
+      nameEl.readOnly = true;
+      nameEl.style.background = '#f5f5f5';
     }
 
     clearErrors();
@@ -593,19 +597,17 @@
     editId = id;
     document.getElementById('modalTitle').textContent = 'Edit Aktivitas';
     document.getElementById('saveBtn').textContent = 'Update';
-    document.getElementById('fDate').value = item.date || '';
+    document.getElementById('fDate').value     = item.date || '';
     document.getElementById('fActivity').value = item.activity || '';
-    document.getElementById('fSalesCode').value = item.salesCode || '';
     document.getElementById('fSalesName').value = item.salesName || '';
-    document.getElementById('fClient').value = item.client || '';
-    document.getElementById('fStatus').value = item.status || '';
-    document.getElementById('fNotes').value = item.notes || '';
+    document.getElementById('fClient').value   = item.client || '';
+    document.getElementById('fStatus').value   = item.status || '';
+    document.getElementById('fNotes').value    = item.notes || '';
 
-    // Allow editing own record
-    const isOwn = curUser?.name === item.salesName;
+    const nameEl = document.getElementById('fSalesName');
     const isAdmin = ['head_account','admin','treasury'].includes(curUser?.role);
-    document.getElementById('fSalesName').disabled = !isAdmin;
-    document.getElementById('fSalesCode').disabled = !isAdmin;
+    nameEl.readOnly = !isAdmin;
+    nameEl.style.background = isAdmin ? '' : '#f5f5f5';
 
     clearErrors();
     document.getElementById('activityModal').classList.add('open');
@@ -622,47 +624,50 @@
 
   // ===== SAVE =====
   async function saveActivity() {
-    const date       = document.getElementById('fDate').value.trim();
-    const activity   = document.getElementById('fActivity').value;
-    const salesCode  = document.getElementById('fSalesCode').value.trim();
-    const salesName  = document.getElementById('fSalesName').value.trim();
-    const client     = document.getElementById('fClient').value.trim();
-    const status     = document.getElementById('fStatus').value;
-    const notes      = document.getElementById('fNotes').value.trim();
+    const date      = document.getElementById('fDate').value.trim();
+    const activity  = document.getElementById('fActivity').value;
+    const salesName = document.getElementById('fSalesName').value.trim();
+    const client    = document.getElementById('fClient').value.trim();
+    const status    = document.getElementById('fStatus').value;
+    const notes     = document.getElementById('fNotes').value.trim();
 
+    // Validasi — salesCode sudah tidak ada
     let hasErr = false;
-    const required = { fDate: date, fActivity: activity, fSalesCode: salesCode, fSalesName: salesName, fClient: client, fStatus: status };
+    const required = { fDate: date, fActivity: activity, fSalesName: salesName, fClient: client, fStatus: status };
     for (const [id, val] of Object.entries(required)) {
       const el = document.getElementById(id);
-      if (!val) { el.classList.add('error'); hasErr = true; }
-      else el.classList.remove('error');
+      if (el) {
+        if (!val) { el.classList.add('error'); hasErr = true; }
+        else el.classList.remove('error');
+      }
     }
     if (hasErr) { showToast('Lengkapi semua field yang wajib diisi', 'error'); return; }
 
     const btn = document.getElementById('saveBtn');
     btn.textContent = 'Menyimpan...'; btn.disabled = true;
 
-    const payload = { date, activity, salesCode, salesName, client, status, notes, updatedAt: new Date().toISOString() };
+    // Payload sesuai kolom DB yang sebenarnya
+    const dbPayload = {
+      date,
+      tipe:        activity,
+      sales_name:  salesName,
+      client_name: client,
+      hasil:       status,
+      keterangan:  notes,
+    };
 
     try {
       if (editId) {
-        const { error } = await window._supabase.from('sales_activities').update({
-          date, tipe: activity, sales_code: salesCode, sales_name: salesName,
-          client_name: client, hasil: status, keterangan: notes
-        }).eq('id', editId);
+        const { error } = await window._supabase.from('sales_activities').update(dbPayload).eq('id', editId);
         if (error) throw error;
         const idx = allData.findIndex(d => d.id === editId);
-        if (idx !== -1) allData[idx] = { id: editId, ...payload };
+        if (idx !== -1) allData[idx] = normalize({ id: editId, ...dbPayload });
         showToast('Aktivitas diperbarui', 'success');
       } else {
-        payload.createdBy = curUser?.name || '';
-        const { data: inserted, error } = await window._supabase.from('sales_activities').insert({
-          date, tipe: activity, sales_code: salesCode, sales_name: salesName,
-          client_name: client, hasil: status, keterangan: notes,
-          created_by: curUser?.name || ''
-        }).select().single();
+        dbPayload.created_by = curUser?.name || '';
+        const { data: inserted, error } = await window._supabase.from('sales_activities').insert(dbPayload).select().single();
         if (error) throw error;
-        allData.unshift(inserted || { id: 'new_' + Date.now(), ...payload });
+        allData.unshift(normalize(inserted));
         showToast('Aktivitas berhasil ditambahkan', 'success');
       }
       document.getElementById('activityModal').classList.remove('open');
@@ -670,7 +675,7 @@
       updateStats();
     } catch(e) {
       console.error(e);
-      showToast('Gagal menyimpan data', 'error');
+      showToast('Gagal menyimpan: ' + (e.message || ''), 'error');
     } finally {
       btn.textContent = editId ? 'Update' : 'Simpan';
       btn.disabled = false;
@@ -692,8 +697,8 @@
 
   // ===== EXPORT CSV =====
   function exportCSV() {
-    const headers = ['Date','Sales Code','Sales Name','Activity','Client','Status','Keterangan'];
-    const rows = filtered.map(d => [d.date, d.salesCode, d.salesName, d.activity, d.client, d.status, d.notes]
+    const headers = ['Date','Sales Name','Activity','Client','Status','Keterangan'];
+    const rows = filtered.map(d => [d.date, d.salesName, d.activity, d.client, d.status, d.notes]
       .map(v => `"${(v||'').replace(/"/g,'""')}"`).join(','));
     const csv = [headers.join(','), ...rows].join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -707,7 +712,7 @@
   function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
   function fmtDate(d) {
     if (!d) return '—';
-    try { return new Date(d).toLocaleDateString('id-ID', { day:'2-digit', month:'short', year:'numeric' }); }
+    try { return new Date(d + 'T00:00:00').toLocaleDateString('id-ID', { day:'2-digit', month:'short', year:'numeric' }); }
     catch { return d; }
   }
   function showToast(msg, type='info') {
