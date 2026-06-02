@@ -285,23 +285,20 @@
 
   function populateMonthFilter() {
     const sel = document.getElementById('filterMonth');
-    // Kumpulkan semua bulan unik dari data
-    const months = [...new Set(allRows.map(r => (r.tanggal||'').slice(0,7)).filter(Boolean))].sort().reverse();
     const now = new Date();
-    const thisMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
-    const BULAN = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+    const thisYear = now.getFullYear();
+    const thisMonth = `${thisYear}-${String(now.getMonth()+1).padStart(2,'0')}`;
+    const BULAN = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
 
-    sel.innerHTML = '<option value="">Semua Bulan</option>';
-    months.forEach(m => {
-      const [y, mo] = m.split('-');
-      const label = `${BULAN[parseInt(mo)-1]} ${y}`;
+    sel.innerHTML = '<option value="">All Month</option>';
+    for (let m = 1; m <= 12; m++) {
+      const val = `${thisYear}-${String(m).padStart(2,'0')}`;
       const opt = document.createElement('option');
-      opt.value = m;
-      opt.textContent = label;
+      opt.value = val;
+      opt.textContent = BULAN[m-1];
       sel.appendChild(opt);
-    });
-    // Default ke bulan ini kalau ada datanya, kalau tidak biarkan "Semua"
-    if (months.includes(thisMonth)) sel.value = thisMonth;
+    }
+    sel.value = thisMonth;
   }
 
   function applyFilter() {
