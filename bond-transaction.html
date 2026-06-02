@@ -153,7 +153,9 @@
       <option value="Beli">Beli</option>
       <option value="Jual">Jual</option>
     </select>
-    <input type="month" class="filter-select" id="filterMonth" onchange="applyFilter()"/>
+    <select class="filter-select" id="filterMonth" onchange="applyFilter()">
+      <option value="">Semua Bulan</option>
+    </select>
     <button class="btn btn-outline btn-sm" onclick="resetFilter()">Reset</button>
   </div>
 
@@ -231,10 +233,8 @@
     }
 
     // Set default month filter
-    const now = new Date();
-    document.getElementById('filterMonth').value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
-
     await loadData();
+    populateMonthFilter();
   }
 
   async function loadData() {
@@ -283,6 +283,27 @@
     }
   }
 
+  function populateMonthFilter() {
+    const sel = document.getElementById('filterMonth');
+    // Kumpulkan semua bulan unik dari data
+    const months = [...new Set(allRows.map(r => (r.tanggal||'').slice(0,7)).filter(Boolean))].sort().reverse();
+    const now = new Date();
+    const thisMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+    const BULAN = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+
+    sel.innerHTML = '<option value="">Semua Bulan</option>';
+    months.forEach(m => {
+      const [y, mo] = m.split('-');
+      const label = `${BULAN[parseInt(mo)-1]} ${y}`;
+      const opt = document.createElement('option');
+      opt.value = m;
+      opt.textContent = label;
+      sel.appendChild(opt);
+    });
+    // Default ke bulan ini kalau ada datanya, kalau tidak biarkan "Semua"
+    if (months.includes(thisMonth)) sel.value = thisMonth;
+  }
+
   function applyFilter() {
     const q       = document.getElementById('searchInput').value.toLowerCase();
     const status  = document.getElementById('filterStatus').value;
@@ -305,8 +326,7 @@
     document.getElementById('searchInput').value = '';
     document.getElementById('filterStatus').value = '';
     document.getElementById('filterJenis').value = '';
-    const now = new Date();
-    document.getElementById('filterMonth').value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+    document.getElementById('filterMonth').value = '';
     applyFilter();
   }
 
