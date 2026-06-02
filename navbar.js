@@ -84,7 +84,6 @@
 
       // Customer dropdown
       'customer.html'          : ['head_account', 'admin', 'treasury'],
-      'history-order.html'     : ['head_account', 'admin', 'treasury', 'sales'],
 
       // Product dropdown
       'obligasi-bookbuilding.html'   : ['head_account', 'admin', 'treasury', 'sales'],

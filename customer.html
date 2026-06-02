@@ -14,7 +14,12 @@
     const _sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     window._supabase = _sb;
 
-    window.addEventListener('DOMContentLoaded', () => { loadCustomers(); });
+    window.addEventListener('DOMContentLoaded', () => {
+      // Set _curUser dari session sebelum load data
+      const _raw = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember');
+      if (_raw) { try { window._curUser = JSON.parse(_raw); } catch(e) {} }
+      loadCustomers();
+    });
   </script>
 
   <style>
@@ -339,7 +344,7 @@
             <th>Kantor</th>
             <th>Status</th>
             <th>Tgl. Aktif</th>
-            <th>Aksi</th>
+            <th id="thAksi">Aksi</th>
           </tr>
         </thead>
         <tbody id="customerTableBody">
@@ -537,10 +542,16 @@
 
   async function loadCustomers() {
     try {
-      const { data, error } = await window._supabase
+      const cu = window._curUser || JSON.parse(sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember') || '{}');
+      let query = window._supabase
         .from('customers')
         .select('*, customer_securities(*)')
         .order('created_at', { ascending: false });
+      // Sales hanya bisa lihat customer miliknya sendiri
+      if (cu.role === 'sales') {
+        query = query.eq('sales_person_name', cu.name || '');
+      }
+      const { data, error } = await query;
       if (error) throw error;
       allCustomers = (data || []).map(r => {
         const mapped = mapCustomerRow(r);
@@ -993,9 +1004,10 @@
         status === 'Closed'    ? 'badge-closed' : 'badge-aktif';
       const tglAktif = c.activeDate ? fmtDate(c.activeDate) : (c.createdDate ? fmtDate(c.createdDate) : '—');
       const checked = selectedIds.has(c.id) ? 'checked' : '';
+      const isSales = window._curUser?.role === 'sales';
 
       return `<tr onclick="openDetailModal('${c.id}')">
-        <td class="cb-cell" onclick="event.stopPropagation()">
+        <td class="cb-cell" onclick="event.stopPropagation()" ${isSales ? 'style="display:none"' : ''}>
           <input type="checkbox" class="row-cb" data-id="${c.id}" ${checked} onchange="toggleRowSelect('${c.id}', this.checked)"/>
         </td>
         <td style="color:#bbb;font-size:0.78rem;">${start+i+1}</td>
@@ -1015,12 +1027,12 @@
           ${c.clientStatusDescription ? `<div style="font-size:0.68rem;color:#aaa;margin-top:3px;">${esc(c.clientStatusDescription)}</div>` : ''}
         </td>
         <td style="font-size:0.82rem;color:#888;">${tglAktif}</td>
-        <td onclick="event.stopPropagation()">
+        ${isSales ? '' : `<td onclick="event.stopPropagation()">
           <div class="action-btns">
             <button class="btn-icon" title="Edit" onclick="openEditModal('${c.id}')">✏️</button>
             <button class="btn-icon del" title="Hapus" onclick="deleteCustomer('${c.id}','${esc(c.clientName||'')}')">🗑️</button>
           </div>
-        </td>
+        </td>`}
       </tr>`;
     }).join('');
 
@@ -1440,7 +1452,46 @@
     sessionStorage.setItem('fawz_user', raw);
     // ── ROLE GUARD ──
     const _gu = JSON.parse(raw);
-    if (!['head_account','admin','treasury'].includes(_gu.role)) { window.location.replace('dashboard.html'); return; }
+    window._curUser = _gu;
+    const allowedRoles = ['head_account','admin','treasury','sales'];
+    if (!allowedRoles.includes(_gu.role)) { window.location.replace('dashboard.html'); return; }
+
+    // ── SALES RESTRICTIONS ──
+    if (_gu.role === 'sales') {
+      // Sembunyikan tombol tambah, upload, export, edit, hapus, bulk delete
+      document.querySelectorAll(
+        '.btn-primary, .bulk-bar, #bulkBar, .btn-icon.del'
+      ).forEach(el => el.style.display = 'none');
+
+      // Sembunyikan tombol Upload CSV & Export CSV (btn-outline di header-actions)
+      const headerBtns = document.querySelectorAll('.header-actions .btn-outline');
+      headerBtns.forEach(btn => btn.style.display = 'none');
+
+      // Sembunyikan kolom Aksi di tabel (header)
+      // Dilakukan setelah render — override renderTable untuk sales
+      const _origRender = window.renderTable || renderTable;
+
+      // Sembunyikan filter Sales (tidak perlu, data sudah otomatis difilter)
+      const filterSalesWrap = document.getElementById('filterSales');
+      if (filterSalesWrap) filterSalesWrap.style.display = 'none';
+
+      // Sembunyikan checkbox kolom & bulk actions
+      document.querySelectorAll('.cb-cell, #cbSelectAll, #cbArrowBtn').forEach(el => el.style.display = 'none');
+
+      // Subtitle update
+      const subtitle = document.querySelector('.page-subtitle');
+      if (subtitle) subtitle.textContent = 'Data customer atas nama Anda';
+
+      // Sembunyikan Edit button di detail modal
+      const detailEditBtn = document.getElementById('detailEditBtn');
+      if (detailEditBtn) detailEditBtn.style.display = 'none';
+
+      // Sembunyikan kolom header Aksi dan checkbox header
+      const thAksi = document.getElementById('thAksi');
+      if (thAksi) thAksi.style.display = 'none';
+      const thCb = document.querySelector('thead th.cb-cell');
+      if (thCb) thCb.style.display = 'none';
+    }
   })();
 </script>
 </body>
