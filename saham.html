@@ -133,7 +133,9 @@
       <div class="title-underline"></div>
     </div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
-      <input type="month" id="filterMonth" onchange="loadData()" style="height:38px;border:1px solid var(--border);border-radius:8px;padding:0 12px;font-family:'Inter',sans-serif;font-size:0.82rem;"/>
+      <select id="filterMonth" onchange="loadData()" style="height:38px;border:1px solid var(--border);border-radius:8px;padding:0 12px;font-family:'Inter',sans-serif;font-size:0.82rem;min-width:150px;">
+        <option value="">Semua Data</option>
+      </select>
       <select id="filterClient" onchange="onFilterChange()" style="height:38px;border:1px solid var(--border);border-radius:8px;padding:0 12px;font-family:'Inter',sans-serif;font-size:0.82rem;min-width:180px;">
         <option value="">Semua Nasabah</option>
       </select>
@@ -369,7 +371,21 @@
   async function initPage() {
     curUser = getCurUser();
     const now = new Date();
-    document.getElementById('filterMonth').value = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+
+    // Populate month dropdown: last 24 months + current
+    const monthSelect = document.getElementById('filterMonth');
+    const currentMonth = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+    const monthNames = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+    for (let i = 0; i < 24; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const val = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+      const label = monthNames[d.getMonth()] + ' ' + d.getFullYear();
+      const opt = document.createElement('option');
+      opt.value = val;
+      opt.textContent = label;
+      monthSelect.appendChild(opt);
+    }
+    monthSelect.value = currentMonth;
 
     // Sembunyikan kontrol manajemen data untuk sales (read-only)
     if (curUser?.role === 'sales') {
@@ -618,13 +634,18 @@
   async function renderSummary() {
     var month = document.getElementById('filterMonth').value;
     var monthlySummary = window.SahamAggregation.calculateMonthlySummary(filteredData);
+
+    // Update Monthly Summary label based on filter
+    var monthlyLabel = document.querySelector('#summarySection .stat-box:first-child .stat-box-label');
+    if (monthlyLabel) monthlyLabel.textContent = month ? 'Monthly Summary' : 'Total Keseluruhan';
+
     document.getElementById('summaryMonthlyVolume').textContent = formatRp(monthlySummary.totalVolume);
     document.getElementById('summaryMonthlyFee').textContent = formatRp(monthlySummary.totalFee);
     document.getElementById('summaryMonthlyClients').textContent = String(monthlySummary.activeClients);
 
-    // YTD: fetch from Jan 1 to Dec 31 of selected year (with pagination)
+    // YTD: if no month selected, use current year; else use selected year
     try {
-      var year = month.split('-')[0];
+      var year = month ? month.split('-')[0] : String(new Date().getFullYear());
       var startDate = year + '-01-01';
       var endDate = year + '-12-31';
 
@@ -654,7 +675,6 @@
         if (result.error) { console.error('YTD page error:', result.error); break; }
 
         var rows = result.data || [];
-        console.log('YTD fetch page offset=' + offset + ' rows=' + rows.length);
         for (var j = 0; j < rows.length; j++) {
           totalVolume += Number(rows[j].volume) || 0;
           totalFee += Number(rows[j].fee) || 0;
@@ -668,7 +688,6 @@
         }
       }
 
-      console.log('YTD total: volume=' + totalVolume + ' fee=' + totalFee + ' clients=' + clientIds.size);
       document.getElementById('summaryYTDVolume').textContent = formatRp(totalVolume);
       document.getElementById('summaryYTDFee').textContent = formatRp(totalFee);
       document.getElementById('summaryYTDClients').textContent = String(clientIds.size);
