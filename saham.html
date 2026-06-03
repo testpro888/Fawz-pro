@@ -556,10 +556,11 @@
   function renderStats() {
     const totalVol = filteredData.reduce((s, r) => s + (parseFloat(r.volume) || 0), 0);
     const totalFee = filteredData.reduce((s, r) => s + (parseFloat(r.fee) || 0), 0);
+    const uniqueClients = new Set(filteredData.map(r => r.client_id)).size;
     document.getElementById('statVolume').textContent = formatRp(totalVol);
     document.getElementById('statFee').textContent = formatRp(totalFee);
     document.getElementById('statCount').textContent = filteredData.length.toLocaleString('id-ID');
-    // Nasabah Aktif diisi dari YTD (diupdate oleh renderSummary)
+    document.getElementById('statNasabah').textContent = uniqueClients;
   }
 
   // Store rekap entries globally for search filtering
@@ -675,8 +676,6 @@
       document.getElementById('summaryYTDVolume').textContent = formatRp(totalVolume);
       document.getElementById('summaryYTDFee').textContent = formatRp(totalFee);
       document.getElementById('summaryYTDClients').textContent = String(clientIds.size);
-      // Nasabah Aktif di stat card = nasabah unik YTD
-      document.getElementById('statNasabah').textContent = clientIds.size.toLocaleString('id-ID');
     } catch(e) {
       console.error('YTD fetch error:', e);
     }
