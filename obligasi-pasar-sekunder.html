@@ -213,7 +213,7 @@
             <th>Series</th><th>Jatuh Tempo</th><th>Coupon (%)</th>
             <th>Last Coupon</th><th>Next Coupon</th>
             <th>Bid</th><th>Offer</th><th>YTM (%)</th>
-            <th>Due Date</th><th>Tgl. Update</th><th>Aksi</th>
+            <th>Tgl. Update</th><th>Aksi</th>
           </tr></thead>
           <tbody id="tbody-gov-idr"><tr><td colspan="11"><div class="empty-state"><div class="empty-icon">⏳</div><p>Memuat data...</p></div></td></tr></tbody>
         </table>
@@ -250,7 +250,7 @@
             <th>Series</th><th>Jatuh Tempo</th><th>Coupon (%)</th>
             <th>Last Coupon</th><th>Next Coupon</th>
             <th>Bid</th><th>Offer</th><th>YTM (%)</th>
-            <th>Due Date</th><th>Tgl. Update</th><th>Aksi</th>
+            <th>Tgl. Update</th><th>Aksi</th>
           </tr></thead>
           <tbody id="tbody-gov-usd"><tr><td colspan="11"><div class="empty-state"><div class="empty-icon">⏳</div><p>Memuat data...</p></div></td></tr></tbody>
         </table>
@@ -287,7 +287,7 @@
             <th>Series</th><th>Penerbit</th><th>Jatuh Tempo</th><th>Rating</th><th>Coupon (%)</th>
             <th>Last Coupon</th><th>Next Coupon</th>
             <th>Bid</th><th>Offer</th><th>YTM (%)</th>
-            <th>Due Date</th><th>Tgl. Update</th><th>Aksi</th>
+            <th>Tgl. Update</th><th>Aksi</th>
           </tr></thead>
           <tbody id="tbody-korp-idr"><tr><td colspan="13"><div class="empty-state"><div class="empty-icon">⏳</div><p>Memuat data...</p></div></td></tr></tbody>
         </table>
@@ -324,7 +324,7 @@
             <th>Series</th><th>Penerbit</th><th>Jatuh Tempo</th><th>Rating</th><th>Coupon (%)</th>
             <th>Last Coupon</th><th>Next Coupon</th>
             <th>Bid</th><th>Offer</th><th>YTM (%)</th>
-            <th>Due Date</th><th>Tgl. Update</th><th>Aksi</th>
+            <th>Tgl. Update</th><th>Aksi</th>
           </tr></thead>
           <tbody id="tbody-korp-usd"><tr><td colspan="13"><div class="empty-state"><div class="empty-icon">⏳</div><p>Memuat data...</p></div></td></tr></tbody>
         </table>
@@ -445,7 +445,7 @@
       <div class="upload-icon">📂</div>
       <div style="font-weight:600;color:var(--navy);">Klik atau drag & drop file CSV</div>
       <div class="upload-hint">
-        Header yang didukung: <strong>Seri, Kupon, JatuhTempo, Rating, LastCouponDate, NextCouponDate, HargaJual, HargaBeli, Yield, DueDate, TanggalUpdate</strong>
+        Header yang didukung: <strong>Seri, Kupon, JatuhTempo, Rating, LastCouponDate, NextCouponDate, HargaJual, HargaBeli, Yield, TanggalUpdate</strong>
       </div>
     </div>
     <input type="file" id="csvFileInput" accept=".csv" onchange="handleCSVFile(event)"/>
@@ -557,7 +557,6 @@
         <td style="color:#27ae60;">${fmtHarga(r.harga_jual)}</td>
         <td style="color:#e74c3c;">${fmtHarga(r.harga_beli)}</td>
         <td>${r.yield != null ? fmtDecimal(r.yield, 4) + '%' : '—'}</td>
-        <td>${fmtDate(r.due_date)}</td>
         <td style="font-size:0.8rem;color:#888;">${fmtDate(r.tanggal_update)}</td>
         <td>
           <div class="action-btns">
@@ -628,7 +627,6 @@
     document.getElementById('fHargaJual').value = item.harga_jual != null ? Number(item.harga_jual).toFixed(2).replace('.', ',') : '';
     document.getElementById('fHargaBeli').value = item.harga_beli != null ? Number(item.harga_beli).toFixed(2).replace('.', ',') : '';
     document.getElementById('fYield').value = item.yield != null ? item.yield : '';
-    document.getElementById('fDueDate').value = item.due_date || '';
     document.getElementById('fTanggalUpdate').value = item.tanggal_update || '';
     toggleRatingField();
     document.getElementById('formModal').classList.add('open');
@@ -834,7 +832,6 @@
       harga_jual:       parseFloat(g('hargajual','harga_jual','bid','bidprice')) || null,
       harga_beli:       parseFloat(g('hargabeli','harga_beli','offer','offerprice','ask','askprice')) || null,
       yield:            parseFloat(g('yield','ytm')) || null,
-      due_date:         g('duedate','due_date') || null,
       tanggal_update:   g('tanggalupdate','tanggal_update','updatedate','date') || new Date().toISOString().slice(0,10),
     };
   }
@@ -853,8 +850,8 @@
   function renderCSVPreview() {
     document.getElementById('csvPreviewInfo').textContent = `${csvRows.length} data ditemukan. Preview 5 baris pertama:`;
     document.getElementById('csvPreview').innerHTML = `<table>
-      <thead><tr><th>Series</th><th>Coupon</th><th>Rating</th><th>Last Coupon</th><th>Next Coupon</th><th>Bid</th><th>Offer</th><th>YTM</th><th>Due Date</th></tr></thead>
-      <tbody>${csvRows.slice(0,5).map(r=>`<tr><td>${esc(r.seri)}</td><td>${r.kupon??''}</td><td>${esc(r.rating||'')}</td><td>${r.last_coupon_date||''}</td><td>${r.next_coupon_date||''}</td><td>${r.harga_jual??''}</td><td>${r.harga_beli??''}</td><td>${r.yield??''}</td><td>${r.due_date||''}</td></tr>`).join('')}</tbody>
+      <thead><tr><th>Series</th><th>Coupon</th><th>Rating</th><th>Last Coupon</th><th>Next Coupon</th><th>Bid</th><th>Offer</th><th>YTM</th></tr></thead>
+      <tbody>${csvRows.slice(0,5).map(r=>`<tr><td>${esc(r.seri)}</td><td>${r.kupon??''}</td><td>${esc(r.rating||'')}</td><td>${r.last_coupon_date||''}</td><td>${r.next_coupon_date||''}</td><td>${r.harga_jual??''}</td><td>${r.harga_beli??''}</td><td>${r.yield??''}</td></tr>`).join('')}</tbody>
     </table>`;
     document.getElementById('csvPreviewWrap').style.display = 'block';
   }
@@ -885,8 +882,8 @@
   }
 
   function downloadTemplate() {
-    const H = 'Seri,Kupon,JatuhTempo,Rating,LastCouponDate,NextCouponDate,HargaJual,HargaBeli,Yield,DueDate,TanggalUpdate';
-    const E = 'FR0100,6.375,2034-02-15,AAA,2025-01-15,2025-07-15,101.50,100.75,6.1234,2034-02-15,2025-01-10';
+    const H = 'Seri,Kupon,JatuhTempo,Rating,LastCouponDate,NextCouponDate,HargaJual,HargaBeli,Yield,TanggalUpdate';
+    const E = 'FR0100,6.375,2034-02-15,AAA,2025-01-15,2025-07-15,101.50,100.75,6.1234,2025-01-10';
     const blob = new Blob([H+'\n'+E], {type:'text/csv'});
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
     a.download = 'template_obligasi_pasar_sekunder.csv'; a.click();
@@ -896,8 +893,8 @@
   function exportCSV(cat) {
     const data = allData[cat];
     if (!data.length) { showToast('Tidak ada data untuk diexport', 'error'); return; }
-    const H = 'Seri,Kupon,JatuhTempo,Rating,LastCouponDate,NextCouponDate,Bid,Offer,YTM,DueDate,TanggalUpdate';
-    const rows = data.map(r => [r.seri,r.kupon??'',r.jatuh_tempo??'',r.rating??'',r.last_coupon_date??'',r.next_coupon_date??'',r.harga_jual??'',r.harga_beli??'',r.yield??'',r.due_date??'',r.tanggal_update??''].map(v=>`"${v}"`).join(','));
+    const H = 'Seri,Kupon,JatuhTempo,Rating,LastCouponDate,NextCouponDate,Bid,Offer,YTM,TanggalUpdate';
+    const rows = data.map(r => [r.seri,r.kupon??'',r.jatuh_tempo??'',r.rating??'',r.last_coupon_date??'',r.next_coupon_date??'',r.harga_jual??'',r.harga_beli??'',r.yield??'',r.tanggal_update??''].map(v=>`"${v}"`).join(','));
     const blob = new Blob([H+'\n'+rows.join('\n')], {type:'text/csv;charset=utf-8;'});
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
     a.download = `obligasi_${cat}_${new Date().toISOString().slice(0,10)}.csv`; a.click();
