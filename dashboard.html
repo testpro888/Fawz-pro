@@ -133,12 +133,14 @@
 
     window.addEventListener('DOMContentLoaded', () => {
       const role = getUserRole();
-      // Selalu load stats dasar dulu
-      loadStats();
-      loadObligasiCount();
-      // Untuk sales, override customer aktif dengan data YTD
       if (role === 'sales') {
+        // Untuk sales: set default 0 dulu, lalu load dari YTD saham_transaksi
+        const el = document.getElementById('sumCustomerAktif');
+        if (el) el.textContent = '0';
         loadSalesCustomerCount();
+      } else {
+        loadStats();
+        loadObligasiCount();
       }
     });
 
