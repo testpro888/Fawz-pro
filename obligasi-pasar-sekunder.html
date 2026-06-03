@@ -412,10 +412,6 @@
         <input class="form-input" id="fYield" type="number" step="0.0001" placeholder="6.82"/>
       </div>
       <div class="form-group">
-        <label class="form-label">Due Date</label>
-        <input class="form-input" id="fDueDate" type="date"/>
-      </div>
-      <div class="form-group">
         <label class="form-label">Tanggal Update</label>
         <input class="form-input" id="fTanggalUpdate" type="date"/>
       </div>
@@ -639,7 +635,7 @@
   }
 
   function clearForm() {
-    ['fSeri','fKupon','fHargaJual','fHargaBeli','fYield','fTanggalUpdate','fRating','fLastCoupon','fNextCoupon','fDueDate','fPenerbit','fTanggalListing','fFinalMaturity'].forEach(id => {
+    ['fSeri','fKupon','fHargaJual','fHargaBeli','fYield','fTanggalUpdate','fRating','fLastCoupon','fNextCoupon','fPenerbit','fTanggalListing','fFinalMaturity'].forEach(id => {
       const el = document.getElementById(id); if (el) el.value = '';
     });
     const freqEl = document.getElementById('fKuponFreq');
@@ -731,7 +727,6 @@
     const penerbit = isKorp ? (document.getElementById('fPenerbit').value.trim() || null) : null;
     const lastCouponDate = document.getElementById('fLastCoupon').value || null;
     const nextCouponDate = document.getElementById('fNextCoupon').value || null;
-    const dueDate = document.getElementById('fDueDate').value || null;
     const tanggalListing = document.getElementById('fTanggalListing').value || null;
     const kuponFreq      = document.getElementById('fKuponFreq').value || null;
 
@@ -739,7 +734,6 @@
     if (penerbit !== null) data.penerbit = penerbit;
     if (lastCouponDate !== null) data.last_coupon_date = lastCouponDate;
     if (nextCouponDate !== null) data.next_coupon_date = nextCouponDate;
-    if (dueDate !== null) data.due_date = dueDate;
     if (tanggalListing !== null) data.tanggal_listing = tanggalListing;
     if (kuponFreq !== null) data.kupon_freq = parseInt(kuponFreq);
 
