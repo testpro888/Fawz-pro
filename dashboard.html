@@ -132,9 +132,50 @@
     }
 
     window.addEventListener('DOMContentLoaded', () => {
-      loadStats();
-      loadObligasiCount();
+      const role = getUserRole();
+      if (role === 'sales') {
+        loadSalesCustomerCount();
+      } else {
+        loadStats();
+        loadObligasiCount();
+      }
     });
+
+    async function loadSalesCustomerCount() {
+      // Untuk sales: hitung nasabah unik dari saham_transaksi YTD
+      try {
+        const raw = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember');
+        const u = raw ? JSON.parse(raw) : {};
+        const salesName = u.name || '';
+        const year = new Date().getFullYear();
+        const startDate = year + '-01-01';
+        const endDate   = year + '-12-31';
+
+        const clientIds = new Set();
+        let offset = 0;
+        const pageSize = 1000;
+        let keepFetching = true;
+
+        while (keepFetching) {
+          const { data, error } = await supabase
+            .from('saham_transaksi')
+            .select('client_id')
+            .gte('tanggal', startDate)
+            .lte('tanggal', endDate)
+            .eq('sales_name', salesName)
+            .range(offset, offset + pageSize - 1);
+          if (error) break;
+          (data || []).forEach(r => clientIds.add(r.client_id));
+          if ((data || []).length < pageSize) keepFetching = false;
+          else offset += pageSize;
+        }
+
+        const el = document.getElementById('sumCustomerAktif');
+        if (el) el.textContent = clientIds.size.toLocaleString('id-ID');
+        const badge = document.getElementById('sumCustomerBadge');
+        if (badge) badge.textContent = 'YTD ' + new Date().getFullYear();
+      } catch(e) { console.error('Gagal load sales customer count:', e); }
+    }
   </script>
 
   <style>
@@ -452,7 +493,7 @@
     <div class="summary-item">
       <div class="sum-label">Customer Aktif</div>
       <div class="sum-value" id="sumCustomerAktif">—</div>
-      <div><span class="sum-badge badge-up">Aktif</span></div>
+      <div><span class="sum-badge badge-up" id="sumCustomerBadge">Aktif</span></div>
     </div>
     <div class="summary-item">
       <div class="sum-label">Transaksi Bulan Ini</div>
