@@ -133,11 +133,12 @@
 
     window.addEventListener('DOMContentLoaded', () => {
       const role = getUserRole();
+      // Selalu load stats dasar dulu
+      loadStats();
+      loadObligasiCount();
+      // Untuk sales, override customer aktif dengan data YTD
       if (role === 'sales') {
         loadSalesCustomerCount();
-      } else {
-        loadStats();
-        loadObligasiCount();
       }
     });
 
@@ -147,6 +148,8 @@
         const raw = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember');
         const u = raw ? JSON.parse(raw) : {};
         const salesName = u.name || '';
+        if (!salesName) return;
+
         const year = new Date().getFullYear();
         const startDate = year + '-01-01';
         const endDate   = year + '-12-31';
@@ -164,8 +167,8 @@
             .lte('tanggal', endDate)
             .eq('sales_name', salesName)
             .range(offset, offset + pageSize - 1);
-          if (error) break;
-          (data || []).forEach(r => clientIds.add(r.client_id));
+          if (error) { console.error('YTD customer error:', error); break; }
+          (data || []).forEach(r => { if (r.client_id) clientIds.add(r.client_id); });
           if ((data || []).length < pageSize) keepFetching = false;
           else offset += pageSize;
         }
@@ -173,7 +176,7 @@
         const el = document.getElementById('sumCustomerAktif');
         if (el) el.textContent = clientIds.size.toLocaleString('id-ID');
         const badge = document.getElementById('sumCustomerBadge');
-        if (badge) badge.textContent = 'YTD ' + new Date().getFullYear();
+        if (badge) badge.textContent = 'YTD ' + year;
       } catch(e) { console.error('Gagal load sales customer count:', e); }
     }
   </script>
