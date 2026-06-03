@@ -637,6 +637,7 @@
       var year = month ? month.split('-')[0] : String(new Date().getFullYear());
       var startDate = year + '-01-01';
       var endDate = year + '-12-31';
+      var isSalesRole = curUser?.role === 'sales';
 
       var totalVolume = 0, totalFee = 0, clientIds = new Set();
       var pageSize = 1000;
@@ -644,23 +645,18 @@
       var keepFetching = true;
 
       while (keepFetching) {
-        var result = await _sb
+        var q = _sb
           .from('saham_transaksi')
           .select('volume, fee, client_id')
           .gte('tanggal', startDate)
           .lte('tanggal', endDate)
           .range(offset, offset + pageSize - 1);
-        // Filter YTD by sales name if role is sales
-        if (curUser?.role === 'sales') {
-          result = await _sb
-            .from('saham_transaksi')
-            .select('volume, fee, client_id')
-            .gte('tanggal', startDate)
-            .lte('tanggal', endDate)
-            .eq('sales_name', curUser.name || '')
-            .range(offset, offset + pageSize - 1);
+
+        if (isSalesRole) {
+          q = q.eq('sales_name', curUser.name || '');
         }
 
+        var result = await q;
         if (result.error) { console.error('YTD page error:', result.error); break; }
 
         var rows = result.data || [];
