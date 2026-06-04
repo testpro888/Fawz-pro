@@ -11,11 +11,11 @@
   <script>
     const SUPABASE_URL = 'https://yhmrfluehibfapvtxcfi.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlobXJmbHVlaGliZmFwdnR4Y2ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNjEzODUsImV4cCI6MjA5NDczNzM4NX0.se_H4n_eLsf81d_1GH5sqsPCpX89MHewlPuuNkY6qcU';
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const _sbDash = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     async function loadObligasiCount() {
       try {
-        const { count, error } = await supabase
+        const { count, error } = await _sbDash
           .from('obligasi_products')
           .select('*', { count: 'exact', head: true });
         const el = document.getElementById('statObligasi');
@@ -49,7 +49,7 @@
 
       try {
         // Obligasi Terjual - jumlah order obligasi bulan ini oleh sales ini
-        let qObl = supabase
+        let qObl = _sbDash
           .from('obligasi_orders')
           .select('nominal', { count: 'exact' })
           .gte('created_at', firstDay)
@@ -67,7 +67,7 @@
 
       try {
         // Reksadana Terjual
-        let qReks = supabase
+        let qReks = _sbDash
           .from('reksadana_orders')
           .select('nominal', { count: 'exact' })
           .gte('created_at', firstDay)
@@ -85,7 +85,7 @@
 
       try {
         // Waran Terstruktur Terjual
-        let qWar = supabase
+        let qWar = _sbDash
           .from('waran_orders')
           .select('nominal', { count: 'exact' })
           .gte('created_at', firstDay)
@@ -103,7 +103,7 @@
 
       try {
         // Komisi Berjalan Bulan Ini
-        let qKom = supabase
+        let qKom = _sbDash
           .from('commissions')
           .select('amount')
           .gte('created_at', firstDay)
@@ -157,7 +157,7 @@
         let keepFetching = true;
 
         while (keepFetching) {
-          const { data, error } = await supabase
+          const { data, error } = await _sbDash
             .from('saham_transaksi')
             .select('client_id')
             .gte('tanggal', startDate)
@@ -190,7 +190,7 @@
         let keepFetching = true;
 
         while (keepFetching) {
-          const { data, error } = await supabase
+          const { data, error } = await _sbDash
             .from('saham_transaksi')
             .select('client_id')
             .gte('tanggal', startDate)
@@ -222,7 +222,7 @@
         let keepFetching = true;
 
         while (keepFetching) {
-          const { data, error } = await supabase
+          const { data, error } = await _sbDash
             .from('saham_transaksi')
             .select('client_id')
             .gte('tanggal', startDate)
