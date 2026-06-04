@@ -27,7 +27,7 @@
         // Fetch accounts with role sales/head_sales that are not yet in sales table
         const { data: accounts, error: accErr } = await supabase
           .from('accounts')
-          .select('id, name, username, email, role')
+          .select('id, name, username, role')
           .in('role', ['sales', 'head_sales']);
 
         if (accErr) {
@@ -43,7 +43,7 @@
             if (accName && !existingNames.has(accName)) {
               toInsert.push({
                 nama: acc.name,
-                email: acc.email || '',
+                
                 kode: acc.username ? acc.username.toUpperCase().substring(0,8) : '',
                 tipe: 'RM',
                 created_at: new Date().toISOString()
@@ -79,7 +79,7 @@
       try {
         const { data: accounts, error: accErr } = await supabase
           .from('accounts')
-          .select('id, name, username, email, role')
+          .select('id, name, username, role')
           .in('role', ['sales', 'head_sales']);
 
         if (accErr) throw accErr;
@@ -95,7 +95,7 @@
           .filter(acc => acc.name && !existingNames.has(acc.name.toLowerCase().trim()))
           .map(acc => ({
             nama: acc.name,
-            email: acc.email || '',
+            
             kode: acc.username ? acc.username.toUpperCase().substring(0,8) : '',
             tipe: 'RM',
             created_at: new Date().toISOString()
