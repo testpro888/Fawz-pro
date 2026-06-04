@@ -30,6 +30,10 @@
           .select('id, name, username, email, role')
           .in('role', ['sales', 'head_sales']);
 
+        if (accErr) {
+          console.warn('Tidak bisa fetch accounts (mungkin RLS):', accErr.message);
+        }
+
         if (!accErr && accounts && accounts.length > 0) {
           const existingNames = new Set((rows||[]).map(r => (r.nama||'').toLowerCase().trim()));
           const toInsert = [];
@@ -49,7 +53,7 @@
 
           if (toInsert.length > 0) {
             const { error: insErr } = await supabase.from('sales').insert(toInsert);
-            if (insErr) console.warn('Auto-insert sales error:', insErr);
+            if (insErr) console.warn('Auto-insert sales error:', insErr.message);
             // Re-fetch after insert
             const { data: refreshed } = await supabase
               .from('sales').select('*').order('created_at', { ascending: false });
@@ -64,7 +68,54 @@
       } catch(e) {
         console.error('Gagal load sales:', e);
         document.getElementById('tableBody').innerHTML =
-          '<tr><td colspan="8" style="text-align:center;padding:40px;color:#aaa;">Gagal memuat data</td></tr>';
+          '<tr><td colspan="8" style="text-align:center;padding:40px;color:#aaa;">Gagal memuat data. Coba refresh halaman.</td></tr>';
+      }
+    }
+
+    // Sync manual: insert semua akun sales/head_sales yang belum ada di tabel sales
+    async function syncSalesFromAccounts() {
+      const btn = document.getElementById('btnSync');
+      if (btn) { btn.disabled = true; btn.textContent = 'Menyinkronkan...'; }
+      try {
+        const { data: accounts, error: accErr } = await supabase
+          .from('accounts')
+          .select('id, name, username, email, role')
+          .in('role', ['sales', 'head_sales']);
+
+        if (accErr) throw accErr;
+        if (!accounts || accounts.length === 0) {
+          alert('Tidak ada akun Sales/Head Sales yang ditemukan.');
+          return;
+        }
+
+        const { data: existing } = await supabase.from('sales').select('nama');
+        const existingNames = new Set((existing||[]).map(r => (r.nama||'').toLowerCase().trim()));
+
+        const toInsert = accounts
+          .filter(acc => acc.name && !existingNames.has(acc.name.toLowerCase().trim()))
+          .map(acc => ({
+            nama: acc.name,
+            email: acc.email || '',
+            kode: acc.username ? acc.username.toUpperCase().substring(0,8) : '',
+            tipe: 'RM',
+            created_at: new Date().toISOString()
+          }));
+
+        if (toInsert.length === 0) {
+          alert('Semua akun Sales sudah tersinkronisasi di Data Sales.');
+          return;
+        }
+
+        const { error: insErr } = await supabase.from('sales').insert(toInsert);
+        if (insErr) throw insErr;
+
+        alert(`✅ Berhasil menambahkan ${toInsert.length} sales baru dari akun pengguna!`);
+        await loadSales();
+      } catch(e) {
+        console.error('Sync error:', e);
+        alert('Gagal sinkronisasi: ' + e.message);
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = '🔄 Sync Akun'; }
       }
     }
 
@@ -405,6 +456,7 @@
       <div class="page-subtitle">Kelola seluruh tim sales Fawz Pro</div>
     </div>
     <button class="btn-add" onclick="openModal()">＋ Tambah Sales</button>
+    <button id="btnSync" onclick="syncSalesFromAccounts()" style="height:38px;padding:0 18px;border-radius:8px;border:1.5px solid var(--gold);background:#fff;color:var(--gold);font-family:'Inter',sans-serif;font-size:0.82rem;font-weight:600;cursor:pointer;margin-left:8px;">🔄 Sync Akun</button>
   </div>
 
   <!-- Stats Strip -->
