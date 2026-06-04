@@ -1,0 +1,7 @@
+node_modules/
+package-lock.json
+*.py
+analytics-new.html
+analytics-template.html
+analytics-working.html
+.kiro/
