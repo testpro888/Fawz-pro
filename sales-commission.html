@@ -12,7 +12,6 @@
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlobXJmbHVlaGliZmFwdnR4Y2ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNjEzODUsImV4cCI6MjA5NDczNzM4NX0.se_H4n_eLsf81d_1GH5sqsPCpX89MHewlPuuNkY6qcU';
     var supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     window._supabase = supabase;
-    window.addEventListener('DOMContentLoaded', boot);
   </script>
 
   <style>
@@ -1024,6 +1023,9 @@
     document.getElementById('toastContainer').appendChild(t);
     setTimeout(() => t.remove(), 3500);
   }
+
+  // Boot when DOM ready - listener here so boot function is already defined
+  window.addEventListener('DOMContentLoaded', boot);
 </script>
 </body>
 </html>
