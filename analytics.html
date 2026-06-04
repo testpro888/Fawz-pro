@@ -63,7 +63,6 @@
       <div class="subtitle">Visualisasi data transaksi saham per bulan</div>
       <div class="title-underline"></div>
     </div>
-    <div id="roleBadge" style="margin-top:8px;"></div>
   </div>
 
   <div class="filter-bar">
@@ -133,9 +132,7 @@ async function initPage(){
   for(let i=c;i>=2020;i--){const o=document.createElement('option');o.value=i;o.textContent=i;y.appendChild(o)}
 
   // Role badge
-  const badge=document.getElementById('roleBadge');
   if(isSales){
-    badge.innerHTML='<span class="role-badge">👤 Menampilkan data Anda: '+curUser.name+'</span>';
   }
 
   // Untuk Sales: sembunyikan filter "Per Sales" karena tidak relevan
