@@ -425,7 +425,7 @@
             .lte('tanggal', endDate)
             .order('tanggal', { ascending: false })
             .range(offset, offset + pageSize - 1);
-          if (isSales) q = q.eq('sales_name', salesName);
+          if (isSales) q = q.ilike('sales_name', salesName);
           // Head Sales tidak perlu filter - bisa lihat semua
           const { data, error } = await q;
 
@@ -441,7 +441,7 @@
         }
       } else {
         let q = _sb.from('saham_transaksi').select('*').order('tanggal', { ascending: false });
-        if (isSales) q = q.eq('sales_name', salesName);
+        if (isSales) q = q.ilike('sales_name', salesName);
         // Head Sales tidak perlu filter - bisa lihat semua
         const { data, error } = await q;
         if (error) throw error;
@@ -657,7 +657,7 @@
           .range(offset, offset + pageSize - 1);
 
         if (isSalesRole) {
-          q = q.eq('sales_name', curUser.name || '');
+          q = q.ilike('sales_name', curUser.name || '');
         }
 
         var result = await q;

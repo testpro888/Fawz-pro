@@ -162,7 +162,7 @@
             .select('client_id')
             .gte('tanggal', startDate)
             .lte('tanggal', endDate)
-            .eq('sales_name', salesName)
+            .ilike('sales_name', salesName)
             .range(offset, offset + pageSize - 1);
           if (error) { console.error('YTD customer error:', error); break; }
           (data || []).forEach(r => { if (r.client_id) clientIds.add(r.client_id); });
