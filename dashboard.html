@@ -13,23 +13,6 @@
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlobXJmbHVlaGliZmFwdnR4Y2ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNjEzODUsImV4cCI6MjA5NDczNzM4NX0.se_H4n_eLsf81d_1GH5sqsPCpX89MHewlPuuNkY6qcU';
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    async function loadStats() {
-      try {
-        const { count, error } = await supabase
-          .from('customers')
-          .select('*', { count: 'exact', head: true })
-          .eq('client_status', 'Aktif');
-        if (error) {
-          console.error('Load stats error:', error);
-          return;
-        }
-        const el = document.getElementById('sumCustomerAktif');
-        if (el) el.textContent = (count || 0).toLocaleString('id-ID');
-      } catch(e) { 
-        console.error('Gagal load stats:', e); 
-      }
-    }
-
     async function loadObligasiCount() {
       try {
         const { count, error } = await supabase
@@ -139,21 +122,19 @@
 
     window.addEventListener('DOMContentLoaded', () => {
       const role = getUserRole();
+      // Untuk semua role: hitung Customer Aktif dari YTD saham_transaksi
+      const el = document.getElementById('sumCustomerAktif');
+      if (el) el.textContent = '0';
+      
       if (role === 'sales') {
-        // Untuk sales: set default 0 dulu, lalu load dari YTD saham_transaksi (hanya transaksi sales tersebut)
-        const el = document.getElementById('sumCustomerAktif');
-        if (el) el.textContent = '0';
+        // Sales: hanya transaksi miliknya
         loadSalesCustomerCount();
       } else if (role === 'head_sales') {
-        // Untuk head_sales: set default 0 dulu, lalu load dari YTD saham_transaksi (semua transaksi sales)
-        const el = document.getElementById('sumCustomerAktif');
-        if (el) el.textContent = '0';
+        // Head Sales: semua transaksi sales
         loadHeadSalesCustomerCount();
       } else {
-        // Untuk admin/head_account/treasury: set default 0 dulu sebelum load
-        const el = document.getElementById('sumCustomerAktif');
-        if (el) el.textContent = '0';
-        loadStats();
+        // Admin/Head Account/Bonds: semua transaksi (sama seperti head_sales)
+        loadAllCustomerCount();
         loadObligasiCount();
       }
     });
@@ -226,6 +207,38 @@
         const badge = document.getElementById('sumCustomerBadge');
         if (badge) badge.textContent = 'YTD ' + year;
       } catch(e) { console.error('Gagal load head sales customer count:', e); }
+    }
+
+    async function loadAllCustomerCount() {
+      // Untuk admin/head_account/bonds: hitung nasabah unik dari semua transaksi saham YTD
+      try {
+        const year = new Date().getFullYear();
+        const startDate = year + '-01-01';
+        const endDate   = year + '-12-31';
+
+        const clientIds = new Set();
+        let offset = 0;
+        const pageSize = 1000;
+        let keepFetching = true;
+
+        while (keepFetching) {
+          const { data, error } = await supabase
+            .from('saham_transaksi')
+            .select('client_id')
+            .gte('tanggal', startDate)
+            .lte('tanggal', endDate)
+            .range(offset, offset + pageSize - 1);
+          if (error) { console.error('YTD customer error:', error); break; }
+          (data || []).forEach(r => { if (r.client_id) clientIds.add(r.client_id); });
+          if ((data || []).length < pageSize) keepFetching = false;
+          else offset += pageSize;
+        }
+
+        const el = document.getElementById('sumCustomerAktif');
+        if (el) el.textContent = clientIds.size.toLocaleString('id-ID');
+        const badge = document.getElementById('sumCustomerBadge');
+        if (badge) badge.textContent = 'YTD ' + year;
+      } catch(e) { console.error('Gagal load all customer count:', e); }
     }
   </script>
 
