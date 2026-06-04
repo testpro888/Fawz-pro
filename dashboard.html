@@ -19,9 +19,15 @@
           .from('customers')
           .select('*', { count: 'exact', head: true })
           .eq('client_status', 'Aktif');
+        if (error) {
+          console.error('Load stats error:', error);
+          return;
+        }
         const el = document.getElementById('sumCustomerAktif');
-        if (el && !error) el.textContent = (count || 0).toLocaleString('id-ID');
-      } catch(e) { console.error('Gagal load stats:', e); }
+        if (el) el.textContent = (count || 0).toLocaleString('id-ID');
+      } catch(e) { 
+        console.error('Gagal load stats:', e); 
+      }
     }
 
     async function loadObligasiCount() {
@@ -144,6 +150,9 @@
         if (el) el.textContent = '0';
         loadHeadSalesCustomerCount();
       } else {
+        // Untuk admin/head_account/treasury: set default 0 dulu sebelum load
+        const el = document.getElementById('sumCustomerAktif');
+        if (el) el.textContent = '0';
         loadStats();
         loadObligasiCount();
       }
