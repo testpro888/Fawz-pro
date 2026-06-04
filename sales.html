@@ -145,7 +145,7 @@
 
     /* ── Stats strip ── */
     .stats-strip {
-      display: grid; grid-template-columns: repeat(4,1fr); gap: 14px;
+      display: grid; grid-template-columns: repeat(2,1fr); gap: 14px;
       margin-bottom: 22px; animation: fadeUp 0.4s 0.05s ease both;
     }
     .strip-card {
@@ -464,19 +464,7 @@
     <div class="strip-card">
       <div class="strip-label">Total Sales</div>
       <div class="strip-value" id="statTotal">—</div>
-      <span class="strip-badge badge-rm">Semua Tipe</span>
-    </div>
-    <div class="strip-card">
-      <div class="strip-label">RM / RMS</div>
-      <div class="strip-value" id="statRM">—</div>
-      <span class="strip-badge badge-rm">RM</span>
-      <span class="strip-badge badge-rms" style="margin-left:4px;">RMS</span>
-    </div>
-    <div class="strip-card">
-      <div class="strip-label">Team Leader</div>
-      <div class="strip-value" id="statTL">—</div>
-      <span class="strip-badge badge-tl">TL</span>
-      <span class="strip-badge badge-tla" style="margin-left:4px;">TLA</span>
+      <span class="strip-badge badge-rm">Total</span>
     </div>
     <div class="strip-card">
       <div class="strip-label">Dokumen Lengkap</div>
@@ -488,13 +476,6 @@
   <!-- Filter -->
   <div class="filter-bar">
     <input type="text" id="filterSearch" placeholder="🔍  Cari nama, kode, kota..." oninput="applyFilter()"/>
-    <select id="filterTipe" onchange="applyFilter()">
-      <option value="">Semua Tipe</option>
-      <option value="RM">RM</option>
-      <option value="RMS">RMS</option>
-      <option value="TL">TL</option>
-      <option value="TLA">TLA</option>
-    </select>
     <div class="filter-spacer"></div>
     <button style="height:36px;padding:0 14px;border-radius:8px;border:1px solid #e0e0ee;background:#fff;color:#888;font-family:'Inter',sans-serif;font-size:0.78rem;cursor:pointer;" onclick="resetFilter()">Reset</button>
     <button style="height:36px;padding:0 14px;border-radius:8px;border:1px solid #e0e0ee;background:#fff;color:var(--navy);font-family:'Inter',sans-serif;font-size:0.78rem;cursor:pointer;display:flex;align-items:center;gap:6px;" onclick="exportCSV()">⬇ Export CSV</button>
@@ -515,13 +496,12 @@
             <th>No Hp</th>
             <th>Email</th>
             <th>Kota</th>
-            <th>Tipe Sales</th>
             <th>Dokumen</th>
             <th>Aksi</th>
           </tr>
         </thead>
         <tbody id="tableBody">
-          <tr><td colspan="9" style="padding:0;">
+          <tr><td colspan="8" style="padding:0;">
             <div style="padding:16px;display:flex;flex-direction:column;gap:12px;">
               <div class="skeleton" style="width:100%;height:14px;"></div>
               <div class="skeleton" style="width:90%;height:14px;"></div>
@@ -550,16 +530,6 @@
       <div class="form-group">
         <label class="form-label">Kode Sales <span class="req">*</span></label>
         <input type="text" class="form-control" id="fKode" placeholder="contoh: SLS001"/>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Tipe Sales <span class="req">*</span></label>
-        <select class="form-control" id="fTipe">
-          <option value="">Pilih Tipe</option>
-          <option value="RM">RM</option>
-          <option value="RMS">RMS</option>
-          <option value="TL">TL</option>
-          <option value="TLA">TLA</option>
-        </select>
       </div>
       <div class="form-group full">
         <label class="form-label">Nama Lengkap <span class="req">*</span></label>
@@ -674,7 +644,7 @@
     const tbody = document.getElementById('tableBody');
 
     if (!slice.length) {
-      tbody.innerHTML = `<tr><td colspan="9">
+      tbody.innerHTML = `<tr><td colspan="8">
         <div class="empty-state">
           <div class="empty-icon">👥</div>
           <div style="font-size:0.9rem;color:#999;font-weight:600;">Belum ada data sales</div>
@@ -685,7 +655,7 @@
 
     tbody.innerHTML = slice.map(r => {
       const initials = (r.nama||'?').split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase();
-      const tipeCls  = 'tipe-' + (r.tipe||'RM');
+      
       const hasDiri  = r.fotoDiri     ? 'has' : '';
       const hasKTP   = r.fotoKTP      ? 'has' : '';
       const hasSelfie= r.fotoSelfie   ? 'has' : '';
@@ -708,7 +678,6 @@
         <td>${r.hp||'—'}</td>
         <td style="color:#555;font-size:0.78rem;">${r.email||'—'}</td>
         <td>${r.kota||'—'}</td>
-        <td><span class="tipe-badge ${tipeCls}">${r.tipe||'—'}</span></td>
         <td>
           <div class="doc-icons">
             <div class="doc-icon ${hasDiri}" title="Foto Diri" onclick="${r.fotoDiri?`openLightbox('${r.fotoDiri}')`:''}" style="${r.fotoDiri?'cursor:pointer;':'cursor:default;'}">👤</div>
@@ -726,12 +695,8 @@
   }
 
   function renderStats(rows) {
-    const rm  = rows.filter(r => r.tipe === 'RM' || r.tipe === 'RMS').length;
-    const tl  = rows.filter(r => r.tipe === 'TL' || r.tipe === 'TLA').length;
     const doc = rows.filter(r => r.fotoDiri && r.fotoKTP && r.fotoSelfie && r.fotoTabungan).length;
     document.getElementById('statTotal').textContent = rows.length;
-    document.getElementById('statRM').textContent    = rm;
-    document.getElementById('statTL').textContent    = tl;
     document.getElementById('statDoc').textContent   = doc;
   }
 
@@ -755,16 +720,15 @@
   function applyFilter() {
     if (!window._allSales) return;
     const s = document.getElementById('filterSearch').value.toLowerCase();
-    const t = document.getElementById('filterTipe').value;
+    
     const res = window._allSales.filter(r =>
-      (!s || (r.nama||'').toLowerCase().includes(s) || (r.kode||'').toLowerCase().includes(s) || (r.kota||'').toLowerCase().includes(s)) &&
-      (!t || r.tipe === t)
+      (!s || (r.nama||'').toLowerCase().includes(s) || (r.kode||'').toLowerCase().includes(s) || (r.kota||'').toLowerCase().includes(s))
     );
     renderTable(res);
   }
   function resetFilter() {
     document.getElementById('filterSearch').value = '';
-    document.getElementById('filterTipe').value   = '';
+    
     if (window._allSales) renderTable(window._allSales);
   }
 
@@ -815,7 +779,7 @@
     document.getElementById('btnSaveText').textContent = 'Simpan Sales';
     ['fKode','fNama','fNPWP','fNIK','fHp','fEmail','fKota','fRek','fBank'].forEach(id =>
       document.getElementById(id).value = '');
-    document.getElementById('fTipe').value = '';
+    
     resetPhotos();
     document.getElementById('modalOverlay').classList.add('open');
   }
@@ -835,7 +799,6 @@
     document.getElementById('fKota').value  = r.kota  || '';
     document.getElementById('fRek').value   = r.rekening || '';
     document.getElementById('fBank').value  = r.bank  || '';
-    document.getElementById('fTipe').value  = r.tipe  || '';
     resetPhotos();
     // Show existing photos
     ['diri','ktp','selfie','tabungan'].forEach(key => {
@@ -859,9 +822,9 @@
   async function saveSales() {
     const kode  = document.getElementById('fKode').value.trim();
     const nama  = document.getElementById('fNama').value.trim();
-    const tipe  = document.getElementById('fTipe').value;
+    
     const hp    = document.getElementById('fHp').value.trim();
-    if (!kode || !nama || !tipe || !hp) { alert('Harap isi field wajib: Kode, Nama, Tipe, dan No Hp.'); return; }
+    if (!kode || !nama  || !hp) { alert('Harap isi field wajib: Kode, Nama, dan No Hp.'); return; }
 
     const btn = document.getElementById('btnSave');
     btn.disabled = true; btn.classList.add('loading');
@@ -897,7 +860,7 @@
     } catch(e) { console.warn('Storage error:', e); }
 
     const data = {
-      kode, nama, tipe,
+      kode, nama,
       npwp:     document.getElementById('fNPWP').value.trim(),
       nik:      document.getElementById('fNIK').value.trim(),
       hp,
