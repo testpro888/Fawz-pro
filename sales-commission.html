@@ -433,11 +433,10 @@
     populateFilters();
     applyFilter();
     updateBanner();
-    // Set default filter komisi ke bulan ini
-    const now2 = new Date();
-    const ym = now2.getFullYear() + '-' + String(now2.getMonth()+1).padStart(2,'0');
+    // Set default filter komisi ke semua data (tanpa filter bulan)
+    // agar langsung terlihat data yang ada
     const elBulan = document.getElementById('filterBulanKomisi');
-    if (elBulan) elBulan.value = ym;
+    if (elBulan) elBulan.value = '';
     renderCommissionPerSales();
   }
 
@@ -566,13 +565,22 @@
     const isSales  = curUser?.role === 'sales';
     const salesName = curUser?.name || '';
     try {
+      // Ambil semua data tanpa filter tahun agar semua bulan bisa ditampilkan
       let q = window._supabase
         .from('saham_transaksi')
         .select('tanggal, sales_name, fee')
+        .not('fee', 'is', null)
+        .gt('fee', 0)
         .order('tanggal', { ascending: false });
       if (isSales) q = q.ilike('sales_name', salesName);
-      const { data, error } = await q;
-      if (!error && data) sahamRows = data;
+      let offset = 0, pageSize = 1000, hasMore = true;
+      while (hasMore) {
+        const { data, error } = await q.range(offset, offset + pageSize - 1);
+        if (error) throw error;
+        sahamRows = sahamRows.concat(data || []);
+        if ((data || []).length < pageSize) hasMore = false;
+        else offset += pageSize;
+      }
     } catch(e) { console.warn('saham_transaksi:', e.message); }
   }
 
@@ -681,21 +689,26 @@
     // filterYM = 'YYYY-MM' atau '' (semua)
     const salesMap = {};
 
+    // Helper: normalize nama untuk key grouping
+    const norm = name => (name || '').toLowerCase().trim();
+
     // 1. Fee dari saham_transaksi
     sahamRows.forEach(r => {
       if (!r.sales_name) return;
       if (filterYM && !(r.tanggal || '').startsWith(filterYM)) return;
-      const key = r.sales_name.toLowerCase().trim();
+      const key = norm(r.sales_name);
       if (!salesMap[key]) salesMap[key] = { nama: r.sales_name, feeSaham: 0, feeObligasi: 0, feeReksadana: 0, feeWaran: 0 };
       salesMap[key].feeSaham += parseFloat(r.fee) || 0;
     });
 
-    // 2. Fee dari obligasi/reksadana/waran (komisi sudah dihitung, pakai sebagai "fee")
+    // 2. Fee dari obligasi/reksadana/waran
+    // Untuk obligasi: pakai nominal (bukan komisi) sebagai fee
     allRows.forEach(r => {
       if (!r.salesNama || r.salesNama === '—') return;
       if (filterYM && !(r.tanggal || '').startsWith(filterYM)) return;
-      const key = r.salesNama.toLowerCase().trim();
+      const key = norm(r.salesNama);
       if (!salesMap[key]) salesMap[key] = { nama: r.salesNama, feeSaham: 0, feeObligasi: 0, feeReksadana: 0, feeWaran: 0 };
+      // Gunakan komisi yang sudah dihitung sebagai kontribusi fee
       if (r.sumber === 'obligasi')  salesMap[key].feeObligasi  += r.komisi;
       if (r.sumber === 'reksadana') salesMap[key].feeReksadana += r.komisi;
       if (r.sumber === 'waran')     salesMap[key].feeWaran     += r.komisi;
