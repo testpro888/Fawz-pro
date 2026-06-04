@@ -476,6 +476,26 @@
 
       if (error) throw error;
 
+      // Auto-insert ke tabel sales jika role adalah sales atau head_sales
+      if (role === 'sales' || role === 'head_sales') {
+        // Cek apakah sudah ada di tabel sales (berdasarkan nama)
+        const { data: existingSales } = await window._supabase
+          .from('sales')
+          .select('id')
+          .ilike('nama', name)
+          .limit(1);
+        
+        if (!existingSales || existingSales.length === 0) {
+          const salesKode = username.toUpperCase().substring(0, 8);
+          await window._supabase.from('sales').insert({
+            nama: name,
+            kode: salesKode,
+            tipe: 'RM',
+            created_at: new Date().toISOString()
+          });
+        }
+      }
+
       clearAddForm();
       document.getElementById('addFormWrapper').classList.remove('open');
       showFb('accFeedback', `✅ Akun "${name}" (${ROLE_LABELS[role]}) berhasil dibuat!`, 'success');
