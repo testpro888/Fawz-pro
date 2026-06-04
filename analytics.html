@@ -3,599 +3,181 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Fawz Pro | Dashboard</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
-
-  <!-- Supabase SDK -->
+  <title>Fawz Pro | Analytics Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script>
-    const SUPABASE_URL = 'https://yhmrfluehibfapvtxcfi.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlobXJmbHVlaGliZmFwdnR4Y2ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNjEzODUsImV4cCI6MjA5NDczNzM4NX0.se_H4n_eLsf81d_1GH5sqsPCpX89MHewlPuuNkY6qcU';
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-    async function loadStats() {
-      try {
-        const { count, error } = await supabase
-          .from('customers')
-          .select('*', { count: 'exact', head: true })
-          .eq('client_status', 'Aktif');
-        const el = document.getElementById('sumCustomerAktif');
-        if (el && !error) el.textContent = (count || 0).toLocaleString('id-ID');
-      } catch(e) { console.error('Gagal load stats:', e); }
-    }
-
-    async function loadObligasiCount() {
-      try {
-        const { count, error } = await supabase
-          .from('obligasi_products')
-          .select('*', { count: 'exact', head: true });
-        const el = document.getElementById('statObligasi');
-        if (el && !error) el.textContent = (count || 0).toLocaleString('id-ID');
-      } catch(e) { console.error('Gagal load obligasi count:', e); }
-    }
-
-    function getUserRole() {
-      try {
-        const raw = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember');
-        if (!raw) return '';
-        const u = JSON.parse(raw);
-        return (u.role || u.userRole || u.jabatan || u.tipe || '').toLowerCase();
-      } catch(e) { return ''; }
-    }
-
-    function getUserId() {
-      try {
-        const raw = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember');
-        if (!raw) return null;
-        const u = JSON.parse(raw);
-        return u.id || u.userId || u.user_id || null;
-      } catch(e) { return null; }
-    }
-
-    async function loadSalesStats() {
-      const userId = getUserId();
-      const now = new Date();
-      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-      const lastDay  = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).toISOString();
-
-      try {
-        // Obligasi Terjual - jumlah order obligasi bulan ini oleh sales ini
-        let qObl = supabase
-          .from('obligasi_orders')
-          .select('nominal', { count: 'exact' })
-          .gte('created_at', firstDay)
-          .lte('created_at', lastDay);
-        if (userId) qObl = qObl.eq('sales_id', userId);
-        const { data: oblData, count: oblCount, error: oblErr } = await qObl;
-        if (!oblErr) {
-          const totalObl = (oblData || []).reduce((s, r) => s + (parseFloat(r.nominal) || 0), 0);
-          const elVal = document.getElementById('statObligasiTerjual');
-          const elSub = document.getElementById('statObligasiTerjualSub');
-          if (elVal) elVal.textContent = 'Rp ' + totalObl.toLocaleString('id-ID');
-          if (elSub) elSub.textContent = (oblCount || 0) + ' Transaksi bulan ini';
-        }
-      } catch(e) { console.error('Gagal load obligasi terjual:', e); }
-
-      try {
-        // Reksadana Terjual
-        let qReks = supabase
-          .from('reksadana_orders')
-          .select('nominal', { count: 'exact' })
-          .gte('created_at', firstDay)
-          .lte('created_at', lastDay);
-        if (userId) qReks = qReks.eq('sales_id', userId);
-        const { data: reksData, count: reksCount, error: reksErr } = await qReks;
-        if (!reksErr) {
-          const totalReks = (reksData || []).reduce((s, r) => s + (parseFloat(r.nominal) || 0), 0);
-          const elVal = document.getElementById('statReksadanaTerjual');
-          const elSub = document.getElementById('statReksadanaTerjualSub');
-          if (elVal) elVal.textContent = 'Rp ' + totalReks.toLocaleString('id-ID');
-          if (elSub) elSub.textContent = (reksCount || 0) + ' Transaksi bulan ini';
-        }
-      } catch(e) { console.error('Gagal load reksadana terjual:', e); }
-
-      try {
-        // Waran Terstruktur Terjual
-        let qWar = supabase
-          .from('waran_orders')
-          .select('nominal', { count: 'exact' })
-          .gte('created_at', firstDay)
-          .lte('created_at', lastDay);
-        if (userId) qWar = qWar.eq('sales_id', userId);
-        const { data: warData, count: warCount, error: warErr } = await qWar;
-        if (!warErr) {
-          const totalWar = (warData || []).reduce((s, r) => s + (parseFloat(r.nominal) || 0), 0);
-          const elVal = document.getElementById('statWaranTerjual');
-          const elSub = document.getElementById('statWaranTerjualSub');
-          if (elVal) elVal.textContent = 'Rp ' + totalWar.toLocaleString('id-ID');
-          if (elSub) elSub.textContent = (warCount || 0) + ' Transaksi bulan ini';
-        }
-      } catch(e) { console.error('Gagal load waran terjual:', e); }
-
-      try {
-        // Komisi Berjalan Bulan Ini
-        let qKom = supabase
-          .from('commissions')
-          .select('amount')
-          .gte('created_at', firstDay)
-          .lte('created_at', lastDay);
-        if (userId) qKom = qKom.eq('sales_id', userId);
-        const { data: komData, error: komErr } = await qKom;
-        if (!komErr) {
-          const totalKom = (komData || []).reduce((s, r) => s + (parseFloat(r.amount) || 0), 0);
-          const elVal = document.getElementById('statKomisi');
-          const elSub = document.getElementById('statKomisiSub');
-          if (elVal) elVal.textContent = 'Rp ' + totalKom.toLocaleString('id-ID');
-          if (elSub) elSub.textContent = 'Bulan ' + now.toLocaleString('id-ID', { month: 'long', year: 'numeric' });
-        }
-      } catch(e) { console.error('Gagal load komisi:', e); }
-    }
-
-    window.addEventListener('DOMContentLoaded', () => {
-      const role = getUserRole();
-      if (role === 'sales') {
-        // Untuk sales: set default 0 dulu, lalu load dari YTD saham_transaksi
-        const el = document.getElementById('sumCustomerAktif');
-        if (el) el.textContent = '0';
-        loadSalesCustomerCount();
-      } else {
-        loadStats();
-        loadObligasiCount();
-      }
-    });
-
-    async function loadSalesCustomerCount() {
-      // Untuk sales: hitung nasabah unik dari saham_transaksi YTD
-      try {
-        const raw = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember');
-        const u = raw ? JSON.parse(raw) : {};
-        const salesName = u.name || '';
-        if (!salesName) return;
-
-        const year = new Date().getFullYear();
-        const startDate = year + '-01-01';
-        const endDate   = year + '-12-31';
-
-        const clientIds = new Set();
-        let offset = 0;
-        const pageSize = 1000;
-        let keepFetching = true;
-
-        while (keepFetching) {
-          const { data, error } = await supabase
-            .from('saham_transaksi')
-            .select('client_id')
-            .gte('tanggal', startDate)
-            .lte('tanggal', endDate)
-            .eq('sales_name', salesName)
-            .range(offset, offset + pageSize - 1);
-          if (error) { console.error('YTD customer error:', error); break; }
-          (data || []).forEach(r => { if (r.client_id) clientIds.add(r.client_id); });
-          if ((data || []).length < pageSize) keepFetching = false;
-          else offset += pageSize;
-        }
-
-        const el = document.getElementById('sumCustomerAktif');
-        if (el) el.textContent = clientIds.size.toLocaleString('id-ID');
-        const badge = document.getElementById('sumCustomerBadge');
-        if (badge) badge.textContent = 'YTD ' + year;
-      } catch(e) { console.error('Gagal load sales customer count:', e); }
-    }
+    const SUPABASE_URL='https://yhmrfluehibfapvtxcfi.supabase.co';
+    const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlobXJmbHVlaGliZmFwdnR4Y2ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNjEzODUsImV4cCI6MjA5NDczNzM4NX0.se_H4n_eLsf81d_1GH5sqsPCpX89MHewlPuuNkY6qcU';
+    const _sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
   </script>
-
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    :root {
-      /* Notion Design Tokens */
-      --primary:          #5645d4;
-      --primary-pressed:  #4534b3;
-      --on-primary:       #ffffff;
-      --brand-navy:       #0a1530;
-      --brand-navy-mid:   #1a2a52;
-      --ink-deep:         #000000;
-      --ink:              #1a1a1a;
-      --charcoal:         #37352f;
-      --slate:            #5d5b54;
-      --steel:            #787671;
-      --stone:            #a4a097;
-      --muted:            #bbb8b1;
-      --canvas:           #ffffff;
-      --surface:          #f6f5f4;
-      --surface-soft:     #fafaf9;
-      --hairline:         #e5e3df;
-      --hairline-soft:    #ede9e4;
-      --hairline-strong:  #c8c4be;
-      --on-dark:          #ffffff;
-      --on-dark-muted:    #a4a097;
-      /* Card tints */
-      --tint-peach:       #ffe8d4;
-      --tint-rose:        #fde0ec;
-      --tint-mint:        #d9f3e1;
-      --tint-lavender:    #e6e0f5;
-      --tint-sky:         #dcecfa;
-      --tint-yellow:      #fef7d6;
-      --tint-yellow-bold: #f9e79f;
-      /* Brand accents */
-      --brand-orange:     #dd5b00;
-      --brand-orange-deep:#793400;
-      --brand-green:      #1aae39;
-      --brand-purple:     #7b3ff2;
-      --brand-purple-800: #391c57;
-      /* Spacing */
-      --nav-h: 68px;
-    }
-
-    body {
-      font-family: 'Inter', sans-serif;
-      background: var(--surface);
-      min-height: 100vh;
-      padding-top: var(--nav-h);
-      color: var(--ink);
-    }
-
-    .dash-container { max-width: 1200px; margin: 0 auto; padding: 40px 32px; }
-
-    @keyframes fadeUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
-
-    /* ── GREETING ── */
-    .greeting-section {
-      background: var(--brand-navy);
-      border-radius: 12px;
-      padding: 32px 36px;
-      display: flex;
-      align-items: stretch;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 16px;
-      margin-bottom: 24px;
-      animation: fadeUp 0.45s ease both;
-      position: relative;
-      overflow: hidden;
-    }
-    /* decorative dots */
-    .greeting-section::before {
-      content: '';
-      position: absolute;
-      width: 220px; height: 220px;
-      border-radius: 50%;
-      background: rgba(86,69,212,0.18);
-      right: -60px; top: -60px;
-      pointer-events: none;
-    }
-    .greeting-section::after {
-      content: '';
-      position: absolute;
-      width: 120px; height: 120px;
-      border-radius: 50%;
-      background: rgba(86,69,212,0.10);
-      right: 100px; bottom: -40px;
-      pointer-events: none;
-    }
-    .greeting-left { display: flex; flex-direction: column; justify-content: center; position: relative; z-index:1; }
-    .greeting-time {
-      font-size: 11px; font-weight: 600; color: var(--on-dark-muted);
-      text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;
-    }
-    .greeting-name {
-      font-size: 28px; font-weight: 700; color: var(--on-dark); line-height: 1.2; letter-spacing: -0.5px;
-    }
-    .greeting-name span { color: #a78bfa; }
-    .greeting-sub {
-      font-size: 14px; color: var(--on-dark-muted); margin-top: 8px; font-weight: 400; line-height: 1.5;
-    }
-    .greeting-date-box {
-      background: var(--brand-navy-mid);
-      border-radius: 8px;
-      padding: 16px 24px;
-      text-align: right;
-      min-width: 160px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      border: 1px solid rgba(255,255,255,0.08);
-      position: relative;
-      z-index: 1;
-    }
-    .greeting-date-day  { font-size: 11px; font-weight: 600; color: var(--on-dark-muted); text-transform: uppercase; letter-spacing: 1px; }
-    .greeting-date-full { font-size: 14px; font-weight: 600; color: var(--on-dark); margin-top: 4px; }
-    .greeting-date-time { font-size: 22px; font-weight: 700; color: var(--on-dark); margin-top: 4px; letter-spacing: 1px; }
-
-    /* ── STATS GRID ── */
-    .stats-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-      margin-bottom: 24px;
-    }
-    .stat-card {
-      border-radius: 12px;
-      padding: 28px 28px;
-      color: var(--charcoal);
-      position: relative;
-      overflow: hidden;
-      cursor: pointer;
-      transition: transform 0.2s, box-shadow 0.2s;
-      animation: fadeUp 0.45s ease both;
-      border: 1px solid transparent;
-    }
-    .stat-card:hover { transform: translateY(-3px); box-shadow: 0 8px 32px rgba(0,0,0,0.10); }
-    .stat-card:nth-child(1) { animation-delay: 0.08s; }
-    .stat-card:nth-child(2) { animation-delay: 0.14s; }
-    .stat-card:nth-child(3) { animation-delay: 0.20s; }
-    .stat-card:nth-child(4) { animation-delay: 0.26s; }
-
-    /* Pastel card tints from DESIGN.md */
-    .stat-card.obligasi  { background: var(--tint-lavender); border-color: #d0c8f0; }
-    .stat-card.reksadana { background: var(--tint-mint);     border-color: #b5e8c3; }
-    .stat-card.saham     { background: var(--tint-peach);    border-color: #f5ccaa; }
-    .stat-card.waran     { background: var(--tint-rose);     border-color: #f2b8d8; }
-
-    .card-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px; }
-    .card-title  { font-size: 13px; font-weight: 600; color: var(--slate); margin-bottom: 6px; letter-spacing: 0.2px; }
-    .card-divider { width: 24px; height: 2px; border-radius: 2px; margin-top: 2px; }
-
-    .stat-card.obligasi  .card-divider { background: var(--primary); }
-    .stat-card.reksadana .card-divider { background: var(--brand-green); }
-    .stat-card.saham     .card-divider { background: var(--brand-orange); }
-    .stat-card.waran     .card-divider { background: #e879b8; }
-
-    .card-arrow {
-      width: 30px; height: 30px;
-      border-radius: 8px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 12px;
-      background: rgba(0,0,0,0.06);
-      color: var(--slate);
-      transition: background 0.2s, transform 0.2s;
-      flex-shrink: 0;
-    }
-    .stat-card:hover .card-arrow { background: rgba(0,0,0,0.10); transform: translateX(2px); }
-
-    .card-body   { position: relative; z-index: 1; }
-    .card-number { font-size: 40px; font-weight: 700; line-height: 1; color: var(--ink-deep); margin-bottom: 2px; letter-spacing: -1px; }
-    .card-unit   { font-size: 14px; font-weight: 400; color: var(--slate); margin-left: 4px; }
-    .card-trend  { font-size: 13px; color: var(--steel); margin-top: 10px; font-weight: 500; }
-
-    /* ── SUMMARY BAR ── */
-    .summary-bar {
-      background: var(--canvas);
-      border-radius: 12px;
-      padding: 20px 28px;
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr 1fr;
-      gap: 0;
-      border: 1px solid var(--hairline);
-      margin-bottom: 32px;
-      animation: fadeUp 0.45s 0.32s ease both;
-    }
-    .summary-item { flex: 1; text-align: center; padding: 8px 16px; border-right: 1px solid var(--hairline-soft); }
-    .summary-item:last-child { border-right: none; }
-    .sum-label {
-      font-size: 11px; color: var(--stone); font-weight: 600;
-      text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;
-    }
-    .sum-value { font-size: 20px; font-weight: 700; color: var(--ink-deep); letter-spacing: -0.5px; }
-    .sum-badge {
-      display: inline-block; font-size: 12px; font-weight: 600;
-      padding: 2px 10px; border-radius: 9999px; margin-top: 4px;
-    }
-    .badge-up      { background: var(--tint-mint);     color: var(--brand-green); }
-    .badge-neutral { background: var(--tint-lavender); color: var(--brand-purple-800); }
-
-    /* ── SECTION TITLE ── */
-    .section-title {
-      font-size: 18px; font-weight: 600; color: var(--ink-deep);
-      margin-bottom: 16px; letter-spacing: -0.3px;
-    }
-
-    /* ── QUICK ACTIONS ── */
-    .quick-actions {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 12px;
-      animation: fadeUp 0.45s 0.38s ease both;
-    }
-    .qa-card {
-      background: var(--canvas);
-      border-radius: 12px;
-      padding: 20px 16px;
-      text-align: center;
-      cursor: pointer;
-      text-decoration: none;
-      color: inherit;
-      transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
-      border: 1px solid var(--hairline);
-    }
-    .qa-card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 20px rgba(0,0,0,0.07);
-      border-color: var(--hairline-strong);
-    }
-    .qa-icon  { font-size: 1.7rem; margin-bottom: 10px; display: block; }
-    .qa-label { font-size: 13px; font-weight: 500; color: var(--slate); line-height: 1.4; }
-
-    /* ── WA FLOATING ── */
-    .wa-float {
-      position: fixed; bottom: 28px; right: 28px; z-index: 999;
-      display: flex; align-items: center; gap: 10px;
-      background: var(--canvas);
-      border-radius: 8px;
-      padding: 12px 18px 12px 16px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.12);
-      border: 1px solid var(--hairline);
-      cursor: pointer; text-decoration: none;
-      transition: transform 0.2s, box-shadow 0.2s;
-      animation: fadeUp 0.5s 0.5s ease both;
-    }
-    .wa-float:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(0,0,0,0.15); }
-    .wa-info { line-height: 1.35; }
-    .wa-title { font-size: 13px; font-weight: 600; color: var(--ink); }
-    .wa-num   { font-size: 12px; color: var(--steel); }
-    .wa-icon  { width: 36px; height: 36px; background: #25D366; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; }
-
-    /* ── RESPONSIVE ── */
-    @media (max-width: 768px) {
-      .stats-grid { grid-template-columns: 1fr; }
-      .quick-actions { grid-template-columns: repeat(2, 1fr); }
-      .summary-bar { grid-template-columns: 1fr 1fr; padding: 16px; }
-      .summary-item { border-right: none; border-bottom: 1px solid var(--hairline-soft); padding: 12px 8px; }
-      .summary-item:nth-child(1),
-      .summary-item:nth-child(2) { border-bottom: 1px solid var(--hairline-soft); }
-      .summary-item:nth-child(3),
-      .summary-item:nth-child(4) { border-bottom: none; }
-      .summary-item:nth-child(odd) { border-right: 1px solid var(--hairline-soft); }
-      .dash-container { padding: 20px 16px; }
-      .greeting-section { padding: 24px 20px; }
-      .greeting-name { font-size: 22px; }
-    }
-    @media (max-width: 480px) {
-      .quick-actions { grid-template-columns: repeat(2, 1fr); }
-      .card-number { font-size: 32px; }
-    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    :root{--navy:#0d0d2b;--gold:#f5a623;--bg:#f8f9fc;--white:#fff;--border:#e0e0ef;--text:#1a1a3a;--gray:#888;--nav-h:68px;--green:#10b981;--blue:#3b82f6;--shadow:0 2px 10px rgba(0,0,0,0.05)}
+    body{font-family:'Inter',sans-serif;background:var(--bg);min-height:100vh;padding-top:var(--nav-h);color:var(--text)}
+    .container{max-width:1400px;margin:0 auto;padding:32px 28px}
+    .header{margin-bottom:28px}
+    .title{font-size:2rem;font-weight:900;color:var(--navy)}
+    .subtitle{font-size:0.9rem;color:var(--gray);margin-top:6px}
+    .filter-bar{background:var(--white);border-radius:14px;padding:20px;box-shadow:var(--shadow);margin-bottom:24px}
+    .filter-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px}
+    .filter-item{display:flex;flex-direction:column;gap:8px}
+    .filter-label{font-size:0.72rem;font-weight:700;color:var(--gray);text-transform:uppercase}
+    .filter-select{height:42px;border:1.5px solid var(--border);border-radius:10px;padding:0 14px;font-family:'Inter';font-size:0.875rem;outline:none}
+    .filter-select:focus{border-color:var(--gold)}
+    .kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px;margin-bottom:28px}
+    .kpi-card{background:var(--white);border-radius:14px;padding:24px;box-shadow:var(--shadow)}
+    .kpi-label{font-size:0.75rem;color:var(--gray);text-transform:uppercase;margin-bottom:8px}
+    .kpi-value{font-size:1.8rem;font-weight:800;color:var(--navy)}
+    .chart-card{background:var(--white);border-radius:14px;padding:28px;box-shadow:var(--shadow);margin-bottom:24px}
+    .chart-title{font-size:1.1rem;font-weight:700;color:var(--navy);margin-bottom:20px}
+    .chart-wrap{height:400px;position:relative}
+    @media(max-width:768px){.container{padding:20px 16px}.kpi-grid{grid-template-columns:1fr}.chart-wrap{height:300px}}
   </style>
-
-  <!-- Auth Guard -->
   <script>
-    (function() {
-      const raw = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember');
-      if (!raw) { window.location.replace('login.html'); }
-      else { sessionStorage.setItem('fawz_user', raw); }
+    (function(){
+      var r=sessionStorage.getItem('fawz_user')||localStorage.getItem('fawz_user_remember');
+      if(!r){window.location.replace('login.html');return}
+      sessionStorage.setItem('fawz_user',r);
     })();
   </script>
 </head>
 <body>
-
-<!-- NAVBAR -->
 <div id="navbar-placeholder"></div>
-<script src="navbar.js"></script>
-
-<!-- DASHBOARD -->
-<div class="dash-container">
-
-  <!-- Greeting -->
-  <div class="greeting-section">
-    <div class="greeting-left">
-      <div class="greeting-time" id="greetingTime">Selamat Pagi</div>
-      <div class="greeting-name">Halo, <span id="greetingName">—</span>!</div>
-      <div class="greeting-sub" id="greetingSub">Semoga harimu produktif dan menyenangkan.</div>
-    </div>
-    <div class="greeting-date-box">
-      <div class="greeting-date-day" id="greetingDay">—</div>
-      <div class="greeting-date-full" id="greetingDateFull">—</div>
-      <div class="greeting-date-time" id="greetingClock">—</div>
+<script src="navbar.js?v=4"></script>
+<div class="container">
+  <div class="header">
+    <div class="title">📊 Analytics Dashboard</div>
+    <div class="subtitle">Visualisasi data transaksi saham dengan chart interaktif</div>
+  </div>
+  <div class="filter-bar">
+    <div class="filter-grid">
+      <div class="filter-item">
+        <label class="filter-label">Tahun</label>
+        <select id="filterYear" class="filter-select" onchange="loadData()"></select>
+      </div>
+      <div class="filter-item">
+        <label class="filter-label">View</label>
+        <select id="filterView" class="filter-select" onchange="onViewChange()">
+          <option value="all">Keseluruhan</option>
+          <option value="client">Per Nasabah</option>
+          <option value="sales">Per Sales</option>
+        </select>
+      </div>
+      <div class="filter-item" id="entityWrap" style="display:none">
+        <label class="filter-label" id="entityLabel">Entity</label>
+        <select id="filterEntity" class="filter-select" onchange="updateCharts()"></select>
+      </div>
     </div>
   </div>
-
-  <!-- Stats Cards: Admin View -->
-  <div id="statsAdmin" class="stats-grid" style="display:none;"></div>
-
-  <!-- Stats Cards: Sales View -->
-  <div id="statsSales" class="stats-grid" style="display:none;"></div>
-
-  <!-- Summary Bar -->
-  <div class="summary-bar" style="margin-bottom:24px;">
-    <div class="summary-item">
-      <div class="sum-label">Customer Aktif</div>
-      <div class="sum-value" id="sumCustomerAktif">—</div>
-      <div><span class="sum-badge badge-up" id="sumCustomerBadge">Aktif</span></div>
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-label">Total Volume</div>
+      <div class="kpi-value" id="kpiVolume">Rp 0</div>
     </div>
-    <div class="summary-item">
-      <div class="sum-label">Transaksi Bulan Ini</div>
-      <div class="sum-value">Rp 0</div>
-      <div><span class="sum-badge badge-neutral">0 Transaksi</span></div>
+    <div class="kpi-card">
+      <div class="kpi-label">Total Fee</div>
+      <div class="kpi-value" id="kpiFee">Rp 0</div>
     </div>
-    <div class="summary-item">
-      <div class="sum-label">Total Revenue</div>
-      <div class="sum-value">Rp 0</div>
-      <div><span class="sum-badge badge-up">—</span></div>
+    <div class="kpi-card">
+      <div class="kpi-label">Transaksi</div>
+      <div class="kpi-value" id="kpiCount">0</div>
     </div>
-    <div class="summary-item">
-      <div class="sum-label">Komisi Berjalan</div>
-      <div class="sum-value">Rp 0</div>
-      <div><span class="sum-badge badge-neutral">—</span></div>
+    <div class="kpi-card">
+      <div class="kpi-label">Nasabah Aktif</div>
+      <div class="kpi-value" id="kpiClients">0</div>
     </div>
   </div>
-
-  <!-- Quick Actions -->
-  <div class="section-title">Menu Cepat</div>
-  <div class="quick-actions">
-    <a class="qa-card qa-restricted" href="customer.html"><span class="qa-icon">👤</span><div class="qa-label">Data Customer</div></a>
-    <a class="qa-card" href="sales-transaction.html"><span class="qa-icon">💳</span><div class="qa-label">Laporan Transaksi</div></a>
-    <a class="qa-card" href="obligasi-bookbuilding.html"><span class="qa-icon">📖</span><div class="qa-label">Obligasi Bookbuilding</div></a>
-    <a class="qa-card" href="reksadana-order.html"><span class="qa-icon">🛒</span><div class="qa-label">Order Reksadana</div></a>
-    <a class="qa-card" href="saham.html"><span class="qa-icon">📉</span><div class="qa-label">Data Saham</div></a>
-    <a class="qa-card qa-restricted" href="revenue-data.html"><span class="qa-icon">💵</span><div class="qa-label">Data Revenue</div></a>
-    <a class="qa-card qa-restricted" href="sales-commission.html"><span class="qa-icon">🏆</span><div class="qa-label">Komisi Sales</div></a>
-    <a class="qa-card qa-restricted" href="log-commission.html"><span class="qa-icon">📝</span><div class="qa-label">Log Komisi</div></a>
+  <div class="chart-card">
+    <div class="chart-title">Trend Bulanan - Volume & Fee</div>
+    <div class="chart-wrap"><canvas id="mainChart"></canvas></div>
   </div>
-
 </div>
 
-<!-- WA Float -->
-<a class="wa-float" href="https://wa.me/628116361598" target="_blank">
-  <div class="wa-info">
-    <div class="wa-title">Contact Person (Admin)</div>
-    <div class="wa-num">+62 811-6361-598</div>
-  </div>
-  <div class="wa-icon"><img src="assets/logo/wa.png" alt="WhatsApp" style="width:22px;height:22px;object-fit:contain;"></div>
-</a>
-
 <script>
-  (function () {
-    function getUser() {
-      try {
-        const raw = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember');
-        if (!raw) return {};
-        return JSON.parse(raw);
-      } catch (e) { return {}; }
-    }
-
-    function getUserName() {
-      const u = getUser();
-      return u.name || u.displayName || u.nama || u.email || 'User';
-    }
-
-    function getUserRole() {
-      const u = getUser();
-      return (u.role || u.userRole || u.jabatan || u.tipe || '').toLowerCase();
-    }
-
-    function applyRoleRestrictions() {
-      const role = getUserRole();
-      if (role === 'sales') {
-        document.querySelectorAll('.qa-restricted').forEach(el => { el.style.display = 'none'; });
-      }
-    }
-
-    function getGreeting(hour) {
-      if (hour >= 4  && hour < 11) return { text: 'Selamat Pagi',  sub: 'Mulai hari dengan semangat dan fokus.' };
-      if (hour >= 11 && hour < 15) return { text: 'Selamat Siang', sub: 'Tetap produktif di tengah hari.' };
-      if (hour >= 15 && hour < 19) return { text: 'Selamat Sore',  sub: 'Tinjau progress harimu sebelum selesai.' };
-      return                              { text: 'Selamat Malam',  sub: 'Istirahat yang cukup untuk esok hari.' };
-    }
-
-    const DAYS   = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
-    const MONTHS = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
-    const pad = n => String(n).padStart(2, '0');
-
-    function updateClock() {
-      const now  = new Date();
-      const hour = now.getHours();
-      const g    = getGreeting(hour);
-      document.getElementById('greetingTime').textContent     = g.text;
-      document.getElementById('greetingName').textContent     = getUserName();
-      document.getElementById('greetingSub').textContent      = g.sub;
-      document.getElementById('greetingDay').textContent      = DAYS[now.getDay()];
-      document.getElementById('greetingDateFull').textContent = now.getDate() + ' ' + MONTHS[now.getMonth()] + ' ' + now.getFullYear();
-      document.getElementById('greetingClock').textContent    = pad(hour) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds());
-    }
-
-    applyRoleRestrictions();
-    updateClock();
-    setInterval(updateClock, 1000);
-  })();
+let allData=[],curUser=null,mainChart=null;
+const MONTHS=['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+function getCurUser(){const r=sessionStorage.getItem('fawz_user');return r?JSON.parse(r):null}
+function formatRp(v){return'Rp '+(parseFloat(v)||0).toLocaleString('id-ID',{maximumFractionDigits:0})}
+async function initPage(){
+curUser=getCurUser();
+const y=document.getElementById('filterYear'),c=new Date().getFullYear();
+for(let i=c;i>=2020;i--){const o=document.createElement('option');o.value=i;o.textContent=i;y.appendChild(o)}
+await loadData();updateCharts();
+}
+async function loadData(){
+try{
+const year=document.getElementById('filterYear').value,start=year+'-01-01',end=year+'-12-31';
+const isSales=curUser?.role==='sales',salesName=curUser?.name||'';
+allData=[];let offset=0,pageSize=1000,hasMore=true;
+while(hasMore){
+let q=_sb.from('saham_transaksi').select('*').gte('tanggal',start).lte('tanggal',end).order('tanggal').range(offset,offset+pageSize-1);
+if(isSales)q=q.eq('sales_name',salesName);
+const{data,error}=await q;if(error)throw error;
+const rows=data||[];allData=allData.concat(rows);
+if(rows.length<pageSize)hasMore=false;else offset+=pageSize;
+}
+}catch(e){console.error(e);alert('Error: '+e.message)}
+}
+function onViewChange(){
+const v=document.getElementById('filterView').value,w=document.getElementById('entityWrap'),s=document.getElementById('filterEntity'),l=document.getElementById('entityLabel');
+if(v==='all'){w.style.display='none';updateCharts()}
+else if(v==='client'){
+l.textContent='Nasabah';const m=new Map();
+allData.forEach(r=>{if(r.client_id&&r.client_name)m.set(r.client_id,r.client_name)});
+s.innerHTML='<option value="">Semua</option>';
+Array.from(m.entries()).sort((a,b)=>a[1].localeCompare(b[1])).forEach(([id,nm])=>{const o=document.createElement('option');o.value=id;o.textContent=nm+' ('+id+')';s.appendChild(o)});
+w.style.display='block';updateCharts();
+}
+else if(v==='sales'){
+l.textContent='Sales';const st=new Set();
+allData.forEach(r=>{if(r.sales_name)st.add(r.sales_name)});
+s.innerHTML='<option value="">Semua</option>';
+Array.from(st).sort().forEach(sn=>{const o=document.createElement('option');o.value=sn;o.textContent=sn;s.appendChild(o)});
+w.style.display='block';updateCharts();
+}
+}
+function updateCharts(){
+const v=document.getElementById('filterView').value,e=document.getElementById('filterEntity').value;
+let fd=allData;
+if(v==='client'&&e)fd=allData.filter(r=>r.client_id===e);
+else if(v==='sales'&&e)fd=allData.filter(r=>r.sales_name===e);
+let tVol=0,tFee=0,tCnt=fd.length,cl=new Set();
+const mVol=new Array(12).fill(0),mFee=new Array(12).fill(0);
+fd.forEach(r=>{
+tVol+=parseFloat(r.volume)||0;tFee+=parseFloat(r.fee)||0;if(r.client_id)cl.add(r.client_id);
+if(r.tanggal){const m=parseInt(r.tanggal.substring(5,7))-1;mVol[m]+=parseFloat(r.volume)||0;mFee[m]+=parseFloat(r.fee)||0}
+});
+document.getElementById('kpiVolume').textContent=formatRp(tVol);
+document.getElementById('kpiFee').textContent=formatRp(tFee);
+document.getElementById('kpiCount').textContent=tCnt.toLocaleString('id-ID');
+document.getElementById('kpiClients').textContent=cl.size.toLocaleString('id-ID');
+renderChart(mVol,mFee);
+}
+function renderChart(vData,fData){
+if(mainChart)mainChart.destroy();
+const ctx=document.getElementById('mainChart').getContext('2d');
+mainChart=new Chart(ctx,{
+type:'bar',
+data:{
+labels:MONTHS,
+datasets:[
+{label:'Volume (Rp)',data:vData,backgroundColor:'rgba(245,166,35,0.3)',borderColor:'rgba(245,166,35,1)',borderWidth:2,borderRadius:6,yAxisID:'y'},
+{label:'Fee (Rp)',data:fData,type:'line',borderColor:'rgba(16,185,129,1)',backgroundColor:'rgba(16,185,129,0.1)',borderWidth:3,tension:0.4,fill:true,yAxisID:'y1'}
+]
+},
+options:{
+responsive:true,maintainAspectRatio:false,
+plugins:{legend:{position:'top'},tooltip:{backgroundColor:'rgba(13,13,43,0.95)',callbacks:{label:c=>c.dataset.label+': '+formatRp(c.parsed.y)}}},
+scales:{
+y:{beginAtZero:true,position:'left',ticks:{callback:v=>formatRp(v)},grid:{color:'rgba(0,0,0,0.05)'}},
+y1:{beginAtZero:true,position:'right',ticks:{callback:v=>formatRp(v)},grid:{display:false}}
+}
+}
+});
+}
+window.addEventListener('DOMContentLoaded',initPage);
 </script>
-
 </body>
 </html>
