@@ -115,7 +115,7 @@
       var user;
       try { user = JSON.parse(raw); } catch (e) { sessionStorage.removeItem('fawz_user'); window.location.replace('login.html'); return; }
       if (!user || typeof user !== 'object' || !user.name || !user.username || !user.role) { sessionStorage.removeItem('fawz_user'); window.location.replace('login.html'); return; }
-      if (!['head_account', 'admin', 'treasury', 'sales'].includes(user.role)) { window.location.replace('dashboard.html'); return; }
+      if (!['head_account', 'admin', 'treasury', 'sales', 'head_sales'].includes(user.role)) { window.location.replace('dashboard.html'); return; }
       sessionStorage.setItem('fawz_user', raw);
     })();
   </script>
@@ -385,6 +385,7 @@
       document.querySelectorAll('button[onclick*="bulkDeleteByType"]')
         .forEach(el => el.style.display = 'none');
     }
+    // Head Sales bisa edit tapi lihat semua transaksi sales
 
     await loadCustomers();
     await loadData();
@@ -425,6 +426,7 @@
             .order('tanggal', { ascending: false })
             .range(offset, offset + pageSize - 1);
           if (isSales) q = q.eq('sales_name', salesName);
+          // Head Sales tidak perlu filter - bisa lihat semua
           const { data, error } = await q;
 
           if (error) throw error;
@@ -440,6 +442,7 @@
       } else {
         let q = _sb.from('saham_transaksi').select('*').order('tanggal', { ascending: false });
         if (isSales) q = q.eq('sales_name', salesName);
+        // Head Sales tidak perlu filter - bisa lihat semua
         const { data, error } = await q;
         if (error) throw error;
         allData = data || [];
@@ -513,6 +516,7 @@
   function renderTable() {
     const isSales = curUser?.role === 'sales';
     const aksiCol = isSales ? '' : `<button onclick="deleteRow('ROWID')" style="border:none;background:#fff0f0;color:var(--red);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:0.75rem;">Hapus</button> <button onclick="editRow('ROWID')" style="border:none;background:#f0f8ff;color:#2d4abf;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:0.75rem;">Edit</button>`;
+    // Head Sales bisa edit seperti admin
 
     // Render Volume table
     const tbodyVol = document.getElementById('tableBodyVolume');

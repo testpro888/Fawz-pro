@@ -250,6 +250,7 @@
           <label class="form-label">Role</label>
           <select class="form-select" id="newRole">
             <option value="sales">Sales</option>
+            <option value="head_sales">Head Sales</option>
             <option value="admin">Admin</option>
             <option value="treasury">Bonds</option>
           </select>
@@ -277,7 +278,7 @@
 
 <script>
   const ROLE_LABELS = {
-    head_account: 'Head Account', admin: 'Admin', sales: 'Sales', treasury: 'Bonds'
+    head_account: 'Head Account', admin: 'Admin', sales: 'Sales', treasury: 'Bonds', head_sales: 'Head Sales'
   };
 
   let curUser = null;

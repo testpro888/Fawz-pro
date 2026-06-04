@@ -32,7 +32,8 @@
     head_account : 'Head Account',
     admin        : 'Admin',
     sales        : 'Sales',
-    treasury     : 'Bonds'
+    treasury     : 'Bonds',
+    head_sales   : 'Head Sales'
   };
 
   /* ── 3. INIT USER INFO ── */

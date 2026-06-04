@@ -499,7 +499,7 @@
   let sortField = '', sortDir = 'asc'; // '' = default (no sort)
   const PAGE_SIZE = 15;
   let currentPage = 1;
-  const ROLE_LABELS = { head_account: 'Head Account', admin: 'Admin', sales: 'Sales', treasury: 'Bonds' };
+  const ROLE_LABELS = { head_account: 'Head Account', admin: 'Admin', sales: 'Sales', treasury: 'Bonds', head_sales: 'Head Sales' };
 
   // ===== SUPABASE =====
   // Helper: map snake_case Supabase row → camelCase for UI compatibility
@@ -1453,7 +1453,7 @@
     // ── ROLE GUARD ──
     const _gu = JSON.parse(raw);
     window._curUser = _gu;
-    const allowedRoles = ['head_account','admin','treasury','sales'];
+    const allowedRoles = ['head_account','admin','treasury','sales','head_sales'];
     if (!allowedRoles.includes(_gu.role)) { window.location.replace('dashboard.html'); return; }
 
     // ── SALES RESTRICTIONS ──

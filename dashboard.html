@@ -134,10 +134,15 @@
     window.addEventListener('DOMContentLoaded', () => {
       const role = getUserRole();
       if (role === 'sales') {
-        // Untuk sales: set default 0 dulu, lalu load dari YTD saham_transaksi
+        // Untuk sales: set default 0 dulu, lalu load dari YTD saham_transaksi (hanya transaksi sales tersebut)
         const el = document.getElementById('sumCustomerAktif');
         if (el) el.textContent = '0';
         loadSalesCustomerCount();
+      } else if (role === 'head_sales') {
+        // Untuk head_sales: set default 0 dulu, lalu load dari YTD saham_transaksi (semua transaksi sales)
+        const el = document.getElementById('sumCustomerAktif');
+        if (el) el.textContent = '0';
+        loadHeadSalesCustomerCount();
       } else {
         loadStats();
         loadObligasiCount();
@@ -180,6 +185,38 @@
         const badge = document.getElementById('sumCustomerBadge');
         if (badge) badge.textContent = 'YTD ' + year;
       } catch(e) { console.error('Gagal load sales customer count:', e); }
+    }
+
+    async function loadHeadSalesCustomerCount() {
+      // Untuk head_sales: hitung nasabah unik dari semua transaksi saham YTD (tidak filter by sales_name)
+      try {
+        const year = new Date().getFullYear();
+        const startDate = year + '-01-01';
+        const endDate   = year + '-12-31';
+
+        const clientIds = new Set();
+        let offset = 0;
+        const pageSize = 1000;
+        let keepFetching = true;
+
+        while (keepFetching) {
+          const { data, error } = await supabase
+            .from('saham_transaksi')
+            .select('client_id')
+            .gte('tanggal', startDate)
+            .lte('tanggal', endDate)
+            .range(offset, offset + pageSize - 1);
+          if (error) { console.error('YTD customer error:', error); break; }
+          (data || []).forEach(r => { if (r.client_id) clientIds.add(r.client_id); });
+          if ((data || []).length < pageSize) keepFetching = false;
+          else offset += pageSize;
+        }
+
+        const el = document.getElementById('sumCustomerAktif');
+        if (el) el.textContent = clientIds.size.toLocaleString('id-ID');
+        const badge = document.getElementById('sumCustomerBadge');
+        if (badge) badge.textContent = 'YTD ' + year;
+      } catch(e) { console.error('Gagal load head sales customer count:', e); }
     }
   </script>
 
@@ -566,6 +603,7 @@
       if (role === 'sales') {
         document.querySelectorAll('.qa-restricted').forEach(el => { el.style.display = 'none'; });
       }
+      // Head Sales bisa akses semua menu seperti admin
     }
 
     function getGreeting(hour) {
