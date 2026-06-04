@@ -17,11 +17,48 @@
 
     async function loadSales() {
       try {
+        // Fetch existing sales data
         const { data: rows, error } = await supabase
           .from('sales')
           .select('*')
           .order('created_at', { ascending: false });
         if (error) throw error;
+
+        // Fetch accounts with role sales/head_sales that are not yet in sales table
+        const { data: accounts, error: accErr } = await supabase
+          .from('accounts')
+          .select('id, name, username, email, role')
+          .in('role', ['sales', 'head_sales']);
+
+        if (!accErr && accounts && accounts.length > 0) {
+          const existingNames = new Set((rows||[]).map(r => (r.nama||'').toLowerCase().trim()));
+          const toInsert = [];
+
+          accounts.forEach(acc => {
+            const accName = (acc.name||'').toLowerCase().trim();
+            if (accName && !existingNames.has(accName)) {
+              toInsert.push({
+                nama: acc.name,
+                email: acc.email || '',
+                kode: acc.username ? acc.username.toUpperCase().substring(0,8) : '',
+                tipe: 'RM',
+                created_at: new Date().toISOString()
+              });
+            }
+          });
+
+          if (toInsert.length > 0) {
+            const { error: insErr } = await supabase.from('sales').insert(toInsert);
+            if (insErr) console.warn('Auto-insert sales error:', insErr);
+            // Re-fetch after insert
+            const { data: refreshed } = await supabase
+              .from('sales').select('*').order('created_at', { ascending: false });
+            window._allSales = refreshed || [];
+            renderTable(window._allSales);
+            return;
+          }
+        }
+
         window._allSales = rows || [];
         renderTable(window._allSales);
       } catch(e) {
