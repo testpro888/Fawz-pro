@@ -91,9 +91,7 @@
       'obligasi-pasar-sekunder.html' : ['head_account', 'admin', 'treasury', 'sales'],
       'obligasi-ipo.html'            : ['head_account', 'admin', 'treasury', 'sales'],
       'bond-transaction.html'        : ['head_account', 'admin', 'treasury', 'sales'],
-      'reksadana-data.html'          : ['head_account', 'admin', 'treasury', 'sales'],
-      'reksadana-order.html'         : ['head_account', 'admin', 'treasury', 'sales'],
-      'waran-terstruktur.html'       : ['head_account', 'admin', 'treasury', 'sales'],
+      // reksadana & waran locked (shown as "soon" — no href)
       'saham.html'                   : ['head_account', 'admin', 'treasury', 'sales'],
       'saham-ranking.html'           : ['head_account', 'admin'],
 

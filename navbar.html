@@ -123,6 +123,30 @@
     .dropdown-item:hover { background: #fdf6ec; color: #e8931a; }
     .d-icon { font-size: 0.9rem; }
 
+    /* Soon / locked */
+    .dropdown-soon {
+      cursor: not-allowed !important;
+      opacity: 0.5;
+      pointer-events: none;
+    }
+    .dropdown-soon:hover { background: none !important; color: #333 !important; }
+    .soon-badge {
+      margin-left: auto;
+      font-size: 0.6rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #f5a623, #e8931a);
+      color: #fff;
+      padding: 2px 7px;
+      border-radius: 20px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+    .mob-link-soon {
+      cursor: not-allowed !important;
+      opacity: 0.5;
+      pointer-events: none;
+    }
+
     /* ===== RIGHT SIDE ===== */
     .nav-right { display: flex; align-items: center; gap: 14px; }
 
@@ -391,12 +415,12 @@
         </div>
         <div class="dropdown-section">
           <div class="dropdown-label">Reksadana</div>
-          <a class="dropdown-item" href="reksadana-data.html"><span class="d-icon"></span> Data Reksadana</a>
-          <a class="dropdown-item" href="reksadana-order.html"><span class="d-icon"></span> Order Reksadana</a>
+          <span class="dropdown-item dropdown-soon"><span class="d-icon">🔒</span> Data Reksadana <span class="soon-badge">Soon</span></span>
+          <span class="dropdown-item dropdown-soon"><span class="d-icon">🔒</span> Order Reksadana <span class="soon-badge">Soon</span></span>
         </div>
         <div class="dropdown-section">
           <div class="dropdown-label">Waran Terstruktur</div>
-          <a class="dropdown-item" href="waran-terstruktur.html"><span class="d-icon"></span> Waran Terstruktur</a>
+          <span class="dropdown-item dropdown-soon"><span class="d-icon">🔒</span> Waran Terstruktur <span class="soon-badge">Soon</span></span>
         </div>
         <div class="dropdown-section">
           <div class="dropdown-label">Saham</div>
@@ -511,9 +535,9 @@
         <a class="mob-link" href="obligasi-ipo.html">Pasar Perdana (IPO)</a>
         <a class="mob-link" href="bond-transaction.html">Bond Transactions</a>
         <a class="mob-link" href="obligasi-coupon-calendar.html">Kalender Kupon</a>
-        <a class="mob-link" href="reksadana-data.html">Data Reksadana</a>
-        <a class="mob-link" href="reksadana-order.html">Order Reksadana</a>
-        <a class="mob-link" href="waran-terstruktur.html">Waran Terstruktur</a>
+        <span class="mob-link mob-link-soon">🔒 Data Reksadana <span class="soon-badge">Soon</span></span>
+        <span class="mob-link mob-link-soon">🔒 Order Reksadana <span class="soon-badge">Soon</span></span>
+        <span class="mob-link mob-link-soon">🔒 Waran Terstruktur <span class="soon-badge">Soon</span></span>
         <a class="mob-link" href="saham.html">Transaksi Saham</a>
         <a class="mob-link" href="saham-ranking.html">Rekap Transaksi</a>
       </div>
