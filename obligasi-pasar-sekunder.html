@@ -854,23 +854,20 @@
   }
 
   function renderCSVPreview() {
-    document.getElementById('csvPreviewInfo').textContent = `${csvRows.length} data ditemukan. Preview 5 baris pertama:`;
+    document.getElementById('csvPreviewInfo').textContent = `${csvRows.length} data ditemukan. Preview 10 baris pertama:`;
     document.getElementById('csvPreview').innerHTML = `<table>
-      <thead><tr><th>Bond ID</th><th>Series</th><th>Name</th><th>ISIN</th><th>Type</th><th>Issue Date</th><th>Maturity</th><th>First Cpn</th><th>Rating</th><th>Coupon%</th><th>Freq</th><th>Basis</th><th>Issuer</th></tr></thead>
-      <tbody>${csvRows.slice(0,5).map(r=>`<tr>
-        <td>${esc(r.bond_id||'')}</td>
-        <td>${esc(r.seri)}</td>
-        <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(r.name||'')}</td>
-        <td>${esc(r.isin||'')}</td>
-        <td>${esc(r.bond_type||'')}</td>
-        <td>${r.tanggal_listing||''}</td>
-        <td>${r.jatuh_tempo||''}</td>
-        <td>${r.first_cpn_date||''}</td>
-        <td>${esc(r.rating||'')}</td>
+      <thead><tr><th>Bond ID</th><th>Series</th><th>Name</th><th>ISIN</th><th>Type</th><th>Issue Date</th><th>Maturity</th><th>Rating</th><th>Coupon%</th><th>Issuer</th></tr></thead>
+      <tbody>${csvRows.slice(0,10).map(r=>`<tr>
+        <td style="font-size:.75rem;">${esc(r.bond_id||'')}</td>
+        <td style="font-weight:600;">${esc(r.seri)}</td>
+        <td style="font-size:.72rem;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(r.name||'')}</td>
+        <td style="font-size:.72rem;">${esc(r.isin||'')}</td>
+        <td style="font-size:.75rem;">${esc(r.bond_type||'')}</td>
+        <td style="font-size:.75rem;">${r.tanggal_listing||''}</td>
+        <td style="font-size:.75rem;">${r.jatuh_tempo||''}</td>
+        <td style="font-size:.75rem;">${esc(r.rating||'')}</td>
         <td>${r.kupon??''}</td>
-        <td>${r.kupon_freq??''}</td>
-        <td>${esc(r.day_count_basis||'')}</td>
-        <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(r.issuer||'')}</td>
+        <td style="font-size:.72rem;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(r.issuer||'')}</td>
       </tr>`).join('')}</tbody>
     </table>`;
     document.getElementById('csvPreviewWrap').style.display = 'block';
@@ -881,28 +878,69 @@
     const btn = document.getElementById('uploadSaveBtn');
     btn.textContent = 'Mengimport...'; btn.disabled = true;
     try {
-      let success = 0, skipped = 0;
+      // Pisahkan rows menjadi: update (sudah ada) dan insert (baru)
+      const toUpdate = [];
+      const toInsert = [];
+
       for (const row of csvRows) {
-        // Cek duplicate berdasarkan bond_id atau seri
         const exists = allData.find(r =>
           (row.bond_id && r.bond_id === row.bond_id) ||
           (row.seri && r.seri === row.seri)
         );
         if (exists) {
-          const { error } = await window._supabase.from('obligasi_products').update(row).eq('id', exists.id);
-          if (!error) { Object.assign(exists, row); success++; } else skipped++;
+          toUpdate.push({ id: exists.id, ...row });
         } else {
-          const { data: inserted, error } = await window._supabase.from('obligasi_products').insert(row).select().single();
-          if (!error && inserted) { allData.push(inserted); success++; } else skipped++;
+          toInsert.push(row);
         }
       }
+
+      let success = 0, skipped = 0;
+
+      // Batch insert - 100 rows at a time
+      const BATCH = 100;
+      for (let i = 0; i < toInsert.length; i += BATCH) {
+        const batch = toInsert.slice(i, i + BATCH);
+        btn.textContent = `Insert ${Math.min(i + BATCH, toInsert.length)}/${toInsert.length}...`;
+        const { data: inserted, error } = await window._supabase
+          .from('obligasi_products')
+          .insert(batch)
+          .select();
+        if (!error && inserted) {
+          allData.push(...inserted);
+          success += inserted.length;
+        } else {
+          console.error('Batch insert error:', error?.message);
+          skipped += batch.length;
+        }
+      }
+
+      // Update satu per satu (biasanya jumlah update lebih sedikit)
+      for (const row of toUpdate) {
+        const { id, ...data } = row;
+        const { error } = await window._supabase
+          .from('obligasi_products')
+          .update(data)
+          .eq('id', id);
+        if (!error) {
+          const idx = allData.findIndex(r => r.id === id);
+          if (idx !== -1) allData[idx] = { id, ...data };
+          success++;
+        } else {
+          skipped++;
+        }
+      }
+
       allData.sort((a,b) => (a.seri||'').localeCompare(b.seri||''));
       filtered = [...allData];
       applyFilterAll();
       document.getElementById('uploadModal').classList.remove('open');
-      showToast(`${success} obligasi berhasil diimport${skipped ? ` (${skipped} gagal)` : ''}`, 'success');
-    } catch(e) { console.error(e); showToast('Gagal import data: ' + e.message, 'error'); }
-    finally { btn.textContent = 'Import Data'; btn.disabled = false; }
+      showToast(`✅ ${success} obligasi berhasil diimport${skipped ? ` (${skipped} gagal)` : ''}`, 'success');
+    } catch(e) {
+      console.error(e);
+      showToast('Gagal import data: ' + e.message, 'error');
+    } finally {
+      btn.textContent = 'Import Data'; btn.disabled = false;
+    }
   }
 
   function downloadTemplate() {
