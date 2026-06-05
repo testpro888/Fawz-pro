@@ -1,0 +1,1052 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Fawz Pro | Bond Calculator</title>
+  <link rel="icon" type="image/png" href="assets/logo/fawz.png"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --navy: #0d0d2b; --purple: #1e1252;
+      --gold: #f5a623; --gold-light: #ffc857;
+      --bg: #f4f5fb; --white: #ffffff;
+      --nav-h: 68px; --border: #e0e0ef;
+      --text: #1a1a3a; --gray: #888;
+      --green: #27ae60; --red: #e74c3c;
+    }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); min-height: 100vh; padding-top: var(--nav-h); color: var(--text); }
+
+    .page-container { max-width: 1340px; margin: 0 auto; padding: 36px 28px; }
+    .page-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 32px; flex-wrap: wrap; gap: 16px; }
+    .page-title { font-size: 2rem; font-weight: 900; color: var(--navy); line-height: 1.1; }
+    .page-subtitle { font-size: 0.88rem; color: var(--gray); margin-top: 4px; }
+    .title-underline { width: 48px; height: 3px; background: linear-gradient(90deg, var(--gold), var(--gold-light)); border-radius: 2px; margin-top: 8px; }
+    .header-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+
+    .btn { display: inline-flex; align-items: center; gap: 7px; padding: 11px 20px; border-radius: 10px; font-family: 'Inter', sans-serif; font-size: 0.875rem; font-weight: 600; cursor: pointer; transition: all 0.2s; border: none; white-space: nowrap; text-decoration: none; }
+    .btn-primary { background: linear-gradient(135deg, var(--gold), #e8931a); color: #fff; box-shadow: 0 4px 14px rgba(245,166,35,0.35); }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(245,166,35,0.45); }
+    .btn-outline { background: #fff; color: var(--navy); border: 1.5px solid var(--border); }
+    .btn-outline:hover { border-color: var(--gold); color: var(--gold); background: #fffbf3; }
+
+    /* LAYOUT */
+    .calc-layout { display: grid; grid-template-columns: 440px 1fr; gap: 24px; align-items: start; }
+
+    /* CARD */
+    .card { background: #fff; border-radius: 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); overflow: hidden; }
+    .card-header { padding: 20px 24px 16px; border-bottom: 1px solid #f0f0f5; display: flex; align-items: center; gap: 10px; }
+    .card-icon { width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, var(--gold), #e8931a); display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; }
+    .card-title { font-size: 1rem; font-weight: 700; color: var(--navy); }
+    .card-subtitle { font-size: 0.78rem; color: var(--gray); margin-top: 2px; }
+    .card-body { padding: 20px 24px; }
+
+    /* BOND SEARCH PICKER */
+    .bond-picker { margin-bottom: 20px; padding-bottom: 18px; border-bottom: 2px solid #f0f0f5; }
+    .bond-picker-label { font-size: 0.68rem; font-weight: 700; color: var(--gold); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+    .bond-search-wrap { position: relative; }
+    .bond-search-input {
+      width: 100%; padding: 11px 14px 11px 40px;
+      border: 2px solid var(--border); border-radius: 12px;
+      font-family: 'Inter', sans-serif; font-size: 0.9rem; color: var(--text);
+      outline: none; transition: border 0.2s, box-shadow 0.2s; background: #fff;
+    }
+    .bond-search-input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(245,166,35,0.1); }
+    .bond-search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 1rem; color: #bbb; pointer-events: none; }
+    .bond-search-clear { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); width: 22px; height: 22px; border-radius: 50%; background: #eee; border: none; cursor: pointer; font-size: 0.75rem; color: #888; display: none; align-items: center; justify-content: center; transition: background 0.15s; }
+    .bond-search-clear:hover { background: #ffd9d9; color: var(--red); }
+    .bond-search-clear.visible { display: flex; }
+
+    .bond-dropdown {
+      display: none; position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 300;
+      background: #fff; border: 1.5px solid var(--border); border-radius: 14px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.12); max-height: 300px; overflow-y: auto;
+    }
+    .bond-dropdown.open { display: block; }
+    .bond-dropdown-item {
+      padding: 11px 14px; cursor: pointer; transition: background 0.12s;
+      border-bottom: 1px solid #f5f5fa; display: flex; align-items: center; gap: 10px;
+    }
+    .bond-dropdown-item:last-child { border-bottom: none; }
+    .bond-dropdown-item:hover, .bond-dropdown-item.focused { background: #fffbf3; }
+    .bond-item-seri { font-weight: 700; color: var(--navy); font-size: 0.88rem; }
+    .bond-item-meta { font-size: 0.75rem; color: var(--gray); margin-top: 1px; }
+    .bond-item-cat { font-size: 0.68rem; font-weight: 700; padding: 2px 8px; border-radius: 8px; flex-shrink: 0; }
+    .cat-gov-idr { background: #e8f8f0; color: #27ae60; }
+    .cat-gov-usd { background: #e8f0ff; color: #2d4abf; }
+    .cat-korp-idr { background: #fffbf0; color: #b45309; }
+    .cat-korp-usd { background: #f5f0ff; color: #7c3aed; }
+    .bond-dropdown-empty { padding: 20px; text-align: center; color: #bbb; font-size: 0.85rem; }
+    .bond-dropdown-loading { padding: 16px; text-align: center; color: var(--gray); font-size: 0.82rem; }
+
+    .bond-selected-chip {
+      margin-top: 8px; padding: 8px 12px; border-radius: 10px;
+      background: linear-gradient(135deg, #f0fff8, #e8fff2); border: 1.5px solid #a8e6c1;
+      display: none; align-items: center; gap: 8px;
+    }
+    .bond-selected-chip.visible { display: flex; }
+    .chip-seri { font-weight: 700; color: var(--navy); font-size: 0.88rem; }
+    .chip-meta { font-size: 0.75rem; color: var(--gray); }
+    .chip-clear { margin-left: auto; background: none; border: none; color: #aaa; cursor: pointer; font-size: 1rem; padding: 2px; border-radius: 4px; transition: color 0.15s; }
+    .chip-clear:hover { color: var(--red); }
+
+    /* FORM */
+    .form-section { margin-bottom: 18px; padding-bottom: 14px; border-bottom: 1px solid #f5f5fa; }
+    .form-section:last-child { margin-bottom: 0; border-bottom: none; padding-bottom: 0; }
+    .form-section-label { font-size: 0.68rem; font-weight: 700; color: var(--gold); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+    .form-group { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
+    .form-group:last-child { margin-bottom: 0; }
+    .form-label { font-size: 0.72rem; font-weight: 700; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
+    .form-label small { font-weight: 400; color: #aaa; text-transform: none; letter-spacing: 0; margin-left: 4px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .form-input, .form-select {
+      padding: 10px 13px; border: 1.5px solid var(--border); border-radius: 10px;
+      font-family: 'Inter', sans-serif; font-size: 0.88rem; color: var(--text);
+      outline: none; transition: border 0.2s, box-shadow 0.2s; background: #fff; width: 100%;
+    }
+    .form-input:focus, .form-select:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(245,166,35,0.1); }
+    .form-input.autofilled { background: #f8fff8; border-color: #b0e8c0; }
+    .form-input.readonly { background: #f8f9ff; color: #555; }
+    .input-suffix { position: relative; }
+    .input-suffix .form-input { padding-right: 40px; }
+    .input-suffix span { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-size: 0.78rem; color: #aaa; font-weight: 600; pointer-events: none; }
+
+    /* RESULTS */
+    .result-card { background: linear-gradient(145deg, var(--navy), #1e1252); border-radius: 16px; padding: 22px 24px; color: #fff; margin-bottom: 16px; }
+    .result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+    .result-item { background: #fff; border-radius: 12px; padding: 13px 16px; border: 1px solid #f0f0f5; }
+    .result-item-label { font-size: 0.68rem; font-weight: 700; color: #aaa; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px; }
+    .result-item-value { font-size: 0.98rem; font-weight: 700; color: var(--navy); }
+    .result-item-value.positive { color: var(--green); }
+    .result-item-value.negative { color: var(--red); }
+    .result-item-value.gold { color: var(--gold); }
+    .result-item-value.blue { color: #2d4abf; }
+
+    .formula-box { background: #f8f9ff; border: 1.5px solid #e8eaff; border-radius: 10px; padding: 12px 14px; margin-bottom: 16px; font-size: 0.77rem; color: #555; line-height: 1.75; }
+    .formula-box code { background: #eef0ff; padding: 1px 6px; border-radius: 4px; font-family: 'Courier New', monospace; font-size: 0.74rem; color: var(--navy); }
+
+    /* CASHFLOW TABLE */
+    .cf-card { background: #fff; border-radius: 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); overflow: hidden; }
+    .cf-table-wrap { overflow-x: auto; max-height: 500px; overflow-y: auto; }
+    table.cf-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+    table.cf-table thead { background: linear-gradient(90deg, #f8f9ff, #fafafa); position: sticky; top: 0; z-index: 2; }
+    table.cf-table thead th { padding: 11px 13px; text-align: left; font-size: 0.67rem; font-weight: 700; color: #999; text-transform: uppercase; letter-spacing: 0.8px; white-space: nowrap; border-bottom: 2px solid #f0f0f5; }
+    table.cf-table thead th.right { text-align: right; }
+    table.cf-table thead th.center { text-align: center; }
+    table.cf-table tbody tr { border-bottom: 1px solid #f5f5fa; transition: background 0.12s; }
+    table.cf-table tbody tr:hover { background: #fffbf3; }
+    table.cf-table tbody tr.total-row { background: #fffbf0; font-weight: 700; border-top: 2px solid #f0e0b0; }
+    table.cf-table tbody td { padding: 10px 13px; color: var(--text); vertical-align: middle; }
+    table.cf-table tbody td.right { text-align: right; font-variant-numeric: tabular-nums; }
+    table.cf-table tbody td.center { text-align: center; }
+    .period-badge { display: inline-block; min-width: 26px; height: 26px; border-radius: 8px; background: #f0f2ff; color: var(--navy); font-size: 0.72rem; font-weight: 700; text-align: center; line-height: 26px; padding: 0 5px; }
+    .period-badge.mature { background: #fde8c8; color: #a85e00; }
+    .day-pill { display: inline-block; padding: 2px 8px; border-radius: 12px; background: #f0f0f5; color: #666; font-size: 0.7rem; }
+    .amount-pos { color: var(--green); }
+    .amount-neg { color: var(--red); }
+    .nett-value { font-weight: 700; color: var(--navy); }
+    .cf-footer { padding: 12px 18px; display: flex; align-items: center; justify-content: space-between; border-top: 1px solid #f0f0f5; font-size: 0.8rem; color: var(--gray); background: #fafafa; flex-wrap: wrap; gap: 8px; }
+
+    /* EMPTY */
+    .empty-calc { text-align: center; padding: 60px 24px; color: #ccc; }
+    .empty-calc-icon { font-size: 3.2rem; margin-bottom: 12px; }
+    .empty-calc p { font-size: 0.88rem; line-height: 1.6; }
+
+    /* LOADING SPINNER */
+    .spin { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.6s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .db-loading { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: var(--gray); padding: 6px 0; }
+    .db-loading .spin-gray { display: inline-block; width: 14px; height: 14px; border: 2px solid #ddd; border-top-color: var(--gold); border-radius: 50%; animation: spin 0.6s linear infinite; }
+
+    /* DB STATUS BADGE */
+    .db-status { display: inline-flex; align-items: center; gap: 5px; font-size: 0.72rem; font-weight: 600; padding: 3px 10px; border-radius: 20px; }
+    .db-status.ok { background: #e8f8f0; color: #27ae60; }
+    .db-status.loading { background: #fff8e0; color: #a85e00; }
+    .db-status.err { background: #fff0f0; color: var(--red); }
+
+    /* TYPE TABS */
+    .type-tabs { display: flex; gap: 6px; margin-bottom: 18px; }
+    .type-tab { flex: 1; padding: 9px 8px; border-radius: 10px; font-family: 'Inter', sans-serif; font-size: 0.8rem; font-weight: 600; cursor: pointer; border: 1.5px solid var(--border); background: #fff; color: var(--gray); transition: all 0.2s; text-align: center; }
+    .type-tab:hover { border-color: var(--gold); color: var(--gold); }
+    .type-tab.active { background: linear-gradient(135deg, var(--gold), #e8931a); color: #fff; border-color: transparent; box-shadow: 0 4px 14px rgba(245,166,35,0.3); }
+
+    @media (max-width: 980px) { .calc-layout { grid-template-columns: 1fr; } }
+    @media (max-width: 600px) { .page-container { padding: 20px 14px; } .result-grid { grid-template-columns: 1fr; } .form-row { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+
+<div id="navbar-placeholder"></div>
+<script src="navbar.js"></script>
+
+<div class="page-container">
+
+  <div class="page-header">
+    <div>
+      <div class="page-title">Bond Calculator</div>
+      <div class="page-subtitle">Kalkulator harga & yield obligasi pasar sekunder | Accrued Interest & Cashflow Schedule</div>
+      <div class="title-underline"></div>
+    </div>
+    <div class="header-actions">
+      <span class="db-status loading" id="db-status-badge">⏳ Memuat data...</span>
+      <a href="obligasi-pasar-sekunder.html" class="btn btn-outline">← Pasar Sekunder</a>
+    </div>
+  </div>
+
+  <div class="calc-layout">
+
+    <!-- ===== LEFT: INPUT ===== -->
+    <div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon">🧮</div>
+          <div>
+            <div class="card-title">Parameter Obligasi</div>
+            <div class="card-subtitle">Pilih dari database atau isi manual</div>
+          </div>
+        </div>
+        <div class="card-body">
+
+          <!-- BOND PICKER FROM DATABASE -->
+          <div class="bond-picker">
+            <div class="bond-picker-label">
+              🗃️ Pilih Obligasi dari Database
+            </div>
+            <div class="bond-search-wrap" id="bond-search-container">
+              <span class="bond-search-icon">🔍</span>
+              <input
+                class="bond-search-input" id="bond-search-input"
+                placeholder="Ketik kode seri... (FR0100, ENRG01BCN3, INDON...)"
+                autocomplete="off"
+                oninput="onBondSearch(this.value)"
+                onkeydown="onBondSearchKey(event)"
+                onfocus="openDropdown()"
+              />
+              <button class="bond-search-clear" id="bond-search-clear" onclick="clearBondSelection()" title="Hapus pilihan">✕</button>
+              <div class="bond-dropdown" id="bond-dropdown">
+                <div class="bond-dropdown-loading">⏳ Memuat daftar obligasi...</div>
+              </div>
+            </div>
+            <div class="bond-selected-chip" id="bond-selected-chip">
+              <div>
+                <div class="chip-seri" id="chip-seri">—</div>
+                <div class="chip-meta" id="chip-meta">—</div>
+              </div>
+              <button class="chip-clear" onclick="clearBondSelection()" title="Ganti obligasi">✕</button>
+            </div>
+          </div>
+
+          <!-- CALCULATOR TYPE -->
+          <div class="type-tabs">
+            <button class="type-tab active" onclick="setCalcType('secondary')" id="tab-secondary">📊 Pasar Sekunder</button>
+            <button class="type-tab" onclick="setCalcType('ipo')" id="tab-ipo">🏦 IPO / Primary</button>
+          </div>
+
+          <!-- DETAIL OBLIGASI (auto-fill dari DB) -->
+          <div class="form-section">
+            <div class="form-section-label">Detail Obligasi</div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Coupon Rate <small>% p.a.</small></label>
+                <div class="input-suffix">
+                  <input class="form-input" id="inp-coupon" type="number" step="0.001" placeholder="8.750" oninput="onInputChange()"/>
+                  <span>%</span>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Frekuensi Kupon</label>
+                <select class="form-select" id="inp-freq" onchange="onInputChange()">
+                  <option value="2">2× / tahun (Semi-Annual)</option>
+                  <option value="4">4× / tahun (Quarterly)</option>
+                  <option value="1">1× / tahun (Annual)</option>
+                  <option value="12">12× / bulan (Monthly)</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Maturity Date</label>
+                <input class="form-input" id="inp-maturity" type="date" onchange="onInputChange()"/>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Day Count Basis</label>
+                <select class="form-select" id="inp-basis" onchange="onInputChange()">
+                  <option value="ACT/ACT">ACT / ACT</option>
+                  <option value="ACT/365">ACT / 365</option>
+                  <option value="30/360">30 / 360</option>
+                  <option value="ACT/360">ACT / 360</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- TRANSAKSI -->
+          <div class="form-section">
+            <div class="form-section-label">Informasi Transaksi</div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Trade Date</label>
+                <input class="form-input" id="inp-trade" type="date" onchange="onTradeChange()"/>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Settlement Date <small>(+2)</small></label>
+                <input class="form-input" id="inp-settle" type="date" onchange="onInputChange()"/>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Last Coupon <small>(otomatis)</small></label>
+                <input class="form-input readonly" id="inp-last-coupon" type="date" readonly/>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Next Coupon <small>(otomatis)</small></label>
+                <input class="form-input readonly" id="inp-next-coupon" type="date" readonly/>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Nominal Investasi</label>
+              <div class="input-suffix">
+                <input class="form-input" id="inp-nominal" type="text" placeholder="100.000.000" oninput="formatNominal(this); onInputChange()"/>
+                <span style="right:8px;font-size:0.75rem;">Rp</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- HARGA & YIELD -->
+          <div class="form-section">
+            <div class="form-section-label">Harga & Yield</div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Clean Price <small>%</small></label>
+                <div class="input-suffix">
+                  <input class="form-input" id="inp-price" type="number" step="0.001" placeholder="100.000" oninput="onPriceChange()"/>
+                  <span>%</span>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">YTM / Yield <small>%</small></label>
+                <div class="input-suffix">
+                  <input class="form-input" id="inp-yield" type="number" step="0.0001" placeholder="8.750" oninput="onYieldChange()"/>
+                  <span>%</span>
+                </div>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">PPh Kupon</label>
+                <div class="input-suffix">
+                  <input class="form-input" id="inp-tax" type="number" step="1" value="10" oninput="onInputChange()"/>
+                  <span>%</span>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Safe Keeping Fee <small>p.a.</small></label>
+                <div class="input-suffix">
+                  <input class="form-input" id="inp-skf" type="number" step="0.001" value="0.025" oninput="onInputChange()"/>
+                  <span>%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <button class="btn btn-primary" style="width:100%;justify-content:center;padding:14px;font-size:0.95rem;" onclick="calculate()">
+            🧮 Hitung Sekarang
+          </button>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== RIGHT: OUTPUT ===== -->
+    <div id="output-panel">
+      <div class="empty-calc">
+        <div class="empty-calc-icon">📊</div>
+        <p>Pilih obligasi dari database atau isi manual,<br/>lalu klik <strong>Hitung Sekarang</strong></p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ===================================================
+     JAVASCRIPT
+==================================================== -->
+<script>
+// =============================================
+// SUPABASE INIT
+// =============================================
+const SUPABASE_URL = 'https://yhmrfluehibfapvtxcfi.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlobXJmbHVlaGliZmFwdnR4Y2ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNjEzODUsImV4cCI6MjA5NDczNzM4NX0.se_H4n_eLsf81d_1GH5sqsPCpX89MHewlPuuNkY6qcU';
+const _sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let allBonds = [];         // all bonds from DB
+let filteredBonds = [];    // search-filtered list
+let selectedBond = null;   // currently selected bond object
+let dropFocusIdx = -1;     // keyboard navigation index
+
+const CAT_LABELS = {
+  'gov-idr':  { label: 'Gov IDR',  cls: 'cat-gov-idr'  },
+  'gov-usd':  { label: 'Gov USD',  cls: 'cat-gov-usd'  },
+  'korp-idr': { label: 'Korp IDR', cls: 'cat-korp-idr' },
+  'korp-usd': { label: 'Korp USD', cls: 'cat-korp-usd' },
+};
+
+// =============================================
+// LOAD ALL BONDS FROM SUPABASE
+// =============================================
+async function loadBonds() {
+  setDbStatus('loading', '⏳ Memuat...');
+  try {
+    const { data, error } = await _sb
+      .from('obligasi_products')
+      .select('id,seri,name,category,kupon,kupon_freq,jatuh_tempo,last_coupon_date,next_coupon_date,harga_modal,modal_to_sales,harga_to_customer,harga_jual,harga_beli,yield,day_count_basis,tanggal_listing,tanggal_update,penerbit,rating')
+      .order('seri', { ascending: true });
+    if (error) throw error;
+    allBonds = data || [];
+    filteredBonds = [...allBonds];
+    setDbStatus('ok', `✅ ${allBonds.length} obligasi`);
+    renderDropdown(filteredBonds);
+  } catch(e) {
+    console.error('Load bonds error:', e);
+    setDbStatus('err', '❌ Gagal memuat');
+    document.getElementById('bond-dropdown').innerHTML =
+      '<div class="bond-dropdown-empty">⚠️ Gagal memuat data dari database</div>';
+  }
+}
+
+function setDbStatus(type, text) {
+  const el = document.getElementById('db-status-badge');
+  el.className = 'db-status ' + type;
+  el.textContent = text;
+}
+
+// =============================================
+// DROPDOWN RENDER
+// =============================================
+function renderDropdown(bonds) {
+  const dd = document.getElementById('bond-dropdown');
+  if (!bonds.length) {
+    dd.innerHTML = '<div class="bond-dropdown-empty">Tidak ada obligasi yang cocok</div>';
+    return;
+  }
+  dd.innerHTML = bonds.slice(0, 80).map((b, i) => {
+    const cat = CAT_LABELS[b.category] || { label: b.category, cls: '' };
+    const ytmStr = b.yield != null ? ` | YTM ${parseFloat(b.yield).toFixed(2)}%` : '';
+    const priceStr = b.harga_modal != null ? ` | Harga ${parseFloat(b.harga_modal).toFixed(2)}` : '';
+    const matStr = b.jatuh_tempo ? ` | JT ${fmtDateShort(b.jatuh_tempo)}` : '';
+    const couponStr = b.kupon != null ? `Kupon ${parseFloat(b.kupon).toFixed(3)}%` : '';
+    return `
+    <div class="bond-dropdown-item" data-idx="${i}" onclick="selectBond(${i})" onmouseover="setFocusIdx(${i})">
+      <span class="bond-item-cat ${cat.cls}">${cat.label}</span>
+      <div style="flex:1;min-width:0;">
+        <div class="bond-item-seri">${esc(b.seri)}${b.name && b.name !== b.seri ? ` <span style="font-weight:400;color:#888;font-size:0.8rem;">(${esc(b.name)})</span>` : ''}</div>
+        <div class="bond-item-meta">${couponStr}${matStr}${ytmStr}${priceStr}</div>
+      </div>
+    </div>`;
+  }).join('');
+  dropFocusIdx = -1;
+}
+
+function openDropdown() {
+  const dd = document.getElementById('bond-dropdown');
+  dd.classList.add('open');
+}
+function closeDropdown() {
+  document.getElementById('bond-dropdown').classList.remove('open');
+}
+
+function onBondSearch(q) {
+  const clearBtn = document.getElementById('bond-search-clear');
+  clearBtn.classList.toggle('visible', q.length > 0);
+  openDropdown();
+  const lq = q.toLowerCase();
+  if (!lq) {
+    filteredBonds = [...allBonds];
+  } else {
+    filteredBonds = allBonds.filter(b =>
+      (b.seri && b.seri.toLowerCase().includes(lq)) ||
+      (b.name && b.name.toLowerCase().includes(lq)) ||
+      (b.penerbit && b.penerbit.toLowerCase().includes(lq))
+    );
+  }
+  renderDropdown(filteredBonds);
+}
+
+function onBondSearchKey(e) {
+  const dd = document.getElementById('bond-dropdown');
+  const items = dd.querySelectorAll('.bond-dropdown-item');
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    dropFocusIdx = Math.min(dropFocusIdx + 1, items.length - 1);
+    updateDropFocus(items);
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    dropFocusIdx = Math.max(dropFocusIdx - 1, 0);
+    updateDropFocus(items);
+  } else if (e.key === 'Enter') {
+    if (dropFocusIdx >= 0 && dropFocusIdx < filteredBonds.length) {
+      selectBond(dropFocusIdx);
+    }
+  } else if (e.key === 'Escape') {
+    closeDropdown();
+  }
+}
+
+function setFocusIdx(i) { dropFocusIdx = i; }
+
+function updateDropFocus(items) {
+  items.forEach((el, i) => el.classList.toggle('focused', i === dropFocusIdx));
+  if (items[dropFocusIdx]) items[dropFocusIdx].scrollIntoView({ block: 'nearest' });
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', (e) => {
+  if (!document.getElementById('bond-search-container').contains(e.target)) closeDropdown();
+});
+
+// =============================================
+// SELECT BOND — AUTO-FILL FORM
+// =============================================
+function selectBond(idx) {
+  const b = filteredBonds[idx];
+  if (!b) return;
+  selectedBond = b;
+  closeDropdown();
+
+  // Update search input & clear btn
+  document.getElementById('bond-search-input').value = b.seri;
+  document.getElementById('bond-search-clear').classList.add('visible');
+
+  // Show selected chip
+  const chip = document.getElementById('bond-selected-chip');
+  const cat = CAT_LABELS[b.category] || { label: b.category };
+  const matStr = b.jatuh_tempo ? ` | JT ${fmtDateShort(b.jatuh_tempo)}` : '';
+  const couponStr = b.kupon != null ? `Kupon ${parseFloat(b.kupon).toFixed(3)}%` : '';
+  document.getElementById('chip-seri').textContent = b.seri + (b.name && b.name !== b.seri ? ` (${b.name})` : '');
+  document.getElementById('chip-meta').textContent = `${cat.label} | ${couponStr}${matStr}`;
+  chip.classList.add('visible');
+
+  // ---- FILL FORM FIELDS ----
+
+  // Coupon
+  if (b.kupon != null) setVal('inp-coupon', parseFloat(b.kupon), true);
+
+  // Frequency — map from DB value (months) to per-year
+  // DB stores: 1=monthly, 3=quarterly, 6=semi-annual, 12=annual
+  if (b.kupon_freq) {
+    const freqMap = { 1: 12, 3: 4, 6: 2, 12: 1 };
+    const perYear = freqMap[parseInt(b.kupon_freq)] || 2;
+    document.getElementById('inp-freq').value = perYear;
+  }
+
+  // Maturity
+  if (b.jatuh_tempo) setVal('inp-maturity', b.jatuh_tempo, true);
+
+  // Day count basis
+  if (b.day_count_basis) {
+    const basisMap = {
+      'ACT/ACT': 'ACT/ACT', 'ACT/365': 'ACT/365',
+      '30/360': '30/360', 'ACT/360': 'ACT/360'
+    };
+    const mapped = basisMap[b.day_count_basis];
+    if (mapped) document.getElementById('inp-basis').value = mapped;
+  }
+
+  // Price — use harga_to_customer first, fallback to harga_modal, then harga_jual
+  const price = b.harga_to_customer ?? b.harga_modal ?? b.harga_jual;
+  if (price != null) setVal('inp-price', parseFloat(price), true);
+
+  // YTM
+  if (b.yield != null) setVal('inp-yield', parseFloat(b.yield), true);
+
+  // Default nominal = 100jt
+  if (!document.getElementById('inp-nominal').value) {
+    document.getElementById('inp-nominal').value = (100000000).toLocaleString('id-ID');
+  }
+
+  // Trigger coupon date recalc
+  onInputChange();
+
+  // If we have price but no yield, compute yield
+  if (price != null && b.yield == null) onPriceChange();
+  // If we have yield but no price, compute price
+  if (b.yield != null && price == null) onYieldChange();
+}
+
+function clearBondSelection() {
+  selectedBond = null;
+  document.getElementById('bond-search-input').value = '';
+  document.getElementById('bond-search-clear').classList.remove('visible');
+  document.getElementById('bond-selected-chip').classList.remove('visible');
+  filteredBonds = [...allBonds];
+  renderDropdown(filteredBonds);
+  // Clear autofilled styling
+  ['inp-coupon','inp-maturity','inp-price','inp-yield'].forEach(id => {
+    document.getElementById(id).classList.remove('autofilled');
+  });
+}
+
+function setVal(id, val, markFilled = false) {
+  const el = document.getElementById(id);
+  el.value = val;
+  if (markFilled) el.classList.add('autofilled');
+}
+
+// =============================================
+// UTILITIES
+// =============================================
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function fmtIDR(n, dec=0) {
+  if (n == null || isNaN(n)) return '—';
+  return 'Rp\u00a0' + Number(n).toLocaleString('id-ID', { minimumFractionDigits: dec, maximumFractionDigits: dec });
+}
+function fmtPct(n, dec=4) {
+  if (n == null || isNaN(n)) return '—';
+  return Number(n).toFixed(dec) + '%';
+}
+function fmtNum(n, dec=2) {
+  if (n == null || isNaN(n)) return '—';
+  return Number(n).toLocaleString('id-ID', { minimumFractionDigits: dec, maximumFractionDigits: dec });
+}
+function fmtDate(d) {
+  if (!d) return '—';
+  const dt = (d instanceof Date) ? d : new Date(d + (d.length === 10 ? 'T00:00:00' : ''));
+  return dt.toLocaleDateString('id-ID', { weekday:'short', day:'numeric', month:'short', year:'numeric' });
+}
+function fmtDateShort(d) {
+  if (!d) return '—';
+  const dt = (d instanceof Date) ? d : new Date(d + (d.length === 10 ? 'T00:00:00' : ''));
+  return dt.toLocaleDateString('id-ID', { day:'numeric', month:'short', year:'numeric' });
+}
+function addDays(d, n) { const r = new Date(d); r.setDate(r.getDate() + n); return r; }
+function toISO(d) { return d.toISOString().split('T')[0]; }
+
+function formatNominal(el) {
+  const v = el.value.replace(/\D/g,'');
+  if (!v) { el.value = ''; return; }
+  el.value = parseInt(v).toLocaleString('id-ID');
+}
+
+// =============================================
+// DATE AUTO-FILL
+// =============================================
+window.addEventListener('DOMContentLoaded', () => {
+  const today = new Date();
+  document.getElementById('inp-trade').value  = toISO(today);
+  document.getElementById('inp-settle').value = toISO(addDays(today, 2));
+  loadBonds();
+});
+
+function onTradeChange() {
+  const t = new Date(document.getElementById('inp-trade').value);
+  if (!isNaN(t)) document.getElementById('inp-settle').value = toISO(addDays(t, 2));
+  onInputChange();
+}
+
+function onInputChange() {
+  const settle   = document.getElementById('inp-settle').value;
+  const maturity = document.getElementById('inp-maturity').value;
+  const freq     = parseInt(document.getElementById('inp-freq').value) || 2;
+  if (settle && maturity) {
+    const cd = calcCouponDates(settle, maturity, freq);
+    if (cd.last) document.getElementById('inp-last-coupon').value = toISO(cd.last);
+    if (cd.next) document.getElementById('inp-next-coupon').value = toISO(cd.next);
+  }
+}
+
+// =============================================
+// COUPON DATE CALC
+// =============================================
+function calcCouponDates(settle, maturity, freqPerYear) {
+  if (!settle || !maturity) return { last: null, next: null };
+  const s   = new Date(settle   + 'T00:00:00');
+  const mat = new Date(maturity + 'T00:00:00');
+  const mpp = Math.round(12 / freqPerYear);
+  let d = new Date(mat);
+  let iters = 0;
+  while (d > s && iters < 600) {
+    d = new Date(d.getFullYear(), d.getMonth() - mpp, d.getDate());
+    iters++;
+  }
+  const last = new Date(d);
+  const next = new Date(last.getFullYear(), last.getMonth() + mpp, last.getDate());
+  return { last, next };
+}
+
+// =============================================
+// DAYS30_360
+// =============================================
+function days30_360(d1, d2) {
+  let y1=d1.getFullYear(), m1=d1.getMonth()+1, day1=d1.getDate();
+  let y2=d2.getFullYear(), m2=d2.getMonth()+1, day2=d2.getDate();
+  if (day1===31) day1=30;
+  if (day2===31) day2=30;
+  return 360*(y2-y1)+30*(m2-m1)+(day2-day1);
+}
+
+// =============================================
+// ACCRUED INTEREST
+// AI = (Coupon/Freq) × (DaysAccrued/PeriodDays) × Nominal
+// =============================================
+function calcAccruedInterest(settle, lastCoupon, nextCoupon, couponRate, freqPerYear, nominal, basis) {
+  if (!settle || !lastCoupon || !nextCoupon) return 0;
+  const s  = new Date(settle      + 'T00:00:00');
+  const lc = new Date(lastCoupon  + 'T00:00:00');
+  const nc = new Date(nextCoupon  + 'T00:00:00');
+  let daysAccrued, periodDays;
+  if (basis === '30/360') {
+    daysAccrued = days30_360(lc, s);
+    periodDays  = days30_360(lc, nc);
+  } else if (basis === 'ACT/360') {
+    daysAccrued = (s - lc) / 86400000;
+    periodDays  = 360 / freqPerYear;
+  } else if (basis === 'ACT/365') {
+    daysAccrued = (s - lc) / 86400000;
+    periodDays  = 365 / freqPerYear;
+  } else { // ACT/ACT
+    daysAccrued = (s - lc) / 86400000;
+    periodDays  = (nc - lc) / 86400000;
+  }
+  if (periodDays <= 0) return 0;
+  return (couponRate / 100 / freqPerYear) * (daysAccrued / periodDays) * nominal;
+}
+
+// =============================================
+// PRICE FROM YIELD  (Excel PRICE equivalent)
+// =============================================
+function priceFromYield(settle, maturity, coupon, ytm, freqPerYear, basis) {
+  if (!settle || !maturity) return null;
+  const { last: lc, next: nc } = calcCouponDates(settle, maturity, freqPerYear);
+  if (!lc || !nc) return null;
+  const s   = new Date(settle   + 'T00:00:00');
+  const mat = new Date(maturity + 'T00:00:00');
+  const c = coupon / 100 / freqPerYear;
+  const y = ytm    / 100 / freqPerYear;
+  const mpp = Math.round(12 / freqPerYear);
+  let dsc, E;
+  if (basis === '30/360') {
+    dsc = days30_360(s, nc); E = days30_360(lc, nc);
+  } else if (basis === 'ACT/360') {
+    dsc = (nc - s) / 86400000; E = 360 / freqPerYear;
+  } else if (basis === 'ACT/365') {
+    dsc = (nc - s) / 86400000; E = 365 / freqPerYear;
+  } else {
+    dsc = (nc - s) / 86400000; E = (nc - lc) / 86400000;
+  }
+  let N = 1, d = new Date(nc);
+  while (d < mat) {
+    d = new Date(d.getFullYear(), d.getMonth() + mpp, d.getDate());
+    if (d <= mat) N++;
+  }
+  const W = dsc / E;
+  if (Math.abs(y) < 1e-10) return (N * c + 1) * 100;
+  let price = 0;
+  for (let k = 1; k <= N; k++) price += c / Math.pow(1 + y, k - 1 + W);
+  price += 1 / Math.pow(1 + y, N - 1 + W);
+  price -= ((E - dsc) / E) * c;
+  return price * 100;
+}
+
+// =============================================
+// YIELD FROM PRICE  (bisect solver)
+// =============================================
+function yieldFromPrice(settle, maturity, coupon, price, freqPerYear, basis) {
+  let lo = 0.0001, hi = 0.5, ytm = coupon / 100;
+  for (let i = 0; i < 200; i++) {
+    const mid = (lo + hi) / 2;
+    const p = priceFromYield(settle, maturity, coupon, mid * 100, freqPerYear, basis);
+    if (p === null) break;
+    if (Math.abs(p - price) < 0.00001) { ytm = mid; break; }
+    p > price ? (lo = mid) : (hi = mid);
+    ytm = mid;
+  }
+  return ytm * 100;
+}
+
+// =============================================
+// CASHFLOW SCHEDULE
+// =============================================
+function generateCashflows(settle, maturity, coupon, freqPerYear, nominal, taxPct, skfPct, basis) {
+  const mpp = Math.round(12 / freqPerYear);
+  const mat = new Date(maturity + 'T00:00:00');
+  const s   = new Date(settle   + 'T00:00:00');
+  const dates = [];
+  let d = new Date(mat), iters = 0;
+  while (d > s && iters < 600) {
+    dates.unshift(new Date(d));
+    d = new Date(d.getFullYear(), d.getMonth() - mpp, d.getDate());
+    iters++;
+  }
+  const couponPerPeriod = (coupon / 100 / freqPerYear) * nominal;
+  return dates.map((cfDate, i) => {
+    const prevDate = i === 0 ? s : dates[i-1];
+    const isMature = cfDate.getTime() === mat.getTime();
+    let periodDays;
+    if (basis === 'ACT/365')      periodDays = 365 / freqPerYear;
+    else if (basis === 'ACT/360') periodDays = 360 / freqPerYear;
+    else if (basis === '30/360')  periodDays = days30_360(prevDate, cfDate);
+    else                          periodDays = (cfDate - prevDate) / 86400000;
+    const grossCoupon = couponPerPeriod;
+    const tax         = grossCoupon * (taxPct / 100);
+    const netCoupon   = grossCoupon - tax;
+    const skf         = (skfPct / 100 / 365) * periodDays * nominal;
+    const principal   = isMature ? nominal : 0;
+    const nett        = netCoupon - skf + principal;
+    return { period: i+1, date: cfDate, days: Math.round(periodDays), grossCoupon, tax, skf, netCoupon, principal, nett, isMature };
+  });
+}
+
+// =============================================
+// UI HELPERS
+// =============================================
+let calcMode = 'secondary';
+function setCalcType(t) {
+  calcMode = t;
+  document.getElementById('tab-secondary').classList.toggle('active', t === 'secondary');
+  document.getElementById('tab-ipo').classList.toggle('active', t === 'ipo');
+}
+
+function onPriceChange() {
+  const price    = parseFloat(document.getElementById('inp-price').value);
+  const settle   = document.getElementById('inp-settle').value;
+  const maturity = document.getElementById('inp-maturity').value;
+  const coupon   = parseFloat(document.getElementById('inp-coupon').value) || 0;
+  const freq     = parseInt(document.getElementById('inp-freq').value) || 2;
+  const basis    = document.getElementById('inp-basis').value;
+  if (!isNaN(price) && price > 0 && settle && maturity && coupon) {
+    const ytm = yieldFromPrice(settle, maturity, coupon, price, freq, basis);
+    setVal('inp-yield', ytm.toFixed(4));
+  }
+}
+
+function onYieldChange() {
+  const ytm      = parseFloat(document.getElementById('inp-yield').value);
+  const settle   = document.getElementById('inp-settle').value;
+  const maturity = document.getElementById('inp-maturity').value;
+  const coupon   = parseFloat(document.getElementById('inp-coupon').value) || 0;
+  const freq     = parseInt(document.getElementById('inp-freq').value) || 2;
+  const basis    = document.getElementById('inp-basis').value;
+  if (!isNaN(ytm) && ytm > 0 && settle && maturity && coupon) {
+    const price = priceFromYield(settle, maturity, coupon, ytm, freq, basis);
+    if (price !== null) setVal('inp-price', price.toFixed(4));
+  }
+}
+
+// =============================================
+// MAIN CALCULATE
+// =============================================
+function calculate() {
+  const seriesLabel = selectedBond
+    ? (selectedBond.seri + (selectedBond.name && selectedBond.name !== selectedBond.seri ? ` (${selectedBond.name})` : ''))
+    : (document.getElementById('bond-search-input').value.trim() || '—');
+
+  const coupon   = parseFloat(document.getElementById('inp-coupon').value)  || 0;
+  const freq     = parseInt(document.getElementById('inp-freq').value)      || 2;
+  const maturity = document.getElementById('inp-maturity').value;
+  const basis    = document.getElementById('inp-basis').value;
+  const trade    = document.getElementById('inp-trade').value;
+  const settle   = document.getElementById('inp-settle').value;
+  const nominal  = parseInt(document.getElementById('inp-nominal').value.replace(/\D/g,'')) || 100000000;
+  const price    = parseFloat(document.getElementById('inp-price').value)   || 100;
+  const ytm      = parseFloat(document.getElementById('inp-yield').value)   || coupon;
+  const taxPct   = parseFloat(document.getElementById('inp-tax').value)     || 10;
+  const skfPct   = parseFloat(document.getElementById('inp-skf').value)     || 0.025;
+
+  if (!maturity || !settle) { alert('Harap isi Maturity Date dan Settlement Date.'); return; }
+  if (coupon <= 0) { alert('Harap isi Coupon Rate.'); return; }
+
+  const { last: lastCoupon, next: nextCoupon } = calcCouponDates(settle, maturity, freq);
+  if (!lastCoupon || !nextCoupon) { alert('Gagal menghitung tanggal kupon.'); return; }
+
+  const accruedAmt = calcAccruedInterest(settle, toISO(lastCoupon), toISO(nextCoupon), coupon, freq, nominal, basis);
+  const accruedPct = (accruedAmt / nominal) * 100;
+  const dirtyPrice  = price + accruedPct;
+  const totalProceed = (dirtyPrice / 100) * nominal;
+  const cleanProceed = (price / 100) * nominal;
+  const couponAmt    = (coupon / 100 / freq) * nominal;
+  const couponNet    = couponAmt * (1 - taxPct / 100);
+  const daysToNext   = Math.round((nextCoupon - new Date(settle + 'T00:00:00')) / 86400000);
+  const daysToMat    = Math.round((new Date(maturity + 'T00:00:00') - new Date(settle + 'T00:00:00')) / 86400000);
+  const flows        = generateCashflows(settle, maturity, coupon, freq, nominal, taxPct, skfPct, basis);
+
+  renderOutput({ seriesLabel, coupon, freq, maturity, settle, trade, nominal, price, ytm, taxPct, skfPct,
+    lastCoupon: toISO(lastCoupon), nextCoupon: toISO(nextCoupon),
+    accruedAmt, accruedPct, dirtyPrice, totalProceed, cleanProceed,
+    couponAmt, couponNet, daysToNext, daysToMat, basis, flows,
+    // DB extras
+    hargaModal:        selectedBond?.harga_modal,
+    hargaToCustomer:   selectedBond?.harga_to_customer,
+    penerbit:          selectedBond?.penerbit,
+    rating:            selectedBond?.rating,
+    tanggalUpdate:     selectedBond?.tanggal_update,
+  });
+}
+
+// =============================================
+// RENDER OUTPUT
+// =============================================
+function renderOutput(r) {
+  const panel = document.getElementById('output-panel');
+  const totalCoupons = r.flows.length;
+  let totalGross = 0, totalTax = 0, totalSKF = 0, totalNett = 0;
+
+  const cfRows = r.flows.map(f => {
+    totalGross += f.grossCoupon; totalTax += f.tax;
+    totalSKF += f.skf; totalNett += f.nett;
+    return `
+    <tr>
+      <td class="center"><span class="${f.isMature ? 'period-badge mature' : 'period-badge'}">${f.isMature ? '🔑' : f.period}</span></td>
+      <td>${fmtDate(f.date)}</td>
+      <td class="center"><span class="day-pill">${f.days}</span></td>
+      <td class="right amount-pos">${fmtIDR(f.grossCoupon)}</td>
+      <td class="right amount-neg">(${fmtIDR(f.tax)})</td>
+      <td class="right amount-neg">(${fmtIDR(f.skf)})</td>
+      <td class="right">${fmtIDR(f.netCoupon)}</td>
+      <td class="right" style="color:#2d4abf;font-weight:600;">${f.isMature ? fmtIDR(f.principal) : '—'}</td>
+      <td class="right nett-value">${fmtIDR(f.nett)}</td>
+    </tr>`;
+  }).join('');
+
+  const cfTotal = `
+  <tr class="total-row">
+    <td colspan="3" style="color:var(--navy);">TOTAL CASHFLOW</td>
+    <td class="right amount-pos">${fmtIDR(totalGross)}</td>
+    <td class="right amount-neg">(${fmtIDR(totalTax)})</td>
+    <td class="right amount-neg">(${fmtIDR(totalSKF)})</td>
+    <td class="right">${fmtIDR(totalGross - totalTax)}</td>
+    <td class="right" style="color:#2d4abf;font-weight:600;">${fmtIDR(r.nominal)}</td>
+    <td class="right" style="color:var(--gold);font-size:0.95rem;">${fmtIDR(totalNett)}</td>
+  </tr>`;
+
+  // DB price info row
+  const dbPriceHtml = (r.hargaModal || r.hargaToCustomer) ? `
+  <div style="background:#f8f9ff;border:1.5px solid #e8eaff;border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:0.78rem;color:#444;display:flex;gap:20px;flex-wrap:wrap;align-items:center;">
+    <span>📋 <strong>Harga dari DB:</strong></span>
+    ${r.hargaModal       != null ? `<span>Harga Modal: <strong>${fmtNum(r.hargaModal,3)}%</strong></span>` : ''}
+    ${r.hargaToCustomer  != null ? `<span>To Customer: <strong>${fmtNum(r.hargaToCustomer,3)}%</strong></span>` : ''}
+    ${r.penerbit         ? `<span>Penerbit: <strong>${esc(r.penerbit)}</strong></span>` : ''}
+    ${r.rating           ? `<span>Rating: <strong style="background:#e8f0ff;padding:1px 7px;border-radius:6px;color:#2d4abf;">${esc(r.rating)}</strong></span>` : ''}
+    ${r.tanggalUpdate    ? `<span style="margin-left:auto;color:#aaa;">Update: ${fmtDateShort(r.tanggalUpdate)}</span>` : ''}
+  </div>` : '';
+
+  panel.innerHTML = `
+  <!-- SUMMARY CARD -->
+  <div class="result-card" style="margin-bottom:14px;">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+      <span style="font-size:1.05rem;">📋</span>
+      <div style="font-size:0.72rem;font-weight:700;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:1px;">
+        ${esc(r.seriesLabel)} &nbsp;·&nbsp; Settlement ${r.settle ? fmtDateShort(r.settle) : '—'}
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;">
+      <div>
+        <div style="font-size:0.68rem;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Total Proceed (Dirty)</div>
+        <div style="font-size:1.5rem;font-weight:900;color:var(--gold-light);">${fmtIDR(r.totalProceed)}</div>
+        <div style="font-size:0.72rem;color:rgba(255,255,255,0.35);margin-top:2px;">Dirty ${fmtNum(r.dirtyPrice,4)}% × Nominal</div>
+      </div>
+      <div>
+        <div style="font-size:0.68rem;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Accrued Interest</div>
+        <div style="font-size:1.5rem;font-weight:900;color:#a8e6c1;">${fmtIDR(r.accruedAmt)}</div>
+        <div style="font-size:0.72rem;color:rgba(255,255,255,0.35);margin-top:2px;">${fmtNum(r.accruedPct,4)}% dari nominal</div>
+      </div>
+      <div>
+        <div style="font-size:0.68rem;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">YTM</div>
+        <div style="font-size:1.5rem;font-weight:900;color:#c5d3ff;">${fmtPct(r.ytm,4)}</div>
+        <div style="font-size:0.72rem;color:rgba(255,255,255,0.35);margin-top:2px;">Yield to Maturity</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESULT GRID -->
+  <div class="result-grid" style="margin-bottom:14px;">
+    <div class="result-item">
+      <div class="result-item-label">Clean Price</div>
+      <div class="result-item-value">${fmtNum(r.price,4)}%</div>
+    </div>
+    <div class="result-item">
+      <div class="result-item-label">Dirty Price</div>
+      <div class="result-item-value gold">${fmtNum(r.dirtyPrice,4)}%</div>
+    </div>
+    <div class="result-item">
+      <div class="result-item-label">Kupon Kotor / Periode</div>
+      <div class="result-item-value positive">${fmtIDR(r.couponAmt)}</div>
+    </div>
+    <div class="result-item">
+      <div class="result-item-label">Kupon Nett (–PPh ${r.taxPct}%)</div>
+      <div class="result-item-value">${fmtIDR(r.couponNet)}</div>
+    </div>
+    <div class="result-item">
+      <div class="result-item-label">Last Coupon Date</div>
+      <div class="result-item-value" style="font-size:0.85rem;">${fmtDateShort(r.lastCoupon)}</div>
+    </div>
+    <div class="result-item">
+      <div class="result-item-label">Next Coupon Date</div>
+      <div class="result-item-value" style="font-size:0.85rem;">
+        ${fmtDateShort(r.nextCoupon)}
+        <span style="font-size:0.7rem;background:#fff0e0;color:#a85e00;padding:2px 6px;border-radius:8px;margin-left:4px;">${r.daysToNext} hr</span>
+      </div>
+    </div>
+    <div class="result-item">
+      <div class="result-item-label">Sisa Hari ke Jatuh Tempo</div>
+      <div class="result-item-value blue">${r.daysToMat.toLocaleString('id-ID')} hari</div>
+    </div>
+    <div class="result-item">
+      <div class="result-item-label">Sisa Jumlah Kupon</div>
+      <div class="result-item-value">${totalCoupons}× kupon</div>
+    </div>
+  </div>
+
+  ${dbPriceHtml}
+
+  <!-- FORMULA -->
+  <div class="formula-box" style="margin-bottom:14px;">
+    <strong>📐 Formula:</strong><br/>
+    <code>Accrued Interest = (Coupon/Freq) × (Hari Akrual / Hari Periode) × Nominal</code><br/>
+    <code>Dirty Price = Clean Price + Accrued Interest%</code> &nbsp;·&nbsp;
+    <code>Total Proceed = Dirty Price% × Nominal</code><br/>
+    <code>Kupon Nett = Kupon Kotor × (1 − PPh%) − Safe Keeping Fee</code> &nbsp;·&nbsp;
+    <code>SKF = (SKF% / 365) × Hari × Nominal</code>
+  </div>
+
+  <!-- CASHFLOW TABLE -->
+  <div class="cf-card">
+    <div class="card-header">
+      <div class="card-icon">📅</div>
+      <div>
+        <div class="card-title">
+          Jadwal Pembagian Kupon
+          <span style="display:inline-block;padding:3px 10px;border-radius:20px;font-size:0.68rem;font-weight:700;background:#e8f0ff;color:#2d4abf;margin-left:6px;">${totalCoupons} Periode</span>
+        </div>
+        <div class="card-subtitle">Dari Settlement → Jatuh Tempo &nbsp;|&nbsp; Basis: ${r.basis} &nbsp;|&nbsp; PPh: ${r.taxPct}% &nbsp;|&nbsp; SKF: ${r.skfPct}% p.a.</div>
+      </div>
+    </div>
+    <div class="cf-table-wrap">
+      <table class="cf-table">
+        <thead><tr>
+          <th class="center">#</th>
+          <th>Tanggal Kupon</th>
+          <th class="center">Hari</th>
+          <th class="right">Kupon Kotor</th>
+          <th class="right">PPh ${r.taxPct}%</th>
+          <th class="right">SKF</th>
+          <th class="right">Kupon Nett</th>
+          <th class="right">Pokok</th>
+          <th class="right">Total Nett</th>
+        </tr></thead>
+        <tbody>${cfRows}${cfTotal}</tbody>
+      </table>
+    </div>
+    <div class="cf-footer">
+      <span>Nominal: <strong>${fmtIDR(r.nominal)}</strong> &nbsp;·&nbsp; Coupon: <strong>${r.coupon}% p.a.</strong> &nbsp;·&nbsp; Frek: <strong>${r.freq}×/thn</strong></span>
+      <span>🔑 = Jatuh Tempo — termasuk pokok</span>
+    </div>
+  </div>`;
+}
+</script>
+
+</body>
+</html>
