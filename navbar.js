@@ -172,7 +172,134 @@
 
   }
 
-  /* ── 4. DROPDOWN HOVER ── */
+  /* ── 4. NOTIFICATIONS (treasury/Bonds only) ── */
+  let _notifReadIds = [];
+
+  function initNotifications(user) {
+    if (user.role !== 'treasury') return;
+    const bell = document.getElementById('notifBell');
+    if (!bell) return;
+    bell.style.display = 'flex';
+
+    // Load read IDs from localStorage
+    const stored = localStorage.getItem('fawz_notif_read_' + (user.username||user.name));
+    _notifReadIds = stored ? JSON.parse(stored) : [];
+
+    fetchPendingOrders(user);
+    // Poll setiap 60 detik
+    setInterval(() => fetchPendingOrders(user), 60000);
+  }
+
+  async function fetchPendingOrders(user) {
+    if (!window._supabase) return;
+    try {
+      const { data, error } = await window._supabase
+        .from('bb_orders')
+        .select('id, seri, customer_name, sales_pic, nominal, created_at, category')
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false })
+        .limit(20);
+      if (error || !data) return;
+
+      const unreadCount = data.filter(o => !_notifReadIds.includes(o.id)).length;
+
+      // Update badge
+      const badge = document.getElementById('notifBadge');
+      if (badge) {
+        if (unreadCount > 0) {
+          badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
+          badge.style.display = 'flex';
+        } else {
+          badge.style.display = 'none';
+        }
+      }
+
+      // Render list
+      const list = document.getElementById('notifList');
+      if (!list) return;
+
+      if (data.length === 0) {
+        list.innerHTML = '<div class="notif-empty">✅ Tidak ada order pending</div>';
+        return;
+      }
+
+      list.innerHTML = data.map(o => {
+        const isUnread = !_notifReadIds.includes(o.id);
+        const nominal  = Number(o.nominal || 0).toLocaleString('id-ID');
+        const seri     = o.seri || '—';
+        const nasabah  = o.customer_name || '—';
+        const sales    = o.sales_pic || '—';
+        const time     = o.created_at ? fmtTimeAgo(o.created_at) : '';
+        const cat      = { 'gov-idr':'Gov IDR','gov-usd':'Gov USD','korp-idr':'Korp IDR','korp-usd':'Korp USD' }[o.category] || '';
+        return `<div class="notif-item ${isUnread ? 'unread' : ''}" onclick="onNotifClick('${o.id}')">
+          <div class="notif-dot"></div>
+          <div class="notif-content">
+            <div class="notif-title">📋 Order ${seri} ${cat ? '· '+cat : ''}</div>
+            <div class="notif-sub">Nasabah: <strong>${nasabah}</strong> · Sales: ${sales}</div>
+            <div class="notif-sub">Nominal: Rp ${nominal}</div>
+            <div class="notif-time">${time}</div>
+          </div>
+        </div>`;
+      }).join('');
+
+    } catch(e) { console.warn('Notif fetch error:', e); }
+  }
+
+  window.toggleNotifPanel = function() {
+    const bell = document.getElementById('notifBell');
+    if (bell) bell.classList.toggle('open');
+    // Close user dropdown if open
+    document.getElementById('navUser')?.classList.remove('open');
+  };
+
+  window.onNotifClick = function(id) {
+    // Mark as read
+    if (!_notifReadIds.includes(id)) {
+      _notifReadIds.push(id);
+      const raw2 = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember');
+      const u = raw2 ? JSON.parse(raw2) : {};
+      localStorage.setItem('fawz_notif_read_' + (u.username||u.name), JSON.stringify(_notifReadIds));
+      // Update badge
+      const badge = document.getElementById('notifBadge');
+      const list  = document.getElementById('notifList');
+      const item  = list?.querySelector(`[onclick="onNotifClick('${id}')"]`);
+      if (item) { item.classList.remove('unread'); item.querySelector('.notif-dot').style.background = 'transparent'; }
+      const unread = list?.querySelectorAll('.notif-item.unread').length || 0;
+      if (badge) { badge.textContent = unread; badge.style.display = unread > 0 ? 'flex' : 'none'; }
+    }
+    // Navigate
+    window.location.href = 'obligasi-bookbuilding.html';
+  };
+
+  window.markAllRead = function(e) {
+    e.stopPropagation();
+    const list = document.getElementById('notifList');
+    const items = list?.querySelectorAll('.notif-item') || [];
+    items.forEach(el => {
+      const match = el.getAttribute('onclick')?.match(/'([^']+)'/);
+      if (match) _notifReadIds.push(match[1]);
+      el.classList.remove('unread');
+      el.querySelector('.notif-dot').style.background = 'transparent';
+    });
+    const raw2 = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember');
+    const u = raw2 ? JSON.parse(raw2) : {};
+    localStorage.setItem('fawz_notif_read_' + (u.username||u.name), JSON.stringify(_notifReadIds));
+    const badge = document.getElementById('notifBadge');
+    if (badge) badge.style.display = 'none';
+  };
+
+  function fmtTimeAgo(iso) {
+    const diff = Date.now() - new Date(iso).getTime();
+    const m = Math.floor(diff / 60000);
+    const h = Math.floor(m / 60);
+    const d = Math.floor(h / 24);
+    if (d > 0)  return d + ' hari lalu';
+    if (h > 0)  return h + ' jam lalu';
+    if (m > 0)  return m + ' menit lalu';
+    return 'Baru saja';
+  }
+
+  /* ── 5. DROPDOWN HOVER ── */
   function setupDropdowns() {
     const items = document.querySelectorAll('.nav-menu .nav-item');
 
@@ -197,6 +324,9 @@
       if (!e.target.closest('.nav-item') && !e.target.closest('.nav-user')) {
         items.forEach(i => i.classList.remove('open'));
         document.getElementById('navUser')?.classList.remove('open');
+      }
+      if (!e.target.closest('.notif-bell')) {
+        document.getElementById('notifBell')?.classList.remove('open');
       }
     });
 
@@ -282,6 +412,10 @@
       // karena semua logika sudah ada di file navbar.js ini
       initNavbar();
       setupDropdowns();
+
+      // Init notifications untuk treasury
+      const _rawUser = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember');
+      if (_rawUser) initNotifications(JSON.parse(_rawUser));
 
       // Event delegation untuk drawer group accordion
       document.addEventListener('click', function(e) {
