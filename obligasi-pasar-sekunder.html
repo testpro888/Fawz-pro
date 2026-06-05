@@ -699,7 +699,6 @@
     document.getElementById('fCategory').value = cat;
     document.getElementById('fCategory').disabled = true;
     document.getElementById('fSeri').value = item.seri || '';
-    document.getElementById('fBondId').value = item.bond_id || '';
     document.getElementById('fName').value = item.name || '';
     document.getElementById('fISIN').value = item.isin || '';
     document.getElementById('fIssuer').value = item.issuer || '';
@@ -726,7 +725,7 @@
   }
 
   function clearForm() {
-    ['fBondId','fSeri','fName','fISIN','fIssuer','fKupon','fHargaJual','fHargaBeli','fYield',
+    ['fSeri','fName','fISIN','fIssuer','fKupon','fHargaJual','fHargaBeli','fYield',
      'fTanggalUpdate','fRating','fLastCoupon','fNextCoupon','fFirstCpnDate','fAccrual',
      'fPenerbit','fTanggalListing','fFinalMaturity'].forEach(id => {
       const el = document.getElementById(id); if (el) el.value = '';
@@ -807,7 +806,6 @@
     const isKorp = cat.startsWith('korp');
     const data = {
       seri,
-      bond_id:        document.getElementById('fBondId').value.trim() || null,
       name:           document.getElementById('fName').value.trim() || null,
       isin:           document.getElementById('fISIN').value.trim() || null,
       issuer:         document.getElementById('fIssuer').value.trim() || null,
