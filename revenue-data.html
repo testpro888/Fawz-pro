@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+  <meta http-equiv="Pragma" content="no-cache"/>
+  <meta http-equiv="Expires" content="0"/>
   <title>Fawz Pro | Data Revenue</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 
@@ -398,11 +401,12 @@
       let q = window._supabase.from('saham_transaksi').select('*').order('tanggal', { ascending: false });
       if (isSales) q = q.ilike('sales_name', salesName);
       const { data, error } = await q;
+      if (error) { console.error('saham_transaksi error:', error); }
       if (!error && data) {
+        console.log('saham_transaksi rows:', data.length);
         data.forEach(o => {
           const volume  = Number(o.volume) || 0;
           const fee     = Number(o.fee) || 0;
-          // Satu baris per record: tampilkan volume/fee sesuai yang ada
           if (volume > 0 || fee > 0) {
             allRows.push({
               id:          o.id + '-s',
@@ -428,7 +432,9 @@
       let q = window._supabase.from('bb_orders').select('*').eq('status','verified').order('created_at',{ascending:false});
       if (isSales) q = q.eq('sales_pic', salesName);
       const { data, error } = await q;
+      if (error) { console.error('bb_orders error:', error); }
       if (!error && data) {
+        console.log('bb_orders rows:', data.length);
         data.forEach(o => {
           const nominal = Number(o.nominal) || 0;
           const revenue = o.revenue != null ? Number(o.revenue) : nominal * FEE_OBLIGASI;
@@ -455,7 +461,9 @@
       let q = window._supabase.from('pasar_sekunder_orders').select('*').order('created_at',{ascending:false});
       if (isSales) q = q.eq('sales_name', salesName);
       const { data, error } = await q;
+      if (error) { console.error('pasar_sekunder_orders error:', error); }
       if (!error && data) {
+        console.log('pasar_sekunder_orders rows:', data.length);
         data.forEach(o => {
           const nominal = Number(o.nominal || 0);
           const revenue = o.revenue != null ? Number(o.revenue) : nominal * FEE_OBLIGASI;
@@ -482,7 +490,9 @@
       let q = window._supabase.from('reksadana_transactions').select('*').order('created_at',{ascending:false});
       if (isSales) q = q.eq('sales_name', salesName);
       const { data, error } = await q;
+      if (error) { console.error('reksadana_transactions error:', error); }
       if (!error && data) {
+        console.log('reksadana_transactions rows:', data.length);
         data.forEach(o => {
           const nominal = Number(o.nominal || 0);
           const revenue = o.revenue != null ? Number(o.revenue) : nominal * FEE_REKSADANA;
@@ -505,6 +515,7 @@
     } catch(e) { console.warn('reksadana_transactions:', e.message); }
 
     allRows.sort((a,b) => (b.tanggal||'').localeCompare(a.tanggal||''));
+    console.log('Total allRows:', allRows.length);
   }
 
   // ─── LABELS ───────────────────────────────────────────────
