@@ -677,6 +677,8 @@
     });
 
     curPage = 1;
+    // Reset halaman per bulan saat filter berubah
+    Object.keys(monthPages).forEach(k => { monthPages[k] = 1; });
     renderStats();
     renderTable();
     updateTabBadges();
@@ -752,9 +754,10 @@
     document.getElementById('badgeReksadana').textContent= allRows.filter(r=>r.sumber==='reksadana').length;
   }
 
-  // ─── TABLE (grouped by month) ─────────────────────────────
-  // Collapsed state per month
+  // ─── TABLE (grouped by month, paginated per group) ────────
   const collapsedMonths = {};
+  const monthPages = {};       // ym → current page (1-based)
+  const ROWS_PER_MONTH = 20;
 
   function renderTable() {
     const tbody = document.getElementById('tableBody');
@@ -769,24 +772,31 @@
     }
 
     // Group by month
-    const groups = {}; // YYYY-MM → rows[]
+    const groups = {};
     filtered.forEach(r => {
-      const ym = (r.tanggal||'').slice(0,7) || 'Tanpa Tanggal';
+      const ym = (r.tanggal||'').slice(0,7) || 'nodate';
       if (!groups[ym]) groups[ym] = [];
       groups[ym].push(r);
     });
 
     const sortedMonths = Object.keys(groups).sort().reverse();
     let html = '';
-    let globalIdx = 0;
 
     sortedMonths.forEach(ym => {
-      const rows     = groups[ym];
-      const isOpen   = !collapsedMonths[ym];
-      const mVol     = rows.reduce((s,r)=>s+(Number(r.totalAmount)||0),0);
-      const mRev     = rows.reduce((s,r)=>s+(Number(r.revenue)||0),0);
-      const label    = ym === 'Tanpa Tanggal' ? 'Tanpa Tanggal' : fmtMonth(ym);
+      const rows    = groups[ym];
+      const isOpen  = !collapsedMonths[ym];
+      const mVol    = rows.reduce((s,r)=>s+(Number(r.totalAmount)||0),0);
+      const mRev    = rows.reduce((s,r)=>s+(Number(r.revenue)||0),0);
+      const label   = ym === 'nodate' ? 'Tanpa Tanggal' : fmtMonth(ym);
 
+      // Pagination per bulan
+      if (!monthPages[ym]) monthPages[ym] = 1;
+      const pg         = monthPages[ym];
+      const totalPages = Math.ceil(rows.length / ROWS_PER_MONTH);
+      const startIdx   = (pg - 1) * ROWS_PER_MONTH;
+      const pageRows   = rows.slice(startIdx, startIdx + ROWS_PER_MONTH);
+
+      // Header baris bulan
       html += `<tr class="month-group-row" onclick="toggleMonth('${ym}')">
         <td colspan="8">
           <span class="mg-toggle">${isOpen ? '▼' : '▶'}</span>
@@ -800,8 +810,8 @@
       </tr>`;
 
       if (isOpen) {
-        rows.forEach(r => {
-          globalIdx++;
+        pageRows.forEach((r, i) => {
+          const rowNum = startIdx + i + 1;
           const sumberBadge = {
             saham:     `<span class="badge badge-saham">Saham</span>`,
             obligasi:  `<span class="badge badge-obligasi">Obligasi</span>`,
@@ -810,7 +820,7 @@
           const jenisBadge = getJenisBadge(r);
 
           html += `<tr class="data-row">
-            <td style="color:var(--gray);font-size:.75rem;">${globalIdx}</td>
+            <td style="color:var(--gray);font-size:.75rem;">${rowNum}</td>
             <td style="font-size:.82rem;color:var(--gray);white-space:nowrap;">${fmtDate(r.tanggal)}</td>
             <td>
               <div class="customer-name">${esc(r.customerName)}</div>
@@ -825,19 +835,53 @@
               <div style="font-size:.88rem;">${esc(r.salesNama)}</div>
               ${r.salesKode ? `<div class="customer-id">${esc(r.salesKode)}</div>` : ''}
             </td>
-            <td style="text-align:right;">
-              <div class="amount-val">${fmtRpFull(r.totalAmount)}</div>
-            </td>
-            <td style="text-align:right;">
-              <div class="revenue-pos">${fmtRpFull(r.revenue)}</div>
-            </td>
+            <td style="text-align:right;"><div class="amount-val">${fmtRpFull(r.totalAmount)}</div></td>
+            <td style="text-align:right;"><div class="revenue-pos">${fmtRpFull(r.revenue)}</div></td>
           </tr>`;
         });
+
+        // Pagination row per bulan (jika > 1 halaman)
+        if (totalPages > 1) {
+          let pgHtml = `<tr><td colspan="8" style="padding:8px 16px;background:#f9f9ff;border-top:1px solid #f0f0f5;">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+              <span style="font-size:.75rem;color:var(--gray);">
+                Hal ${pg} dari ${totalPages} &nbsp;·&nbsp; ${startIdx+1}–${Math.min(startIdx+ROWS_PER_MONTH, rows.length)} dari ${rows.length}
+              </span>
+              <div style="display:flex;gap:4px;">`;
+
+          if (pg > 1) pgHtml += `<button class="pg-btn" onclick="goMonthPage('${ym}',${pg-1});event.stopPropagation()">‹</button>`;
+
+          // Show max 5 page buttons around current
+          const start = Math.max(1, pg - 2);
+          const end   = Math.min(totalPages, pg + 2);
+          if (start > 1) pgHtml += `<button class="pg-btn" onclick="goMonthPage('${ym}',1);event.stopPropagation()">1</button><span style="line-height:30px;padding:0 2px;color:#aaa;">…</span>`;
+          for (let p = start; p <= end; p++) {
+            pgHtml += `<button class="pg-btn ${p===pg?'active':''}" onclick="goMonthPage('${ym}',${p});event.stopPropagation()">${p}</button>`;
+          }
+          if (end < totalPages) pgHtml += `<span style="line-height:30px;padding:0 2px;color:#aaa;">…</span><button class="pg-btn" onclick="goMonthPage('${ym}',${totalPages});event.stopPropagation()">${totalPages}</button>`;
+
+          if (pg < totalPages) pgHtml += `<button class="pg-btn" onclick="goMonthPage('${ym}',${pg+1});event.stopPropagation()">›</button>`;
+
+          pgHtml += `</div></div></td></tr>`;
+          html += pgHtml;
+        }
       }
     });
 
     tbody.innerHTML = html;
     document.getElementById('pagination').innerHTML = '';
+  }
+
+  function goMonthPage(ym, p) {
+    monthPages[ym] = p;
+    renderTable();
+    // Scroll to the month header
+    const rows = document.querySelectorAll('.month-group-row');
+    rows.forEach(row => {
+      if (row.querySelector('strong') && row.querySelector('strong').textContent.includes(fmtMonth(ym))) {
+        row.scrollIntoView({ behavior:'smooth', block:'start' });
+      }
+    });
   }
 
   function toggleMonth(ym) {
