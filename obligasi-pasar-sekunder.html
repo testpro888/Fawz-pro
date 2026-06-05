@@ -929,20 +929,70 @@
 
   function mapCSVRow(obj) {
     const g = (...keys) => { for (const k of keys) if (obj[k] !== undefined && obj[k] !== '') return obj[k]; return ''; };
-    const seri = g('seri','serie','series');
+    
+    // Helper: parse date formats DD-MMM-YYYY, DD/MM/YYYY, YYYY-MM-DD
+    const parseDate = (val) => {
+      if (!val) return null;
+      val = val.trim();
+      // DD-MMM-YYYY e.g. 03-Jul-2012
+      const mmmMatch = val.match(/^(\d{1,2})[\/\-]([A-Za-z]{3})[\/\-](\d{4})$/);
+      if (mmmMatch) {
+        const months = {jan:'01',feb:'02',mar:'03',apr:'04',may:'05',mei:'05',jun:'06',jul:'07',aug:'08',agu:'08',sep:'09',oct:'10',okt:'10',nov:'11',dec:'12',des:'12'};
+        const m = months[(mmmMatch[2]).toLowerCase()];
+        if (m) return `${mmmMatch[3]}-${m}-${mmmMatch[1].padStart(2,'0')}`;
+      }
+      // DD/MM/YYYY
+      const dmyMatch = val.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+      if (dmyMatch) return `${dmyMatch[3]}-${dmyMatch[2].padStart(2,'0')}-${dmyMatch[1].padStart(2,'0')}`;
+      // Already YYYY-MM-DD
+      if (/^\d{4}-\d{2}-\d{2}$/.test(val)) return val;
+      return val;
+    };
+
+    // Parse coupon % — handle "9,75% 4" format (strip % and trailing freq)
+    const parseCoupon = (val) => {
+      if (!val) return null;
+      val = String(val).replace('%','').replace(',','.').trim().split(/\s+/)[0];
+      return parseFloat(val) || null;
+    };
+
+    // Parse freq — handle "4" for quarterly
+    const parseFreq = (val) => {
+      if (!val) return null;
+      const n = parseInt(String(val).trim());
+      if (n === 1) return 12;  // annual
+      if (n === 2) return 6;   // semi-annual
+      if (n === 4) return 3;   // quarterly
+      if (n === 12) return 1;  // monthly
+      return n || null;
+    };
+
+    const seri  = g('bond id','bondid') || g('seri','serie','series');
     const ticker = extractTicker(seri);
     return {
       seri,
-      kupon:            parseFloat(g('kupon','coupon')) || null,
-      jatuh_tempo:      g('jatuhtempo','jatuh_tempo','maturity','maturitydate'),
-      rating:           g('rating') || null,
+      bond_id:          g('bond id','bondid') || null,
+      name:             g('name','nama') || null,
+      isin:             g('isin') || null,
+      bond_type:        g('type','tipe') || null,
+      bond_type2:       g('type2','type 2','tipe2') || null,
+      issuer:           g('issuer','penerbit','emiten') || (ISSUER_MAP[ticker] || null),
       penerbit:         g('penerbit','issuer','emiten') || (ISSUER_MAP[ticker] || null),
-      last_coupon_date: g('lastcoupondate','last_coupon_date','lastcoupon','last_coupon') || null,
-      next_coupon_date: g('nextcoupondate','next_coupon_date','nextcoupon','next_coupon') || null,
+      kupon:            parseCoupon(g('coupon %','coupon%','kupon','coupon','cpn')) || null,
+      kupon_freq:       parseFreq(g('freq.','freq','frekuensi')) || null,
+      jatuh_tempo:      parseDate(g('maturity date','maturitydate','jatuh_tempo','jatuhtempo','maturity')) || null,
+      tanggal_listing:  parseDate(g('issue date','issuedate','tanggal_listing')) || null,
+      first_cpn_date:   parseDate(g('first cpn. date','first cpn date','firstcpndate','first_cpn_date')) || null,
+      last_coupon_date: parseDate(g('last cpn. date','last cpn date','lastcpndate','last_coupon_date','lastcoupondate')) || null,
+      next_coupon_date: parseDate(g('next_coupon_date','nextcoupondate')) || null,
+      accrual_date:     parseDate(g('accrual','accrual date','accrualdate')) || null,
+      rating:           g('rating') || null,
+      day_count_basis:  g('basis','day count','daycount','day_count_basis') || null,
+      payment_type:     g('pay. type','pay.type','paytype','payment_type') || null,
       harga_jual:       parseFloat(g('hargajual','harga_jual','bid','bidprice')) || null,
       harga_beli:       parseFloat(g('hargabeli','harga_beli','offer','offerprice','ask','askprice')) || null,
       yield:            parseFloat(g('yield','ytm')) || null,
-      tanggal_update:   g('tanggalupdate','tanggal_update','updatedate','date') || new Date().toISOString().slice(0,10),
+      tanggal_update:   parseDate(g('tanggalupdate','tanggal_update','updatedate','date')) || new Date().toISOString().slice(0,10),
     };
   }
 
@@ -960,8 +1010,22 @@
   function renderCSVPreview() {
     document.getElementById('csvPreviewInfo').textContent = `${csvRows.length} data ditemukan. Preview 5 baris pertama:`;
     document.getElementById('csvPreview').innerHTML = `<table>
-      <thead><tr><th>Series</th><th>Coupon</th><th>Rating</th><th>Last Coupon</th><th>Next Coupon</th><th>Bid</th><th>Offer</th><th>YTM</th></tr></thead>
-      <tbody>${csvRows.slice(0,5).map(r=>`<tr><td>${esc(r.seri)}</td><td>${r.kupon??''}</td><td>${esc(r.rating||'')}</td><td>${r.last_coupon_date||''}</td><td>${r.next_coupon_date||''}</td><td>${r.harga_jual??''}</td><td>${r.harga_beli??''}</td><td>${r.yield??''}</td></tr>`).join('')}</tbody>
+      <thead><tr><th>Bond ID</th><th>Series</th><th>Name</th><th>ISIN</th><th>Type</th><th>Issue Date</th><th>Maturity</th><th>First Cpn</th><th>Rating</th><th>Coupon%</th><th>Freq</th><th>Basis</th><th>Issuer</th></tr></thead>
+      <tbody>${csvRows.slice(0,5).map(r=>`<tr>
+        <td>${esc(r.bond_id||'')}</td>
+        <td>${esc(r.seri)}</td>
+        <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(r.name||'')}</td>
+        <td>${esc(r.isin||'')}</td>
+        <td>${esc(r.bond_type||'')}</td>
+        <td>${r.tanggal_listing||''}</td>
+        <td>${r.jatuh_tempo||''}</td>
+        <td>${r.first_cpn_date||''}</td>
+        <td>${esc(r.rating||'')}</td>
+        <td>${r.kupon??''}</td>
+        <td>${r.kupon_freq??''}</td>
+        <td>${esc(r.day_count_basis||'')}</td>
+        <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(r.issuer||'')}</td>
+      </tr>`).join('')}</tbody>
     </table>`;
     document.getElementById('csvPreviewWrap').style.display = 'block';
   }
@@ -972,13 +1036,24 @@
     const btn = document.getElementById('uploadSaveBtn');
     btn.textContent = 'Mengimport...'; btn.disabled = true;
     try {
-      let success = 0;
+      let success = 0, skipped = 0;
       for (const row of csvRows) {
         row.category = cat;
-        const { data: inserted, error } = await window._supabase.from('obligasi_products').insert(row).select().single();
-        if (!error && inserted) {
-          allData[cat].push(inserted);
-          success++;
+        // Cek apakah Bond ID/Seri sudah ada (upsert berdasarkan seri)
+        const exists = allData[cat].find(r =>
+          (row.bond_id && r.bond_id === row.bond_id) ||
+          (row.seri && r.seri === row.seri)
+        );
+        if (exists) {
+          // Update existing
+          const { error } = await window._supabase.from('obligasi_products').update(row).eq('id', exists.id);
+          if (!error) { Object.assign(exists, row); success++; }
+          else skipped++;
+        } else {
+          // Insert new
+          const { data: inserted, error } = await window._supabase.from('obligasi_products').insert(row).select().single();
+          if (!error && inserted) { allData[cat].push(inserted); success++; }
+          else skipped++;
         }
       }
       allData[cat].sort((a,b) => (a.seri||'').localeCompare(b.seri||''));
@@ -986,17 +1061,18 @@
       document.getElementById('uploadModal').classList.remove('open');
       renderTable(cat);
       switchTab(cat);
-      showToast(`${success} obligasi berhasil diimport ke ${CAT_LABEL[cat]}`, 'success');
-    } catch(e) { console.error(e); showToast('Gagal import data', 'error'); }
+      showToast(`${success} obligasi berhasil diimport${skipped ? ` (${skipped} gagal)` : ''}`, 'success');
+    } catch(e) { console.error(e); showToast('Gagal import data: ' + e.message, 'error'); }
     finally { btn.textContent = 'Import Data'; btn.disabled = false; }
   }
 
   function downloadTemplate() {
-    const H = 'Seri,Kupon,JatuhTempo,Rating,LastCouponDate,NextCouponDate,HargaJual,HargaBeli,Yield,TanggalUpdate';
-    const E = 'FR0100,6.375,2034-02-15,AAA,2025-01-15,2025-07-15,101.50,100.75,6.1234,2025-01-10';
+    const H = 'Bond ID,Series,Name,ISIN,Type,Issue Date,Maturity Date,First Cpn. Date,Last Cpn. Date,Rating,Coupon %,Freq.,Basis,Accrual,Pay. Type,Type2,Issuer,Bid,Offer,YTM';
+    const E = 'IDA0001327A6,FR0100,OBL NEGARA FR0100,IDG000032704,FR,2024-01-15,2034-02-15,2024-04-15,2025-01-15,AAA,6.375,4,ACT/ACT,2024-01-15,Bullet,Fixed,Pemerintah RI,101.50,100.75,6.1234';
     const blob = new Blob([H+'\n'+E], {type:'text/csv'});
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
     a.download = 'template_obligasi_pasar_sekunder.csv'; a.click();
+    showToast('Template CSV berhasil didownload', 'success');
   }
 
   // ===== CSV EXPORT =====
