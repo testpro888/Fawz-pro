@@ -21,74 +21,89 @@
       --navy:#0d0d2b; --purple:#1e1252; --gold:#f5a623; --gold-light:#ffc857;
       --bg:#f4f5fb; --white:#fff; --border:#e0e0ef; --text:#1a1a3a; --gray:#888;
       --green:#27ae60; --red:#e74c3c; --blue:#2980b9; --teal:#16a085;
+      --orange:#e67e22;
       --nav-h:68px;
     }
     body { font-family:'Inter',sans-serif; background:var(--bg); min-height:100vh; padding-top:var(--nav-h); color:var(--text); }
 
-    /* NAVBAR — style dari navbar.html */
-
-    /* ── PAGE ── */
     .page-container { max-width:1400px; margin:0 auto; padding:36px 28px; }
     .page-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:28px; flex-wrap:wrap; gap:16px; }
     .page-title { font-family:'Inter',sans-serif; font-size:2rem; font-weight:900; color:var(--navy); }
     .page-subtitle { font-size:.88rem; color:var(--gray); margin-top:4px; }
     .title-underline { width:48px; height:3px; background:linear-gradient(90deg,var(--gold),var(--gold-light)); border-radius:2px; margin-top:8px; }
 
-    /* ── BUTTONS ── */
     .btn { display:inline-flex; align-items:center; gap:7px; padding:11px 20px; border-radius:10px; font-family:'Inter',sans-serif; font-size:.875rem; font-weight:600; cursor:pointer; transition:all .2s; border:none; white-space:nowrap; text-decoration:none; }
     .btn-primary { background:linear-gradient(135deg,var(--gold),#e8931a); color:#fff; box-shadow:0 4px 14px rgba(245,166,35,.35); }
-    .btn-primary:hover { transform:translateY(-2px); box-shadow:0 8px 22px rgba(245,166,35,.45); }
+    .btn-primary:hover { transform:translateY(-2px); }
     .btn-outline { background:#fff; color:var(--navy); border:1.5px solid var(--border); }
     .btn-outline:hover { border-color:var(--gold); color:var(--gold); }
     .btn-sm { padding:7px 14px; font-size:.8rem; }
 
-    /* ── SUMMARY BANNER ── */
+    /* BANNER */
     .summary-banner {
       background:linear-gradient(135deg,#0d0d2b 0%,#1e1252 100%);
       border-radius:20px; padding:28px 32px; margin-bottom:24px;
       display:grid; grid-template-columns:1fr auto; gap:24px; align-items:center;
-      box-shadow:0 8px 32px rgba(13,13,43,.22);
-      position:relative; overflow:hidden;
+      box-shadow:0 8px 32px rgba(13,13,43,.22); position:relative; overflow:hidden;
     }
     .summary-banner::before {
-      content:''; position:absolute; top:-60px; right:-60px;
-      width:200px; height:200px; border-radius:50%;
-      background:radial-gradient(circle,rgba(245,166,35,.15),transparent 70%);
+      content:''; position:absolute; top:-60px; right:-60px; width:200px; height:200px;
+      border-radius:50%; background:radial-gradient(circle,rgba(245,166,35,.15),transparent 70%);
     }
     .banner-label { font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:1.2px; color:rgba(255,255,255,.5); margin-bottom:6px; }
-    .banner-total { font-size:2.4rem; font-weight:900; color:var(--gold); font-family:'Inter',sans-serif; line-height:1; }
+    .banner-total { font-size:2.4rem; font-weight:900; color:var(--gold); line-height:1; }
     .banner-sub { font-size:.82rem; color:rgba(255,255,255,.4); margin-top:6px; }
-    .banner-right { display:flex; gap:24px; }
+    .banner-right { display:flex; gap:20px; flex-wrap:wrap; }
     .banner-stat { text-align:center; }
-    .banner-stat-val { font-size:1.4rem; font-weight:700; color:#fff; line-height:1; }
-    .banner-stat-val.green { color:#4ede8a; }
-    .banner-stat-val.gold  { color:var(--gold); }
-    .banner-stat-label { font-size:.67rem; color:rgba(255,255,255,.4); text-transform:uppercase; letter-spacing:.8px; margin-top:4px; }
+    .banner-stat-val { font-size:1.25rem; font-weight:700; color:#fff; line-height:1; }
+    .banner-stat-val.purple { color:#c4b5fd; }
+    .banner-stat-val.green  { color:#4ede8a; }
+    .banner-stat-val.gold   { color:var(--gold); }
+    .banner-stat-val.orange { color:#fdba74; }
+    .banner-stat-label { font-size:.63rem; color:rgba(255,255,255,.4); text-transform:uppercase; letter-spacing:.8px; margin-top:4px; }
     .banner-divider { width:1px; background:rgba(255,255,255,.1); }
 
-    /* ── STAT CARDS ── */
-    .stats-row { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:24px; }
+    /* STAT CARDS */
+    .stats-row { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:24px; }
     .stat-card { background:#fff; border-radius:14px; padding:18px 22px; box-shadow:0 2px 10px rgba(0,0,0,.05); border-left:4px solid transparent; }
     .stat-card.obligasi  { border-color:#8b5cf6; }
     .stat-card.reksadana { border-color:var(--teal); }
+    .stat-card.saham     { border-color:var(--orange); }
     .stat-card.transaksi { border-color:var(--blue); }
-    .stat-card.sales-top { border-color:var(--gold); }
     .stat-label { font-size:.68rem; color:var(--gray); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px; }
-    .stat-value { font-size:1.4rem; font-weight:700; color:var(--navy); line-height:1; }
+    .stat-value { font-size:1.25rem; font-weight:700; color:var(--navy); line-height:1; }
     .stat-value.purple { color:#8b5cf6; }
     .stat-value.teal   { color:var(--teal); }
+    .stat-value.orange { color:var(--orange); }
     .stat-value.blue   { color:var(--blue); }
-    .stat-value.gold   { color:var(--gold); }
     .stat-sub { font-size:.7rem; color:var(--gray); margin-top:4px; }
 
-    /* ── TAB SWITCHER ── */
-    .tab-bar { display:flex; gap:4px; background:#fff; padding:6px; border-radius:14px; margin-bottom:20px; box-shadow:0 2px 10px rgba(0,0,0,.05); width:fit-content; }
+    /* MONTHLY SUMMARY */
+    .monthly-section { margin-bottom:24px; }
+    .monthly-title { font-size:.9rem; font-weight:700; color:var(--navy); margin-bottom:12px; display:flex; align-items:center; gap:8px; }
+    .monthly-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:12px; }
+    .month-card {
+      background:#fff; border-radius:14px; padding:16px 20px;
+      box-shadow:0 2px 10px rgba(0,0,0,.05); border:1.5px solid var(--border);
+      cursor:pointer; transition:all .2s;
+    }
+    .month-card:hover { border-color:var(--gold); box-shadow:0 4px 16px rgba(245,166,35,.15); }
+    .month-card.active { border-color:var(--gold); background:#fffbf3; }
+    .month-card-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+    .month-name { font-size:.95rem; font-weight:700; color:var(--navy); }
+    .month-count { font-size:.72rem; background:#f0f0fa; color:var(--gray); padding:2px 8px; border-radius:10px; }
+    .month-row { display:flex; justify-content:space-between; font-size:.78rem; margin-bottom:4px; }
+    .month-row-label { color:var(--gray); }
+    .month-row-val { font-weight:600; }
+
+    /* TABS */
+    .tab-bar { display:flex; gap:4px; background:#fff; padding:6px; border-radius:14px; margin-bottom:20px; box-shadow:0 2px 10px rgba(0,0,0,.05); width:fit-content; flex-wrap:wrap; }
     .tab-btn { padding:9px 22px; border-radius:10px; font-family:'Inter',sans-serif; font-size:.875rem; font-weight:600; cursor:pointer; border:none; background:none; color:var(--gray); transition:all .2s; display:flex; align-items:center; gap:7px; }
     .tab-btn.active { background:linear-gradient(135deg,var(--navy),var(--purple)); color:#fff; box-shadow:0 4px 12px rgba(13,13,43,.2); }
     .tab-badge { font-size:.65rem; background:rgba(255,255,255,.2); padding:2px 7px; border-radius:10px; }
     .tab-btn:not(.active) .tab-badge { background:#f0f0fa; color:var(--navy); }
 
-    /* ── TOOLBAR ── */
+    /* TOOLBAR */
     .toolbar { background:#fff; border-radius:14px; padding:14px 18px; display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:20px; box-shadow:0 2px 10px rgba(0,0,0,.05); }
     .search-wrap { position:relative; flex:1; min-width:220px; }
     .search-wrap input { width:100%; padding:9px 14px 9px 36px; border:1.5px solid var(--border); border-radius:10px; font-family:'Inter',sans-serif; font-size:.875rem; outline:none; transition:border .2s; }
@@ -99,8 +114,8 @@
     .date-input { padding:9px 12px; border:1.5px solid var(--border); border-radius:10px; font-family:'Inter',sans-serif; font-size:.85rem; outline:none; cursor:pointer; }
     .date-input:focus { border-color:var(--gold); }
 
-    /* ── TABLE ── */
-    .table-card { background:#fff; border-radius:16px; box-shadow:0 2px 12px rgba(0,0,0,.06); overflow:hidden; }
+    /* TABLE */
+    .table-card { background:#fff; border-radius:16px; box-shadow:0 2px 12px rgba(0,0,0,.06); overflow:hidden; margin-bottom:16px; }
     .table-wrap { overflow-x:auto; }
     table { width:100%; border-collapse:collapse; font-size:.875rem; }
     thead { background:#fafafa; border-bottom:2px solid #f0f0f5; }
@@ -108,10 +123,16 @@
     thead th:hover { color:var(--gold); }
     thead th .sort-icon { margin-left:4px; opacity:.4; }
     thead th.sorted .sort-icon { opacity:1; color:var(--gold); }
-    tbody tr { border-bottom:1px solid #f5f5fa; transition:background .12s; }
-    tbody tr:last-child { border-bottom:none; }
-    tbody tr:hover { background:#fffbf3; }
+
+    /* Month group row */
+    tr.month-group-row td { background:linear-gradient(90deg,#f8f4ff,#f4f5fb); padding:10px 16px; font-size:.78rem; font-weight:700; color:var(--navy); border-bottom:1px solid #ede8ff; cursor:pointer; user-select:none; }
+    tr.month-group-row td:hover { background:#f0ebff; }
+    tr.month-group-row .mg-toggle { font-size:.8rem; color:var(--purple); margin-right:6px; }
+    tr.month-group-row .mg-stats { float:right; font-weight:400; font-size:.72rem; color:var(--gray); display:flex; gap:16px; }
+    tr.data-row { border-bottom:1px solid #f5f5fa; transition:background .12s; }
+    tr.data-row:hover { background:#fffbf3; }
     tbody td { padding:12px 14px; vertical-align:middle; }
+
     .table-footer { padding:12px 18px; display:flex; align-items:center; justify-content:space-between; border-top:1px solid #f0f0f5; font-size:.82rem; color:var(--gray); flex-wrap:wrap; gap:8px; }
     .pagination { display:flex; gap:4px; }
     .pg-btn { width:30px; height:30px; border-radius:7px; display:flex; align-items:center; justify-content:center; font-size:.8rem; cursor:pointer; border:1.5px solid var(--border); background:#fff; color:var(--text); transition:all .15s; }
@@ -119,19 +140,17 @@
     .pg-btn:hover:not(.active) { border-color:var(--gold); }
     .pg-btn:disabled { opacity:.4; cursor:not-allowed; }
 
-    /* ── CELL STYLES ── */
+    /* CELL STYLES */
     .customer-name  { font-weight:600; color:var(--navy); font-size:.88rem; }
     .customer-id    { font-size:.7rem; color:var(--gray); font-family:'Courier New',monospace; }
     .product-name   { font-weight:700; color:var(--navy); font-size:.88rem; font-family:'Courier New',monospace; }
     .product-type   { font-size:.7rem; color:var(--gray); }
     .revenue-pos    { font-weight:700; color:var(--green); }
-    .revenue-neg    { font-weight:700; color:var(--red); }
     .amount-val     { font-weight:600; font-size:.9rem; color:var(--navy); }
-    .sales-name     { font-size:.88rem; }
-    .sales-code     { font-size:.7rem; color:var(--gray); font-family:'Courier New',monospace; }
 
-    /* ── BADGES ── */
+    /* BADGES */
     .badge { display:inline-block; font-size:.67rem; font-weight:700; padding:3px 10px; border-radius:20px; white-space:nowrap; }
+    .badge-saham     { background:#fff3e0; color:#bf360c; border:1px solid rgba(230,126,34,.25); }
     .badge-obligasi  { background:#ede9fe; color:#6d28d9; border:1px solid rgba(139,92,246,.25); }
     .badge-reksadana { background:#d1fae5; color:#065f46; border:1px solid rgba(16,185,129,.25); }
     .badge-gov-idr   { background:#e0f2fe; color:#0369a1; border:1px solid rgba(14,165,233,.25); }
@@ -141,40 +160,38 @@
     .badge-buy       { background:#d1fae5; color:#065f46; border:1px solid rgba(16,185,129,.2); }
     .badge-sell      { background:#fee2e2; color:#991b1b; border:1px solid rgba(239,68,68,.2); }
 
-    /* ── EMPTY / LOADING ── */
+    /* LOADING */
     .empty-state { text-align:center; padding:60px 20px; color:#bbb; }
     .empty-icon  { font-size:2.8rem; margin-bottom:12px; }
-    .empty-text  { font-size:.9rem; }
     .loading-wrap { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:80px; gap:16px; color:#aaa; }
     .spinner { width:36px; height:36px; border:3px solid #f0f0f5; border-top-color:var(--gold); border-radius:50%; animation:spin .7s linear infinite; }
     @keyframes spin { to { transform:rotate(360deg); } }
 
-    /* ── TOAST ── */
+    /* TOAST */
     .toast-container { position:fixed; bottom:28px; right:28px; z-index:9999; display:flex; flex-direction:column; gap:10px; }
-    .toast { padding:14px 20px; border-radius:12px; font-size:.875rem; font-weight:500; box-shadow:0 6px 24px rgba(0,0,0,.15); animation:toastIn .3s ease; max-width:320px; }
+    .toast { padding:14px 20px; border-radius:12px; font-size:.875rem; font-weight:500; box-shadow:0 6px 24px rgba(0,0,0,.15); animation:toastIn .3s ease; max-width:340px; }
     @keyframes toastIn { from{opacity:0;transform:translateX(20px)} to{opacity:1;transform:translateX(0)} }
     .toast-success { background:#f0fff8; border:1px solid #a8e6c1; color:#1e7e4e; }
     .toast-error   { background:#fff0f0; border:1px solid #ffcccc; color:#c0392b; }
     .toast-info    { background:#f0f4ff; border:1px solid #c5d3ff; color:#2d4abf; }
 
-    @media (max-width:900px) { .stats-row { grid-template-columns:repeat(2,1fr); } .banner-right { display:none; } }
+    @media (max-width:1100px) { .stats-row { grid-template-columns:repeat(2,1fr); } }
+    @media (max-width:900px)  { .banner-right { display:none; } }
     @media (max-width:600px)  { .stats-row { grid-template-columns:1fr; } .page-container { padding:20px 14px; } }
   </style>
 </head>
 <body>
 
-<!-- NAVBAR -->
 <div id="navbar-placeholder"></div>
 <script src="navbar.js"></script>
 
-<!-- PAGE -->
 <div class="page-container">
 
   <!-- Header -->
   <div class="page-header">
     <div>
       <div class="page-title">Data Revenue</div>
-      <div class="page-subtitle">Rekapitulasi pendapatan dari transaksi Obligasi & Reksadana</div>
+      <div class="page-subtitle" id="pageSubtitle">Rekapitulasi pendapatan dari semua transaksi</div>
       <div class="title-underline"></div>
     </div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
@@ -191,6 +208,11 @@
     </div>
     <div class="banner-right">
       <div class="banner-stat">
+        <div class="banner-stat-val orange" id="bannerSaham">Rp 0</div>
+        <div class="banner-stat-label">Fee Saham</div>
+      </div>
+      <div class="banner-divider"></div>
+      <div class="banner-stat">
         <div class="banner-stat-val purple" id="bannerObligasi">Rp 0</div>
         <div class="banner-stat-label">Obligasi</div>
       </div>
@@ -202,7 +224,7 @@
       <div class="banner-divider"></div>
       <div class="banner-stat">
         <div class="banner-stat-val gold" id="bannerTransaksi">0</div>
-        <div class="banner-stat-label">Total Transaksi</div>
+        <div class="banner-stat-label">Transaksi</div>
       </div>
       <div class="banner-divider"></div>
       <div class="banner-stat">
@@ -214,49 +236,68 @@
 
   <!-- Stat Cards -->
   <div class="stats-row">
+    <div class="stat-card saham">
+      <div class="stat-label">Fee Saham</div>
+      <div class="stat-value orange" id="sSaham" style="font-size:1.1rem;">—</div>
+      <div class="stat-sub" id="sSahamCount">0 transaksi</div>
+      <div style="margin-top:8px;padding-top:8px;border-top:1px solid #f0f0f5;">
+        <div style="font-size:.65rem;color:var(--gray);margin-bottom:2px;">Volume Saham</div>
+        <div style="font-size:.88rem;font-weight:600;color:var(--orange);" id="sSahamVolume">—</div>
+      </div>
+    </div>
     <div class="stat-card obligasi">
       <div class="stat-label">Revenue Obligasi</div>
-      <div class="stat-value purple" id="sObligasi" style="font-size:1.15rem;">—</div>
+      <div class="stat-value purple" id="sObligasi" style="font-size:1.1rem;">—</div>
       <div class="stat-sub" id="sObligasiCount">0 transaksi</div>
     </div>
     <div class="stat-card reksadana">
       <div class="stat-label">Revenue Reksadana</div>
-      <div class="stat-value teal" id="sReksadana" style="font-size:1.15rem;">—</div>
+      <div class="stat-value teal" id="sReksadana" style="font-size:1.1rem;">—</div>
       <div class="stat-sub" id="sReksadanaCount">0 transaksi</div>
     </div>
     <div class="stat-card transaksi">
       <div class="stat-label">Total Transaksi</div>
-      <div class="stat-value blue" id="sTotal" style="font-size:1.15rem;">—</div>
+      <div class="stat-value blue" id="sTotal" style="font-size:1.1rem;">—</div>
       <div class="stat-sub" id="sTotalFiltered">Setelah filter</div>
       <div style="margin-top:8px;padding-top:8px;border-top:1px solid #f0f0f5;">
-        <div style="font-size:.65rem;color:var(--gray);text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px;">Total Volume</div>
-        <div style="font-size:.95rem;font-weight:700;color:var(--blue);" id="sTotalVolume">—</div>
+        <div style="font-size:.65rem;color:var(--gray);margin-bottom:2px;">Total Volume</div>
+        <div style="font-size:.88rem;font-weight:600;color:var(--blue);" id="sTotalVolume">—</div>
       </div>
     </div>
+  </div>
+
+  <!-- Monthly Cards -->
+  <div class="monthly-section" id="monthlySection">
+    <div class="monthly-title">📅 Ringkasan Per Bulan</div>
+    <div class="monthly-grid" id="monthlyGrid"></div>
   </div>
 
   <!-- Tab Switcher -->
   <div class="tab-bar">
     <button class="tab-btn active" id="tabAll"       onclick="setTab('all')">Semua <span class="tab-badge" id="badgeAll">0</span></button>
-    <button class="tab-btn"        id="tabObligasi"  onclick="setTab('obligasi')">Obligasi <span class="tab-badge" id="badgeObligasi">0</span></button>
-    <button class="tab-btn"        id="tabReksadana" onclick="setTab('reksadana')">Reksadana <span class="tab-badge" id="badgeReksadana">0</span></button>
+    <button class="tab-btn"        id="tabSaham"     onclick="setTab('saham')">📈 Saham <span class="tab-badge" id="badgeSaham">0</span></button>
+    <button class="tab-btn"        id="tabObligasi"  onclick="setTab('obligasi')">🏛️ Obligasi <span class="tab-badge" id="badgeObligasi">0</span></button>
+    <button class="tab-btn"        id="tabReksadana" onclick="setTab('reksadana')">📊 Reksadana <span class="tab-badge" id="badgeReksadana">0</span></button>
   </div>
 
   <!-- Toolbar -->
   <div class="toolbar">
     <div class="search-wrap">
-      <span class="search-icon"></span>
+      <span class="search-icon">🔍</span>
       <input type="text" id="searchInput" placeholder="Cari nasabah, produk, sales, kode..." oninput="applyFilter()"/>
     </div>
     <select class="filter-select" id="filterSales" onchange="applyFilter()">
       <option value="">Semua Sales</option>
     </select>
+    <select class="filter-select" id="filterMonth" onchange="applyFilter()">
+      <option value="">Semua Bulan</option>
+    </select>
     <select class="filter-select" id="filterType" onchange="applyFilter()">
       <option value="">Semua Kategori</option>
     </select>
     <input type="date" class="date-input" id="filterDateFrom" onchange="applyFilter()" title="Dari tanggal"/>
-      <span style="color:var(--gray);font-size:.85rem;">s/d</span>
-    <input type="date" class="date-input" id="filterDateTo"   onchange="applyFilter()" title="Sampai tanggal"/>
+    <span style="color:var(--gray);font-size:.85rem;">s/d</span>
+    <input type="date" class="date-input" id="filterDateTo" onchange="applyFilter()" title="Sampai tanggal"/>
     <button class="btn btn-outline btn-sm" onclick="resetFilter()">✕ Reset</button>
   </div>
 
@@ -272,14 +313,14 @@
       <table>
         <thead>
           <tr>
-            <th style="width:40px;">#</th>
+            <th style="width:36px;">#</th>
             <th onclick="sortBy('tanggal')" id="th-tanggal">Tanggal <span class="sort-icon" id="sort-tanggal">↕</span></th>
             <th>Nasabah</th>
             <th onclick="sortBy('produk')" id="th-produk">Produk <span class="sort-icon" id="sort-produk">↕</span></th>
             <th>Jenis</th>
             <th onclick="sortBy('salesNama')" id="th-salesNama">Sales <span class="sort-icon" id="sort-salesNama">↕</span></th>
-            <th onclick="sortBy('totalAmount')" id="th-totalAmount" style="text-align:right;">Total Amount <span class="sort-icon" id="sort-totalAmount">↕</span></th>
-            <th onclick="sortBy('revenue')" id="th-revenue" style="text-align:right;">Revenue <span class="sort-icon" id="sort-revenue">↕</span></th>
+            <th onclick="sortBy('totalAmount')" id="th-totalAmount" style="text-align:right;">Volume <span class="sort-icon" id="sort-totalAmount">↕</span></th>
+            <th onclick="sortBy('revenue')" id="th-revenue" style="text-align:right;">Fee/Revenue <span class="sort-icon" id="sort-revenue">↕</span></th>
           </tr>
         </thead>
         <tbody id="tableBody"></tbody>
@@ -291,56 +332,56 @@
     </div>
   </div>
 
-</div><!-- /page-container -->
+</div>
 
 <div class="toast-container" id="toastContainer"></div>
 
 <script>
-  // ─── COLLECTIONS ───────────────────────────────────────────
-  // Obligasi: ambil dari bb_orders (verified) + pasar_sekunder_orders (verified)
-  // Reksadana: ambil dari reksadana_transactions
-  const COL_BB       = 'bb_orders';             // bookbuilding orders
-  const COL_SEKUNDER = 'pasar_sekunder_orders'; // pasar sekunder orders
-  const COL_REKSA    = 'reksadana_transactions'; // reksadana transaksi
+  const FEE_OBLIGASI  = 0.001;
+  const FEE_REKSADANA = 0.005;
 
-  // Revenue rate (fee) — sesuaikan dengan kebijakan FAWZ
-  // Obligasi: fee kupon / trading spread (contoh 0.1% dari nominal)
-  // Reksadana: subscription fee (contoh 0.5% dari nominal)
-  const FEE_OBLIGASI  = 0.001;  // 0.1%
-  const FEE_REKSADANA = 0.005;  // 0.5%
-
-  // ─── STATE ─────────────────────────────────────────────────
-  let allRows   = [];   // semua baris revenue yang sudah digabung
-  let filtered  = [];
-  let curTab    = 'all';
-  let sortCol   = 'tanggal';
-  let sortAsc   = false;
-  let curPage   = 1;
-  const PAGE_SIZE = 20;
+  let allRows  = [];
+  let filtered = [];
+  let curTab   = 'all';
+  let sortCol  = 'tanggal';
+  let sortAsc  = false;
+  let curPage  = 1;
+  let viewMonth = '';      // bulan aktif dari monthly card click
+  const PAGE_SIZE = 25;
+  let curUser  = null;
 
   // ─── BOOT ──────────────────────────────────────────────────
   async function boot() {
     const raw = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember');
     if (!raw) { window.location.replace('login.html'); return; }
+    curUser = JSON.parse(raw);
+    const role = curUser.role;
 
-    // Guard: hanya head_account, admin, dan sales
-    const user = JSON.parse(raw);
-    if (!['head_account', 'admin', 'sales'].includes(user.role)) {
-      window.location.replace('dashboard.html');
-      return;
+    // head_account, admin, head_sales → lihat semua
+    // sales → filter by nama/sales
+    if (!['head_account','admin','head_sales','sales'].includes(role)) {
+      window.location.replace('dashboard.html'); return;
     }
 
-    try {
-      await loadAllData();
-    } catch(e) {
-      console.error(e);
-      showToast('Gagal memuat data revenue', 'error');
+    // Update subtitle jika sales
+    if (role === 'sales') {
+      document.getElementById('pageSubtitle').textContent =
+        `Data revenue client Anda — ${curUser.name || ''}`;
     }
 
-    document.getElementById('loadingWrap').style.display = 'none';
-    document.getElementById('tableCard').style.display = 'block';
+    try { await loadAllData(); }
+    catch(e) { console.error(e); showToast('Gagal memuat data revenue','error'); }
+
+    document.getElementById('loadingWrap').style.display  = 'none';
+    document.getElementById('tableCard').style.display    = 'block';
+
+    // Sembunyikan filter sales jika role sales
+    if (role === 'sales') {
+      document.getElementById('filterSales').style.display = 'none';
+    }
 
     populateFilters();
+    renderMonthlyCards();
     applyFilter();
     updateBannerTotals();
   }
@@ -348,20 +389,49 @@
   // ─── LOAD ALL DATA ─────────────────────────────────────────
   async function loadAllData() {
     allRows = [];
-    const raw2 = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember');
-    const _u = raw2 ? JSON.parse(raw2) : {};
-    const isSales = _u.role === 'sales';
-    const salesName = _u.name || '';
+    const role      = curUser.role;
+    const isSales   = role === 'sales';
+    const salesName = curUser.name || '';
 
-    // 1. Bookbuilding Obligasi (verified)
+    // 1. SAHAM — dari saham_transaksi
     try {
-      let q = window._supabase.from('bb_orders').select('*').eq('status', 'verified').order('created_at', { ascending: false });
+      let q = window._supabase.from('saham_transaksi').select('*').order('tanggal', { ascending: false });
+      if (isSales) q = q.ilike('sales_name', salesName);
+      const { data, error } = await q;
+      if (!error && data) {
+        data.forEach(o => {
+          const volume  = Number(o.volume) || 0;
+          const fee     = Number(o.fee) || 0;
+          // Satu baris per record: tampilkan volume/fee sesuai yang ada
+          if (volume > 0 || fee > 0) {
+            allRows.push({
+              id:          o.id + '-s',
+              sumber:      'saham',
+              tanggal:     o.tanggal || '',
+              customerId:  o.client_id || '',
+              customerName:o.client_name || '—',
+              produk:      'Saham',
+              kategori:    'saham',
+              jenis:       'Saham',
+              salesKode:   o.sales_code || '',
+              salesNama:   o.sales_name || '—',
+              totalAmount: volume,
+              revenue:     fee,
+            });
+          }
+        });
+      }
+    } catch(e) { console.warn('saham_transaksi:', e.message); }
+
+    // 2. OBLIGASI Bookbuilding
+    try {
+      let q = window._supabase.from('bb_orders').select('*').eq('status','verified').order('created_at',{ascending:false});
       if (isSales) q = q.eq('sales_pic', salesName);
       const { data, error } = await q;
       if (!error && data) {
         data.forEach(o => {
-          const nominal  = Number(o.nominal) || 0;
-          const revenue  = o.revenue != null ? Number(o.revenue) : nominal * FEE_OBLIGASI;
+          const nominal = Number(o.nominal) || 0;
+          const revenue = o.revenue != null ? Number(o.revenue) : nominal * FEE_OBLIGASI;
           allRows.push({
             id:          o.id,
             sumber:      'obligasi',
@@ -370,7 +440,6 @@
             customerName:o.customer_name || '—',
             produk:      o.seri || '—',
             kategori:    o.category || '',
-            tipe:        o.category || '',
             jenis:       catLabel(o.category),
             salesKode:   o.sales_code || '',
             salesNama:   o.sales_pic || '—',
@@ -381,15 +450,15 @@
       }
     } catch(e) { console.warn('bb_orders:', e.message); }
 
-    // 2. Pasar Sekunder Obligasi
+    // 3. OBLIGASI Pasar Sekunder
     try {
-      let q = window._supabase.from('pasar_sekunder_orders').select('*').order('created_at', { ascending: false });
+      let q = window._supabase.from('pasar_sekunder_orders').select('*').order('created_at',{ascending:false});
       if (isSales) q = q.eq('sales_name', salesName);
       const { data, error } = await q;
       if (!error && data) {
         data.forEach(o => {
-          const nominal  = Number(o.nominal || 0);
-          const revenue  = o.revenue != null ? Number(o.revenue) : nominal * FEE_OBLIGASI;
+          const nominal = Number(o.nominal || 0);
+          const revenue = o.revenue != null ? Number(o.revenue) : nominal * FEE_OBLIGASI;
           allRows.push({
             id:          o.id,
             sumber:      'obligasi',
@@ -398,7 +467,6 @@
             customerName:o.client_name || '—',
             produk:      o.seri || '—',
             kategori:    o.category || '',
-            tipe:        o.tipe || o.category || '',
             jenis:       catLabel(o.category) || 'Pasar Sekunder',
             salesKode:   o.sales_code || '',
             salesNama:   o.sales_name || '—',
@@ -409,15 +477,15 @@
       }
     } catch(e) { console.warn('pasar_sekunder_orders:', e.message); }
 
-    // 3. Reksadana
+    // 4. REKSADANA
     try {
-      let q = window._supabase.from('reksadana_transactions').select('*').order('created_at', { ascending: false });
+      let q = window._supabase.from('reksadana_transactions').select('*').order('created_at',{ascending:false});
       if (isSales) q = q.eq('sales_name', salesName);
       const { data, error } = await q;
       if (!error && data) {
         data.forEach(o => {
-          const nominal  = Number(o.nominal || 0);
-          const revenue  = o.revenue != null ? Number(o.revenue) : nominal * FEE_REKSADANA;
+          const nominal = Number(o.nominal || 0);
+          const revenue = o.revenue != null ? Number(o.revenue) : nominal * FEE_REKSADANA;
           allRows.push({
             id:          o.id,
             sumber:      'reksadana',
@@ -426,7 +494,6 @@
             customerName:o.client_name || '—',
             produk:      o.nama_produk || '—',
             kategori:    o.kategori || '',
-            tipe:        o.tipe || '',
             jenis:       reksa_label(o.kategori, o.tipe),
             salesKode:   o.sales_code || '',
             salesNama:   o.sales_name || '—',
@@ -437,13 +504,12 @@
       }
     } catch(e) { console.warn('reksadana_transactions:', e.message); }
 
-    // Sort default: tanggal desc
     allRows.sort((a,b) => (b.tanggal||'').localeCompare(a.tanggal||''));
   }
 
-  // ─── LABELS ────────────────────────────────────────────────
+  // ─── LABELS ───────────────────────────────────────────────
   function catLabel(cat) {
-    return { 'gov-idr':'Pemerintah IDR','gov-usd':'Pemerintah USD','korp-idr':'Korporasi IDR','korp-usd':'Korporasi USD' }[cat] || cat || '—';
+    return {'gov-idr':'Pemerintah IDR','gov-usd':'Pemerintah USD','korp-idr':'Korporasi IDR','korp-usd':'Korporasi USD'}[cat] || cat || '—';
   }
   function reksa_label(jenis, transaksi) {
     const j = jenis ? jenis.charAt(0).toUpperCase()+jenis.slice(1) : 'Reksadana';
@@ -451,60 +517,131 @@
     return t ? `${j} – ${t}` : j;
   }
 
-  // ─── POPULATE FILTER DROPDOWNS ─────────────────────────────
+  // ─── MONTHLY CARDS ────────────────────────────────────────
+  function renderMonthlyCards() {
+    const monthMap = {};
+    allRows.forEach(r => {
+      if (!r.tanggal) return;
+      const ym = r.tanggal.slice(0,7); // YYYY-MM
+      if (!monthMap[ym]) monthMap[ym] = { count:0, volume:0, revenue:0, sahamVol:0, sahamFee:0 };
+      monthMap[ym].count++;
+      monthMap[ym].volume  += Number(r.totalAmount)||0;
+      monthMap[ym].revenue += Number(r.revenue)||0;
+      if (r.sumber === 'saham') {
+        monthMap[ym].sahamVol += Number(r.totalAmount)||0;
+        monthMap[ym].sahamFee += Number(r.revenue)||0;
+      }
+    });
+
+    const months = Object.keys(monthMap).sort().reverse();
+    const grid = document.getElementById('monthlyGrid');
+
+    // Populate filter bulan
+    const selMonth = document.getElementById('filterMonth');
+    selMonth.innerHTML = '<option value="">Semua Bulan</option>';
+    months.forEach(ym => {
+      const o = document.createElement('option');
+      o.value = ym;
+      o.textContent = fmtMonth(ym);
+      selMonth.appendChild(o);
+    });
+
+    if (!months.length) { grid.innerHTML = '<div style="color:var(--gray);font-size:.85rem;">Belum ada data</div>'; return; }
+
+    grid.innerHTML = months.map(ym => {
+      const m = monthMap[ym];
+      return `<div class="month-card" id="mc-${ym}" onclick="filterByMonth('${ym}')">
+        <div class="month-card-head">
+          <span class="month-name">📅 ${fmtMonth(ym)}</span>
+          <span class="month-count">${m.count} transaksi</span>
+        </div>
+        <div class="month-row">
+          <span class="month-row-label">Total Revenue</span>
+          <span class="month-row-val" style="color:var(--green);">${fmtRp(m.revenue)}</span>
+        </div>
+        <div class="month-row">
+          <span class="month-row-label">Total Volume</span>
+          <span class="month-row-val">${fmtRp(m.volume)}</span>
+        </div>
+        ${m.sahamFee > 0 ? `<div class="month-row">
+          <span class="month-row-label">Fee Saham</span>
+          <span class="month-row-val" style="color:var(--orange);">${fmtRp(m.sahamFee)}</span>
+        </div>` : ''}
+      </div>`;
+    }).join('');
+  }
+
+  function filterByMonth(ym) {
+    if (viewMonth === ym) {
+      // Toggle off
+      viewMonth = '';
+      document.querySelectorAll('.month-card').forEach(c => c.classList.remove('active'));
+      document.getElementById('filterMonth').value = '';
+    } else {
+      viewMonth = ym;
+      document.querySelectorAll('.month-card').forEach(c => c.classList.remove('active'));
+      const mc = document.getElementById('mc-'+ym);
+      if (mc) mc.classList.add('active');
+      document.getElementById('filterMonth').value = ym;
+    }
+    curPage = 1;
+    applyFilter();
+  }
+
+  function fmtMonth(ym) {
+    const [y, m] = ym.split('-');
+    const names = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agt','Sep','Okt','Nov','Des'];
+    return (names[parseInt(m)-1] || m) + ' ' + y;
+  }
+
+  // ─── POPULATE FILTERS ─────────────────────────────────────
   function populateFilters() {
     const salesSet = [...new Set(allRows.map(r => r.salesNama).filter(Boolean))].sort();
     const typeSet  = [...new Set(allRows.map(r => r.jenis).filter(Boolean))].sort();
-
     const selSales = document.getElementById('filterSales');
     const selType  = document.getElementById('filterType');
-
-    salesSet.forEach(s => {
-      const o = document.createElement('option'); o.value = s; o.textContent = s;
-      selSales.appendChild(o);
-    });
-    typeSet.forEach(t => {
-      const o = document.createElement('option'); o.value = t; o.textContent = t;
-      selType.appendChild(o);
-    });
+    salesSet.forEach(s => { const o = document.createElement('option'); o.value=s; o.textContent=s; selSales.appendChild(o); });
+    typeSet.forEach(t  => { const o = document.createElement('option'); o.value=t; o.textContent=t; selType.appendChild(o);  });
   }
 
-  // ─── TAB ───────────────────────────────────────────────────
+  // ─── TAB ──────────────────────────────────────────────────
   function setTab(tab) {
     curTab = tab;
-    ['all','obligasi','reksadana'].forEach(t => {
-      document.getElementById('tab'+cap(t)).classList.toggle('active', t === tab);
+    ['all','saham','obligasi','reksadana'].forEach(t => {
+      const el = document.getElementById('tab'+t.charAt(0).toUpperCase()+t.slice(1));
+      if (el) el.classList.toggle('active', t === tab);
     });
     curPage = 1;
     applyFilter();
   }
-  function cap(s) { return s.charAt(0).toUpperCase()+s.slice(1); }
 
-  // ─── FILTER ────────────────────────────────────────────────
+  // ─── FILTER ───────────────────────────────────────────────
   function applyFilter() {
     const q        = document.getElementById('searchInput').value.toLowerCase();
     const sales    = document.getElementById('filterSales').value;
     const tipe     = document.getElementById('filterType').value;
+    const month    = document.getElementById('filterMonth').value;
     const dateFrom = document.getElementById('filterDateFrom').value;
     const dateTo   = document.getElementById('filterDateTo').value;
 
     filtered = allRows.filter(r => {
-      const matchTab  = curTab === 'all' || r.sumber === curTab;
-      const matchQ    = !q || [r.customerName,r.customerId,r.produk,r.salesNama,r.salesKode,r.jenis]
-                          .some(v => (v||'').toLowerCase().includes(q));
-      const matchSales= !sales || r.salesNama === sales;
-      const matchType = !tipe  || r.jenis === tipe;
-      const matchFrom = !dateFrom || r.tanggal >= dateFrom;
-      const matchTo   = !dateTo   || r.tanggal <= dateTo;
-      return matchTab && matchQ && matchSales && matchType && matchFrom && matchTo;
+      const matchTab   = curTab === 'all' || r.sumber === curTab;
+      const matchQ     = !q || [r.customerName,r.customerId,r.produk,r.salesNama,r.salesKode,r.jenis]
+                           .some(v => (v||'').toLowerCase().includes(q));
+      const matchSales = !sales || r.salesNama === sales;
+      const matchType  = !tipe  || r.jenis === tipe;
+      const matchMonth = !month || (r.tanggal||'').startsWith(month);
+      const matchFrom  = !dateFrom || r.tanggal >= dateFrom;
+      const matchTo    = !dateTo   || r.tanggal <= dateTo;
+      return matchTab && matchQ && matchSales && matchType && matchMonth && matchFrom && matchTo;
     });
 
     // Sort
     filtered.sort((a,b) => {
-      let va = a[sortCol] ?? '', vb = b[sortCol] ?? '';
-      if (sortCol === 'totalAmount' || sortCol === 'revenue') { va = Number(a[sortCol]||0); vb = Number(b[sortCol]||0); }
-      if (va < vb) return sortAsc ? -1 :  1;
-      if (va > vb) return sortAsc ?  1 : -1;
+      let va = a[sortCol]??'', vb = b[sortCol]??'';
+      if (sortCol === 'totalAmount' || sortCol === 'revenue') { va=Number(a[sortCol]||0); vb=Number(b[sortCol]||0); }
+      if (va < vb) return sortAsc ? -1 : 1;
+      if (va > vb) return sortAsc ?  1 :-1;
       return 0;
     });
 
@@ -515,211 +652,222 @@
   }
 
   function resetFilter() {
-    document.getElementById('searchInput').value = '';
-    document.getElementById('filterSales').value = '';
-    document.getElementById('filterType').value  = '';
-    document.getElementById('filterDateFrom').value = '';
-    document.getElementById('filterDateTo').value   = '';
+    document.getElementById('searchInput').value   = '';
+    document.getElementById('filterSales').value   = '';
+    document.getElementById('filterType').value    = '';
+    document.getElementById('filterMonth').value   = '';
+    document.getElementById('filterDateFrom').value= '';
+    document.getElementById('filterDateTo').value  = '';
+    viewMonth = '';
+    document.querySelectorAll('.month-card').forEach(c => c.classList.remove('active'));
     applyFilter();
   }
 
-  // ─── SORT ──────────────────────────────────────────────────
+  // ─── SORT ─────────────────────────────────────────────────
   function sortBy(col) {
     if (sortCol === col) { sortAsc = !sortAsc; }
     else { sortCol = col; sortAsc = (col !== 'totalAmount' && col !== 'revenue' && col !== 'tanggal'); }
-    document.querySelectorAll('.sort-icon').forEach(el => el.textContent = '↕');
-    const icon = document.getElementById('sort-'+col);
-    if (icon) icon.textContent = sortAsc ? '↑' : '↓';
+    document.querySelectorAll('.sort-icon').forEach(el => el.textContent='↕');
+    const icon = document.getElementById('sort-'+col); if (icon) icon.textContent = sortAsc ? '↑' : '↓';
     document.querySelectorAll('thead th').forEach(th => th.classList.remove('sorted'));
-    const th = document.getElementById('th-'+col);
-    if (th) th.classList.add('sorted');
+    const th = document.getElementById('th-'+col); if (th) th.classList.add('sorted');
     applyFilter();
   }
 
-  // ─── STATS ─────────────────────────────────────────────────
+  // ─── STATS ────────────────────────────────────────────────
   function renderStats() {
-    const obligasiRows  = filtered.filter(r => r.sumber === 'obligasi');
-    const reksadanaRows = filtered.filter(r => r.sumber === 'reksadana');
-    const revObligasi   = obligasiRows.reduce((s,r)  => s + r.revenue, 0);
-    const revReksadana  = reksadanaRows.reduce((s,r) => s + r.revenue, 0);
+    const sahamRows    = filtered.filter(r => r.sumber === 'saham');
+    const obligasiRows = filtered.filter(r => r.sumber === 'obligasi');
+    const reksadRows   = filtered.filter(r => r.sumber === 'reksadana');
 
-    document.getElementById('sObligasi').textContent      = fmtRp(revObligasi);
-    document.getElementById('sObligasiCount').textContent = `${obligasiRows.length} transaksi`;
-    document.getElementById('sReksadana').textContent     = fmtRp(revReksadana);
-    document.getElementById('sReksadanaCount').textContent= `${reksadanaRows.length} transaksi`;
-    document.getElementById('sTotal').textContent         = filtered.length;
-    document.getElementById('sTotalFiltered').textContent = `${filtered.length} dari ${allRows.length} total`;
-    const totalVolume = filtered.reduce((s,r) => s + (Number(r.totalAmount)||0), 0);
-    document.getElementById('sTotalVolume').textContent   = fmtRpFull(totalVolume);
+    const feeSaham     = sahamRows.reduce((s,r)    => s + (Number(r.revenue)||0), 0);
+    const volSaham     = sahamRows.reduce((s,r)    => s + (Number(r.totalAmount)||0), 0);
+    const revObligasi  = obligasiRows.reduce((s,r) => s + (Number(r.revenue)||0), 0);
+    const revReksa     = reksadRows.reduce((s,r)   => s + (Number(r.revenue)||0), 0);
+    const totalVol     = filtered.reduce((s,r)     => s + (Number(r.totalAmount)||0), 0);
 
-    // Top sales
-    const salesMap = {};
-    filtered.forEach(r => {
-      salesMap[r.salesNama] = (salesMap[r.salesNama]||0) + r.revenue;
-    });
-    const topSales = Object.entries(salesMap).sort((a,b) => b[1]-a[1])[0];
-    if (topSales) {
-      document.getElementById('sTopSales').textContent    = topSales[0];
-      document.getElementById('sTopSalesRev').textContent = fmtRp(topSales[1]);
-    } else {
-      document.getElementById('sTopSales').textContent    = '—';
-      document.getElementById('sTopSalesRev').textContent = '—';
-    }
+    document.getElementById('sSaham').textContent        = fmtRp(feeSaham);
+    document.getElementById('sSahamCount').textContent   = `${sahamRows.length} transaksi`;
+    document.getElementById('sSahamVolume').textContent  = fmtRp(volSaham);
+    document.getElementById('sObligasi').textContent     = fmtRp(revObligasi);
+    document.getElementById('sObligasiCount').textContent= `${obligasiRows.length} transaksi`;
+    document.getElementById('sReksadana').textContent    = fmtRp(revReksa);
+    document.getElementById('sReksadanaCount').textContent=`${reksadRows.length} transaksi`;
+    document.getElementById('sTotal').textContent        = filtered.length;
+    document.getElementById('sTotalFiltered').textContent= `${filtered.length} dari ${allRows.length} total`;
+    document.getElementById('sTotalVolume').textContent  = fmtRpFull(totalVol);
   }
 
   function updateBannerTotals() {
-    const totalRev   = allRows.reduce((s,r) => s + r.revenue, 0);
-    const revObligasi= allRows.filter(r => r.sumber==='obligasi').reduce((s,r) => s + r.revenue, 0);
-    const revReksa   = allRows.filter(r => r.sumber==='reksadana').reduce((s,r) => s + r.revenue, 0);
-    const totalVol   = allRows.reduce((s,r) => s + (Number(r.totalAmount)||0), 0);
+    const feeSaham   = allRows.filter(r=>r.sumber==='saham').reduce((s,r)=>s+(Number(r.revenue)||0),0);
+    const revObligasi= allRows.filter(r=>r.sumber==='obligasi').reduce((s,r)=>s+(Number(r.revenue)||0),0);
+    const revReksa   = allRows.filter(r=>r.sumber==='reksadana').reduce((s,r)=>s+(Number(r.revenue)||0),0);
+    const totalRev   = feeSaham + revObligasi + revReksa;
+    const totalVol   = allRows.reduce((s,r)=>s+(Number(r.totalAmount)||0),0);
 
-    document.getElementById('bannerTotal').textContent    = fmtRpFull(totalRev);
-    document.getElementById('bannerObligasi').textContent = fmtRp(revObligasi);
-    document.getElementById('bannerReksadana').textContent= fmtRp(revReksa);
-    document.getElementById('bannerTransaksi').textContent= allRows.length;
-    document.getElementById('bannerVolume').textContent   = fmtRp(totalVol);
-    document.getElementById('bannerSub').textContent      = `${allRows.length} transaksi · per ${new Date().toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})}`;
+    document.getElementById('bannerTotal').textContent     = fmtRpFull(totalRev);
+    document.getElementById('bannerSaham').textContent     = fmtRp(feeSaham);
+    document.getElementById('bannerObligasi').textContent  = fmtRp(revObligasi);
+    document.getElementById('bannerReksadana').textContent = fmtRp(revReksa);
+    document.getElementById('bannerTransaksi').textContent = allRows.length;
+    document.getElementById('bannerVolume').textContent    = fmtRp(totalVol);
+    document.getElementById('bannerSub').textContent       = `${allRows.length} transaksi · per ${new Date().toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})}`;
   }
 
   function updateTabBadges() {
-    document.getElementById('badgeAll').textContent       = allRows.length;
-    document.getElementById('badgeObligasi').textContent  = allRows.filter(r=>r.sumber==='obligasi').length;
-    document.getElementById('badgeReksadana').textContent = allRows.filter(r=>r.sumber==='reksadana').length;
+    document.getElementById('badgeAll').textContent      = allRows.length;
+    document.getElementById('badgeSaham').textContent    = allRows.filter(r=>r.sumber==='saham').length;
+    document.getElementById('badgeObligasi').textContent = allRows.filter(r=>r.sumber==='obligasi').length;
+    document.getElementById('badgeReksadana').textContent= allRows.filter(r=>r.sumber==='reksadana').length;
   }
 
-  // ─── TABLE ─────────────────────────────────────────────────
+  // ─── TABLE (grouped by month) ─────────────────────────────
+  // Collapsed state per month
+  const collapsedMonths = {};
+
   function renderTable() {
     const tbody = document.getElementById('tableBody');
-    const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-    curPage = Math.min(curPage, totalPages);
-    const slice = filtered.slice((curPage-1)*PAGE_SIZE, curPage*PAGE_SIZE);
-
     document.getElementById('tableInfo').textContent = filtered.length
-      ? `Menampilkan ${(curPage-1)*PAGE_SIZE+1}–${Math.min(curPage*PAGE_SIZE, filtered.length)} dari ${filtered.length} transaksi`
+      ? `${filtered.length} transaksi`
       : 'Tidak ada data';
 
     if (!filtered.length) {
-      tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="empty-icon"></div><div class="empty-text">Belum ada data revenue yang sesuai filter</div></div></td></tr>`;
-      renderPagination(0, 0); return;
+      tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="empty-icon">📄</div><div>Belum ada data</div></div></td></tr>`;
+      document.getElementById('pagination').innerHTML = '';
+      return;
     }
 
-    tbody.innerHTML = slice.map((r, i) => {
-      const rowNum    = (curPage-1)*PAGE_SIZE + i + 1;
-      const isNegRev  = r.revenue < 0;
-      const sumberBadge = r.sumber === 'obligasi'
-        ? `<span class="badge badge-obligasi">Obligasi</span>`
-        : `<span class="badge badge-reksadana">Reksadana</span>`;
-      const jenisBadge = getJenisBadge(r);
+    // Group by month
+    const groups = {}; // YYYY-MM → rows[]
+    filtered.forEach(r => {
+      const ym = (r.tanggal||'').slice(0,7) || 'Tanpa Tanggal';
+      if (!groups[ym]) groups[ym] = [];
+      groups[ym].push(r);
+    });
 
-      return `<tr>
-        <td style="color:var(--gray);font-size:.78rem;">${rowNum}</td>
-        <td style="font-size:.82rem;color:var(--gray);white-space:nowrap;">${fmtDate(r.tanggal)}</td>
-        <td>
-          <div class="customer-name">${esc(r.customerName)}</div>
-          ${r.customerId ? `<div class="customer-id">${esc(r.customerId)}</div>` : ''}
-        </td>
-        <td>
-          <div class="product-name">${esc(r.produk)}</div>
-          <div class="product-type">${esc(r.jenis)}</div>
-        </td>
-        <td>${sumberBadge} ${jenisBadge}</td>
-        <td>
-          <div class="sales-name">${esc(r.salesNama)}</div>
-          ${r.salesKode ? `<div class="sales-code">${esc(r.salesKode)}</div>` : ''}
-        </td>
-        <td style="text-align:right;">
-          <div class="amount-val">${fmtRpFull(r.totalAmount)}</div>
-        </td>
-        <td style="text-align:right;">
-          <div class="${isNegRev ? 'revenue-neg' : 'revenue-pos'}">${fmtRpFull(r.revenue)}</div>
+    const sortedMonths = Object.keys(groups).sort().reverse();
+    let html = '';
+    let globalIdx = 0;
+
+    sortedMonths.forEach(ym => {
+      const rows     = groups[ym];
+      const isOpen   = !collapsedMonths[ym];
+      const mVol     = rows.reduce((s,r)=>s+(Number(r.totalAmount)||0),0);
+      const mRev     = rows.reduce((s,r)=>s+(Number(r.revenue)||0),0);
+      const label    = ym === 'Tanpa Tanggal' ? 'Tanpa Tanggal' : fmtMonth(ym);
+
+      html += `<tr class="month-group-row" onclick="toggleMonth('${ym}')">
+        <td colspan="8">
+          <span class="mg-toggle">${isOpen ? '▼' : '▶'}</span>
+          <strong>${label}</strong>
+          <span style="margin-left:8px;font-size:.72rem;color:var(--gray);">${rows.length} transaksi</span>
+          <span class="mg-stats">
+            <span>Volume: ${fmtRp(mVol)}</span>
+            <span style="color:var(--green);">Revenue: ${fmtRp(mRev)}</span>
+          </span>
         </td>
       </tr>`;
-    }).join('');
 
-    renderPagination(totalPages, curPage);
+      if (isOpen) {
+        rows.forEach(r => {
+          globalIdx++;
+          const sumberBadge = {
+            saham:     `<span class="badge badge-saham">Saham</span>`,
+            obligasi:  `<span class="badge badge-obligasi">Obligasi</span>`,
+            reksadana: `<span class="badge badge-reksadana">Reksadana</span>`,
+          }[r.sumber] || '';
+          const jenisBadge = getJenisBadge(r);
+
+          html += `<tr class="data-row">
+            <td style="color:var(--gray);font-size:.75rem;">${globalIdx}</td>
+            <td style="font-size:.82rem;color:var(--gray);white-space:nowrap;">${fmtDate(r.tanggal)}</td>
+            <td>
+              <div class="customer-name">${esc(r.customerName)}</div>
+              ${r.customerId ? `<div class="customer-id">${esc(r.customerId)}</div>` : ''}
+            </td>
+            <td>
+              <div class="product-name">${esc(r.produk)}</div>
+              <div class="product-type">${esc(r.jenis)}</div>
+            </td>
+            <td>${sumberBadge} ${jenisBadge}</td>
+            <td>
+              <div style="font-size:.88rem;">${esc(r.salesNama)}</div>
+              ${r.salesKode ? `<div class="customer-id">${esc(r.salesKode)}</div>` : ''}
+            </td>
+            <td style="text-align:right;">
+              <div class="amount-val">${fmtRpFull(r.totalAmount)}</div>
+            </td>
+            <td style="text-align:right;">
+              <div class="revenue-pos">${fmtRpFull(r.revenue)}</div>
+            </td>
+          </tr>`;
+        });
+      }
+    });
+
+    tbody.innerHTML = html;
+    document.getElementById('pagination').innerHTML = '';
+  }
+
+  function toggleMonth(ym) {
+    collapsedMonths[ym] = !collapsedMonths[ym];
+    renderTable();
   }
 
   function getJenisBadge(r) {
+    if (r.sumber === 'saham') return '';
     if (r.sumber === 'reksadana') {
       if ((r.tipe||'').toLowerCase() === 'sell') return `<span class="badge badge-sell">Jual</span>`;
       return `<span class="badge badge-buy">Beli</span>`;
     }
-    const cls = { 'gov-idr':'badge-gov-idr','gov-usd':'badge-gov-usd','korp-idr':'badge-korp-idr','korp-usd':'badge-korp-usd' }[r.kategori] || 'badge-gov-idr';
-    const lbl = { 'gov-idr':'Gov IDR','gov-usd':'Gov USD','korp-idr':'Korp IDR','korp-usd':'Korp USD' }[r.kategori] || r.kategori || '';
+    const cls = {'gov-idr':'badge-gov-idr','gov-usd':'badge-gov-usd','korp-idr':'badge-korp-idr','korp-usd':'badge-korp-usd'}[r.kategori]||'badge-gov-idr';
+    const lbl = {'gov-idr':'Gov IDR','gov-usd':'Gov USD','korp-idr':'Korp IDR','korp-usd':'Korp USD'}[r.kategori]||r.kategori||'';
     return lbl ? `<span class="badge ${cls}">${lbl}</span>` : '';
   }
 
-  function renderPagination(total, cur) {
-    const pg = document.getElementById('pagination');
-    if (total <= 1) { pg.innerHTML = ''; return; }
-    let html = `<button class="pg-btn" onclick="goPage(${cur-1})" ${cur<=1?'disabled':''}>‹</button>`;
-    for (let p = 1; p <= total; p++) {
-      if (p===1 || p===total || Math.abs(p-cur)<=2) {
-        html += `<button class="pg-btn ${p===cur?'active':''}" onclick="goPage(${p})">${p}</button>`;
-      } else if (Math.abs(p-cur)===3) {
-        html += `<span style="padding:0 4px;color:#aaa;line-height:30px;">…</span>`;
-      }
-    }
-    html += `<button class="pg-btn" onclick="goPage(${cur+1})" ${cur>=total?'disabled':''}>›</button>`;
-    pg.innerHTML = html;
-  }
-
-  function goPage(p) {
-    curPage = p;
-    renderTable();
-    window.scrollTo({top:0, behavior:'smooth'});
-  }
-
-  // ─── EXPORT CSV ────────────────────────────────────────────
+  // ─── EXPORT CSV ───────────────────────────────────────────
   function exportCSV() {
-    if (!filtered.length) { showToast('Tidak ada data untuk diexport', 'error'); return; }
-    const headers = ['Tanggal','Nasabah','ID Customer','Produk','Jenis','Sumber','Kategori','Sales Kode','Sales Nama','Total Amount','Revenue'];
+    if (!filtered.length) { showToast('Tidak ada data untuk diexport','error'); return; }
+    const H = ['Tanggal','Nasabah','ID Customer','Produk','Jenis','Sumber','Sales','Volume','Fee/Revenue'];
     const rows = filtered.map(r => [
       r.tanggal, r.customerName, r.customerId, r.produk, r.jenis,
-      r.sumber, r.kategori, r.salesKode, r.salesNama, r.totalAmount, r.revenue
-    ].map(v => `"${String(v??'').replace(/"/g,'""')}"`).join(','));
-    const csv  = [headers.join(','), ...rows].join('\n');
+      r.sumber, r.salesNama, r.totalAmount, r.revenue
+    ].map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(','));
+    const csv  = [H.join(','), ...rows].join('\n');
     const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8;'});
-    const a    = document.createElement('a');
-    a.href     = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
     a.download = `revenue-fawz-${new Date().toISOString().slice(0,10)}.csv`;
     a.click();
     showToast(`${filtered.length} transaksi berhasil diexport`, 'success');
   }
 
-  // ─── UTILS ─────────────────────────────────────────────────
+  // ─── UTILS ────────────────────────────────────────────────
   function esc(s) {
     return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
-
   function fmtDate(d) {
     if (!d) return '—';
     try { return new Date(d).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}); }
     catch { return d; }
   }
-
   function fmtRp(val) {
-    const n = Number(val)||0;
-    const abs = Math.abs(n);
-    const sign = n < 0 ? '-' : '';
-    if (abs >= 1e12) return sign+'Rp '+(abs/1e12).toFixed(2)+' T';
-    if (abs >= 1e9)  return sign+'Rp '+(abs/1e9).toFixed(2)+' M';
-    if (abs >= 1e6)  return sign+'Rp '+(abs/1e6).toFixed(1)+' jt';
+    const n=Number(val)||0, abs=Math.abs(n), sign=n<0?'-':'';
+    if (abs>=1e12) return sign+'Rp '+(abs/1e12).toFixed(2)+' T';
+    if (abs>=1e9)  return sign+'Rp '+(abs/1e9).toFixed(2)+' M';
+    if (abs>=1e6)  return sign+'Rp '+(abs/1e6).toFixed(1)+' jt';
     return sign+'Rp '+abs.toLocaleString('id-ID');
   }
-
   function fmtRpFull(val) {
-    const n = Number(val)||0;
-    return (n < 0 ? '-' : '') + 'Rp ' + Math.abs(n).toLocaleString('id-ID',{minimumFractionDigits:0,maximumFractionDigits:2});
+    const n=Number(val)||0;
+    return (n<0?'-':'')+'Rp '+Math.abs(n).toLocaleString('id-ID',{minimumFractionDigits:0,maximumFractionDigits:2});
   }
-
-  function showToast(msg, type='info') {
-    const t = document.createElement('div');
-    t.className = `toast toast-${type}`; t.textContent = msg;
+  function showToast(msg,type='info') {
+    const t=document.createElement('div');
+    t.className=`toast toast-${type}`; t.textContent=msg;
     document.getElementById('toastContainer').appendChild(t);
-    setTimeout(() => t.remove(), 3500);
+    setTimeout(()=>t.remove(),3500);
   }
 </script>
 </body>
 </html>
-
