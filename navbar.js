@@ -15,6 +15,32 @@
     document.head.appendChild(link);
   })();
 
+  /* ── 0b. SUPABASE INIT (jika belum ada di halaman) ── */
+  (function() {
+    if (window._supabase) return; // sudah diinit oleh halaman
+    const SUPABASE_URL = 'https://yhmrfluehibfapvtxcfi.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlobXJmbHVlaGliZmFwdnR4Y2ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNjEzODUsImV4cCI6MjA5NDczNzM4NX0.se_H4n_eLsf81d_1GH5sqsPCpX89MHewlPuuNkY6qcU';
+    // Tunggu supabase SDK tersedia (dimuat lewat CDN di head)
+    const tryInit = () => {
+      if (window.supabase && window.supabase.createClient) {
+        window._supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      } else {
+        setTimeout(tryInit, 300);
+      }
+    };
+    // Hanya init jika SDK sudah ada
+    if (window.supabase) {
+      try { window._supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); }
+      catch(e) { setTimeout(tryInit, 300); }
+    } else {
+      // Inject Supabase SDK jika tidak ada
+      const s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
+      s.onload = tryInit;
+      document.head.appendChild(s);
+    }
+  })();
+
   /* ── 1. SESSION SYNC ── */
   const ss  = sessionStorage.getItem('fawz_user');
   const ls  = localStorage.getItem('fawz_user_remember');
@@ -185,9 +211,18 @@
     const stored = localStorage.getItem('fawz_notif_read_' + (user.username||user.name));
     _notifReadIds = stored ? JSON.parse(stored) : [];
 
-    fetchPendingOrders(user);
-    // Poll setiap 60 detik
-    setInterval(() => fetchPendingOrders(user), 60000);
+    // Tunggu _supabase siap, lalu fetch
+    waitForSupabase(() => {
+      fetchPendingOrders(user);
+      setInterval(() => fetchPendingOrders(user), 60000);
+    });
+  }
+
+  function waitForSupabase(cb, tries) {
+    tries = tries || 0;
+    if (window._supabase) { cb(); return; }
+    if (tries > 20) return; // max 10 detik
+    setTimeout(() => waitForSupabase(cb, tries + 1), 500);
   }
 
   async function fetchPendingOrders(user) {
