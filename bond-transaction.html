@@ -227,7 +227,7 @@
     isBondsDealer = curUser.role === 'treasury';
     isAdmin = ['head_account','admin'].includes(curUser.role);
 
-    // Sembunyikan kolom Aksi jika bukan Bonds Dealer / Admin
+    // Sembunyikan kolom Aksi jika bukan Bonds Dealer / Admin / Head Account
     if (!isBondsDealer && !isAdmin) {
       document.getElementById('thAction').style.display = 'none';
     }
@@ -362,13 +362,15 @@
         ? `<span class="badge badge-sell">Jual</span>`
         : `<span class="badge badge-buy">Beli</span>`;
       const isPending = r.status === 'pending';
+      const canDelete = curUser?.role === 'head_account';
       const actionCell = canAct
-        ? `<div class="action-btns" style="justify-content:center;">
+        ? `<div class="action-btns" style="justify-content:center;gap:6px;">
             ${isPending ? `<button class="btn btn-approve btn-sm" onclick="event.stopPropagation();approve('${r.id}')">Approve</button>` : ''}
             ${isPending ? `<button class="btn btn-reject btn-sm" onclick="event.stopPropagation();reject('${r.id}')">Reject</button>` : ''}
-            ${!isPending ? `<span style="font-size:.75rem;color:#bbb;">—</span>` : ''}
+            ${!isPending && !canDelete ? `<span style="font-size:.75rem;color:#bbb;">—</span>` : ''}
+            ${canDelete ? `<button class="btn btn-sm" onclick="event.stopPropagation();deleteTransaction('${r.id}','${esc(r.seri)}')" style="background:#fff0f0;color:var(--red);border:1.5px solid #ffcccc;">🗑 Hapus</button>` : ''}
            </div>`
-        : '';
+        : canDelete ? `<div style="text-align:center;"><button class="btn btn-sm" onclick="event.stopPropagation();deleteTransaction('${r.id}','${esc(r.seri)}')" style="background:#fff0f0;color:var(--red);border:1.5px solid #ffcccc;">🗑 Hapus</button></div>` : '';
       return `<tr style="cursor:pointer;" onclick="showDetail('${r.id}')">
         <td style="color:#bbb;font-size:.75rem;">${rowNum}</td>
         <td style="font-size:.8rem;color:var(--gray);white-space:nowrap;">${fmtDate(r.tanggal)}</td>
@@ -463,6 +465,20 @@
       applyFilter(); updateStats();
       showToast('Transaksi ditolak', 'info');
     } catch(e) { showToast('Gagal reject: ' + e.message, 'error'); }
+  }
+
+  async function deleteTransaction(id, seri) {
+    if (curUser?.role !== 'head_account') {
+      showToast('Hanya Head Account yang dapat menghapus transaksi', 'error'); return;
+    }
+    if (!confirm(`Hapus transaksi "${seri}" secara permanen? Tindakan ini tidak dapat dibatalkan.`)) return;
+    try {
+      const { error } = await getDb().from('bb_orders').delete().eq('id', id);
+      if (error) throw error;
+      allRows = allRows.filter(r => r.id !== id);
+      applyFilter(); updateStats();
+      showToast(`Transaksi ${seri} berhasil dihapus`, 'success');
+    } catch(e) { showToast('Gagal hapus: ' + e.message, 'error'); }
   }
 
   function exportCSV() {
