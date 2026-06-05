@@ -213,9 +213,10 @@
             <th>Series</th><th>Jatuh Tempo</th><th>Coupon (%)</th>
             <th>Last Coupon</th><th>Next Coupon</th>
             <th>Bid</th><th>Offer</th><th>YTM (%)</th>
+            <th>Harga Modal</th><th>Modal to Sales</th><th>Harga to Customer</th>
             <th>Tgl. Update</th><th>Aksi</th>
           </tr></thead>
-          <tbody id="tbody-gov-idr"><tr><td colspan="11"><div class="empty-state"><div class="empty-icon">⏳</div><p>Memuat data...</p></div></td></tr></tbody>
+          <tbody id="tbody-gov-idr"><tr><td colspan="14"><div class="empty-state"><div class="empty-icon">⏳</div><p>Memuat data...</p></div></td></tr></tbody>
         </table>
       </div>
       <div class="table-footer">
@@ -250,9 +251,10 @@
             <th>Series</th><th>Jatuh Tempo</th><th>Coupon (%)</th>
             <th>Last Coupon</th><th>Next Coupon</th>
             <th>Bid</th><th>Offer</th><th>YTM (%)</th>
+            <th>Harga Modal</th><th>Modal to Sales</th><th>Harga to Customer</th>
             <th>Tgl. Update</th><th>Aksi</th>
           </tr></thead>
-          <tbody id="tbody-gov-usd"><tr><td colspan="11"><div class="empty-state"><div class="empty-icon">⏳</div><p>Memuat data...</p></div></td></tr></tbody>
+          <tbody id="tbody-gov-usd"><tr><td colspan="14"><div class="empty-state"><div class="empty-icon">⏳</div><p>Memuat data...</p></div></td></tr></tbody>
         </table>
       </div>
       <div class="table-footer">
@@ -287,9 +289,10 @@
             <th>Series</th><th>Penerbit</th><th>Jatuh Tempo</th><th>Rating</th><th>Coupon (%)</th>
             <th>Last Coupon</th><th>Next Coupon</th>
             <th>Bid</th><th>Offer</th><th>YTM (%)</th>
+            <th>Harga Modal</th><th>Modal to Sales</th><th>Harga to Customer</th>
             <th>Tgl. Update</th><th>Aksi</th>
           </tr></thead>
-          <tbody id="tbody-korp-idr"><tr><td colspan="13"><div class="empty-state"><div class="empty-icon">⏳</div><p>Memuat data...</p></div></td></tr></tbody>
+          <tbody id="tbody-korp-idr"><tr><td colspan="16"><div class="empty-state"><div class="empty-icon">⏳</div><p>Memuat data...</p></div></td></tr></tbody>
         </table>
       </div>
       <div class="table-footer">
@@ -324,9 +327,10 @@
             <th>Series</th><th>Penerbit</th><th>Jatuh Tempo</th><th>Rating</th><th>Coupon (%)</th>
             <th>Last Coupon</th><th>Next Coupon</th>
             <th>Bid</th><th>Offer</th><th>YTM (%)</th>
+            <th>Harga Modal</th><th>Modal to Sales</th><th>Harga to Customer</th>
             <th>Tgl. Update</th><th>Aksi</th>
           </tr></thead>
-          <tbody id="tbody-korp-usd"><tr><td colspan="13"><div class="empty-state"><div class="empty-icon">⏳</div><p>Memuat data...</p></div></td></tr></tbody>
+          <tbody id="tbody-korp-usd"><tr><td colspan="16"><div class="empty-state"><div class="empty-icon">⏳</div><p>Memuat data...</p></div></td></tr></tbody>
         </table>
       </div>
       <div class="table-footer">
@@ -485,6 +489,18 @@
         <div style="font-size:.68rem;font-weight:700;color:#f5a623;text-transform:uppercase;letter-spacing:1px;padding-bottom:6px;border-bottom:1px solid #f0f0f5;">Harga & Update</div>
       </div>
       <div class="form-group">
+        <label class="form-label">Harga Modal</label>
+        <input class="form-input harga-input" id="fHargaModal" type="text" inputmode="decimal" placeholder="100,00" oninput="formatHargaInput(this)" onkeydown="blockDot(event)"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Modal to Sales</label>
+        <input class="form-input harga-input" id="fModalToSales" type="text" inputmode="decimal" placeholder="100,50" oninput="formatHargaInput(this)" onkeydown="blockDot(event)"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Harga to Customer</label>
+        <input class="form-input harga-input" id="fHargaToCustomer" type="text" inputmode="decimal" placeholder="101,00" oninput="formatHargaInput(this)" onkeydown="blockDot(event)"/>
+      </div>
+      <div class="form-group">
         <label class="form-label">Bid (Harga Jual)</label>
         <input class="form-input harga-input" id="fHargaJual" type="text" inputmode="decimal" placeholder="101,50" oninput="formatHargaInput(this)" onkeydown="blockDot(event)"/>
       </div>
@@ -619,7 +635,7 @@
     const tbody = document.getElementById('tbody-' + cat);
     const idr = cat.endsWith('idr');
     const isKorp = cat.startsWith('korp');
-    const colSpan = isKorp ? 13 : 11;
+    const colSpan = isKorp ? 16 : 14;
 
     document.getElementById('count-' + cat).textContent = total + ' seri';
     document.getElementById('info-' + cat).textContent =
@@ -642,6 +658,9 @@
         <td style="color:#27ae60;">${fmtHarga(r.harga_jual)}</td>
         <td style="color:#e74c3c;">${fmtHarga(r.harga_beli)}</td>
         <td>${r.yield != null ? fmtDecimal(r.yield, 4) + '%' : '—'}</td>
+        <td style="color:#7c3aed;">${r.harga_modal != null ? fmtHarga(r.harga_modal) : '—'}</td>
+        <td style="color:#0369a1;">${r.modal_to_sales != null ? fmtHarga(r.modal_to_sales) : '—'}</td>
+        <td style="color:#b45309;">${r.harga_to_customer != null ? fmtHarga(r.harga_to_customer) : '—'}</td>
         <td style="font-size:0.8rem;color:#888;">${fmtDate(r.tanggal_update)}</td>
         <td>
           <div class="action-btns">
@@ -720,6 +739,9 @@
     document.getElementById('fHargaBeli').value = item.harga_beli != null ? Number(item.harga_beli).toFixed(2).replace('.', ',') : '';
     document.getElementById('fYield').value = item.yield != null ? item.yield : '';
     document.getElementById('fTanggalUpdate').value = item.tanggal_update || '';
+    document.getElementById('fHargaModal').value       = item.harga_modal       != null ? Number(item.harga_modal).toFixed(2).replace('.',',') : '';
+    document.getElementById('fModalToSales').value     = item.modal_to_sales    != null ? Number(item.modal_to_sales).toFixed(2).replace('.',',') : '';
+    document.getElementById('fHargaToCustomer').value  = item.harga_to_customer != null ? Number(item.harga_to_customer).toFixed(2).replace('.',',') : '';
     toggleRatingField();
     document.getElementById('formModal').classList.add('open');
   }
@@ -727,7 +749,7 @@
   function clearForm() {
     ['fSeri','fName','fISIN','fIssuer','fKupon','fHargaJual','fHargaBeli','fYield',
      'fTanggalUpdate','fRating','fLastCoupon','fNextCoupon','fFirstCpnDate','fAccrual',
-     'fPenerbit','fTanggalListing','fFinalMaturity'].forEach(id => {
+     'fPenerbit','fTanggalListing','fFinalMaturity','fHargaModal','fModalToSales','fHargaToCustomer'].forEach(id => {
       const el = document.getElementById(id); if (el) el.value = '';
     });
     ['fKuponFreq','fType','fType2','fBasis','fPayType'].forEach(id => {
@@ -822,6 +844,9 @@
       yield:          parseFloat(document.getElementById('fYield').value) || null,
       tanggal_update: document.getElementById('fTanggalUpdate').value || new Date().toISOString().slice(0,10),
       category:       cat,
+      harga_modal:        parseHargaInput(document.getElementById('fHargaModal').value),
+      modal_to_sales:     parseHargaInput(document.getElementById('fModalToSales').value),
+      harga_to_customer:  parseHargaInput(document.getElementById('fHargaToCustomer').value),
     };
 
     // Kolom baru — hanya kirim jika ada nilainya
