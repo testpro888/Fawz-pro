@@ -358,46 +358,135 @@
     </div>
 
     <div class="form-grid">
+
+      <!-- Section: Identifikasi -->
+      <div class="form-group full" style="margin-top:4px;">
+        <div style="font-size:.68rem;font-weight:700;color:#f5a623;text-transform:uppercase;letter-spacing:1px;padding-bottom:6px;border-bottom:1px solid #f0f0f5;">Identifikasi Obligasi</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Bond ID</label>
+        <input class="form-input" id="fBondId" placeholder="Contoh: ID1000132706"/>
+      </div>
       <div class="form-group full">
-        <label class="form-label">Series <span class="req">*</span></label>
+        <label class="form-label">Series / ISIN Code <span class="req">*</span></label>
         <input class="form-input" id="fSeri" placeholder="Contoh: FR0100, INDO30, PPLN03CN3" oninput="autoFillPenerbit()"/>
       </div>
+      <div class="form-group full">
+        <label class="form-label">Name (Nama Obligasi)</label>
+        <input class="form-input" id="fName" placeholder="Contoh: ORI025, FR0100"/>
+      </div>
+      <div class="form-group full">
+        <label class="form-label">ISIN</label>
+        <input class="form-input" id="fISIN" placeholder="Contoh: IDG000032704"/>
+      </div>
       <div class="form-group full" id="fPenerbitGroup" style="display:none;">
-        <label class="form-label">Penerbit <span style="font-size:0.65rem;color:#888;">(Otomatis dari kode series)</span></label>
+        <label class="form-label">Penerbit <span style="font-size:.65rem;color:#888;">(Otomatis dari kode series)</span></label>
         <input class="form-input" id="fPenerbit" placeholder="Nama penerbit akan terisi otomatis..." style="background:#f8f9ff;"/>
       </div>
       <div class="form-group">
-        <label class="form-label">Tanggal Listing</label>
+        <label class="form-label">Issuer</label>
+        <input class="form-input" id="fIssuer" placeholder="Contoh: Pemerintah RI, PLN"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Type</label>
+        <select class="form-select" id="fType">
+          <option value="">— Pilih —</option>
+          <option value="FR">FR (Fixed Rate)</option>
+          <option value="ORI">ORI (Obligasi Ritel)</option>
+          <option value="SBR">SBR (Savings Bond)</option>
+          <option value="PBS">PBS (Project Based Sukuk)</option>
+          <option value="SR">SR (Sukuk Ritel)</option>
+          <option value="INDON">INDON (Global Bond USD)</option>
+          <option value="INDOIS">INDOIS (Global Sukuk USD)</option>
+          <option value="Korporasi">Korporasi</option>
+          <option value="Lainnya">Lainnya</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Type 2</label>
+        <select class="form-select" id="fType2">
+          <option value="">— Pilih —</option>
+          <option value="Fixed">Fixed</option>
+          <option value="Floating">Floating</option>
+          <option value="Zero Coupon">Zero Coupon</option>
+          <option value="Sukuk">Sukuk</option>
+        </select>
+      </div>
+
+      <!-- Section: Tanggal -->
+      <div class="form-group full" style="margin-top:8px;">
+        <div style="font-size:.68rem;font-weight:700;color:#f5a623;text-transform:uppercase;letter-spacing:1px;padding-bottom:6px;border-bottom:1px solid #f0f0f5;">Tanggal</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Issue Date (Tanggal Listing)</label>
         <input class="form-input" id="fTanggalListing" type="date" onchange="autoCalcCouponDates()"/>
       </div>
+      <div class="form-group">
+        <label class="form-label">Maturity Date (Jatuh Tempo)</label>
+        <input class="form-input" id="fFinalMaturity" type="date"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">First Cpn. Date</label>
+        <input class="form-input" id="fFirstCpnDate" type="date"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Last Cpn. Date <span style="font-size:.65rem;color:#27ae60;">(Otomatis)</span></label>
+        <input class="form-input" id="fLastCoupon" type="date" style="background:#f8fff8;"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Next Cpn. Date <span style="font-size:.65rem;color:#27ae60;">(Otomatis)</span></label>
+        <input class="form-input" id="fNextCoupon" type="date" style="background:#f8fff8;"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Accrual Date</label>
+        <input class="form-input" id="fAccrual" type="date"/>
+      </div>
+
+      <!-- Section: Kupon -->
+      <div class="form-group full" style="margin-top:8px;">
+        <div style="font-size:.68rem;font-weight:700;color:#f5a623;text-transform:uppercase;letter-spacing:1px;padding-bottom:6px;border-bottom:1px solid #f0f0f5;">Detail Kupon</div>
+      </div>
       <div class="form-group" id="fRatingGroup">
-        <label class="form-label">Rating <span style="font-size:0.65rem;color:#888;">(Korporasi)</span></label>
+        <label class="form-label">Rating <span style="font-size:.65rem;color:#888;">(Korporasi)</span></label>
         <input class="form-input" id="fRating" placeholder="AAA, AA+, A, BBB+"/>
       </div>
       <div class="form-group">
-        <label class="form-label">Jatuh Tempo</label>
-        <input class="form-input" id="fFinalMaturity" type="date"/>
-      </div>      <div class="form-group">
         <label class="form-label">Coupon (%)</label>
         <input class="form-input" id="fKupon" type="number" step="0.001" placeholder="6.375"/>
       </div>
       <div class="form-group">
-        <label class="form-label">Frekuensi Kupon</label>
+        <label class="form-label">Freq. (Frekuensi Kupon)</label>
         <select class="form-select" id="fKuponFreq" onchange="autoCalcCouponDates()">
           <option value="">— Pilih Frekuensi —</option>
-          <option value="1">Setiap 1 Bulan</option>
-          <option value="3">Setiap 3 Bulan</option>
-          <option value="6">Setiap 6 Bulan</option>
-          <option value="12">Setiap 12 Bulan</option>
+          <option value="1">1 (Monthly)</option>
+          <option value="3">3 (Quarterly)</option>
+          <option value="6">6 (Semi-Annual)</option>
+          <option value="12">12 (Annual)</option>
         </select>
       </div>
       <div class="form-group">
-        <label class="form-label">Last Coupon Date <span style="font-size:0.65rem;color:#27ae60;">(Otomatis)</span></label>
-        <input class="form-input" id="fLastCoupon" type="date" style="background:#f8fff8;"/>
+        <label class="form-label">Basis (Day Count)</label>
+        <select class="form-select" id="fBasis">
+          <option value="">— Pilih —</option>
+          <option value="ACT/ACT">ACT/ACT</option>
+          <option value="ACT/360">ACT/360</option>
+          <option value="ACT/365">ACT/365</option>
+          <option value="30/360">30/360</option>
+        </select>
       </div>
       <div class="form-group">
-        <label class="form-label">Next Coupon Date <span style="font-size:0.65rem;color:#27ae60;">(Otomatis)</span></label>
-        <input class="form-input" id="fNextCoupon" type="date" style="background:#f8fff8;"/>
+        <label class="form-label">Pay. Type</label>
+        <select class="form-select" id="fPayType">
+          <option value="">— Pilih —</option>
+          <option value="Bullet">Bullet</option>
+          <option value="Amortizing">Amortizing</option>
+          <option value="Sinking Fund">Sinking Fund</option>
+        </select>
+      </div>
+
+      <!-- Section: Harga -->
+      <div class="form-group full" style="margin-top:8px;">
+        <div style="font-size:.68rem;font-weight:700;color:#f5a623;text-transform:uppercase;letter-spacing:1px;padding-bottom:6px;border-bottom:1px solid #f0f0f5;">Harga & Update</div>
       </div>
       <div class="form-group">
         <label class="form-label">Bid (Harga Jual)</label>
@@ -614,16 +703,24 @@
     document.getElementById('fCategory').value = cat;
     document.getElementById('fCategory').disabled = true;
     document.getElementById('fSeri').value = item.seri || '';
+    document.getElementById('fBondId').value = item.bond_id || '';
+    document.getElementById('fName').value = item.name || '';
+    document.getElementById('fISIN').value = item.isin || '';
+    document.getElementById('fIssuer').value = item.issuer || '';
     document.getElementById('fKupon').value = item.kupon != null ? item.kupon : '';
     document.getElementById('fFinalMaturity').value = item.jatuh_tempo || item.final_maturity || '';
     document.getElementById('fRating').value = item.rating || '';
     document.getElementById('fPenerbit').value = item.penerbit || '';
     document.getElementById('fLastCoupon').value = item.last_coupon_date || '';
     document.getElementById('fNextCoupon').value = item.next_coupon_date || '';
+    document.getElementById('fFirstCpnDate').value = item.first_cpn_date || '';
+    document.getElementById('fAccrual').value = item.accrual_date || '';
     document.getElementById('fTanggalListing').value = item.tanggal_listing || '';
-    document.getElementById('fFinalMaturity').value = item.jatuh_tempo || item.final_maturity || '';
-    const freqEl = document.getElementById('fKuponFreq');
-    if (freqEl) freqEl.value = item.kupon_freq || '';
+    document.getElementById('fKuponFreq').value = item.kupon_freq || '';
+    document.getElementById('fType').value = item.bond_type || '';
+    document.getElementById('fType2').value = item.bond_type2 || '';
+    document.getElementById('fBasis').value = item.day_count_basis || '';
+    document.getElementById('fPayType').value = item.payment_type || '';
     document.getElementById('fHargaJual').value = item.harga_jual != null ? Number(item.harga_jual).toFixed(2).replace('.', ',') : '';
     document.getElementById('fHargaBeli').value = item.harga_beli != null ? Number(item.harga_beli).toFixed(2).replace('.', ',') : '';
     document.getElementById('fYield').value = item.yield != null ? item.yield : '';
@@ -633,11 +730,14 @@
   }
 
   function clearForm() {
-    ['fSeri','fKupon','fHargaJual','fHargaBeli','fYield','fTanggalUpdate','fRating','fLastCoupon','fNextCoupon','fPenerbit','fTanggalListing','fFinalMaturity'].forEach(id => {
+    ['fBondId','fSeri','fName','fISIN','fIssuer','fKupon','fHargaJual','fHargaBeli','fYield',
+     'fTanggalUpdate','fRating','fLastCoupon','fNextCoupon','fFirstCpnDate','fAccrual',
+     'fPenerbit','fTanggalListing','fFinalMaturity'].forEach(id => {
       const el = document.getElementById(id); if (el) el.value = '';
     });
-    const freqEl = document.getElementById('fKuponFreq');
-    if (freqEl) freqEl.value = '';
+    ['fKuponFreq','fType','fType2','fBasis','fPayType'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.value = '';
+    });
     document.getElementById('fCategory').disabled = false;
     document.getElementById('editDocId').value = '';
     document.getElementById('editCategory').value = '';
@@ -711,6 +811,16 @@
     const isKorp = cat.startsWith('korp');
     const data = {
       seri,
+      bond_id:        document.getElementById('fBondId').value.trim() || null,
+      name:           document.getElementById('fName').value.trim() || null,
+      isin:           document.getElementById('fISIN').value.trim() || null,
+      issuer:         document.getElementById('fIssuer').value.trim() || null,
+      bond_type:      document.getElementById('fType').value || null,
+      bond_type2:     document.getElementById('fType2').value || null,
+      day_count_basis:document.getElementById('fBasis').value || null,
+      payment_type:   document.getElementById('fPayType').value || null,
+      first_cpn_date: document.getElementById('fFirstCpnDate').value || null,
+      accrual_date:   document.getElementById('fAccrual').value || null,
       kupon:          parseFloat(document.getElementById('fKupon').value) || null,
       jatuh_tempo:    document.getElementById('fFinalMaturity').value || null,
       harga_jual:     parseHargaInput(document.getElementById('fHargaJual').value),
