@@ -566,8 +566,8 @@
     clearForm();
     document.getElementById('formModalTitle').textContent = 'Edit Obligasi';
     document.getElementById('editDocId').value = id;
-    document.getElementById('editCategory').value = cat;
-    document.getElementById('fCategory').value = cat;
+    document.getElementById('editCategory').value = item.category || '';
+    document.getElementById('fCategory').value = item.category || 'all';
     document.getElementById('fCategory').disabled = true;
     document.getElementById('fSeri').value = item.seri || '';
     document.getElementById('fBondId').value = item.bond_id || '';
