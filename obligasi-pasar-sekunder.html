@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="id">
 <head>
   <meta charset="UTF-8"/>
@@ -43,7 +43,7 @@
     body { font-family: 'Inter', sans-serif; background: var(--bg); min-height: 100vh; padding-top: var(--nav-h); color: var(--text); }
 
     
-    /* NAVBAR — style dari navbar.html */
+    /* NAVBAR ΓÇö style dari navbar.html */
 
     /* PAGE */
     .page-container { max-width: 1400px; margin: 0 auto; padding: 36px 28px; }
@@ -160,7 +160,7 @@
 </head>
 <body>
 
-<!-- NAVBAR — dimuat dari navbar.html -->
+<!-- NAVBAR ΓÇö dimuat dari navbar.html -->
 <div id="navbar-placeholder"></div>
 <script src="navbar.js"></script>
 
@@ -172,81 +172,190 @@
   <div class="page-header">
     <div>
       <div class="page-title">Obligasi Pasar Sekunder</div>
-      <div class="page-subtitle">Data harga obligasi di pasar sekunder</div>
+      <div class="page-subtitle">Data harga obligasi di pasar sekunder | Pemerintah & Korporasi</div>
       <div class="title-underline"></div>
     </div>
     <div class="header-actions">
-      <a href="obligasi-coupon-calendar.html" class="btn btn-outline">📅 Kalender Kupon</a>
+      <a href="obligasi-coupon-calendar.html" class="btn btn-outline">≡ƒôà Kalender Kupon</a>
     </div>
   </div>
 
-  <!-- Filter & Actions Bar -->
-  <div style="background:#fff;border-radius:14px;padding:14px 18px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;box-shadow:0 2px 10px rgba(0,0,0,.05);margin-bottom:18px;">
-    <div class="search-wrap" style="min-width:220px;flex:1;">
-      <span class="search-icon">🔍</span>
-      <input type="text" id="searchAll" placeholder="Cari seri, name, ISIN, issuer..." oninput="applySearchAll(this.value)"/>
-    </div>
-    <select id="filterType" class="filter-select" onchange="applyFilterAll()" style="height:38px;border:1px solid var(--border);border-radius:8px;padding:0 12px;font-family:'Inter';font-size:.82rem;">
-      <option value="">Semua Type</option>
-      <option value="FR">FR</option>
-      <option value="ORI">ORI</option>
-      <option value="SBR">SBR</option>
-      <option value="PBS">PBS</option>
-      <option value="SR">SR</option>
-      <option value="INDON">INDON</option>
-      <option value="INDOIS">INDOIS</option>
-      <option value="Korporasi">Korporasi</option>
-    </select>
-    <div class="filter-spacer" style="flex:1;"></div>
-    <span style="font-size:.8rem;color:var(--gray);" id="countAll">0 seri</span>
-    <button class="btn btn-outline btn-sm" onclick="openUploadModal()">⬆️ CSV</button>
-    <button class="btn btn-outline btn-sm" onclick="exportAllCSV()">⬇️ Export</button>
-    <button class="btn btn-primary btn-sm" onclick="openAddModal()">+ Tambah</button>
+  <!-- Tab navigation -->
+  <div class="tab-nav">
+    <button class="tab-btn active" onclick="switchTab('gov-idr')">≡ƒÅ¢∩╕Å Obligasi Pemerintah IDR</button>
+    <button class="tab-btn" onclick="switchTab('gov-usd')">≡ƒÅ¢∩╕Å Obligasi Pemerintah USD</button>
+    <button class="tab-btn" onclick="switchTab('korp-idr')">≡ƒÅó Obligasi Korporasi IDR</button>
+    <button class="tab-btn" onclick="switchTab('korp-usd')">≡ƒÅó Obligasi Korporasi USD</button>
   </div>
 
-  <!-- Unified Table -->
-  <div class="table-card">
-    <div class="table-wrap">
-      <table id="mainTable">
-        <thead><tr>
-          <th>Bond ID</th>
-          <th>Series</th>
-          <th style="min-width:160px;">Name</th>
-          <th>Type</th>
-          <th>Issue Date</th>
-          <th>Maturity</th>
-          <th>Rating</th>
-          <th>Coupon%</th>
-          <th>Freq</th>
-          <th>Last Cpn</th>
-          <th>Next Cpn</th>
-          <th>Bid</th>
-          <th>Offer</th>
-          <th>YTM%</th>
-          <th style="min-width:140px;">Issuer</th>
-          <th>Aksi</th>
-        </tr></thead>
-        <tbody id="tbody-all"><tr><td colspan="16"><div class="empty-state"><div class="empty-icon">⏳</div><p>Memuat data...</p></div></td></tr></tbody>
-      </table>
+  <!-- TAB: Gov IDR -->
+  <div class="tab-panel active" id="panel-gov-idr">
+    <div class="section-header">
+      <div class="section-title-row">
+        <span style="font-size:1.05rem;font-weight:700;color:var(--navy);">Obligasi Pemerintah IDR</span>
+        <span class="section-badge badge-idr">IDR</span>
+        <span style="font-size:0.8rem;color:var(--gray);" id="count-gov-idr">0 seri</span>
+      </div>
+      <div class="section-actions">
+        <div class="search-wrap">
+          <span class="search-icon">≡ƒöì</span>
+          <input type="text" placeholder="Cari seri..." oninput="applySearch('gov-idr', this.value)" id="search-gov-idr"/>
+        </div>
+        <button class="btn btn-outline btn-sm" onclick="openUploadModalFor('gov-idr')">Γ¼å∩╕Å CSV</button>
+        <button class="btn btn-outline btn-sm" onclick="exportCSV('gov-idr')">Γ¼ç∩╕Å Export</button>
+        <button class="btn btn-primary btn-sm" onclick="openAddModal('gov-idr')">+ Tambah</button>
+      </div>
     </div>
-    <div class="table-footer">
-      <div id="info-all">Menampilkan 0 data</div>
-      <div class="pagination" id="pg-all"></div>
+    <div class="table-card">
+      <div class="table-wrap">
+        <table class="obligasi-gov-idr">
+          <thead><tr>
+            <th>Series</th><th>Jatuh Tempo</th><th>Coupon (%)</th>
+            <th>Last Coupon</th><th>Next Coupon</th>
+            <th>Bid</th><th>Offer</th><th>YTM (%)</th>
+            <th>Tgl. Update</th><th>Aksi</th>
+          </tr></thead>
+          <tbody id="tbody-gov-idr"><tr><td colspan="11"><div class="empty-state"><div class="empty-icon">ΓÅ│</div><p>Memuat data...</p></div></td></tr></tbody>
+        </table>
+      </div>
+      <div class="table-footer">
+        <div id="info-gov-idr">Menampilkan 0 data</div>
+        <div class="pagination" id="pg-gov-idr"></div>
+      </div>
     </div>
   </div>
 
-</div><!-- /page-container -->
+  <!-- TAB: Gov USD -->
+  <div class="tab-panel" id="panel-gov-usd">
+    <div class="section-header">
+      <div class="section-title-row">
+        <span style="font-size:1.05rem;font-weight:700;color:var(--navy);">Obligasi Pemerintah USD</span>
+        <span class="section-badge badge-usd">USD</span>
+        <span style="font-size:0.8rem;color:var(--gray);" id="count-gov-usd">0 seri</span>
+      </div>
+      <div class="section-actions">
+        <div class="search-wrap">
+          <span class="search-icon">≡ƒöì</span>
+          <input type="text" placeholder="Cari seri..." oninput="applySearch('gov-usd', this.value)" id="search-gov-usd"/>
+        </div>
+        <button class="btn btn-outline btn-sm" onclick="openUploadModalFor('gov-usd')">Γ¼å∩╕Å CSV</button>
+        <button class="btn btn-outline btn-sm" onclick="exportCSV('gov-usd')">Γ¼ç∩╕Å Export</button>
+        <button class="btn btn-primary btn-sm" onclick="openAddModal('gov-usd')">+ Tambah</button>
+      </div>
+    </div>
+    <div class="table-card">
+      <div class="table-wrap">
+        <table class="obligasi-gov-usd">
+          <thead><tr>
+            <th>Series</th><th>Jatuh Tempo</th><th>Coupon (%)</th>
+            <th>Last Coupon</th><th>Next Coupon</th>
+            <th>Bid</th><th>Offer</th><th>YTM (%)</th>
+            <th>Tgl. Update</th><th>Aksi</th>
+          </tr></thead>
+          <tbody id="tbody-gov-usd"><tr><td colspan="11"><div class="empty-state"><div class="empty-icon">ΓÅ│</div><p>Memuat data...</p></div></td></tr></tbody>
+        </table>
+      </div>
+      <div class="table-footer">
+        <div id="info-gov-usd">Menampilkan 0 data</div>
+        <div class="pagination" id="pg-gov-usd"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: Korp IDR -->
+  <div class="tab-panel" id="panel-korp-idr">
+    <div class="section-header">
+      <div class="section-title-row">
+        <span style="font-size:1.05rem;font-weight:700;color:var(--navy);">Obligasi Korporasi IDR</span>
+        <span class="section-badge badge-idr">IDR</span>
+        <span style="font-size:0.8rem;color:var(--gray);" id="count-korp-idr">0 seri</span>
+      </div>
+      <div class="section-actions">
+        <div class="search-wrap">
+          <span class="search-icon">≡ƒöì</span>
+          <input type="text" placeholder="Cari seri..." oninput="applySearch('korp-idr', this.value)" id="search-korp-idr"/>
+        </div>
+        <button class="btn btn-outline btn-sm" onclick="openUploadModalFor('korp-idr')">Γ¼å∩╕Å CSV</button>
+        <button class="btn btn-outline btn-sm" onclick="exportCSV('korp-idr')">Γ¼ç∩╕Å Export</button>
+        <button class="btn btn-primary btn-sm" onclick="openAddModal('korp-idr')">+ Tambah</button>
+      </div>
+    </div>
+    <div class="table-card">
+      <div class="table-wrap">
+        <table class="obligasi-korp-idr">
+          <thead><tr>
+            <th>Series</th><th>Penerbit</th><th>Jatuh Tempo</th><th>Rating</th><th>Coupon (%)</th>
+            <th>Last Coupon</th><th>Next Coupon</th>
+            <th>Bid</th><th>Offer</th><th>YTM (%)</th>
+            <th>Tgl. Update</th><th>Aksi</th>
+          </tr></thead>
+          <tbody id="tbody-korp-idr"><tr><td colspan="13"><div class="empty-state"><div class="empty-icon">ΓÅ│</div><p>Memuat data...</p></div></td></tr></tbody>
+        </table>
+      </div>
+      <div class="table-footer">
+        <div id="info-korp-idr">Menampilkan 0 data</div>
+        <div class="pagination" id="pg-korp-idr"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: Korp USD -->
+  <div class="tab-panel" id="panel-korp-usd">
+    <div class="section-header">
+      <div class="section-title-row">
+        <span style="font-size:1.05rem;font-weight:700;color:var(--navy);">Obligasi Korporasi USD</span>
+        <span class="section-badge badge-usd">USD</span>
+        <span style="font-size:0.8rem;color:var(--gray);" id="count-korp-usd">0 seri</span>
+      </div>
+      <div class="section-actions">
+        <div class="search-wrap">
+          <span class="search-icon">≡ƒöì</span>
+          <input type="text" placeholder="Cari seri..." oninput="applySearch('korp-usd', this.value)" id="search-korp-usd"/>
+        </div>
+        <button class="btn btn-outline btn-sm" onclick="openUploadModalFor('korp-usd')">Γ¼å∩╕Å CSV</button>
+        <button class="btn btn-outline btn-sm" onclick="exportCSV('korp-usd')">Γ¼ç∩╕Å Export</button>
+        <button class="btn btn-primary btn-sm" onclick="openAddModal('korp-usd')">+ Tambah</button>
+      </div>
+    </div>
+    <div class="table-card">
+      <div class="table-wrap">
+        <table class="obligasi-korp-usd">
+          <thead><tr>
+            <th>Series</th><th>Penerbit</th><th>Jatuh Tempo</th><th>Rating</th><th>Coupon (%)</th>
+            <th>Last Coupon</th><th>Next Coupon</th>
+            <th>Bid</th><th>Offer</th><th>YTM (%)</th>
+            <th>Tgl. Update</th><th>Aksi</th>
+          </tr></thead>
+          <tbody id="tbody-korp-usd"><tr><td colspan="13"><div class="empty-state"><div class="empty-icon">ΓÅ│</div><p>Memuat data...</p></div></td></tr></tbody>
+        </table>
+      </div>
+      <div class="table-footer">
+        <div id="info-korp-usd">Menampilkan 0 data</div>
+        <div class="pagination" id="pg-korp-usd"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: ADD / EDIT -->
 <div class="modal-overlay" id="formModal" onclick="closeFormModal(event)">
   <div class="modal">
     <div class="modal-header">
       <div class="modal-title" id="formModalTitle">Tambah Obligasi</div>
-      <button class="modal-close" onclick="document.getElementById('formModal').classList.remove('open')">✕</button>
+      <button class="modal-close" onclick="document.getElementById('formModal').classList.remove('open')">Γ£ò</button>
     </div>
     <input type="hidden" id="editDocId"/>
     <input type="hidden" id="editCategory"/>
 
-    <!-- Category hidden -->
-    <input type="hidden" id="fCategory" value="all"/>
+    <div class="form-group full" style="margin-bottom:16px;">
+      <label class="form-label">Kategori <span class="req">*</span></label>
+      <select class="form-select" id="fCategory">
+        <option value="gov-idr">Obligasi Pemerintah IDR</option>
+        <option value="gov-usd">Obligasi Pemerintah USD</option>
+        <option value="korp-idr">Obligasi Korporasi IDR</option>
+        <option value="korp-usd">Obligasi Korporasi USD</option>
+      </select>
+    </div>
 
     <div class="form-grid">
 
@@ -281,7 +390,7 @@
       <div class="form-group">
         <label class="form-label">Type</label>
         <select class="form-select" id="fType">
-          <option value="">— Pilih —</option>
+          <option value="">ΓÇö Pilih ΓÇö</option>
           <option value="FR">FR (Fixed Rate)</option>
           <option value="ORI">ORI (Obligasi Ritel)</option>
           <option value="SBR">SBR (Savings Bond)</option>
@@ -296,7 +405,7 @@
       <div class="form-group">
         <label class="form-label">Type 2</label>
         <select class="form-select" id="fType2">
-          <option value="">— Pilih —</option>
+          <option value="">ΓÇö Pilih ΓÇö</option>
           <option value="Fixed">Fixed</option>
           <option value="Floating">Floating</option>
           <option value="Zero Coupon">Zero Coupon</option>
@@ -348,7 +457,7 @@
       <div class="form-group">
         <label class="form-label">Freq. (Frekuensi Kupon)</label>
         <select class="form-select" id="fKuponFreq" onchange="autoCalcCouponDates()">
-          <option value="">— Pilih Frekuensi —</option>
+          <option value="">ΓÇö Pilih Frekuensi ΓÇö</option>
           <option value="1">1 (Monthly)</option>
           <option value="3">3 (Quarterly)</option>
           <option value="6">6 (Semi-Annual)</option>
@@ -358,7 +467,7 @@
       <div class="form-group">
         <label class="form-label">Basis (Day Count)</label>
         <select class="form-select" id="fBasis">
-          <option value="">— Pilih —</option>
+          <option value="">ΓÇö Pilih ΓÇö</option>
           <option value="ACT/ACT">ACT/ACT</option>
           <option value="ACT/360">ACT/360</option>
           <option value="ACT/365">ACT/365</option>
@@ -368,7 +477,7 @@
       <div class="form-group">
         <label class="form-label">Pay. Type</label>
         <select class="form-select" id="fPayType">
-          <option value="">— Pilih —</option>
+          <option value="">ΓÇö Pilih ΓÇö</option>
           <option value="Bullet">Bullet</option>
           <option value="Amortizing">Amortizing</option>
           <option value="Sinking Fund">Sinking Fund</option>
@@ -409,14 +518,23 @@
   <div class="modal">
     <div class="modal-header">
       <div class="modal-title">Upload CSV Obligasi</div>
-      <button class="modal-close" onclick="document.getElementById('uploadModal').classList.remove('open')">✕</button>
+      <button class="modal-close" onclick="document.getElementById('uploadModal').classList.remove('open')">Γ£ò</button>
+    </div>
+    <div class="form-group" style="margin-bottom:14px;">
+      <label class="form-label">Target Kategori</label>
+      <select class="form-select" id="uploadCategory">
+        <option value="gov-idr">Obligasi Pemerintah IDR</option>
+        <option value="gov-usd">Obligasi Pemerintah USD</option>
+        <option value="korp-idr">Obligasi Korporasi IDR</option>
+        <option value="korp-usd">Obligasi Korporasi USD</option>
+      </select>
     </div>
     <div class="upload-zone" id="uploadZone" onclick="document.getElementById('csvFileInput').click()"
       ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
-      <div class="upload-icon">📂</div>
+      <div class="upload-icon">≡ƒôé</div>
       <div style="font-weight:600;color:var(--navy);">Klik atau drag & drop file CSV</div>
       <div class="upload-hint">
-        Header: <strong>Bond ID, Series, Name, ISIN, Type, Issue Date, Maturity Date, First Cpn. Date, Last Cpn. Date, Rating, Coupon %, Freq., Basis, Accrual, Pay. Type, Type2, Issuer</strong>
+        Header yang didukung: <strong>Seri, Kupon, JatuhTempo, Rating, LastCouponDate, NextCouponDate, HargaJual, HargaBeli, Yield, TanggalUpdate</strong>
       </div>
     </div>
     <input type="file" id="csvFileInput" accept=".csv" onchange="handleCSVFile(event)"/>
@@ -425,7 +543,7 @@
       <div class="csv-preview-box" id="csvPreview"></div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-outline btn-sm" onclick="downloadTemplate()">⬇️ Template CSV</button>
+      <button class="btn btn-outline btn-sm" onclick="downloadTemplate()">Γ¼ç∩╕Å Template CSV</button>
       <button class="btn btn-outline" onclick="document.getElementById('uploadModal').classList.remove('open')">Batal</button>
       <button class="btn btn-primary" id="uploadSaveBtn" onclick="importCSV()" disabled>Import Data</button>
     </div>
@@ -435,139 +553,154 @@
 <div class="toast-container" id="toastContainer"></div>
 
 <script>
-  // ===== DATA STORE (unified) =====
-  const PAGE_SIZE = 20;
-  let allData  = [];   // all obligasi, no category split
-  let filtered = [];   // filtered view
-  let curPage  = 1;
-  let csvRows  = [];
-  const ROLE_LABELS = { head_account:'Head Account', admin:'Admin', sales:'Sales', treasury:'Bonds', head_sales:'Head Sales' };
+  // ===== DATA STORE =====
+  // allData[category] = array of {id, seri, kupon, jatuhTempo, hargaJual, hargaBeli, yield, tanggalUpdate}
+  const CATEGORIES = ['gov-idr', 'gov-usd', 'korp-idr', 'korp-usd'];
+  const COL_MAP = {
+    'gov-idr':  'obligasi_gov_idr',
+    'gov-usd':  'obligasi_gov_usd',
+    'korp-idr': 'obligasi_korp_idr',
+    'korp-usd': 'obligasi_korp_usd',
+  };
+  const CAT_LABEL = {
+    'gov-idr':  'Obligasi Pemerintah IDR',
+    'gov-usd':  'Obligasi Pemerintah USD',
+    'korp-idr': 'Obligasi Korporasi IDR',
+    'korp-usd': 'Obligasi Korporasi USD',
+  };
 
-  // ===== AUTH =====
+  let allData    = { 'gov-idr': [], 'gov-usd': [], 'korp-idr': [], 'korp-usd': [] };
+  let filtered   = { 'gov-idr': [], 'gov-usd': [], 'korp-idr': [], 'korp-usd': [] };
+  let pages      = { 'gov-idr': 1,  'gov-usd': 1,  'korp-idr': 1,  'korp-usd': 1  };
+  const PAGE_SIZE = 15;
+  let csvRows = [], csvTargetCat = '';
+  let activeTab = 'gov-idr';
+
+  const ROLE_LABELS = { head_account: 'Head Account', admin: 'Admin', sales: 'Sales', treasury: 'Bonds' };
+
+  // ===== AUTH ΓÇö navbar UI dihandle navbar.html =====
   function initAuth() {
     if (!sessionStorage.getItem('fawz_user')) { window.location.href = 'login.html'; }
   }
+  // ===== TABS =====
+  function switchTab(cat) {
+    activeTab = cat;
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('panel-' + cat).classList.add('active');
+    document.querySelectorAll('.tab-btn').forEach((b, i) => { if (CATEGORIES[i] === cat) b.classList.add('active'); });
+  }
 
-  // ===== LOAD DATA =====
+  // ===== SUPABASE LOAD =====
   async function loadAllData() {
-    try {
-      let all = [];
-      let offset = 0, pageSize = 1000, hasMore = true;
-      while (hasMore) {
+    for (const cat of CATEGORIES) {
+      try {
         const { data, error } = await window._supabase
           .from('obligasi_products')
           .select('*')
-          .order('seri', { ascending: true })
-          .range(offset, offset + pageSize - 1);
+          .eq('category', cat)
+          .order('seri', { ascending: true });
         if (error) throw error;
-        all = all.concat(data || []);
-        if ((data || []).length < pageSize) hasMore = false;
-        else offset += pageSize;
+        allData[cat] = data || [];
+      } catch(e) {
+        console.error('Load error', cat, e);
+        allData[cat] = [];
       }
-      allData = all;
-      filtered = [...allData];
-      renderTable();
-      showToast(`${allData.length} obligasi berhasil dimuat`, 'success');
-    } catch(e) {
-      console.error('Load error', e);
-      showToast('Gagal memuat data: ' + e.message, 'error');
+      filtered[cat] = [...allData[cat]];
+      renderTable(cat);
     }
-  }
-
-  // ===== FILTER & SEARCH =====
-  function applySearchAll(q) {
-    const s = q.toLowerCase();
-    applyFilterAll(s);
-  }
-
-  function applyFilterAll(searchOverride) {
-    const s = (searchOverride !== undefined ? searchOverride : document.getElementById('searchAll').value).toLowerCase();
-    const type = document.getElementById('filterType').value;
-    filtered = allData.filter(r => {
-      const matchS = !s || [r.seri,r.name,r.isin,r.issuer,r.penerbit,r.bond_id]
-        .some(v => (v||'').toLowerCase().includes(s));
-      const matchT = !type || (r.bond_type||'') === type;
-      return matchS && matchT;
-    });
-    curPage = 1;
-    renderTable();
+    showToast('Data berhasil dimuat', 'success');
   }
 
   // ===== RENDER TABLE =====
-  function renderTable() {
-    const total = filtered.length;
-    const start = (curPage - 1) * PAGE_SIZE;
-    const end   = Math.min(start + PAGE_SIZE, total);
-    const pageData = filtered.slice(start, end);
-    const tbody = document.getElementById('tbody-all');
+  function renderTable(cat) {
+    const data = filtered[cat];
+    const total = data.length;
+    const p = pages[cat];
+    const start = (p - 1) * PAGE_SIZE;
+    const end = Math.min(start + PAGE_SIZE, total);
+    const pageData = data.slice(start, end);
+    const tbody = document.getElementById('tbody-' + cat);
+    const idr = cat.endsWith('idr');
+    const isKorp = cat.startsWith('korp');
+    const colSpan = isKorp ? 13 : 11;
 
-    document.getElementById('countAll').textContent = total + ' seri';
-    document.getElementById('info-all').textContent = total === 0 ? 'Tidak ada data' : `Menampilkan ${start+1}–${end} dari ${total} data`;
+    document.getElementById('count-' + cat).textContent = total + ' seri';
+    document.getElementById('info-' + cat).textContent =
+      total === 0 ? 'Tidak ada data' : `Menampilkan ${start+1}ΓÇô${end} dari ${total} data`;
 
-    if (!pageData.length) {
-      tbody.innerHTML = `<tr><td colspan="16"><div class="empty-state"><div class="empty-icon">📄</div><p>Belum ada data obligasi</p></div></td></tr>`;
-      renderPagination(0); return;
+    if (pageData.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="${colSpan}"><div class="empty-state"><div class="empty-icon">≡ƒôä</div><p>Belum ada data</p></div></td></tr>`;
+      renderPagination(cat, 0); return;
     }
 
     tbody.innerHTML = pageData.map(r => `
       <tr>
-        <td style="font-size:.78rem;color:#888;">${esc(r.bond_id||'—')}</td>
-        <td style="font-weight:600;color:var(--navy);white-space:nowrap;">${esc(r.seri||'—')}</td>
-        <td style="font-size:.78rem;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(r.name||'')}">${esc(r.name||'—')}</td>
-        <td><span style="background:#f0f4ff;padding:2px 8px;border-radius:6px;font-size:.75rem;font-weight:600;color:#2d4abf;">${esc(r.bond_type||'—')}</span></td>
-        <td style="font-size:.78rem;color:#888;white-space:nowrap;">${fmtDate(r.tanggal_listing)}</td>
-        <td style="font-size:.78rem;white-space:nowrap;">${fmtDate(r.jatuh_tempo)}</td>
-        <td>${r.rating ? `<span style="background:#e8f8f0;padding:2px 8px;border-radius:6px;font-size:.75rem;font-weight:700;color:#1e7e4e;">${esc(r.rating)}</span>` : '—'}</td>
-        <td style="text-align:right;">${r.kupon != null ? fmtDecimal(r.kupon,3)+'%' : '—'}</td>
-        <td style="text-align:center;font-size:.78rem;">${r.kupon_freq||'—'}</td>
-        <td style="font-size:.78rem;white-space:nowrap;">${fmtDate(r.last_coupon_date)}</td>
-        <td style="font-size:.78rem;white-space:nowrap;">${fmtDate(r.next_coupon_date)}</td>
-        <td style="color:#27ae60;text-align:right;font-weight:600;">${fmtHarga(r.harga_jual)}</td>
-        <td style="color:#e74c3c;text-align:right;font-weight:600;">${fmtHarga(r.harga_beli)}</td>
-        <td style="text-align:right;">${r.yield != null ? fmtDecimal(r.yield,4)+'%' : '—'}</td>
-        <td style="font-size:.75rem;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#666;" title="${esc(r.issuer||r.penerbit||'')}">${esc(r.issuer||r.penerbit||'—')}</td>
+        <td>${esc(r.seri||'ΓÇö')}</td>
+        ${isKorp ? `<td style="font-size:0.8rem;color:#444;max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${esc(r.penerbit||'')}">${esc(r.penerbit||'ΓÇö')}</td>` : ''}
+        <td>${fmtDate(r.jatuh_tempo)}</td>
+        ${isKorp ? `<td><span style="background:#f0f4ff;padding:2px 8px;border-radius:6px;font-size:0.8rem;font-weight:600;color:#2d4abf;">${esc(r.rating||'ΓÇö')}</span></td>` : ''}
+        <td>${r.kupon != null ? fmtDecimal(r.kupon, 3) + '%' : 'ΓÇö'}</td>
+        <td>${fmtDate(r.last_coupon_date)}</td>
+        <td>${fmtDate(r.next_coupon_date)}</td>
+        <td style="color:#27ae60;">${fmtHarga(r.harga_jual)}</td>
+        <td style="color:#e74c3c;">${fmtHarga(r.harga_beli)}</td>
+        <td>${r.yield != null ? fmtDecimal(r.yield, 4) + '%' : 'ΓÇö'}</td>
+        <td style="font-size:0.8rem;color:#888;">${fmtDate(r.tanggal_update)}</td>
         <td>
           <div class="action-btns">
-            <button class="btn-icon" title="Edit" onclick="openEditModal('${r.id}')">✏️</button>
-            <button class="btn-icon del" title="Hapus" onclick="deleteItem('${r.id}','${esc(r.seri||'')}')">🗑️</button>
+            <button class="btn-icon" title="Edit" onclick="openEditModal('${cat}','${r.id}')">Γ£Å∩╕Å</button>
+            <button class="btn-icon del" title="Hapus" onclick="deleteItem('${cat}','${r.id}','${esc(r.seri||'')}')">≡ƒùæ∩╕Å</button>
           </div>
         </td>
-      </tr>`).join('');
+      </tr>
+    `).join('');
 
-    renderPagination(Math.ceil(total / PAGE_SIZE));
+    renderPagination(cat, Math.ceil(total / PAGE_SIZE));
   }
 
-  function renderPagination(totalPages) {
-    const pg = document.getElementById('pg-all');
+  function renderPagination(cat, totalPages) {
+    const pg = document.getElementById('pg-' + cat);
+    const p = pages[cat];
     if (totalPages <= 1) { pg.innerHTML = ''; return; }
     let html = '';
-    if (curPage > 1) html += `<button class="pg-btn" onclick="goPage(${curPage-1})">‹</button>`;
-    for (let i = Math.max(1, curPage-2); i <= Math.min(totalPages, curPage+2); i++)
-      html += `<button class="pg-btn ${i===curPage?'active':''}" onclick="goPage(${i})">${i}</button>`;
-    if (curPage < totalPages) html += `<button class="pg-btn" onclick="goPage(${curPage+1})">›</button>`;
+    if (p > 1) html += `<button class="pg-btn" onclick="goPage('${cat}',${p-1})">ΓÇ╣</button>`;
+    for (let i = Math.max(1, p-2); i <= Math.min(totalPages, p+2); i++)
+      html += `<button class="pg-btn ${i===p?'active':''}" onclick="goPage('${cat}',${i})">${i}</button>`;
+    if (p < totalPages) html += `<button class="pg-btn" onclick="goPage('${cat}',${p+1})">ΓÇ║</button>`;
     pg.innerHTML = html;
   }
 
-  function goPage(p) { curPage = p; renderTable(); }
+  function goPage(cat, p) { pages[cat] = p; renderTable(cat); }
+
+  function applySearch(cat, q) {
+    const s = q.toLowerCase();
+    filtered[cat] = !s ? [...allData[cat]] : allData[cat].filter(r =>
+      (r.seri||'').toLowerCase().includes(s)
+    );
+    pages[cat] = 1;
+    renderTable(cat);
+  }
 
   // ===== FORM =====
-  function openAddModal() {
+  function openAddModal(cat) {
     clearForm();
     document.getElementById('formModalTitle').textContent = 'Tambah Obligasi';
     document.getElementById('editDocId').value = '';
+    if (cat) document.getElementById('fCategory').value = cat;
     document.getElementById('fTanggalUpdate').value = new Date().toISOString().slice(0,10);
     toggleRatingField();
     document.getElementById('formModal').classList.add('open');
   }
 
-  function openEditModal(id) {
-    const item = allData.find(r => r.id === id);
+  function openEditModal(cat, id) {
+    const item = allData[cat].find(r => r.id === id);
     if (!item) return;
     clearForm();
     document.getElementById('formModalTitle').textContent = 'Edit Obligasi';
     document.getElementById('editDocId').value = id;
-    document.getElementById('editCategory').value = item.category || '';
-    document.getElementById('fCategory').value = item.category || 'all';
+    document.getElementById('editCategory').value = cat;
+    document.getElementById('fCategory').value = cat;
     document.getElementById('fCategory').disabled = true;
     document.getElementById('fSeri').value = item.seri || '';
     document.getElementById('fBondId').value = item.bond_id || '';
@@ -596,18 +729,6 @@
     document.getElementById('formModal').classList.add('open');
   }
 
-  async function deleteItem(id, seri) {
-    if (!confirm(`Hapus "${seri}"?`)) return;
-    try {
-      const { error } = await window._supabase.from('obligasi_products').delete().eq('id', id);
-      if (error) throw error;
-      allData = allData.filter(r => r.id !== id);
-      filtered = filtered.filter(r => r.id !== id);
-      renderTable();
-      showToast(`${seri} berhasil dihapus`, 'success');
-    } catch(e) { showToast('Gagal hapus: '+e.message, 'error'); }
-  }
-
   function clearForm() {
     ['fBondId','fSeri','fName','fISIN','fIssuer','fKupon','fHargaJual','fHargaBeli','fYield',
      'fTanggalUpdate','fRating','fLastCoupon','fNextCoupon','fFirstCpnDate','fAccrual',
@@ -620,6 +741,7 @@
     document.getElementById('fCategory').disabled = false;
     document.getElementById('editDocId').value = '';
     document.getElementById('editCategory').value = '';
+    document.getElementById('fCategory').value = activeTab;
     toggleRatingField();
   }
 
@@ -675,39 +797,53 @@
   }
 
   async function saveObligasi() {
+    // Pastikan Supabase client tersedia
     if (!window._supabase) {
       try { window._supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); }
-      catch(e) { showToast('Koneksi database gagal.', 'error'); return; }
+      catch(e) { showToast('Koneksi database gagal. Refresh halaman.', 'error'); return; }
     }
+
     const docId = document.getElementById('editDocId').value;
-    const seri  = document.getElementById('fSeri').value.trim();
+    const cat = docId ? document.getElementById('editCategory').value : document.getElementById('fCategory').value;
+    const seri = document.getElementById('fSeri').value.trim();
     if (!seri) { showToast('Seri wajib diisi!', 'error'); return; }
 
+    const isKorp = cat.startsWith('korp');
     const data = {
       seri,
-      bond_id:         document.getElementById('fBondId').value.trim() || null,
-      name:            document.getElementById('fName').value.trim() || null,
-      isin:            document.getElementById('fISIN').value.trim() || null,
-      issuer:          document.getElementById('fIssuer').value.trim() || null,
-      bond_type:       document.getElementById('fType').value || null,
-      bond_type2:      document.getElementById('fType2').value || null,
-      day_count_basis: document.getElementById('fBasis').value || null,
-      payment_type:    document.getElementById('fPayType').value || null,
-      first_cpn_date:  document.getElementById('fFirstCpnDate').value || null,
-      accrual_date:    document.getElementById('fAccrual').value || null,
-      kupon:           parseFloat(document.getElementById('fKupon').value) || null,
-      jatuh_tempo:     document.getElementById('fFinalMaturity').value || null,
-      harga_jual:      parseHargaInput(document.getElementById('fHargaJual').value),
-      harga_beli:      parseHargaInput(document.getElementById('fHargaBeli').value),
-      yield:           parseFloat(document.getElementById('fYield').value) || null,
-      tanggal_update:  document.getElementById('fTanggalUpdate').value || new Date().toISOString().slice(0,10),
-      rating:          document.getElementById('fRating').value.trim() || null,
-      penerbit:        document.getElementById('fPenerbit').value.trim() || null,
-      last_coupon_date:document.getElementById('fLastCoupon').value || null,
-      next_coupon_date:document.getElementById('fNextCoupon').value || null,
-      tanggal_listing: document.getElementById('fTanggalListing').value || null,
-      kupon_freq:      document.getElementById('fKuponFreq').value ? parseInt(document.getElementById('fKuponFreq').value) : null,
+      bond_id:        document.getElementById('fBondId').value.trim() || null,
+      name:           document.getElementById('fName').value.trim() || null,
+      isin:           document.getElementById('fISIN').value.trim() || null,
+      issuer:         document.getElementById('fIssuer').value.trim() || null,
+      bond_type:      document.getElementById('fType').value || null,
+      bond_type2:     document.getElementById('fType2').value || null,
+      day_count_basis:document.getElementById('fBasis').value || null,
+      payment_type:   document.getElementById('fPayType').value || null,
+      first_cpn_date: document.getElementById('fFirstCpnDate').value || null,
+      accrual_date:   document.getElementById('fAccrual').value || null,
+      kupon:          parseFloat(document.getElementById('fKupon').value) || null,
+      jatuh_tempo:    document.getElementById('fFinalMaturity').value || null,
+      harga_jual:     parseHargaInput(document.getElementById('fHargaJual').value),
+      harga_beli:     parseHargaInput(document.getElementById('fHargaBeli').value),
+      yield:          parseFloat(document.getElementById('fYield').value) || null,
+      tanggal_update: document.getElementById('fTanggalUpdate').value || new Date().toISOString().slice(0,10),
+      category:       cat,
     };
+
+    // Kolom baru ΓÇö hanya kirim jika ada nilainya
+    const rating = isKorp ? (document.getElementById('fRating').value.trim() || null) : null;
+    const penerbit = isKorp ? (document.getElementById('fPenerbit').value.trim() || null) : null;
+    const lastCouponDate = document.getElementById('fLastCoupon').value || null;
+    const nextCouponDate = document.getElementById('fNextCoupon').value || null;
+    const tanggalListing = document.getElementById('fTanggalListing').value || null;
+    const kuponFreq      = document.getElementById('fKuponFreq').value || null;
+
+    if (rating !== null) data.rating = rating;
+    if (penerbit !== null) data.penerbit = penerbit;
+    if (lastCouponDate !== null) data.last_coupon_date = lastCouponDate;
+    if (nextCouponDate !== null) data.next_coupon_date = nextCouponDate;
+    if (tanggalListing !== null) data.tanggal_listing = tanggalListing;
+    if (kuponFreq !== null) data.kupon_freq = parseInt(kuponFreq);
 
     const btn = document.getElementById('formSaveBtn');
     btn.textContent = 'Menyimpan...'; btn.disabled = true;
@@ -715,32 +851,50 @@
       if (docId) {
         const { error } = await window._supabase.from('obligasi_products').update({ ...data, updated_at: new Date().toISOString() }).eq('id', docId);
         if (error) throw error;
-        const idx = allData.findIndex(r => r.id === docId);
-        if (idx !== -1) allData[idx] = { id: docId, ...data };
+        const idx = allData[cat].findIndex(r => r.id === docId);
+        if (idx !== -1) allData[cat][idx] = { id: docId, ...data };
         showToast('Data berhasil diperbarui', 'success');
       } else {
+        data.category = cat;
         const { data: inserted, error } = await window._supabase.from('obligasi_products').insert(data).select().single();
         if (error) throw error;
-        allData.unshift(inserted);
-        allData.sort((a,b) => (a.seri||'').localeCompare(b.seri||''));
+        allData[cat].unshift(inserted);
+        allData[cat].sort((a,b) => (a.seri||'').localeCompare(b.seri||''));
         showToast('Obligasi berhasil ditambahkan', 'success');
       }
+      document.getElementById('fCategory').disabled = false;
       document.getElementById('formModal').classList.remove('open');
-      filtered = [...allData];
-      applyFilterAll();
-    } catch(e) { console.error('Save error:', e); showToast('Gagal menyimpan: ' + (e.message||''), 'error'); }
+      filtered[cat] = [...allData[cat]];
+      renderTable(cat);
+    } catch(e) { console.error('Save error:', e); showToast('Gagal menyimpan: ' + (e.message || e.details || JSON.stringify(e)), 'error'); }
     finally { btn.textContent = 'Simpan'; btn.disabled = false; }
+  }
+
+  async function deleteItem(cat, id, seri) {
+    if (!confirm(`Hapus obligasi "${seri}"? Tindakan ini tidak dapat dibatalkan.`)) return;
+    try {
+      const { error } = await window._supabase.from('obligasi_products').delete().eq('id', id);
+      if (error) throw error;
+      allData[cat] = allData[cat].filter(r => r.id !== id);
+      filtered[cat] = filtered[cat].filter(r => r.id !== id);
+      renderTable(cat);
+      showToast(`Obligasi "${seri}" dihapus`, 'success');
+    } catch(e) { showToast('Gagal menghapus data', 'error'); }
   }
 
   // ===== CSV IMPORT =====
   function openUploadModal() {
-    csvRows = [];
+    csvRows = []; csvTargetCat = activeTab;
+    document.getElementById('uploadCategory').value = activeTab;
     resetUploadModal();
     document.getElementById('uploadModal').classList.add('open');
   }
 
-  function openUploadModalFor() {
-    openUploadModal();
+  function openUploadModalFor(cat) {
+    csvRows = []; csvTargetCat = cat;
+    document.getElementById('uploadCategory').value = cat;
+    resetUploadModal();
+    document.getElementById('uploadModal').classList.add('open');
   }
 
   function resetUploadModal() {
@@ -775,70 +929,20 @@
 
   function mapCSVRow(obj) {
     const g = (...keys) => { for (const k of keys) if (obj[k] !== undefined && obj[k] !== '') return obj[k]; return ''; };
-    
-    // Helper: parse date formats DD-MMM-YYYY, DD/MM/YYYY, YYYY-MM-DD
-    const parseDate = (val) => {
-      if (!val) return null;
-      val = val.trim();
-      // DD-MMM-YYYY e.g. 03-Jul-2012
-      const mmmMatch = val.match(/^(\d{1,2})[\/\-]([A-Za-z]{3})[\/\-](\d{4})$/);
-      if (mmmMatch) {
-        const months = {jan:'01',feb:'02',mar:'03',apr:'04',may:'05',mei:'05',jun:'06',jul:'07',aug:'08',agu:'08',sep:'09',oct:'10',okt:'10',nov:'11',dec:'12',des:'12'};
-        const m = months[(mmmMatch[2]).toLowerCase()];
-        if (m) return `${mmmMatch[3]}-${m}-${mmmMatch[1].padStart(2,'0')}`;
-      }
-      // DD/MM/YYYY
-      const dmyMatch = val.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-      if (dmyMatch) return `${dmyMatch[3]}-${dmyMatch[2].padStart(2,'0')}-${dmyMatch[1].padStart(2,'0')}`;
-      // Already YYYY-MM-DD
-      if (/^\d{4}-\d{2}-\d{2}$/.test(val)) return val;
-      return val;
-    };
-
-    // Parse coupon % — handle "9,75% 4" format (strip % and trailing freq)
-    const parseCoupon = (val) => {
-      if (!val) return null;
-      val = String(val).replace('%','').replace(',','.').trim().split(/\s+/)[0];
-      return parseFloat(val) || null;
-    };
-
-    // Parse freq — handle "4" for quarterly
-    const parseFreq = (val) => {
-      if (!val) return null;
-      const n = parseInt(String(val).trim());
-      if (n === 1) return 12;  // annual
-      if (n === 2) return 6;   // semi-annual
-      if (n === 4) return 3;   // quarterly
-      if (n === 12) return 1;  // monthly
-      return n || null;
-    };
-
-    const seri  = g('bond id','bondid') || g('seri','serie','series');
+    const seri = g('seri','serie','series');
     const ticker = extractTicker(seri);
     return {
       seri,
-      bond_id:          g('bond id','bondid') || null,
-      name:             g('name','nama') || null,
-      isin:             g('isin') || null,
-      bond_type:        g('type','tipe') || null,
-      bond_type2:       g('type2','type 2','tipe2') || null,
-      issuer:           g('issuer','penerbit','emiten') || (ISSUER_MAP[ticker] || null),
-      penerbit:         g('penerbit','issuer','emiten') || (ISSUER_MAP[ticker] || null),
-      kupon:            parseCoupon(g('coupon %','coupon%','kupon','coupon','cpn')) || null,
-      kupon_freq:       parseFreq(g('freq.','freq','frekuensi')) || null,
-      jatuh_tempo:      parseDate(g('maturity date','maturitydate','jatuh_tempo','jatuhtempo','maturity')) || null,
-      tanggal_listing:  parseDate(g('issue date','issuedate','tanggal_listing')) || null,
-      first_cpn_date:   parseDate(g('first cpn. date','first cpn date','firstcpndate','first_cpn_date')) || null,
-      last_coupon_date: parseDate(g('last cpn. date','last cpn date','lastcpndate','last_coupon_date','lastcoupondate')) || null,
-      next_coupon_date: parseDate(g('next_coupon_date','nextcoupondate')) || null,
-      accrual_date:     parseDate(g('accrual','accrual date','accrualdate')) || null,
+      kupon:            parseFloat(g('kupon','coupon')) || null,
+      jatuh_tempo:      g('jatuhtempo','jatuh_tempo','maturity','maturitydate'),
       rating:           g('rating') || null,
-      day_count_basis:  g('basis','day count','daycount','day_count_basis') || null,
-      payment_type:     g('pay. type','pay.type','paytype','payment_type') || null,
+      penerbit:         g('penerbit','issuer','emiten') || (ISSUER_MAP[ticker] || null),
+      last_coupon_date: g('lastcoupondate','last_coupon_date','lastcoupon','last_coupon') || null,
+      next_coupon_date: g('nextcoupondate','next_coupon_date','nextcoupon','next_coupon') || null,
       harga_jual:       parseFloat(g('hargajual','harga_jual','bid','bidprice')) || null,
       harga_beli:       parseFloat(g('hargabeli','harga_beli','offer','offerprice','ask','askprice')) || null,
       yield:            parseFloat(g('yield','ytm')) || null,
-      tanggal_update:   parseDate(g('tanggalupdate','tanggal_update','updatedate','date')) || new Date().toISOString().slice(0,10),
+      tanggal_update:   g('tanggalupdate','tanggal_update','updatedate','date') || new Date().toISOString().slice(0,10),
     };
   }
 
@@ -854,139 +958,81 @@
   }
 
   function renderCSVPreview() {
-    document.getElementById('csvPreviewInfo').textContent = `${csvRows.length} data ditemukan. Preview 10 baris pertama:`;
+    document.getElementById('csvPreviewInfo').textContent = `${csvRows.length} data ditemukan. Preview 5 baris pertama:`;
     document.getElementById('csvPreview').innerHTML = `<table>
-      <thead><tr><th>Bond ID</th><th>Series</th><th>Name</th><th>ISIN</th><th>Type</th><th>Issue Date</th><th>Maturity</th><th>Rating</th><th>Coupon%</th><th>Issuer</th></tr></thead>
-      <tbody>${csvRows.slice(0,10).map(r=>`<tr>
-        <td style="font-size:.75rem;">${esc(r.bond_id||'')}</td>
-        <td style="font-weight:600;">${esc(r.seri)}</td>
-        <td style="font-size:.72rem;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(r.name||'')}</td>
-        <td style="font-size:.72rem;">${esc(r.isin||'')}</td>
-        <td style="font-size:.75rem;">${esc(r.bond_type||'')}</td>
-        <td style="font-size:.75rem;">${r.tanggal_listing||''}</td>
-        <td style="font-size:.75rem;">${r.jatuh_tempo||''}</td>
-        <td style="font-size:.75rem;">${esc(r.rating||'')}</td>
-        <td>${r.kupon??''}</td>
-        <td style="font-size:.72rem;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(r.issuer||'')}</td>
-      </tr>`).join('')}</tbody>
+      <thead><tr><th>Series</th><th>Coupon</th><th>Rating</th><th>Last Coupon</th><th>Next Coupon</th><th>Bid</th><th>Offer</th><th>YTM</th></tr></thead>
+      <tbody>${csvRows.slice(0,5).map(r=>`<tr><td>${esc(r.seri)}</td><td>${r.kupon??''}</td><td>${esc(r.rating||'')}</td><td>${r.last_coupon_date||''}</td><td>${r.next_coupon_date||''}</td><td>${r.harga_jual??''}</td><td>${r.harga_beli??''}</td><td>${r.yield??''}</td></tr>`).join('')}</tbody>
     </table>`;
     document.getElementById('csvPreviewWrap').style.display = 'block';
   }
 
   async function importCSV() {
     if (!csvRows.length) return;
+    const cat = document.getElementById('uploadCategory').value;
     const btn = document.getElementById('uploadSaveBtn');
     btn.textContent = 'Mengimport...'; btn.disabled = true;
     try {
-      // Pisahkan rows menjadi: update (sudah ada) dan insert (baru)
-      const toUpdate = [];
-      const toInsert = [];
-
+      let success = 0;
       for (const row of csvRows) {
-        const exists = allData.find(r =>
-          (row.bond_id && r.bond_id === row.bond_id) ||
-          (row.seri && r.seri === row.seri)
-        );
-        if (exists) {
-          toUpdate.push({ id: exists.id, ...row });
-        } else {
-          toInsert.push(row);
-        }
-      }
-
-      let success = 0, skipped = 0;
-
-      // Batch insert - 100 rows at a time
-      const BATCH = 100;
-      for (let i = 0; i < toInsert.length; i += BATCH) {
-        const batch = toInsert.slice(i, i + BATCH);
-        btn.textContent = `Insert ${Math.min(i + BATCH, toInsert.length)}/${toInsert.length}...`;
-        const { data: inserted, error } = await window._supabase
-          .from('obligasi_products')
-          .insert(batch)
-          .select();
+        row.category = cat;
+        const { data: inserted, error } = await window._supabase.from('obligasi_products').insert(row).select().single();
         if (!error && inserted) {
-          allData.push(...inserted);
-          success += inserted.length;
-        } else {
-          console.error('Batch insert error:', error?.message);
-          skipped += batch.length;
-        }
-      }
-
-      // Update satu per satu (biasanya jumlah update lebih sedikit)
-      for (const row of toUpdate) {
-        const { id, ...data } = row;
-        const { error } = await window._supabase
-          .from('obligasi_products')
-          .update(data)
-          .eq('id', id);
-        if (!error) {
-          const idx = allData.findIndex(r => r.id === id);
-          if (idx !== -1) allData[idx] = { id, ...data };
+          allData[cat].push(inserted);
           success++;
-        } else {
-          skipped++;
         }
       }
-
-      allData.sort((a,b) => (a.seri||'').localeCompare(b.seri||''));
-      filtered = [...allData];
-      applyFilterAll();
+      allData[cat].sort((a,b) => (a.seri||'').localeCompare(b.seri||''));
+      filtered[cat] = [...allData[cat]];
       document.getElementById('uploadModal').classList.remove('open');
-      showToast(`✅ ${success} obligasi berhasil diimport${skipped ? ` (${skipped} gagal)` : ''}`, 'success');
-    } catch(e) {
-      console.error(e);
-      showToast('Gagal import data: ' + e.message, 'error');
-    } finally {
-      btn.textContent = 'Import Data'; btn.disabled = false;
-    }
+      renderTable(cat);
+      switchTab(cat);
+      showToast(`${success} obligasi berhasil diimport ke ${CAT_LABEL[cat]}`, 'success');
+    } catch(e) { console.error(e); showToast('Gagal import data', 'error'); }
+    finally { btn.textContent = 'Import Data'; btn.disabled = false; }
   }
 
   function downloadTemplate() {
-    const H = 'Bond ID,Series,Name,ISIN,Type,Issue Date,Maturity Date,First Cpn. Date,Last Cpn. Date,Rating,Coupon %,Freq.,Basis,Accrual,Pay. Type,Type2,Issuer,Bid,Offer,YTM';
-    const E = 'IDA0001327A6,FR0100,OBL NEGARA FR0100,IDG000032704,FR,2024-01-15,2034-02-15,2024-04-15,2025-01-15,AAA,6.375,4,ACT/ACT,2024-01-15,Bullet,Fixed,Pemerintah RI,101.50,100.75,6.1234';
+    const H = 'Seri,Kupon,JatuhTempo,Rating,LastCouponDate,NextCouponDate,HargaJual,HargaBeli,Yield,TanggalUpdate';
+    const E = 'FR0100,6.375,2034-02-15,AAA,2025-01-15,2025-07-15,101.50,100.75,6.1234,2025-01-10';
     const blob = new Blob([H+'\n'+E], {type:'text/csv'});
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
     a.download = 'template_obligasi_pasar_sekunder.csv'; a.click();
-    showToast('Template CSV berhasil didownload', 'success');
   }
 
   // ===== CSV EXPORT =====
-  function exportAllCSV() {
-    if (!allData.length) { showToast('Tidak ada data untuk diexport', 'error'); return; }
-    const H = 'Bond ID,Series,Name,ISIN,Type,Issue Date,Maturity Date,First Cpn. Date,Last Cpn. Date,Rating,Coupon %,Freq.,Basis,Accrual,Pay. Type,Type2,Issuer,Bid,Offer,YTM';
-    const rows = allData.map(r => [
-      r.bond_id||'', r.seri||'', r.name||'', r.isin||'', r.bond_type||'',
-      r.tanggal_listing||'', r.jatuh_tempo||'', r.first_cpn_date||'', r.last_coupon_date||'',
-      r.rating||'', r.kupon??'', r.kupon_freq??'', r.day_count_basis||'', r.accrual_date||'',
-      r.payment_type||'', r.bond_type2||'', r.issuer||r.penerbit||'',
-      r.harga_jual??'', r.harga_beli??'', r.yield??''
-    ].map(v=>`"${v}"`).join(','));
+  function exportCSV(cat) {
+    const data = allData[cat];
+    if (!data.length) { showToast('Tidak ada data untuk diexport', 'error'); return; }
+    const H = 'Seri,Kupon,JatuhTempo,Rating,LastCouponDate,NextCouponDate,Bid,Offer,YTM,TanggalUpdate';
+    const rows = data.map(r => [r.seri,r.kupon??'',r.jatuh_tempo??'',r.rating??'',r.last_coupon_date??'',r.next_coupon_date??'',r.harga_jual??'',r.harga_beli??'',r.yield??'',r.tanggal_update??''].map(v=>`"${v}"`).join(','));
     const blob = new Blob([H+'\n'+rows.join('\n')], {type:'text/csv;charset=utf-8;'});
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-    a.download = `obligasi_pasar_sekunder_${new Date().toISOString().slice(0,10)}.csv`; a.click();
-    showToast(`${allData.length} data berhasil diexport`, 'success');
+    a.download = `obligasi_${cat}_${new Date().toISOString().slice(0,10)}.csv`; a.click();
+    showToast(`${data.length} data berhasil diexport`, 'success');
+  }
+
+  function exportAllCSV() {
+    CATEGORIES.forEach(cat => { if (allData[cat].length) exportCSV(cat); });
   }
 
   // ===== UTILS =====
   function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
   function fmtDate(d) {
-    if (!d) return '—';
+    if (!d) return 'ΓÇö';
     try { return new Date(d).toLocaleDateString('id-ID', {day:'2-digit',month:'short',year:'numeric'}); }
     catch { return d; }
   }
 
   function fmtHarga(val) {
-    if (val == null) return '—';
+    if (val == null) return 'ΓÇö';
     const n = Number(val);
     // Format: 101,50 (koma sebagai desimal, 2 angka di belakang koma)
     return n.toFixed(2).replace('.', ',');
   }
 
   function fmtDecimal(val, digits) {
-    if (val == null) return '—';
+    if (val == null) return 'ΓÇö';
     return Number(val).toFixed(digits).replace('.', ',');
   }
 
@@ -1023,7 +1069,7 @@
   }
 
   // ===== PENERBIT AUTO-FILL (Korporasi) =====
-  // Mapping kode ticker obligasi korporasi → nama penerbit
+  // Mapping kode ticker obligasi korporasi ΓåÆ nama penerbit
   const ISSUER_MAP = {
     'INET': 'PT Sinergi Inti Andalan Prima',
     'ADHI': 'PT Adhi Karya (Persero) Tbk',
@@ -1098,7 +1144,7 @@
 
   /**
    * Extract ticker prefix from bond series code.
-   * e.g. "INET01ACN1" → "INET", "PPLN03CN3" → "PPLN", "BBRI02BCN2" → "BBRI"
+   * e.g. "INET01ACN1" ΓåÆ "INET", "PPLN03CN3" ΓåÆ "PPLN", "BBRI02BCN2" ΓåÆ "BBRI"
    */
   function extractTicker(series) {
     if (!series) return '';
@@ -1120,7 +1166,7 @@
       penerbitEl.style.color = '#1a7a4a';
     } else if (ticker && ticker.length >= 3) {
       penerbitEl.value = '';
-      penerbitEl.placeholder = 'Ticker "' + ticker + '" belum terdaftar — isi manual';
+      penerbitEl.placeholder = 'Ticker "' + ticker + '" belum terdaftar ΓÇö isi manual';
       penerbitEl.style.color = '';
     } else {
       penerbitEl.value = '';
