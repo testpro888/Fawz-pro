@@ -368,9 +368,9 @@
             ${isPending ? `<button class="btn btn-approve btn-sm" onclick="event.stopPropagation();approve('${r.id}')">Approve</button>` : ''}
             ${isPending ? `<button class="btn btn-reject btn-sm" onclick="event.stopPropagation();reject('${r.id}')">Reject</button>` : ''}
             ${!isPending && !canDelete ? `<span style="font-size:.75rem;color:#bbb;">—</span>` : ''}
-            ${canDelete ? `<button class="btn btn-sm" onclick="event.stopPropagation();deleteTransaction('${r.id}','${esc(r.seri)}')" style="background:#fff0f0;color:var(--red);border:1.5px solid #ffcccc;">🗑 Hapus</button>` : ''}
+            ${canDelete ? `<button class="btn btn-sm" onclick="event.stopPropagation();deleteTransaction('${r.id}','${esc(r.seri)}')" style="background:#fff0f0;color:var(--red);border:1.5px solid #ffcccc;">Hapus</button>` : ''}
            </div>`
-        : canDelete ? `<div style="text-align:center;"><button class="btn btn-sm" onclick="event.stopPropagation();deleteTransaction('${r.id}','${esc(r.seri)}')" style="background:#fff0f0;color:var(--red);border:1.5px solid #ffcccc;">🗑 Hapus</button></div>` : '';
+        : canDelete ? `<div style="text-align:center;"><button class="btn btn-sm" onclick="event.stopPropagation();deleteTransaction('${r.id}','${esc(r.seri)}')" style="background:#fff0f0;color:var(--red);border:1.5px solid #ffcccc;">Hapus</button></div>` : '';
       return `<tr style="cursor:pointer;" onclick="showDetail('${r.id}')">
         <td style="color:#bbb;font-size:.75rem;">${rowNum}</td>
         <td style="font-size:.8rem;color:var(--gray);white-space:nowrap;">${fmtDate(r.tanggal)}</td>
