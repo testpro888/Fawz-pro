@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="id">
 <head>
   <meta charset="UTF-8"/>
@@ -43,7 +43,7 @@
     body { font-family: 'Inter', sans-serif; background: var(--bg); min-height: 100vh; padding-top: var(--nav-h); color: var(--text); }
 
     
-    /* NAVBAR ΓÇö style dari navbar.html */
+    /* NAVBAR — style dari navbar.html */
 
     /* PAGE */
     .page-container { max-width: 1400px; margin: 0 auto; padding: 36px 28px; }
@@ -160,7 +160,7 @@
 </head>
 <body>
 
-<!-- NAVBAR ΓÇö dimuat dari navbar.html -->
+<!-- NAVBAR — dimuat dari navbar.html -->
 <div id="navbar-placeholder"></div>
 <script src="navbar.js"></script>
 
@@ -176,16 +176,16 @@
       <div class="title-underline"></div>
     </div>
     <div class="header-actions">
-      <a href="obligasi-coupon-calendar.html" class="btn btn-outline">≡ƒôà Kalender Kupon</a>
+      <a href="obligasi-coupon-calendar.html" class="btn btn-outline">📅 Kalender Kupon</a>
     </div>
   </div>
 
   <!-- Tab navigation -->
   <div class="tab-nav">
-    <button class="tab-btn active" onclick="switchTab('gov-idr')">≡ƒÅ¢∩╕Å Obligasi Pemerintah IDR</button>
-    <button class="tab-btn" onclick="switchTab('gov-usd')">≡ƒÅ¢∩╕Å Obligasi Pemerintah USD</button>
-    <button class="tab-btn" onclick="switchTab('korp-idr')">≡ƒÅó Obligasi Korporasi IDR</button>
-    <button class="tab-btn" onclick="switchTab('korp-usd')">≡ƒÅó Obligasi Korporasi USD</button>
+    <button class="tab-btn active" onclick="switchTab('gov-idr')">🏛️ Obligasi Pemerintah IDR</button>
+    <button class="tab-btn" onclick="switchTab('gov-usd')">🏛️ Obligasi Pemerintah USD</button>
+    <button class="tab-btn" onclick="switchTab('korp-idr')">🏢 Obligasi Korporasi IDR</button>
+    <button class="tab-btn" onclick="switchTab('korp-usd')">🏢 Obligasi Korporasi USD</button>
   </div>
 
   <!-- TAB: Gov IDR -->
@@ -198,11 +198,11 @@
       </div>
       <div class="section-actions">
         <div class="search-wrap">
-          <span class="search-icon">≡ƒöì</span>
+          <span class="search-icon">🔍</span>
           <input type="text" placeholder="Cari seri..." oninput="applySearch('gov-idr', this.value)" id="search-gov-idr"/>
         </div>
-        <button class="btn btn-outline btn-sm" onclick="openUploadModalFor('gov-idr')">Γ¼å∩╕Å CSV</button>
-        <button class="btn btn-outline btn-sm" onclick="exportCSV('gov-idr')">Γ¼ç∩╕Å Export</button>
+        <button class="btn btn-outline btn-sm" onclick="openUploadModalFor('gov-idr')">⬆️ CSV</button>
+        <button class="btn btn-outline btn-sm" onclick="exportCSV('gov-idr')">⬇️ Export</button>
         <button class="btn btn-primary btn-sm" onclick="openAddModal('gov-idr')">+ Tambah</button>
       </div>
     </div>
@@ -215,7 +215,7 @@
             <th>Bid</th><th>Offer</th><th>YTM (%)</th>
             <th>Tgl. Update</th><th>Aksi</th>
           </tr></thead>
-          <tbody id="tbody-gov-idr"><tr><td colspan="11"><div class="empty-state"><div class="empty-icon">ΓÅ│</div><p>Memuat data...</p></div></td></tr></tbody>
+          <tbody id="tbody-gov-idr"><tr><td colspan="11"><div class="empty-state"><div class="empty-icon">⏳</div><p>Memuat data...</p></div></td></tr></tbody>
         </table>
       </div>
       <div class="table-footer">
@@ -235,11 +235,11 @@
       </div>
       <div class="section-actions">
         <div class="search-wrap">
-          <span class="search-icon">≡ƒöì</span>
+          <span class="search-icon">🔍</span>
           <input type="text" placeholder="Cari seri..." oninput="applySearch('gov-usd', this.value)" id="search-gov-usd"/>
         </div>
-        <button class="btn btn-outline btn-sm" onclick="openUploadModalFor('gov-usd')">Γ¼å∩╕Å CSV</button>
-        <button class="btn btn-outline btn-sm" onclick="exportCSV('gov-usd')">Γ¼ç∩╕Å Export</button>
+        <button class="btn btn-outline btn-sm" onclick="openUploadModalFor('gov-usd')">⬆️ CSV</button>
+        <button class="btn btn-outline btn-sm" onclick="exportCSV('gov-usd')">⬇️ Export</button>
         <button class="btn btn-primary btn-sm" onclick="openAddModal('gov-usd')">+ Tambah</button>
       </div>
     </div>
@@ -252,7 +252,7 @@
             <th>Bid</th><th>Offer</th><th>YTM (%)</th>
             <th>Tgl. Update</th><th>Aksi</th>
           </tr></thead>
-          <tbody id="tbody-gov-usd"><tr><td colspan="11"><div class="empty-state"><div class="empty-icon">ΓÅ│</div><p>Memuat data...</p></div></td></tr></tbody>
+          <tbody id="tbody-gov-usd"><tr><td colspan="11"><div class="empty-state"><div class="empty-icon">⏳</div><p>Memuat data...</p></div></td></tr></tbody>
         </table>
       </div>
       <div class="table-footer">
@@ -272,11 +272,11 @@
       </div>
       <div class="section-actions">
         <div class="search-wrap">
-          <span class="search-icon">≡ƒöì</span>
+          <span class="search-icon">🔍</span>
           <input type="text" placeholder="Cari seri..." oninput="applySearch('korp-idr', this.value)" id="search-korp-idr"/>
         </div>
-        <button class="btn btn-outline btn-sm" onclick="openUploadModalFor('korp-idr')">Γ¼å∩╕Å CSV</button>
-        <button class="btn btn-outline btn-sm" onclick="exportCSV('korp-idr')">Γ¼ç∩╕Å Export</button>
+        <button class="btn btn-outline btn-sm" onclick="openUploadModalFor('korp-idr')">⬆️ CSV</button>
+        <button class="btn btn-outline btn-sm" onclick="exportCSV('korp-idr')">⬇️ Export</button>
         <button class="btn btn-primary btn-sm" onclick="openAddModal('korp-idr')">+ Tambah</button>
       </div>
     </div>
@@ -289,7 +289,7 @@
             <th>Bid</th><th>Offer</th><th>YTM (%)</th>
             <th>Tgl. Update</th><th>Aksi</th>
           </tr></thead>
-          <tbody id="tbody-korp-idr"><tr><td colspan="13"><div class="empty-state"><div class="empty-icon">ΓÅ│</div><p>Memuat data...</p></div></td></tr></tbody>
+          <tbody id="tbody-korp-idr"><tr><td colspan="13"><div class="empty-state"><div class="empty-icon">⏳</div><p>Memuat data...</p></div></td></tr></tbody>
         </table>
       </div>
       <div class="table-footer">
@@ -309,11 +309,11 @@
       </div>
       <div class="section-actions">
         <div class="search-wrap">
-          <span class="search-icon">≡ƒöì</span>
+          <span class="search-icon">🔍</span>
           <input type="text" placeholder="Cari seri..." oninput="applySearch('korp-usd', this.value)" id="search-korp-usd"/>
         </div>
-        <button class="btn btn-outline btn-sm" onclick="openUploadModalFor('korp-usd')">Γ¼å∩╕Å CSV</button>
-        <button class="btn btn-outline btn-sm" onclick="exportCSV('korp-usd')">Γ¼ç∩╕Å Export</button>
+        <button class="btn btn-outline btn-sm" onclick="openUploadModalFor('korp-usd')">⬆️ CSV</button>
+        <button class="btn btn-outline btn-sm" onclick="exportCSV('korp-usd')">⬇️ Export</button>
         <button class="btn btn-primary btn-sm" onclick="openAddModal('korp-usd')">+ Tambah</button>
       </div>
     </div>
@@ -326,7 +326,7 @@
             <th>Bid</th><th>Offer</th><th>YTM (%)</th>
             <th>Tgl. Update</th><th>Aksi</th>
           </tr></thead>
-          <tbody id="tbody-korp-usd"><tr><td colspan="13"><div class="empty-state"><div class="empty-icon">ΓÅ│</div><p>Memuat data...</p></div></td></tr></tbody>
+          <tbody id="tbody-korp-usd"><tr><td colspan="13"><div class="empty-state"><div class="empty-icon">⏳</div><p>Memuat data...</p></div></td></tr></tbody>
         </table>
       </div>
       <div class="table-footer">
@@ -342,7 +342,7 @@
   <div class="modal">
     <div class="modal-header">
       <div class="modal-title" id="formModalTitle">Tambah Obligasi</div>
-      <button class="modal-close" onclick="document.getElementById('formModal').classList.remove('open')">Γ£ò</button>
+      <button class="modal-close" onclick="document.getElementById('formModal').classList.remove('open')">✕</button>
     </div>
     <input type="hidden" id="editDocId"/>
     <input type="hidden" id="editCategory"/>
@@ -390,7 +390,7 @@
       <div class="form-group">
         <label class="form-label">Type</label>
         <select class="form-select" id="fType">
-          <option value="">ΓÇö Pilih ΓÇö</option>
+          <option value="">— Pilih —</option>
           <option value="FR">FR (Fixed Rate)</option>
           <option value="ORI">ORI (Obligasi Ritel)</option>
           <option value="SBR">SBR (Savings Bond)</option>
@@ -405,7 +405,7 @@
       <div class="form-group">
         <label class="form-label">Type 2</label>
         <select class="form-select" id="fType2">
-          <option value="">ΓÇö Pilih ΓÇö</option>
+          <option value="">— Pilih —</option>
           <option value="Fixed">Fixed</option>
           <option value="Floating">Floating</option>
           <option value="Zero Coupon">Zero Coupon</option>
@@ -457,7 +457,7 @@
       <div class="form-group">
         <label class="form-label">Freq. (Frekuensi Kupon)</label>
         <select class="form-select" id="fKuponFreq" onchange="autoCalcCouponDates()">
-          <option value="">ΓÇö Pilih Frekuensi ΓÇö</option>
+          <option value="">— Pilih Frekuensi —</option>
           <option value="1">1 (Monthly)</option>
           <option value="3">3 (Quarterly)</option>
           <option value="6">6 (Semi-Annual)</option>
@@ -467,7 +467,7 @@
       <div class="form-group">
         <label class="form-label">Basis (Day Count)</label>
         <select class="form-select" id="fBasis">
-          <option value="">ΓÇö Pilih ΓÇö</option>
+          <option value="">— Pilih —</option>
           <option value="ACT/ACT">ACT/ACT</option>
           <option value="ACT/360">ACT/360</option>
           <option value="ACT/365">ACT/365</option>
@@ -477,7 +477,7 @@
       <div class="form-group">
         <label class="form-label">Pay. Type</label>
         <select class="form-select" id="fPayType">
-          <option value="">ΓÇö Pilih ΓÇö</option>
+          <option value="">— Pilih —</option>
           <option value="Bullet">Bullet</option>
           <option value="Amortizing">Amortizing</option>
           <option value="Sinking Fund">Sinking Fund</option>
@@ -518,7 +518,7 @@
   <div class="modal">
     <div class="modal-header">
       <div class="modal-title">Upload CSV Obligasi</div>
-      <button class="modal-close" onclick="document.getElementById('uploadModal').classList.remove('open')">Γ£ò</button>
+      <button class="modal-close" onclick="document.getElementById('uploadModal').classList.remove('open')">✕</button>
     </div>
     <div class="form-group" style="margin-bottom:14px;">
       <label class="form-label">Target Kategori</label>
@@ -531,7 +531,7 @@
     </div>
     <div class="upload-zone" id="uploadZone" onclick="document.getElementById('csvFileInput').click()"
       ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
-      <div class="upload-icon">≡ƒôé</div>
+      <div class="upload-icon">📂</div>
       <div style="font-weight:600;color:var(--navy);">Klik atau drag & drop file CSV</div>
       <div class="upload-hint">
         Header yang didukung: <strong>Seri, Kupon, JatuhTempo, Rating, LastCouponDate, NextCouponDate, HargaJual, HargaBeli, Yield, TanggalUpdate</strong>
@@ -543,7 +543,7 @@
       <div class="csv-preview-box" id="csvPreview"></div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-outline btn-sm" onclick="downloadTemplate()">Γ¼ç∩╕Å Template CSV</button>
+      <button class="btn btn-outline btn-sm" onclick="downloadTemplate()">⬇️ Template CSV</button>
       <button class="btn btn-outline" onclick="document.getElementById('uploadModal').classList.remove('open')">Batal</button>
       <button class="btn btn-primary" id="uploadSaveBtn" onclick="importCSV()" disabled>Import Data</button>
     </div>
@@ -578,7 +578,7 @@
 
   const ROLE_LABELS = { head_account: 'Head Account', admin: 'Admin', sales: 'Sales', treasury: 'Bonds' };
 
-  // ===== AUTH ΓÇö navbar UI dihandle navbar.html =====
+  // ===== AUTH — navbar UI dihandle navbar.html =====
   function initAuth() {
     if (!sessionStorage.getItem('fawz_user')) { window.location.href = 'login.html'; }
   }
@@ -627,30 +627,30 @@
 
     document.getElementById('count-' + cat).textContent = total + ' seri';
     document.getElementById('info-' + cat).textContent =
-      total === 0 ? 'Tidak ada data' : `Menampilkan ${start+1}ΓÇô${end} dari ${total} data`;
+      total === 0 ? 'Tidak ada data' : `Menampilkan ${start+1}–${end} dari ${total} data`;
 
     if (pageData.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="${colSpan}"><div class="empty-state"><div class="empty-icon">≡ƒôä</div><p>Belum ada data</p></div></td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="${colSpan}"><div class="empty-state"><div class="empty-icon">📄</div><p>Belum ada data</p></div></td></tr>`;
       renderPagination(cat, 0); return;
     }
 
     tbody.innerHTML = pageData.map(r => `
       <tr>
-        <td>${esc(r.seri||'ΓÇö')}</td>
-        ${isKorp ? `<td style="font-size:0.8rem;color:#444;max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${esc(r.penerbit||'')}">${esc(r.penerbit||'ΓÇö')}</td>` : ''}
+        <td>${esc(r.seri||'—')}</td>
+        ${isKorp ? `<td style="font-size:0.8rem;color:#444;max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${esc(r.penerbit||'')}">${esc(r.penerbit||'—')}</td>` : ''}
         <td>${fmtDate(r.jatuh_tempo)}</td>
-        ${isKorp ? `<td><span style="background:#f0f4ff;padding:2px 8px;border-radius:6px;font-size:0.8rem;font-weight:600;color:#2d4abf;">${esc(r.rating||'ΓÇö')}</span></td>` : ''}
-        <td>${r.kupon != null ? fmtDecimal(r.kupon, 3) + '%' : 'ΓÇö'}</td>
+        ${isKorp ? `<td><span style="background:#f0f4ff;padding:2px 8px;border-radius:6px;font-size:0.8rem;font-weight:600;color:#2d4abf;">${esc(r.rating||'—')}</span></td>` : ''}
+        <td>${r.kupon != null ? fmtDecimal(r.kupon, 3) + '%' : '—'}</td>
         <td>${fmtDate(r.last_coupon_date)}</td>
         <td>${fmtDate(r.next_coupon_date)}</td>
         <td style="color:#27ae60;">${fmtHarga(r.harga_jual)}</td>
         <td style="color:#e74c3c;">${fmtHarga(r.harga_beli)}</td>
-        <td>${r.yield != null ? fmtDecimal(r.yield, 4) + '%' : 'ΓÇö'}</td>
+        <td>${r.yield != null ? fmtDecimal(r.yield, 4) + '%' : '—'}</td>
         <td style="font-size:0.8rem;color:#888;">${fmtDate(r.tanggal_update)}</td>
         <td>
           <div class="action-btns">
-            <button class="btn-icon" title="Edit" onclick="openEditModal('${cat}','${r.id}')">Γ£Å∩╕Å</button>
-            <button class="btn-icon del" title="Hapus" onclick="deleteItem('${cat}','${r.id}','${esc(r.seri||'')}')">≡ƒùæ∩╕Å</button>
+            <button class="btn-icon" title="Edit" onclick="openEditModal('${cat}','${r.id}')">✏️</button>
+            <button class="btn-icon del" title="Hapus" onclick="deleteItem('${cat}','${r.id}','${esc(r.seri||'')}')">🗑️</button>
           </div>
         </td>
       </tr>
@@ -664,10 +664,10 @@
     const p = pages[cat];
     if (totalPages <= 1) { pg.innerHTML = ''; return; }
     let html = '';
-    if (p > 1) html += `<button class="pg-btn" onclick="goPage('${cat}',${p-1})">ΓÇ╣</button>`;
+    if (p > 1) html += `<button class="pg-btn" onclick="goPage('${cat}',${p-1})">‹</button>`;
     for (let i = Math.max(1, p-2); i <= Math.min(totalPages, p+2); i++)
       html += `<button class="pg-btn ${i===p?'active':''}" onclick="goPage('${cat}',${i})">${i}</button>`;
-    if (p < totalPages) html += `<button class="pg-btn" onclick="goPage('${cat}',${p+1})">ΓÇ║</button>`;
+    if (p < totalPages) html += `<button class="pg-btn" onclick="goPage('${cat}',${p+1})">›</button>`;
     pg.innerHTML = html;
   }
 
@@ -830,7 +830,7 @@
       category:       cat,
     };
 
-    // Kolom baru ΓÇö hanya kirim jika ada nilainya
+    // Kolom baru — hanya kirim jika ada nilainya
     const rating = isKorp ? (document.getElementById('fRating').value.trim() || null) : null;
     const penerbit = isKorp ? (document.getElementById('fPenerbit').value.trim() || null) : null;
     const lastCouponDate = document.getElementById('fLastCoupon').value || null;
@@ -1019,20 +1019,20 @@
   function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
   function fmtDate(d) {
-    if (!d) return 'ΓÇö';
+    if (!d) return '—';
     try { return new Date(d).toLocaleDateString('id-ID', {day:'2-digit',month:'short',year:'numeric'}); }
     catch { return d; }
   }
 
   function fmtHarga(val) {
-    if (val == null) return 'ΓÇö';
+    if (val == null) return '—';
     const n = Number(val);
     // Format: 101,50 (koma sebagai desimal, 2 angka di belakang koma)
     return n.toFixed(2).replace('.', ',');
   }
 
   function fmtDecimal(val, digits) {
-    if (val == null) return 'ΓÇö';
+    if (val == null) return '—';
     return Number(val).toFixed(digits).replace('.', ',');
   }
 
@@ -1069,7 +1069,7 @@
   }
 
   // ===== PENERBIT AUTO-FILL (Korporasi) =====
-  // Mapping kode ticker obligasi korporasi ΓåÆ nama penerbit
+  // Mapping kode ticker obligasi korporasi → nama penerbit
   const ISSUER_MAP = {
     'INET': 'PT Sinergi Inti Andalan Prima',
     'ADHI': 'PT Adhi Karya (Persero) Tbk',
@@ -1144,7 +1144,7 @@
 
   /**
    * Extract ticker prefix from bond series code.
-   * e.g. "INET01ACN1" ΓåÆ "INET", "PPLN03CN3" ΓåÆ "PPLN", "BBRI02BCN2" ΓåÆ "BBRI"
+   * e.g. "INET01ACN1" → "INET", "PPLN03CN3" → "PPLN", "BBRI02BCN2" → "BBRI"
    */
   function extractTicker(series) {
     if (!series) return '';
@@ -1166,7 +1166,7 @@
       penerbitEl.style.color = '#1a7a4a';
     } else if (ticker && ticker.length >= 3) {
       penerbitEl.value = '';
-      penerbitEl.placeholder = 'Ticker "' + ticker + '" belum terdaftar ΓÇö isi manual';
+      penerbitEl.placeholder = 'Ticker "' + ticker + '" belum terdaftar — isi manual';
       penerbitEl.style.color = '';
     } else {
       penerbitEl.value = '';
