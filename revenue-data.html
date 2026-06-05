@@ -395,17 +395,22 @@
     const isSales   = role === 'sales';
     const salesName = curUser.name || '';
 
-    // 1. SAHAM — dari saham_transaksi
+    // 1. SAHAM — dari saham_transaksi (pagination karena bisa > 1000 rows)
     try {
-      let q = window._supabase.from('saham_transaksi').select('*').order('tanggal', { ascending: false });
-      if (isSales) q = q.ilike('sales_name', salesName);
-      const { data, error } = await q;
-      if (error) { console.error('saham_transaksi error:', error); }
-      if (!error && data) {
-        console.log('saham_transaksi rows:', data.length);
+      const PAGE = 1000;
+      let offset = 0, hasMore = true;
+      while (hasMore) {
+        let q = window._supabase.from('saham_transaksi').select('*')
+          .order('tanggal', { ascending: false })
+          .range(offset, offset + PAGE - 1);
+        if (isSales) q = q.ilike('sales_name', salesName);
+        const { data, error } = await q;
+        if (error) { console.error('saham_transaksi error:', error); break; }
+        if (!data || data.length === 0) { hasMore = false; break; }
+        console.log(`saham_transaksi page offset=${offset}: ${data.length} rows`);
         data.forEach(o => {
-          const volume  = Number(o.volume) || 0;
-          const fee     = Number(o.fee) || 0;
+          const volume = Number(o.volume) || 0;
+          const fee    = Number(o.fee)    || 0;
           if (volume > 0 || fee > 0) {
             allRows.push({
               id:          o.id + '-s',
@@ -423,17 +428,22 @@
             });
           }
         });
+        if (data.length < PAGE) { hasMore = false; } else { offset += PAGE; }
       }
     } catch(e) { console.warn('saham_transaksi:', e.message); }
 
-    // 2. OBLIGASI Bookbuilding
+    // 2. OBLIGASI Bookbuilding (pagination)
     try {
-      let q = window._supabase.from('bb_orders').select('*').eq('status','verified').order('created_at',{ascending:false});
-      if (isSales) q = q.eq('sales_pic', salesName);
-      const { data, error } = await q;
-      if (error) { console.error('bb_orders error:', error); }
-      if (!error && data) {
-        console.log('bb_orders rows:', data.length);
+      const PAGE = 1000;
+      let offset = 0, hasMore = true;
+      while (hasMore) {
+        let q = window._supabase.from('bb_orders').select('*').eq('status','verified')
+          .order('created_at',{ascending:false}).range(offset, offset + PAGE - 1);
+        if (isSales) q = q.eq('sales_pic', salesName);
+        const { data, error } = await q;
+        if (error) { console.error('bb_orders error:', error); break; }
+        if (!data || data.length === 0) { hasMore = false; break; }
+        console.log(`bb_orders offset=${offset}: ${data.length} rows`);
         data.forEach(o => {
           const nominal = Number(o.nominal) || 0;
           const revenue = o.revenue != null ? Number(o.revenue) : nominal * FEE_OBLIGASI;
@@ -452,17 +462,22 @@
             revenue:     revenue,
           });
         });
+        if (data.length < PAGE) { hasMore = false; } else { offset += PAGE; }
       }
     } catch(e) { console.warn('bb_orders:', e.message); }
 
-    // 3. OBLIGASI Pasar Sekunder
+    // 3. OBLIGASI Pasar Sekunder (pagination)
     try {
-      let q = window._supabase.from('pasar_sekunder_orders').select('*').order('created_at',{ascending:false});
-      if (isSales) q = q.eq('sales_name', salesName);
-      const { data, error } = await q;
-      if (error) { console.error('pasar_sekunder_orders error:', error); }
-      if (!error && data) {
-        console.log('pasar_sekunder_orders rows:', data.length);
+      const PAGE = 1000;
+      let offset = 0, hasMore = true;
+      while (hasMore) {
+        let q = window._supabase.from('pasar_sekunder_orders').select('*')
+          .order('created_at',{ascending:false}).range(offset, offset + PAGE - 1);
+        if (isSales) q = q.eq('sales_name', salesName);
+        const { data, error } = await q;
+        if (error) { console.error('pasar_sekunder_orders error:', error); break; }
+        if (!data || data.length === 0) { hasMore = false; break; }
+        console.log(`pasar_sekunder_orders offset=${offset}: ${data.length} rows`);
         data.forEach(o => {
           const nominal = Number(o.nominal || 0);
           const revenue = o.revenue != null ? Number(o.revenue) : nominal * FEE_OBLIGASI;
@@ -481,17 +496,22 @@
             revenue:     revenue,
           });
         });
+        if (data.length < PAGE) { hasMore = false; } else { offset += PAGE; }
       }
     } catch(e) { console.warn('pasar_sekunder_orders:', e.message); }
 
-    // 4. REKSADANA
+    // 4. REKSADANA (pagination)
     try {
-      let q = window._supabase.from('reksadana_transactions').select('*').order('created_at',{ascending:false});
-      if (isSales) q = q.eq('sales_name', salesName);
-      const { data, error } = await q;
-      if (error) { console.error('reksadana_transactions error:', error); }
-      if (!error && data) {
-        console.log('reksadana_transactions rows:', data.length);
+      const PAGE = 1000;
+      let offset = 0, hasMore = true;
+      while (hasMore) {
+        let q = window._supabase.from('reksadana_transactions').select('*')
+          .order('created_at',{ascending:false}).range(offset, offset + PAGE - 1);
+        if (isSales) q = q.eq('sales_name', salesName);
+        const { data, error } = await q;
+        if (error) { console.error('reksadana_transactions error:', error); break; }
+        if (!data || data.length === 0) { hasMore = false; break; }
+        console.log(`reksadana_transactions offset=${offset}: ${data.length} rows`);
         data.forEach(o => {
           const nominal = Number(o.nominal || 0);
           const revenue = o.revenue != null ? Number(o.revenue) : nominal * FEE_REKSADANA;
@@ -510,6 +530,7 @@
             revenue:     revenue,
           });
         });
+        if (data.length < PAGE) { hasMore = false; } else { offset += PAGE; }
       }
     } catch(e) { console.warn('reksadana_transactions:', e.message); }
 
