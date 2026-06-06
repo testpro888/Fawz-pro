@@ -628,7 +628,7 @@ async function runUpdate() {
   log('Mengambil semua data customer dari DB...');
   const { data: customers, error: fetchErr } = await _sb
     .from('customers')
-    .select('id, client_name, sales_pic');
+    .select('id, client_name, sales_person_name');
 
   if (fetchErr) {
     log('ERROR mengambil data: ' + fetchErr.message, 'err');
@@ -654,7 +654,7 @@ async function runUpdate() {
     }
 
     for (const cust of matches) {
-      if (cust.sales_pic === sales) {
+      if (cust.sales_person_name === sales) {
         log(`[SKIP - same] ${nama} → ${sales}`, 'skip');
         skipped++;
         continue;
@@ -662,16 +662,15 @@ async function runUpdate() {
 
       const { error } = await _sb
         .from('customers')
-        .update({ sales_pic: sales })
+        .update({ sales_person_name: sales })
         .eq('id', cust.id);
 
       if (error) {
         log(`[ERROR] ${nama} → ${sales} | ${error.message}`, 'err');
         errors++;
       } else {
-        log(`[OK] ${nama} | ${cust.sales_pic || 'null'} → ${sales}`, 'ok');
-        // update local cache so duplicate names use latest
-        cust.sales_pic = sales;
+        log(`[OK] ${nama} | ${cust.sales_person_name || 'null'} → ${sales}`, 'ok');
+        cust.sales_person_name = sales;
         updated++;
       }
     }
