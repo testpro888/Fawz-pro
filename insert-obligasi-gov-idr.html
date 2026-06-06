@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Insert Obligasi Gov IDR</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <style>
+    body { font-family: monospace; background: #0d0d2b; color: #eee; padding: 24px; }
+    h2 { color: #f5a623; }
+    #log { background: #111; padding: 16px; border-radius: 8px; max-height: 600px; overflow-y: auto; font-size: 0.8rem; line-height: 1.8; }
+    .ok   { color: #27ae60; }
+    .err  { color: #e74c3c; }
+    .skip { color: #888; }
+    .warn { color: #f5a623; }
+    button { background: #f5a623; color: #000; border: none; padding: 12px 28px; border-radius: 8px; font-size: 1rem; font-weight: 700; cursor: pointer; margin-bottom: 16px; margin-right: 10px; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    #summary { margin-top: 16px; padding: 12px 16px; background: #1a1a3a; border-radius: 8px; font-size: 0.9rem; display:none; }
+    label { color: #aaa; font-size: 0.85rem; }
+    select { background: #1a1a3a; color: #eee; border: 1px solid #444; padding: 6px 10px; border-radius: 6px; margin-bottom: 16px; }
+  </style>
+</head>
+<body>
+<h2>Insert / Update Obligasi Pemerintah IDR</h2>
+<p style="color:#aaa;font-size:0.85rem;">Data FR & PBS dari harga pasar sekunder. Jika seri sudah ada → UPDATE harga. Jika belum → INSERT baru.</p>
+
+<label>Mode: </label>
+<select id="modeSelect">
+  <option value="upsert">UPSERT (insert baru + update yang sudah ada)</option>
+  <option value="insert_only">INSERT ONLY (skip yang sudah ada)</option>
+  <option value="update_only">UPDATE ONLY (hanya update harga seri yang sudah ada)</option>
+</select><br/>
+
+<button id="btnRun" onclick="runInsert()">▶ Jalankan</button>
+<div id="summary"></div>
+<div id="log">Klik tombol untuk mulai...</div>
+
+<script>
+const SUPABASE_URL = 'https://yhmrfluehibfapvtxcfi.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlobXJmbHVlaGliZmFwdnR4Y2ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNjEzODUsImV4cCI6MjA5NDczNzM4NX0.se_H4n_eLsf81d_1GH5sqsPCpX89MHewlPuuNkY6qcU';
+const _sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ============================================================
+// DATA OBLIGASI - dari tabel yang diberikan
+// Fields: seri, jatuh_tempo, kupon(%), harga_jual(bid), harga_beli(offer), yield(%), tanggal_listing
+// kupon_freq: 2 (semi-annual untuk FR), 4 (quarterly untuk PBS)
+// ============================================================
+const BONDS = [
+  // FR Series
+  { seri:"FR0056", jatuh_tempo:"2026-09-15", kupon:12.00, harga_jual:99.89,  harga_beli:101.11, yield:6.78, tanggal_listing:"2006-09-15", kupon_freq:2 },
+  { seri:"FR0037", jatuh_tempo:"2026-09-15", kupon:8.375, harga_jual:100.86, harga_beli:102.24, yield:6.67, tanggal_listing:"2006-09-15", kupon_freq:2 },
+  { seri:"FR0090", jatuh_tempo:"2027-04-15", kupon:5.125, harga_jual:97.99,  harga_beli:99.31,  yield:6.97, tanggal_listing:"2019-02-22", kupon_freq:2 },
+  { seri:"FR0059", jatuh_tempo:"2027-05-15", kupon:7.00,  harga_jual:99.41,  harga_beli:100.70, yield:7.09, tanggal_listing:"2009-01-30", kupon_freq:2 },
+  { seri:"FR0042", jatuh_tempo:"2027-07-15", kupon:10.25, harga_jual:102.75, harga_beli:104.48, yield:7.12, tanggal_listing:"2007-07-13", kupon_freq:2 },
+  { seri:"FR0094", jatuh_tempo:"2028-01-15", kupon:5.625, harga_jual:97.74,  harga_beli:100.86, yield:6.77, tanggal_listing:"2020-02-21", kupon_freq:2 },
+  { seri:"FR0047", jatuh_tempo:"2028-02-15", kupon:10.00, harga_jual:104.21, harga_beli:105.91, yield:6.98, tanggal_listing:"2010-02-19", kupon_freq:2 },
+  { seri:"FR0064", jatuh_tempo:"2028-05-15", kupon:6.125, harga_jual:98.34,  harga_beli:99.65,  yield:6.77, tanggal_listing:"2012-05-18", kupon_freq:2 },
+  { seri:"FR0095", jatuh_tempo:"2028-08-15", kupon:6.375, harga_jual:98.54,  harga_beli:100.04, yield:6.85, tanggal_listing:"2022-08-26", kupon_freq:2 },
+  { seri:"FR0071", jatuh_tempo:"2029-03-15", kupon:9.00,  harga_jual:105.07, harga_beli:106.52, yield:6.75, tanggal_listing:"2015-02-20", kupon_freq:2 },
+  { seri:"FR0101", jatuh_tempo:"2029-04-15", kupon:6.875, harga_jual:99.84,  harga_beli:101.25, yield:6.74, tanggal_listing:"2021-08-20", kupon_freq:2 },
+  { seri:"FR0078", jatuh_tempo:"2029-05-15", kupon:8.25,  harga_jual:103.32, harga_beli:104.81, yield:6.79, tanggal_listing:"2016-08-19", kupon_freq:2 },
+  { seri:"FR0104", jatuh_tempo:"2030-07-15", kupon:6.50,  harga_jual:98.38,  harga_beli:99.73,  yield:6.82, tanggal_listing:"2022-08-26", kupon_freq:2 },
+  { seri:"FR0052", jatuh_tempo:"2030-08-15", kupon:10.50, harga_jual:113.23, harga_beli:114.88, yield:6.68, tanggal_listing:"2011-08-05", kupon_freq:2 },
+  { seri:"FR0082", jatuh_tempo:"2030-09-15", kupon:7.00,  harga_jual:100.32, harga_beli:102.05, yield:6.77, tanggal_listing:"2017-08-18", kupon_freq:2 },
+  { seri:"FR0087", jatuh_tempo:"2031-02-15", kupon:6.50,  harga_jual:98.28,  harga_beli:99.80,  yield:6.81, tanggal_listing:"2018-02-23", kupon_freq:2 },
+  { seri:"FR0109", jatuh_tempo:"2031-03-15", kupon:5.875, harga_jual:95.89,  harga_beli:97.25,  yield:6.77, tanggal_listing:"2024-02-16", kupon_freq:2 },
+  { seri:"FR0085", jatuh_tempo:"2031-04-15", kupon:7.75,  harga_jual:103.81, harga_beli:105.30, yield:6.69, tanggal_listing:"2018-02-23", kupon_freq:2 },
+  { seri:"FR0073", jatuh_tempo:"2031-05-15", kupon:8.75,  harga_jual:107.66, harga_beli:109.22, yield:6.77, tanggal_listing:"2015-02-20", kupon_freq:2 },
+  { seri:"FR0054", jatuh_tempo:"2031-07-15", kupon:9.50,  harga_jual:111.02, harga_beli:112.81, yield:6.79, tanggal_listing:"2012-02-24", kupon_freq:2 },
+  { seri:"FR0091", jatuh_tempo:"2032-04-15", kupon:6.375, harga_jual:97.44,  harga_beli:98.93,  yield:6.80, tanggal_listing:"2019-02-22", kupon_freq:2 },
+  { seri:"FR0058", jatuh_tempo:"2032-06-15", kupon:8.25,  harga_jual:106.41, harga_beli:108.16, yield:6.83, tanggal_listing:"2013-07-26", kupon_freq:2 },
+  { seri:"FR0074", jatuh_tempo:"2032-08-15", kupon:7.50,  harga_jual:102.84, harga_beli:104.47, yield:6.83, tanggal_listing:"2015-08-21", kupon_freq:2 },
+  { seri:"FR0096", jatuh_tempo:"2033-02-15", kupon:7.00,  harga_jual:100.30, harga_beli:101.97, yield:6.85, tanggal_listing:"2020-08-21", kupon_freq:2 },
+  { seri:"FR0065", jatuh_tempo:"2033-05-15", kupon:6.625, harga_jual:98.38,  harga_beli:99.97,  yield:6.83, tanggal_listing:"2013-11-22", kupon_freq:2 },
+  { seri:"FR0100", jatuh_tempo:"2034-02-15", kupon:6.625, harga_jual:98.15,  harga_beli:99.73,  yield:6.85, tanggal_listing:"2021-08-20", kupon_freq:2 },
+  { seri:"FR0068", jatuh_tempo:"2034-03-15", kupon:8.375, harga_jual:108.62, harga_beli:110.07, yield:6.84, tanggal_listing:"2014-01-31", kupon_freq:2 },
+  { seri:"FR0080", jatuh_tempo:"2035-06-15", kupon:7.50,  harga_jual:103.88, harga_beli:105.51, yield:6.84, tanggal_listing:"2017-02-24", kupon_freq:2 },
+  { seri:"FR0103", jatuh_tempo:"2035-07-15", kupon:6.75,  harga_jual:99.09,  harga_beli:100.56, yield:6.81, tanggal_listing:"2022-02-18", kupon_freq:2 },
+  { seri:"FR0108", jatuh_tempo:"2036-04-15", kupon:6.50,  harga_jual:97.86,  harga_beli:99.23,  yield:6.73, tanggal_listing:"2024-02-16", kupon_freq:2 },
+  { seri:"FR0072", jatuh_tempo:"2036-05-15", kupon:8.25,  harga_jual:109.42, harga_beli:111.03, yield:6.86, tanggal_listing:"2015-08-21", kupon_freq:2 },
+  { seri:"FR0088", jatuh_tempo:"2036-06-15", kupon:6.25,  harga_jual:95.55,  harga_beli:97.82,  yield:6.80, tanggal_listing:"2018-08-17", kupon_freq:2 },
+  { seri:"FR0045", jatuh_tempo:"2037-05-15", kupon:9.75,  harga_jual:120.57, harga_beli:122.77, yield:6.96, tanggal_listing:"2009-05-29", kupon_freq:2 },
+  { seri:"FR0093", jatuh_tempo:"2037-07-15", kupon:6.375, harga_jual:95.97,  harga_beli:97.83,  yield:6.83, tanggal_listing:"2019-08-23", kupon_freq:2 },
+  { seri:"FR0075", jatuh_tempo:"2038-05-15", kupon:7.50,  harga_jual:104.28, harga_beli:105.88, yield:6.91, tanggal_listing:"2016-08-19", kupon_freq:2 },
+  { seri:"FR0098", jatuh_tempo:"2038-06-15", kupon:7.125, harga_jual:101.25, harga_beli:102.81, yield:6.91, tanggal_listing:"2021-02-19", kupon_freq:2 },
+  { seri:"FR0050", jatuh_tempo:"2038-07-15", kupon:10.50, harga_jual:129.30, harga_beli:130.40, yield:6.84, tanggal_listing:"2010-07-30", kupon_freq:2 },
+  { seri:"FR0079", jatuh_tempo:"2039-04-15", kupon:8.375, harga_jual:111.47, harga_beli:113.26, yield:6.95, tanggal_listing:"2017-02-24", kupon_freq:2 },
+  { seri:"FR0083", jatuh_tempo:"2040-04-15", kupon:7.50,  harga_jual:104.72, harga_beli:106.33, yield:6.91, tanggal_listing:"2017-08-18", kupon_freq:2 },
+  { seri:"FR0106", jatuh_tempo:"2040-08-15", kupon:7.125, harga_jual:101.73, harga_beli:103.23, yield:6.87, tanggal_listing:"2023-02-17", kupon_freq:2 },
+  { seri:"FR0057", jatuh_tempo:"2041-05-15", kupon:9.50,  harga_jual:123.80, harga_beli:125.46, yield:6.87, tanggal_listing:"2013-01-25", kupon_freq:2 },
+  { seri:"FR0062", jatuh_tempo:"2042-04-15", kupon:6.375, harga_jual:94.15,  harga_beli:95.98,  yield:6.94, tanggal_listing:"2014-01-31", kupon_freq:2 },
+  { seri:"FR0092", jatuh_tempo:"2042-06-15", kupon:7.125, harga_jual:101.49, harga_beli:103.26, yield:6.92, tanggal_listing:"2019-08-23", kupon_freq:2 },
+  { seri:"FR0097", jatuh_tempo:"2043-06-15", kupon:7.125, harga_jual:101.69, harga_beli:103.47, yield:6.90, tanggal_listing:"2020-08-21", kupon_freq:2 },
+  { seri:"FR0067", jatuh_tempo:"2044-02-15", kupon:8.75,  harga_jual:117.56, harga_beli:119.39, yield:6.96, tanggal_listing:"2014-08-08", kupon_freq:2 },
+  { seri:"FR0107", jatuh_tempo:"2045-08-15", kupon:7.125, harga_jual:101.96, harga_beli:103.47, yield:6.89, tanggal_listing:"2023-02-17", kupon_freq:2 },
+  { seri:"FR0076", jatuh_tempo:"2048-05-15", kupon:7.375, harga_jual:104.15, harga_beli:105.70, yield:6.96, tanggal_listing:"2016-02-19", kupon_freq:2 },
+  { seri:"FR0089", jatuh_tempo:"2051-08-15", kupon:6.875, harga_jual:97.91,  harga_beli:99.88,  yield:7.01, tanggal_listing:"2018-08-17", kupon_freq:2 },
+  { seri:"FR0102", jatuh_tempo:"2054-07-15", kupon:6.875, harga_jual:98.28,  harga_beli:100.01, yield:6.97, tanggal_listing:"2022-02-18", kupon_freq:2 },
+  { seri:"FR0105", jatuh_tempo:"2064-07-15", kupon:6.875, harga_jual:98.69,  harga_beli:100.22, yield:6.94, tanggal_listing:"2024-08-16", kupon_freq:2 },
+  // PBS / PBSG Series
+  { seri:"PBS032",  jatuh_tempo:"2026-07-15", kupon:4.875, harga_jual:99.31,  harga_beli:100.36, yield:6.63, tanggal_listing:"2020-08-21", kupon_freq:2 },
+  { seri:"PBS021",  jatuh_tempo:"2026-11-15", kupon:8.50,  harga_jual:101.50, harga_beli:102.51, yield:3.80, tanggal_listing:"2017-08-18", kupon_freq:2 },
+  { seri:"PBS003",  jatuh_tempo:"2027-01-15", kupon:6.00,  harga_jual:99.00,  harga_beli:100.22, yield:6.85, tanggal_listing:"2012-02-24", kupon_freq:2 },
+  { seri:"PBS020",  jatuh_tempo:"2027-10-15", kupon:9.00,  harga_jual:104.50, harga_beli:105.62, yield:5.12, tanggal_listing:"2017-08-18", kupon_freq:2 },
+  { seri:"PBS018",  jatuh_tempo:"2028-05-15", kupon:7.625, harga_jual:102.33, harga_beli:103.73, yield:6.05, tanggal_listing:"2016-08-19", kupon_freq:2 },
+  { seri:"PBS030",  jatuh_tempo:"2028-07-15", kupon:5.875, harga_jual:97.98,  harga_beli:99.06,  yield:6.66, tanggal_listing:"2020-02-21", kupon_freq:2 },
+  { seri:"PBSG001", jatuh_tempo:"2029-09-15", kupon:6.625, harga_jual:99.27,  harga_beli:101.30, yield:6.70, tanggal_listing:"2023-02-17", kupon_freq:2 },
+  { seri:"PBS023",  jatuh_tempo:"2030-05-15", kupon:8.125, harga_jual:107.24, harga_beli:108.36, yield:5.89, tanggal_listing:"2018-08-17", kupon_freq:2 },
+  { seri:"PBS040",  jatuh_tempo:"2030-11-15", kupon:5.00,  harga_jual:93.13,  harga_beli:94.77,  yield:6.68, tanggal_listing:"2025-02-21", kupon_freq:2 },
+  { seri:"PBS012",  jatuh_tempo:"2031-11-15", kupon:8.875, harga_jual:109.31, harga_beli:110.75, yield:6.69, tanggal_listing:"2015-02-20", kupon_freq:2 },
+  { seri:"PBS024",  jatuh_tempo:"2032-05-15", kupon:8.375, harga_jual:110.35, harga_beli:111.46, yield:6.16, tanggal_listing:"2019-02-22", kupon_freq:2 },
+  { seri:"PBS025",  jatuh_tempo:"2033-05-15", kupon:8.375, harga_jual:109.25, harga_beli:110.55, yield:6.60, tanggal_listing:"2019-02-22", kupon_freq:2 },
+  { seri:"PBSG002", jatuh_tempo:"2033-10-15", kupon:5.625, harga_jual:94.43,  harga_beli:95.96,  yield:6.50, tanggal_listing:"2025-02-21", kupon_freq:2 },
+  { seri:"PBS029",  jatuh_tempo:"2034-03-15", kupon:6.375, harga_jual:99.80,  harga_beli:101.39, yield:6.32, tanggal_listing:"2019-08-23", kupon_freq:2 },
+  { seri:"PBS022",  jatuh_tempo:"2034-04-15", kupon:8.625, harga_jual:110.92, harga_beli:112.08, yield:6.73, tanggal_listing:"2018-02-23", kupon_freq:2 },
+  { seri:"PBS037",  jatuh_tempo:"2036-03-15", kupon:6.875, harga_jual:100.89, harga_beli:102.10, yield:6.68, tanggal_listing:"2022-02-18", kupon_freq:2 },
+  { seri:"PBS004",  jatuh_tempo:"2037-02-15", kupon:6.10,  harga_jual:94.83,  harga_beli:96.80,  yield:6.72, tanggal_listing:"2012-07-27", kupon_freq:2 },
+  { seri:"PBS034",  jatuh_tempo:"2039-06-15", kupon:6.50,  harga_jual:96.47,  harga_beli:97.98,  yield:6.86, tanggal_listing:"2021-02-19", kupon_freq:2 },
+  { seri:"PBS007",  jatuh_tempo:"2040-09-15", kupon:9.00,  harga_jual:120.05, harga_beli:121.57, yield:6.73, tanggal_listing:"2013-07-26", kupon_freq:2 },
+  { seri:"PBS039",  jatuh_tempo:"2041-07-15", kupon:6.625, harga_jual:99.50,  harga_beli:100.95, yield:6.62, tanggal_listing:"2023-08-25", kupon_freq:2 },
+  { seri:"PBS035",  jatuh_tempo:"2042-03-15", kupon:6.80,  harga_jual:99.45,  harga_beli:101.03, yield:6.75, tanggal_listing:"2021-08-20", kupon_freq:2 },
+  { seri:"PBS005",  jatuh_tempo:"2043-04-15", kupon:6.75,  harga_jual:98.92,  harga_beli:100.97, yield:6.81, tanggal_listing:"2013-01-25", kupon_freq:2 },
+  { seri:"PBS028",  jatuh_tempo:"2046-10-15", kupon:7.75,  harga_jual:108.87, harga_beli:110.18, yield:6.89, tanggal_listing:"2019-08-23", kupon_freq:2 },
+  { seri:"PBS033",  jatuh_tempo:"2047-06-15", kupon:6.75,  harga_jual:99.69,  harga_beli:101.16, yield:6.73, tanggal_listing:"2021-02-19", kupon_freq:2 },
+  { seri:"PBS015",  jatuh_tempo:"2047-07-15", kupon:8.00,  harga_jual:111.85, harga_beli:113.45, yield:6.88, tanggal_listing:"2015-08-21", kupon_freq:2 },
+  { seri:"PBS038",  jatuh_tempo:"2049-12-15", kupon:6.875, harga_jual:99.06,  harga_beli:100.52, yield:6.91, tanggal_listing:"2022-02-18", kupon_freq:2 },
+];
+
+const TODAY = new Date().toISOString().slice(0,10);
+
+function log(msg, cls='') {
+  const el = document.getElementById('log');
+  el.innerHTML += `<div class="${cls}">${msg}</div>`;
+  el.scrollTop = el.scrollHeight;
+}
+
+async function runInsert() {
+  const btn = document.getElementById('btnRun');
+  btn.disabled = true;
+  document.getElementById('log').innerHTML = '';
+  document.getElementById('summary').style.display = 'none';
+
+  const mode = document.getElementById('modeSelect').value;
+  log(`Mode: ${mode} | Total data: ${BONDS.length}`, 'warn');
+  log('─'.repeat(70));
+
+  // Load existing seri
+  const { data: existing, error: fetchErr } = await _sb
+    .from('obligasi_products')
+    .select('id, seri')
+    .eq('category', 'gov-idr');
+
+  if (fetchErr) { log('ERROR fetch existing: ' + fetchErr.message, 'err'); btn.disabled=false; return; }
+
+  const existingMap = {};
+  (existing || []).forEach(r => { existingMap[r.seri.toUpperCase()] = r.id; });
+  log(`Seri sudah ada di DB (gov-idr): ${Object.keys(existingMap).length}`, 'ok');
+  log('─'.repeat(70));
+
+  let inserted=0, updated=0, skipped=0, errors=0;
+
+  for (const b of BONDS) {
+    const row = {
+      seri:            b.seri,
+      category:        'gov-idr',
+      jatuh_tempo:     b.jatuh_tempo,
+      kupon:           b.kupon,
+      harga_jual:      b.harga_jual,
+      harga_beli:      b.harga_beli,
+      yield:           b.yield,
+      tanggal_listing: b.tanggal_listing,
+      kupon_freq:      b.kupon_freq,
+      day_count_basis: 'ACT/ACT',
+      bond_type:       b.seri.startsWith('PBS') || b.seri.startsWith('PBSG') ? 'PBS' : 'FR',
+      bond_type2:      b.seri.startsWith('PBS') || b.seri.startsWith('PBSG') ? 'Sukuk' : 'Fixed',
+      tanggal_update:  TODAY,
+      issuer:          'Pemerintah RI',
+    };
+
+    const existingId = existingMap[b.seri.toUpperCase()];
+
+    if (existingId) {
+      // Seri sudah ada
+      if (mode === 'insert_only') {
+        log(`[SKIP] ${b.seri} — sudah ada`, 'skip');
+        skipped++; continue;
+      }
+      // UPDATE harga saja
+      const updateRow = {
+        harga_jual:     b.harga_jual,
+        harga_beli:     b.harga_beli,
+        yield:          b.yield,
+        tanggal_update: TODAY,
+      };
+      const { error } = await _sb.from('obligasi_products').update(updateRow).eq('id', existingId);
+      if (error) { log(`[ERR UPDATE] ${b.seri}: ${error.message}`, 'err'); errors++; }
+      else { log(`[UPDATED] ${b.seri} | Bid:${b.harga_jual} Offer:${b.harga_beli} YTM:${b.yield}%`, 'warn'); updated++; }
+    } else {
+      // Seri belum ada
+      if (mode === 'update_only') {
+        log(`[SKIP] ${b.seri} — belum ada di DB, skip (update_only mode)`, 'skip');
+        skipped++; continue;
+      }
+      // INSERT baru
+      const { error } = await _sb.from('obligasi_products').insert(row);
+      if (error) { log(`[ERR INSERT] ${b.seri}: ${error.message}`, 'err'); errors++; }
+      else { log(`[INSERTED] ${b.seri} | JT:${b.jatuh_tempo} Kupon:${b.kupon}% YTM:${b.yield}%`, 'ok'); inserted++; }
+    }
+  }
+
+  log('─'.repeat(70));
+  const sum = `Selesai — Inserted: ${inserted} | Updated: ${updated} | Skip: ${skipped} | Error: ${errors}`;
+  log(sum, 'warn');
+  const s = document.getElementById('summary');
+  s.style.display='block';
+  s.innerHTML=`<strong style="color:#f5a623;">Hasil:</strong> ✅ Inserted: <b>${inserted}</b> &nbsp;|&nbsp; 🔄 Updated: <b>${updated}</b> &nbsp;|&nbsp; ⏭ Skip: <b>${skipped}</b> &nbsp;|&nbsp; ❌ Error: <b>${errors}</b>`;
+  btn.disabled=false;
+}
+</script>
+</body>
+</html>
