@@ -628,7 +628,7 @@ async function runUpdate() {
   log('Mengambil semua data customer dari DB...');
   const { data: customers, error: fetchErr } = await _sb
     .from('customers')
-    .select('id, nama_nasabah, sales_pic');
+    .select('id, client_name, sales_pic');
 
   if (fetchErr) {
     log('ERROR mengambil data: ' + fetchErr.message, 'err');
@@ -644,7 +644,7 @@ async function runUpdate() {
     // Case-insensitive match — trim both sides
     const namaLower = nama.trim().toLowerCase();
     const matches = customers.filter(c =>
-      c.nama_nasabah && c.nama_nasabah.trim().toLowerCase() === namaLower
+      c.client_name && c.client_name.trim().toLowerCase() === namaLower
     );
 
     if (matches.length === 0) {
