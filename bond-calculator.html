@@ -125,9 +125,6 @@
     .result-item-value.gold { color: var(--gold); }
     .result-item-value.blue { color: #2d4abf; }
 
-    .formula-box { background: #f8f9ff; border: 1.5px solid #e8eaff; border-radius: 10px; padding: 12px 14px; margin-bottom: 16px; font-size: 0.77rem; color: #555; line-height: 1.75; }
-    .formula-box code { background: #eef0ff; padding: 1px 6px; border-radius: 4px; font-family: 'Courier New', monospace; font-size: 0.74rem; color: var(--navy); }
-
     /* CASHFLOW TABLE */
     .cf-card { background: #fff; border-radius: 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); overflow: hidden; }
     .cf-table-wrap { overflow-x: auto; max-height: 500px; overflow-y: auto; }
@@ -187,12 +184,13 @@
   <div class="page-header">
     <div>
       <div class="page-title">Bond Calculator</div>
-      <div class="page-subtitle">Kalkulator harga & yield obligasi pasar sekunder | Accrued Interest & Cashflow Schedule</div>
+      <div class="page-subtitle">Kalkulasi harga, yield, accrued interest & jadwal kupon obligasi</div>
       <div class="title-underline"></div>
     </div>
     <div class="header-actions">
       <span class="db-status loading" id="db-status-badge">⏳ Memuat data...</span>
-      <a href="obligasi-pasar-sekunder.html" class="btn btn-outline">← Pasar Sekunder</a>
+      <a href="obligasi-bookbuilding.html" class="btn btn-outline">← Bookbuilding</a>
+      <a href="obligasi-pasar-sekunder.html" class="btn btn-outline">Pasar Sekunder</a>
     </div>
   </div>
 
@@ -1002,16 +1000,6 @@ function renderOutput(r) {
 
   ${dbPriceHtml}
 
-  <!-- FORMULA -->
-  <div class="formula-box" style="margin-bottom:14px;">
-    <strong>📐 Formula:</strong><br/>
-    <code>Accrued Interest = (Coupon/Freq) × (Hari Akrual / Hari Periode) × Nominal</code><br/>
-    <code>Dirty Price = Clean Price + Accrued Interest%</code> &nbsp;·&nbsp;
-    <code>Total Proceed = Dirty Price% × Nominal</code><br/>
-    <code>Kupon Nett = Kupon Kotor × (1 − PPh%) − Safe Keeping Fee</code> &nbsp;·&nbsp;
-    <code>SKF = (SKF% / 365) × Hari × Nominal</code>
-  </div>
-
   <!-- CASHFLOW TABLE -->
   <div class="cf-card">
     <div class="card-header">
@@ -1021,7 +1009,7 @@ function renderOutput(r) {
           Jadwal Pembagian Kupon
           <span style="display:inline-block;padding:3px 10px;border-radius:20px;font-size:0.68rem;font-weight:700;background:#e8f0ff;color:#2d4abf;margin-left:6px;">${totalCoupons} Periode</span>
         </div>
-        <div class="card-subtitle">Dari Settlement → Jatuh Tempo &nbsp;|&nbsp; Basis: ${r.basis} &nbsp;|&nbsp; PPh: ${r.taxPct}% &nbsp;|&nbsp; SKF: ${r.skfPct}% p.a.</div>
+        <div class="card-subtitle">Settlement → Jatuh Tempo &nbsp;|&nbsp; Basis: ${r.basis} &nbsp;|&nbsp; PPh: ${r.taxPct}% &nbsp;|&nbsp; SKF: ${r.skfPct}%</div>
       </div>
     </div>
     <div class="cf-table-wrap">
