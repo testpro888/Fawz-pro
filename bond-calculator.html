@@ -188,8 +188,8 @@
       <div class="title-underline"></div>
     </div>
     <div class="header-actions">
-      <span class="db-status loading" id="db-status-badge">⏳ Memuat data...</span>
-      <a href="obligasi-bookbuilding.html" class="btn btn-outline">← Bookbuilding</a>
+      <span class="db-status loading" id="db-status-badge">Memuat data...</span>
+      <a href="obligasi-bookbuilding.html" class="btn btn-outline">&#8592; Bookbuilding</a>
       <a href="obligasi-pasar-sekunder.html" class="btn btn-outline">Pasar Sekunder</a>
     </div>
   </div>
@@ -200,7 +200,7 @@
     <div>
       <div class="card">
         <div class="card-header">
-          <div class="card-icon">🧮</div>
+          <div class="card-icon" style="font-size:0.85rem;font-weight:700;letter-spacing:1px;">BC</div>
           <div>
             <div class="card-title">Parameter Obligasi</div>
             <div class="card-subtitle">Pilih dari database atau isi manual</div>
@@ -211,10 +211,10 @@
           <!-- BOND PICKER FROM DATABASE -->
           <div class="bond-picker">
             <div class="bond-picker-label">
-              🗃️ Pilih Obligasi dari Database
+              Pilih Obligasi dari Database
             </div>
             <div class="bond-search-wrap" id="bond-search-container">
-              <span class="bond-search-icon">🔍</span>
+              <span class="bond-search-icon" style="font-size:0.85rem;color:#bbb;">&#128269;</span>
               <input
                 class="bond-search-input" id="bond-search-input"
                 placeholder="Ketik kode seri... (FR0100, ENRG01BCN3, INDON...)"
@@ -239,8 +239,8 @@
 
           <!-- CALCULATOR TYPE -->
           <div class="type-tabs">
-            <button class="type-tab active" onclick="setCalcType('secondary')" id="tab-secondary">📊 Pasar Sekunder</button>
-            <button class="type-tab" onclick="setCalcType('ipo')" id="tab-ipo">🏦 IPO / Primary</button>
+            <button class="type-tab active" onclick="setCalcType('secondary')" id="tab-secondary">Pasar Sekunder</button>
+            <button class="type-tab" onclick="setCalcType('ipo')" id="tab-ipo">IPO / Primary</button>
           </div>
 
           <!-- DETAIL OBLIGASI (auto-fill dari DB) -->
@@ -351,7 +351,7 @@
           </div>
 
           <button class="btn btn-primary" style="width:100%;justify-content:center;padding:14px;font-size:0.95rem;" onclick="calculate()">
-            🧮 Hitung Sekarang
+            Hitung Sekarang
           </button>
 
         </div>
@@ -361,7 +361,7 @@
     <!-- ===== RIGHT: OUTPUT ===== -->
     <div id="output-panel">
       <div class="empty-calc">
-        <div class="empty-calc-icon">📊</div>
+        <div class="empty-calc-icon" style="font-size:2rem;color:#ddd;">&#9783;</div>
         <p>Pilih obligasi dari database atau isi manual,<br/>lalu klik <strong>Hitung Sekarang</strong></p>
       </div>
     </div>
@@ -396,7 +396,7 @@ const CAT_LABELS = {
 // LOAD ALL BONDS FROM SUPABASE
 // =============================================
 async function loadBonds() {
-  setDbStatus('loading', '⏳ Memuat...');
+  setDbStatus('loading', 'Memuat...');
   try {
     const { data, error } = await _sb
       .from('obligasi_products')
@@ -405,13 +405,13 @@ async function loadBonds() {
     if (error) throw error;
     allBonds = data || [];
     filteredBonds = [...allBonds];
-    setDbStatus('ok', `✅ ${allBonds.length} obligasi`);
+    setDbStatus('ok', `${allBonds.length} obligasi`);
     renderDropdown(filteredBonds);
   } catch(e) {
     console.error('Load bonds error:', e);
-    setDbStatus('err', '❌ Gagal memuat');
+    setDbStatus('err', 'Gagal memuat');
     document.getElementById('bond-dropdown').innerHTML =
-      '<div class="bond-dropdown-empty">⚠️ Gagal memuat data dari database</div>';
+      '<div class="bond-dropdown-empty">Gagal memuat data dari database</div>';
   }
 }
 
@@ -897,7 +897,7 @@ function renderOutput(r) {
     totalSKF += f.skf; totalNett += f.nett;
     return `
     <tr>
-      <td class="center"><span class="${f.isMature ? 'period-badge mature' : 'period-badge'}">${f.isMature ? '🔑' : f.period}</span></td>
+      <td class="center"><span class="${f.isMature ? 'period-badge mature' : 'period-badge'}">${f.isMature ? 'JT' : f.period}</span></td>
       <td>${fmtDate(f.date)}</td>
       <td class="center"><span class="day-pill">${f.days}</span></td>
       <td class="right amount-pos">${fmtIDR(f.grossCoupon)}</td>
@@ -923,7 +923,7 @@ function renderOutput(r) {
   // DB price info row
   const dbPriceHtml = (r.hargaModal || r.hargaToCustomer) ? `
   <div style="background:#f8f9ff;border:1.5px solid #e8eaff;border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:0.78rem;color:#444;display:flex;gap:20px;flex-wrap:wrap;align-items:center;">
-    <span>📋 <strong>Harga dari DB:</strong></span>
+    <span><strong>Harga dari DB:</strong></span>
     ${r.hargaModal       != null ? `<span>Harga Modal: <strong>${fmtNum(r.hargaModal,3)}%</strong></span>` : ''}
     ${r.hargaToCustomer  != null ? `<span>To Customer: <strong>${fmtNum(r.hargaToCustomer,3)}%</strong></span>` : ''}
     ${r.penerbit         ? `<span>Penerbit: <strong>${esc(r.penerbit)}</strong></span>` : ''}
@@ -935,9 +935,8 @@ function renderOutput(r) {
   <!-- SUMMARY CARD -->
   <div class="result-card" style="margin-bottom:14px;">
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
-      <span style="font-size:1.05rem;">📋</span>
       <div style="font-size:0.72rem;font-weight:700;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:1px;">
-        ${esc(r.seriesLabel)} &nbsp;·&nbsp; Settlement ${r.settle ? fmtDateShort(r.settle) : '—'}
+        ${esc(r.seriesLabel)} &nbsp;&middot;&nbsp; Settlement ${r.settle ? fmtDateShort(r.settle) : '&mdash;'}
       </div>
     </div>
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;">
@@ -1003,13 +1002,13 @@ function renderOutput(r) {
   <!-- CASHFLOW TABLE -->
   <div class="cf-card">
     <div class="card-header">
-      <div class="card-icon">📅</div>
+      <div class="card-icon" style="font-size:0.75rem;font-weight:700;letter-spacing:0.5px;">CF</div>
       <div>
         <div class="card-title">
           Jadwal Pembagian Kupon
           <span style="display:inline-block;padding:3px 10px;border-radius:20px;font-size:0.68rem;font-weight:700;background:#e8f0ff;color:#2d4abf;margin-left:6px;">${totalCoupons} Periode</span>
         </div>
-        <div class="card-subtitle">Settlement → Jatuh Tempo &nbsp;|&nbsp; Basis: ${r.basis} &nbsp;|&nbsp; PPh: ${r.taxPct}% &nbsp;|&nbsp; SKF: ${r.skfPct}%</div>
+        <div class="card-subtitle">Settlement &rarr; Jatuh Tempo &nbsp;|&nbsp; Basis: ${r.basis} &nbsp;|&nbsp; PPh: ${r.taxPct}% &nbsp;|&nbsp; SKF: ${r.skfPct}%</div>
       </div>
     </div>
     <div class="cf-table-wrap">
@@ -1029,8 +1028,8 @@ function renderOutput(r) {
       </table>
     </div>
     <div class="cf-footer">
-      <span>Nominal: <strong>${fmtIDR(r.nominal)}</strong> &nbsp;·&nbsp; Coupon: <strong>${r.coupon}% p.a.</strong> &nbsp;·&nbsp; Frek: <strong>${r.freq}×/thn</strong></span>
-      <span>🔑 = Jatuh Tempo — termasuk pokok</span>
+      <span>Nominal: <strong>${fmtIDR(r.nominal)}</strong> &nbsp;&middot;&nbsp; Coupon: <strong>${r.coupon}% p.a.</strong> &nbsp;&middot;&nbsp; Frek: <strong>${r.freq}&times;/thn</strong></span>
+      <span>JT = Jatuh Tempo &mdash; termasuk pengembalian pokok</span>
     </div>
   </div>`;
 }
