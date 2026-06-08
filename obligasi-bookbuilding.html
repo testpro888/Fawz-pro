@@ -958,15 +958,23 @@
     document.getElementById('orderModal').classList.add('open');
   }
 
-  function calcT2() {
-    let date = new Date();
+  function calcT2(fromDate) {
+    // Mulai dari tanggal lokal (bukan UTC) untuk hindari geser hari
+    let date = fromDate ? new Date(fromDate) : new Date();
+    // Pastikan pakai waktu lokal tengah hari agar tidak terpengaruh timezone
+    date = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12, 0, 0);
+
     let businessDays = 0;
     while (businessDays < 2) {
       date.setDate(date.getDate() + 1);
-      const day = date.getDay();
+      const day = date.getDay(); // 0=Minggu, 6=Sabtu
       if (day !== 0 && day !== 6) businessDays++;
     }
-    return date.toISOString().slice(0, 10);
+    // Return YYYY-MM-DD lokal
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
   }
 
   function formatUnitInput(el) {
