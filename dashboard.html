@@ -150,14 +150,18 @@
         const lastDay  = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().slice(0,10);
         const monthLabel = now.toLocaleString('id-ID', { month: 'long', year: 'numeric' });
 
+        // Konstanta komisi (sama dengan sales-commission.html)
+        const DEFAULT_TARGET_FEE = 10_000_000;
+        const RATE_ABOVE_TARGET  = 0.12;
+        const RATE_BELOW_TARGET  = 0.05;
+
         // Query saham_transaksi bulan ini
         let q = _sbDash
           .from('saham_transaksi')
-          .select('volume, fee')
+          .select('volume, fee, sales_name')
           .gte('tanggal', firstDay)
           .lte('tanggal', lastDay);
 
-        // Filter by sales jika role sales
         if (role === 'sales' && salesName) {
           q = q.ilike('sales_name', salesName);
         }
@@ -169,6 +173,17 @@
         const totalVolume = rows.reduce((s, r) => s + (parseFloat(r.volume) || 0), 0);
         const totalFee    = rows.reduce((s, r) => s + (parseFloat(r.fee)    || 0), 0);
         const jumlahTrx   = rows.length;
+
+        // Hitung total komisi: per-sales dengan target-based rate lalu dijumlah
+        const salesFeeMap = {};
+        rows.forEach(r => {
+          const key = (r.sales_name || '—').toLowerCase().trim();
+          salesFeeMap[key] = (salesFeeMap[key] || 0) + (parseFloat(r.fee) || 0);
+        });
+        const totalKomisi = Object.values(salesFeeMap).reduce((sum, fee) => {
+          const rate = fee >= DEFAULT_TARGET_FEE ? RATE_ABOVE_TARGET : RATE_BELOW_TARGET;
+          return sum + fee * rate;
+        }, 0);
 
         const fmtRp = v => 'Rp ' + Math.round(v).toLocaleString('id-ID');
 
@@ -183,7 +198,7 @@
         if (elTrxBadge) elTrxBadge.textContent = jumlahTrx.toLocaleString('id-ID') + ' Transaksi';
         if (elRevVal)   elRevVal.textContent    = fmtRp(totalFee);
         if (elRevBadge) elRevBadge.textContent  = monthLabel;
-        if (elKomVal)   elKomVal.textContent    = fmtRp(totalFee);
+        if (elKomVal)   elKomVal.textContent    = fmtRp(totalKomisi);
         if (elKomBadge) elKomBadge.textContent  = monthLabel;
 
       } catch(e) {
