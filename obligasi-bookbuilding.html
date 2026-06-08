@@ -1047,9 +1047,9 @@
 
     const ob = orderObligasi || {};
 
-    // Nominal Amount = (Unit Amount / 100) × Offer Price × 1.000.000
-    const offerPrice  = parseFloat(ob.harga_beli) || parseFloat(ob.hargaBeli) || 100;
-    const nominalAmount = unit * offerPrice * 1000000;
+    // Nominal Amount = Unit Amount × (Offer / 100)
+    const offerPrice    = parseFloat(ob.harga_beli) || parseFloat(ob.hargaBeli) || 100;
+    const nominalAmount = unitAmount * (offerPrice / 100);
 
     // Accrued Interest = YEARFRAC(Last Coupon, Settlement) × Unit Amount × Coupon Rate
     const lastCouponStr = ob.last_coupon_date || ob.lastCouponDate || '';
@@ -1063,8 +1063,8 @@
       if (!isNaN(lastCouponDate) && !isNaN(settlementDate) && settlementDate > lastCouponDate) {
         const diffDays = (settlementDate - lastCouponDate) / (1000 * 60 * 60 * 24);
         const yearFrac = diffDays / 365;
-        // AI = yearFrac × Unit Amount × Coupon Rate (%)
-        accruedInterest = yearFrac * unitAmount * (couponRate / 100) * 1000000;
+        // AI = YEARFRAC(lastCoupon, settlement) × Unit Amount × Coupon%
+        accruedInterest = yearFrac * unitAmount * (couponRate / 100);
       }
     }
 
