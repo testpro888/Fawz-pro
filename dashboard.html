@@ -127,17 +127,69 @@
       if (el) el.textContent = '0';
       
       if (role === 'sales') {
-        // Sales: hanya transaksi miliknya
         loadSalesCustomerCount();
       } else if (role === 'head_sales') {
-        // Head Sales: semua transaksi sales
         loadHeadSalesCustomerCount();
       } else {
-        // Admin/Head Account/Bonds: semua transaksi (sama seperti head_sales)
         loadAllCustomerCount();
         loadObligasiCount();
       }
+
+      // Load summary bar untuk semua role
+      loadSummaryBar(role);
     });
+
+    async function loadSummaryBar(role) {
+      try {
+        const raw = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember');
+        const u = raw ? JSON.parse(raw) : {};
+        const salesName = u.name || '';
+
+        const now = new Date();
+        const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0,10);
+        const lastDay  = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().slice(0,10);
+        const monthLabel = now.toLocaleString('id-ID', { month: 'long', year: 'numeric' });
+
+        // Query saham_transaksi bulan ini
+        let q = _sbDash
+          .from('saham_transaksi')
+          .select('volume, fee')
+          .gte('tanggal', firstDay)
+          .lte('tanggal', lastDay);
+
+        // Filter by sales jika role sales
+        if (role === 'sales' && salesName) {
+          q = q.ilike('sales_name', salesName);
+        }
+
+        const { data, error } = await q;
+        if (error) throw error;
+
+        const rows = data || [];
+        const totalVolume = rows.reduce((s, r) => s + (parseFloat(r.volume) || 0), 0);
+        const totalFee    = rows.reduce((s, r) => s + (parseFloat(r.fee)    || 0), 0);
+        const jumlahTrx   = rows.length;
+
+        const fmtRp = v => 'Rp ' + Math.round(v).toLocaleString('id-ID');
+
+        const elTrxVal   = document.getElementById('sumTransaksiValue');
+        const elTrxBadge = document.getElementById('sumTransaksiBadge');
+        const elRevVal   = document.getElementById('sumRevenueValue');
+        const elRevBadge = document.getElementById('sumRevenueBadge');
+        const elKomVal   = document.getElementById('sumKomisiValue');
+        const elKomBadge = document.getElementById('sumKomisiBadge');
+
+        if (elTrxVal)   elTrxVal.textContent   = fmtRp(totalVolume);
+        if (elTrxBadge) elTrxBadge.textContent = jumlahTrx.toLocaleString('id-ID') + ' Transaksi';
+        if (elRevVal)   elRevVal.textContent    = fmtRp(totalFee);
+        if (elRevBadge) elRevBadge.textContent  = monthLabel;
+        if (elKomVal)   elKomVal.textContent    = fmtRp(totalFee);
+        if (elKomBadge) elKomBadge.textContent  = monthLabel;
+
+      } catch(e) {
+        console.error('Gagal load summary bar:', e);
+      }
+    }
 
     async function loadSalesCustomerCount() {
       // Untuk sales: hitung nasabah unik dari saham_transaksi YTD
@@ -561,18 +613,18 @@
     </div>
     <div class="summary-item">
       <div class="sum-label">Transaksi Bulan Ini</div>
-      <div class="sum-value">Rp 0</div>
-      <div><span class="sum-badge badge-neutral">0 Transaksi</span></div>
+      <div class="sum-value" id="sumTransaksiValue">Rp 0</div>
+      <div><span class="sum-badge badge-neutral" id="sumTransaksiBadge">0 Transaksi</span></div>
     </div>
     <div class="summary-item">
       <div class="sum-label">Total Revenue</div>
-      <div class="sum-value">Rp 0</div>
-      <div><span class="sum-badge badge-up">—</span></div>
+      <div class="sum-value" id="sumRevenueValue">Rp 0</div>
+      <div><span class="sum-badge badge-up" id="sumRevenueBadge">—</span></div>
     </div>
     <div class="summary-item">
       <div class="sum-label">Komisi Berjalan</div>
-      <div class="sum-value">Rp 0</div>
-      <div><span class="sum-badge badge-neutral">—</span></div>
+      <div class="sum-value" id="sumKomisiValue">Rp 0</div>
+      <div><span class="sum-badge badge-neutral" id="sumKomisiBadge">—</span></div>
     </div>
   </div>
 
