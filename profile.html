@@ -398,7 +398,7 @@
           <div class="acc-right">
             ${isSelf ? '<span class="self-badge">ANDA</span>' : ''}
             <span class="acc-role ${a.role}">${ROLE_LABELS[a.role] || a.role}</span>
-            ${!isSelf && !isHead
+            ${!isSelf && !(isHead && a.username === 'fawzheadaccount')
               ? `<button class="btn-del" onclick="deleteAccount('${esc(a.id || '')}','${esc(a.username)}','${esc(a.name || '')}')" title="Hapus akun">✕</button>`
               : `<button class="btn-del" style="opacity:0.2;cursor:not-allowed;" disabled>✕</button>`}
           </div>
