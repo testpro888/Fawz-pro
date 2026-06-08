@@ -351,12 +351,13 @@
         <input class="form-input" id="ordClientName" readonly style="background:#f5f5f5;"/>
       </div>
       <div class="form-group">
-        <label class="form-label">Amount (Nominal) <span class="req">*</span></label>
-        <input class="form-input" id="ordAmount" type="text" inputmode="numeric" placeholder="10.000.000" oninput="formatAmountInput(this)"/>
+        <label class="form-label">Unit <span class="req">*</span></label>
+        <input class="form-input" id="ordUnit" type="text" inputmode="numeric" placeholder="10.000" oninput="formatUnitInput(this)"/>
+        <div style="font-size:0.72rem;color:#888;margin-top:3px;">1 unit = Rp 100.000 × harga offer. Nominal = unit × 100rb × (offer%/100)</div>
       </div>
       <div class="form-group">
-        <label class="form-label">Unit <span style="font-size:.65rem;color:#888;">(Otomatis)</span></label>
-        <input class="form-input" id="ordUnit" readonly style="background:#f5f5f5;"/>
+        <label class="form-label">Amount (Nominal) <span style="font-size:.65rem;color:#888;">(Otomatis)</span></label>
+        <input class="form-input" id="ordAmount" readonly style="background:#f5f5f5;"/>
       </div>
       <div class="form-group">
         <label class="form-label">Tgl. Settlement <span style="font-size:.65rem;color:#888;">(T+2)</span></label>
@@ -948,8 +949,8 @@
     // Reset form
     document.getElementById('ordClientCode').value = '';
     document.getElementById('ordClientName').value = '';
-    document.getElementById('ordAmount').value = '';
     document.getElementById('ordUnit').value = '';
+    document.getElementById('ordAmount').value = '';
     document.getElementById('ordSekuritas').innerHTML = '<option value="">-- Pilih Sekuritas --</option>';
 
     // Load clients for this sales
@@ -969,10 +970,19 @@
     return date.toISOString().slice(0, 10);
   }
 
-  function formatAmountInput(el) {
-    // Hapus semua selain angka
+  function formatUnitInput(el) {
     let raw = el.value.replace(/[^0-9]/g, '');
-    // Format dengan titik ribuan
+    if (raw) {
+      el.value = Number(raw).toLocaleString('id-ID');
+    } else {
+      el.value = '';
+    }
+    calcNominalFromUnit();
+  }
+
+  function formatAmountInput(el) {
+    // Kept for sell form compatibility
+    let raw = el.value.replace(/[^0-9]/g, '');
     if (raw) {
       el.value = Number(raw).toLocaleString('id-ID');
     } else {
@@ -981,9 +991,29 @@
     calcUnit();
   }
 
+  function getUnitRaw() {
+    const val = document.getElementById('ordUnit').value;
+    return parseInt(val.replace(/[^0-9]/g, '')) || 0;
+  }
+
   function getAmountRaw() {
     const val = document.getElementById('ordAmount').value;
     return parseInt(val.replace(/[^0-9]/g, '')) || 0;
+  }
+
+  function calcNominalFromUnit() {
+    const unit = getUnitRaw();
+    if (!unit) {
+      document.getElementById('ordAmount').value = '';
+      return;
+    }
+    // 1 unit = Rp 100.000 face value
+    // nominal = unit × 100.000 × (offer / 100)
+    const offerPrice = orderObligasi
+      ? (parseFloat(orderObligasi.harga_beli) || parseFloat(orderObligasi.hargaBeli) || 100)
+      : 100;
+    const nominal = Math.round(unit * 100000 * (offerPrice / 100));
+    document.getElementById('ordAmount').value = nominal.toLocaleString('id-ID');
   }
 
   function calcUnit() {
@@ -1085,14 +1115,14 @@
   async function submitOrder() {
     const clientId = document.getElementById('ordClientCode').value;
     const clientName = document.getElementById('ordClientName').value;
+    const unit = getUnitRaw();
     const amount = getAmountRaw();
-    const unit = Math.floor(amount / 100);
     const settlement = document.getElementById('ordSettlement').value;
     const nextCoupon = document.getElementById('ordNextCoupon').value;
     const sekuritas = document.getElementById('ordSekuritas').value;
 
     if (!clientId) { showToast('Pilih client terlebih dahulu', 'error'); return; }
-    if (amount < 100) { showToast('Amount minimal 100', 'error'); return; }
+    if (unit < 1) { showToast('Masukkan jumlah unit', 'error'); return; }
     if (!sekuritas) { showToast('Pilih sekuritas', 'error'); return; }
 
     const btn = document.getElementById('ordSubmitBtn');
