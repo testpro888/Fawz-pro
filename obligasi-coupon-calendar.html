@@ -255,7 +255,7 @@
     try {
       const { data, error } = await window._supabase
         .from('obligasi_products')
-        .select('id, seri, kupon, category, penerbit, jatuh_tempo, tanggal_listing, kupon_freq, last_coupon_date, next_coupon_date, final_maturity')
+        .select('id, seri, kupon, category, penerbit, jatuh_tempo, tanggal_listing, kupon_freq, last_coupon_date, next_coupon_date')
         .order('seri', { ascending: true });
       if (error) throw error;
       allObligasi = data || [];
@@ -293,9 +293,7 @@
     if (item.tanggal_listing && item.kupon_freq) {
       const freq     = parseInt(item.kupon_freq);
       const listing  = new Date(item.tanggal_listing);
-      const maturity = item.final_maturity ? new Date(item.final_maturity)
-                     : item.jatuh_tempo    ? new Date(item.jatuh_tempo)
-                     : null;
+      const maturity = item.jatuh_tempo ? new Date(item.jatuh_tempo) : null;
 
       let cursor = addMonths(listing, freq);
       let safety = 0;
@@ -399,8 +397,8 @@
         const catClass = ('cat-' + (item.category||'').replace('-','-'));
         const catLabel = CAT_LABEL[item.category] || item.category || '';
         const penerbit = item.penerbit ? `<div class="coupon-detail-item"><span>Penerbit</span><strong>${esc(item.penerbit)}</strong></div>` : '';
-        const jatuhTempo = item.jatuh_tempo || item.final_maturity
-          ? `<div class="coupon-detail-item"><span>Jatuh Tempo</span><strong>${fmtDate(item.jatuh_tempo || item.final_maturity)}</strong></div>`
+        const jatuhTempo = item.jatuh_tempo
+          ? `<div class="coupon-detail-item"><span>Jatuh Tempo</span><strong>${fmtDate(item.jatuh_tempo)}</strong></div>`
           : '';
         const freqLabel = item.kupon_freq
           ? `<div class="coupon-detail-item"><span>Frekuensi</span><strong>Setiap ${item.kupon_freq} bln</strong></div>`
