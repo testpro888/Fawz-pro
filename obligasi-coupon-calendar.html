@@ -343,7 +343,13 @@
           ? `<div class="coupon-detail-item"><span>Jatuh Tempo</span><strong>${fmtDate(item.jatuh_tempo)}</strong></div>`
           : '';
         const freqLabel = item.kupon_freq
-          ? `<div class="coupon-detail-item"><span>Frekuensi</span><strong>Setiap ${item.kupon_freq} bln</strong></div>`
+          ? (() => {
+              // kupon_freq ≤ 12 = per-tahun (2=semi-annual, 4=quarterly, 12=annual)
+              // kupon_freq > 12 = interval bulan (tidak lazim)
+              const f = parseInt(item.kupon_freq);
+              const bulan = f <= 12 ? Math.round(12 / f) : f;
+              return `<div class="coupon-detail-item"><span>Frekuensi</span><strong>Setiap ${bulan} bln</strong></div>`;
+            })()
           : '';
 
         return `<div class="coupon-item">

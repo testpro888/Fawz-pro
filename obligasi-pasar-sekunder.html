@@ -769,10 +769,18 @@
   function closeFormModal(e) { if (e.target === document.getElementById('formModal')) { document.getElementById('fCategory').disabled = false; document.getElementById('formModal').classList.remove('open'); } }
 
   // ===== BATCH HITUNG KUPON OTOMATIS =====
-  // Logika: anchor = jatuh_tempo, mundur kelipatan 6 bulan
+  // Logika: anchor = jatuh_tempo, mundur kelipatan freq bulan
   // Referensi "hari ini" = tanggal_update (bukan Date.now())
-  function calcCouponsFromMaturity(jatuh_tempo, tanggal_update) {
+  // kupon_freq konvensi: ≤ 12 = per-tahun (2=semi-annual), > 12 = bulan interval
+  function freqToMonths(kupon_freq) {
+    const f = parseInt(kupon_freq) || 2;
+    return f <= 12 ? Math.round(12 / f) : f;
+  }
+
+  function calcCouponsFromMaturity(jatuh_tempo, tanggal_update, kupon_freq) {
     if (!jatuh_tempo) return { last: null, next: null };
+
+    const intervalMonths = freqToMonths(kupon_freq || 2); // default semi-annual
 
     function addMonths(d, m) {
       const r = new Date(d);
@@ -789,19 +797,16 @@
     const ref      = tanggal_update ? new Date(tanggal_update) : new Date();
     ref.setHours(0, 0, 0, 0);
 
-    // Hasilkan semua tanggal kupon: mundur dari jatuh_tempo kelipatan 6 bulan
-    // sampai jauh ke belakang (maks 60 tahun = 120 periode)
+    // Hasilkan semua tanggal kupon: mundur dari jatuh_tempo kelipatan interval
     const dates = [];
-    for (let i = 0; i <= 120; i++) {
-      const d = addMonths(maturity, -6 * i);
+    const maxPeriods = Math.ceil(60 * 12 / intervalMonths);
+    for (let i = 0; i <= maxPeriods; i++) {
+      const d = addMonths(maturity, -intervalMonths * i);
       dates.push(d);
-      // Hentikan kalau sudah > 60 tahun sebelum maturity
       if (i > 0 && maturity.getFullYear() - d.getFullYear() > 60) break;
     }
-    // Urutkan ascending
     dates.sort((a, b) => a - b);
 
-    // Cari last (≤ ref) dan next (> ref)
     let last = null, next = null;
     for (const d of dates) {
       if (d <= ref) last = d;
@@ -817,7 +822,7 @@
   async function batchCalcCoupons(cat) {
     const btn = document.querySelector(`button[onclick="batchCalcCoupons('${cat}')"]`);
     const origText = btn ? btn.textContent : '';
-    if (btn) { btn.disabled = true; btn.textContent = '⏳ Menghitung...'; }
+    if (btn) { btn.disabled = true; btn.textContent = 'Menghitung...'; }
 
     try {
       if (!window._supabase) throw new Error('Supabase belum siap');
@@ -825,7 +830,7 @@
       // Ambil semua record kategori ini
       const { data: rows, error } = await window._supabase
         .from('obligasi_products')
-        .select('id, jatuh_tempo, tanggal_update, last_coupon_date, next_coupon_date')
+        .select('id, jatuh_tempo, tanggal_update, last_coupon_date, next_coupon_date, kupon_freq')
         .eq('category', cat);
 
       if (error) throw error;
@@ -840,17 +845,26 @@
       for (const row of rows) {
         if (!row.jatuh_tempo) { skipped++; continue; }
 
-        const { last, next } = calcCouponsFromMaturity(row.jatuh_tempo, row.tanggal_update);
+        // Normalise kupon_freq: konvensi per-tahun (≤12) → konversi ke bulan
+        // Simpan ulang dalam format bulan agar konsisten dengan form input
+        const freqRaw       = parseInt(row.kupon_freq) || 2;
+        const freqNormalized = freqRaw <= 12 ? Math.round(12 / freqRaw) : freqRaw;
 
-        // Skip kalau tidak ada perubahan
-        if (row.last_coupon_date === last && row.next_coupon_date === next) {
+        const { last, next } = calcCouponsFromMaturity(row.jatuh_tempo, row.tanggal_update, row.kupon_freq);
+
+        // Skip kalau tidak ada perubahan (termasuk kupon_freq sudah benar)
+        const freqChanged = row.kupon_freq !== freqNormalized;
+        if (!freqChanged && row.last_coupon_date === last && row.next_coupon_date === next) {
           skipped++;
           continue;
         }
 
+        const updatePayload = { last_coupon_date: last, next_coupon_date: next };
+        if (freqChanged) updatePayload.kupon_freq = freqNormalized;
+
         const { error: updErr } = await window._supabase
           .from('obligasi_products')
-          .update({ last_coupon_date: last, next_coupon_date: next })
+          .update(updatePayload)
           .eq('id', row.id);
 
         if (updErr) { console.warn('Update error', row.id, updErr); skipped++; }
