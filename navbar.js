@@ -97,33 +97,36 @@
     const PERMISSIONS = {
       // format: { navItemId atau href : [roles yang BOLEH lihat] }
       // Nav menu utama
-      navSales   : ['head_account', 'admin', 'treasury', 'sales'],
-      navCustomer: ['head_account', 'admin', 'treasury', 'sales'],
-      navProduct : ['head_account', 'admin', 'treasury', 'sales'],
-      navRevenue : ['head_account', 'admin', 'treasury', 'sales'],
+      navSales   : ['head_account', 'admin', 'treasury', 'sales', 'head_sales'],
+      navCustomer: ['head_account', 'admin', 'treasury', 'sales', 'head_sales'],
+      navProduct : ['head_account', 'admin', 'treasury', 'sales', 'head_sales'],
+      navRevenue : ['head_account', 'admin', 'treasury', 'sales', 'head_sales'],
 
       // Dropdown items — by href
       // Sales dropdown
-      'sales-activity.html'    : ['head_account', 'admin', 'treasury', 'sales'],
-      'sales-transaction.html' : ['head_account', 'admin', 'treasury', 'sales'],
-      'sales-tracker.html'     : ['head_account', 'admin'],
-      'sales.html'             : ['head_account', 'admin'],
+      'sales-activity.html'    : ['head_account', 'admin', 'treasury', 'sales', 'head_sales'],
+      'sales-transaction.html' : ['head_account', 'admin', 'treasury', 'sales', 'head_sales'],
+      'sales-tracker.html'     : ['head_account', 'admin', 'head_sales'],
+      'sales.html'             : ['head_account', 'admin', 'head_sales'],
 
       // Customer dropdown
-      'customer.html'          : ['head_account', 'admin', 'treasury', 'sales'],
+      'customer.html'          : ['head_account', 'admin', 'treasury', 'sales', 'head_sales'],
 
       // Product dropdown
-      'obligasi-bookbuilding.html'   : ['head_account', 'admin', 'treasury', 'sales'],
-      'obligasi-pasar-sekunder.html' : ['head_account', 'admin', 'treasury', 'sales'],
-      'obligasi-ipo.html'            : ['head_account', 'admin', 'treasury', 'sales'],
-      'bond-transaction.html'        : ['head_account', 'admin', 'treasury', 'sales'],
+      'obligasi-bookbuilding.html'    : ['head_account', 'admin', 'treasury', 'sales', 'head_sales'],
+      'obligasi-pasar-sekunder.html'  : ['head_account', 'admin', 'treasury', 'sales', 'head_sales'],
+      'obligasi-ipo.html'             : ['head_account', 'admin', 'treasury', 'sales', 'head_sales'],
+      'bond-transaction.html'         : ['head_account', 'admin', 'treasury', 'sales', 'head_sales'],
+      'obligasi-coupon-calendar.html' : ['head_account', 'admin', 'treasury', 'sales', 'head_sales'],
       // reksadana & waran locked (shown as "soon" — no href)
-      'saham.html'                   : ['head_account', 'admin', 'treasury', 'sales'],
-      'saham-ranking.html'           : ['head_account', 'admin'],
+      'saham.html'                    : ['head_account', 'admin', 'treasury', 'sales', 'head_sales'],
+      'saham-ranking.html'            : ['head_account', 'admin', 'head_sales'],
+      'fawz-point.html'               : ['head_account', 'admin', 'head_sales'],
 
       // Revenue dropdown
-      'revenue-data.html'      : ['head_account', 'admin', 'sales'],
-      'sales-commission.html'  : ['head_account', 'admin', 'sales'],
+      'analytics.html'         : ['head_account', 'admin', 'sales', 'head_sales'],
+      'revenue-data.html'      : ['head_account', 'admin', 'sales', 'head_sales'],
+      'sales-commission.html'  : ['head_account', 'admin', 'sales', 'head_sales'],
 
       // User dropdown
       'manageAccountsLink'     : ['head_account'],  // Kelola Akun di profile
