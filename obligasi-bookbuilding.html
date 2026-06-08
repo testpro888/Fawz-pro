@@ -158,13 +158,14 @@
     /* MODAL */
     .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(13,13,43,.55); backdrop-filter: blur(4px); z-index: 2000; align-items: center; justify-content: center; }
     .modal-overlay.open { display: flex; }
-    .modal { background: #fff; border-radius: 20px; padding: 32px; width: 700px; max-width: 96vw; max-height: 92vh; overflow-y: auto; box-shadow: 0 24px 80px rgba(0,0,0,.2); animation: slideUp .25s ease; }
-    @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-    .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+    .modal { background: #fff; border-radius: 20px; padding: 0; width: 700px; max-width: 96vw; max-height: 92vh; display: flex; flex-direction: column; box-shadow: 0 24px 80px rgba(0,0,0,.2); animation: slideUp .25s ease; }
+    .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 24px 32px 16px; flex-shrink: 0; border-bottom: 1px solid #f0f0f5; }
+    .modal-body { padding: 20px 32px; overflow-y: auto; flex: 1; }
     .modal-title { font-family: 'Inter', sans-serif; font-size: 1.3rem; font-weight: 700; color: var(--navy); }
     .modal-close { width: 32px; height: 32px; border-radius: 8px; border: 1.5px solid var(--border); background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1rem; color: var(--gray); transition: all .15s; }
     .modal-close:hover { border-color: #ffcccc; color: #e74c3c; background: #fff0f0; }
-    .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; padding-top: 18px; border-top: 1px solid #f0f0f5; }
+    @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .modal-footer { display: flex; gap: 10px; justify-content: flex-end; padding: 16px 32px; border-top: 1px solid #f0f0f5; flex-shrink: 0; background: #fff; border-radius: 0 0 20px 20px; }
 
     /* Picker */
     .picker-filters { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
@@ -323,72 +324,73 @@
       <button class="modal-close" onclick="closeModal('orderModal')">✕</button>
     </div>
 
-    <!-- Info Obligasi (otomatis) -->
-    <div style="background:#f8f9ff;border-radius:12px;padding:16px 20px;margin-bottom:20px;border:1px solid #e8e8f5;">
-      <div style="font-size:.68rem;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Data Obligasi</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px 16px;font-size:.82rem;">
-        <div><span style="color:#888;">Series:</span> <strong id="ordSeri">—</strong></div>
-        <div><span style="color:#888;">Coupon:</span> <strong id="ordKupon">—</strong></div>
-        <div><span style="color:#888;">YTM:</span> <strong id="ordYtm">—</strong></div>
-        <div><span style="color:#888;">Bid:</span> <strong id="ordBid">—</strong></div>
-        <div><span style="color:#888;">Offer:</span> <strong id="ordOffer">—</strong></div>
-        <div><span style="color:#888;">Jatuh Tempo:</span> <strong id="ordJatuhTempo">—</strong></div>
+    <div class="modal-body">
+      <!-- Info Obligasi (otomatis) -->
+      <div style="background:#f8f9ff;border-radius:12px;padding:16px 20px;margin-bottom:20px;border:1px solid #e8e8f5;">
+        <div style="font-size:.68rem;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Data Obligasi</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px 16px;font-size:.82rem;">
+          <div><span style="color:#888;">Series:</span> <strong id="ordSeri">—</strong></div>
+          <div><span style="color:#888;">Coupon:</span> <strong id="ordKupon">—</strong></div>
+          <div><span style="color:#888;">YTM:</span> <strong id="ordYtm">—</strong></div>
+          <div><span style="color:#888;">Bid:</span> <strong id="ordBid">—</strong></div>
+          <div><span style="color:#888;">Offer:</span> <strong id="ordOffer">—</strong></div>
+          <div><span style="color:#888;">Jatuh Tempo:</span> <strong id="ordJatuhTempo">—</strong></div>
+        </div>
       </div>
-    </div>
 
-    <input type="hidden" id="ordCategory"/>
-    <input type="hidden" id="ordPsId"/>
+      <input type="hidden" id="ordCategory"/>
+      <input type="hidden" id="ordPsId"/>
 
-    <div class="form-grid">
-      <div class="form-group" style="position:relative;">
-        <label class="form-label">Client Code <span class="req">*</span></label>
-        <input class="form-input" id="ordClientSearch" type="text" placeholder="Ketik kode atau nama client..." autocomplete="off"
-          oninput="filterClientDropdown()"
-          onfocus="openClientDropdown()"
-          onkeydown="onClientSearchKey(event)"
-          style="padding-right:30px;"/>
-        <span style="position:absolute;right:10px;top:34px;color:#bbb;font-size:0.8rem;pointer-events:none;">▾</span>
-        <div id="ordClientDropdown" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:500;background:#fff;border:1.5px solid #e0e0ef;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.12);max-height:220px;overflow-y:auto;"></div>
-        <input type="hidden" id="ordClientCode"/>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Nama Client</label>
-        <input class="form-input" id="ordClientName" readonly style="background:#f5f5f5;"/>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Unit Amount <span class="req">*</span></label>
-        <input class="form-input" id="ordUnit" type="text" inputmode="numeric" placeholder="1.000" oninput="formatUnitInput(this)"/>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Unit</label>
-        <input class="form-input" id="ordUnitCalc" readonly style="background:#f5f5f5;"/>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Nominal Amount</label>
-        <input class="form-input" id="ordAmount" readonly style="background:#f5f5f5;"/>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Accrued Interest</label>
-        <input class="form-input" id="ordAccrued" readonly style="background:#f5f5f5;"/>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Total Nominal Setor/Debet</label>
-        <input class="form-input" id="ordTotalNominal" readonly style="background:#f5f5f5;font-weight:700;"/>
-      </div>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Tgl. Settlement <span style="font-size:.65rem;color:#888;">(T+2)</span></label>
-        <input class="form-input" id="ordSettlement" type="date" readonly style="background:#f5f5f5;"/>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Next Coupon Date <span style="font-size:.65rem;color:#888;">(Otomatis)</span></label>
-        <input class="form-input" id="ordNextCoupon" type="date" readonly style="background:#f5f5f5;"/>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Sekuritas <span class="req">*</span></label>
-        <select class="form-select" id="ordSekuritas">
-          <option value="">-- Pilih Sekuritas --</option>
-        </select>
+      <div class="form-grid">
+        <div class="form-group" style="position:relative;">
+          <label class="form-label">Client Code <span class="req">*</span></label>
+          <input class="form-input" id="ordClientSearch" type="text" placeholder="Ketik kode atau nama client..." autocomplete="off"
+            oninput="filterClientDropdown()"
+            onfocus="openClientDropdown()"
+            onkeydown="onClientSearchKey(event)"
+            style="padding-right:30px;"/>
+          <span style="position:absolute;right:10px;top:34px;color:#bbb;font-size:0.8rem;pointer-events:none;">▾</span>
+          <div id="ordClientDropdown" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:500;background:#fff;border:1.5px solid #e0e0ef;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.12);max-height:220px;overflow-y:auto;"></div>
+          <input type="hidden" id="ordClientCode"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Nama Client</label>
+          <input class="form-input" id="ordClientName" readonly style="background:#f5f5f5;"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Unit Amount <span class="req">*</span></label>
+          <input class="form-input" id="ordUnit" type="text" inputmode="numeric" placeholder="1.000.000.000" oninput="formatUnitInput(this)"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Unit</label>
+          <input class="form-input" id="ordUnitCalc" readonly style="background:#f5f5f5;"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Nominal Amount</label>
+          <input class="form-input" id="ordAmount" readonly style="background:#f5f5f5;"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Accrued Interest</label>
+          <input class="form-input" id="ordAccrued" readonly style="background:#f5f5f5;"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Total Nominal Setor/Debet</label>
+          <input class="form-input" id="ordTotalNominal" readonly style="background:#f5f5f5;font-weight:700;"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tgl. Settlement (T+2)</label>
+          <input class="form-input" id="ordSettlement" type="date" readonly style="background:#f5f5f5;"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Next Coupon Date</label>
+          <input class="form-input" id="ordNextCoupon" type="date" readonly style="background:#f5f5f5;"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Sekuritas <span class="req">*</span></label>
+          <select class="form-select" id="ordSekuritas">
+            <option value="">-- Pilih Sekuritas --</option>
+          </select>
+        </div>
       </div>
     </div>
 
@@ -1062,7 +1064,7 @@
       const settlementDate = new Date(settlementStr);
       if (!isNaN(lastCouponDate) && !isNaN(settlementDate) && settlementDate > lastCouponDate) {
         const diffDays = (settlementDate - lastCouponDate) / (1000 * 60 * 60 * 24);
-        const yearFrac = diffDays / 365;
+        const yearFrac = diffDays / 360; // ACT/360 sesuai konvensi obligasi Indonesia
         // AI = YEARFRAC(lastCoupon, settlement) × Unit Amount × Coupon%
         accruedInterest = yearFrac * unitAmount * (couponRate / 100);
       }
