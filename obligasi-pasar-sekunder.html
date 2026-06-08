@@ -203,6 +203,7 @@
         </div>
         <button class="btn btn-outline btn-sm" onclick="openUploadModalFor('gov-idr')">⬆️ CSV</button>
         <button class="btn btn-outline btn-sm" onclick="exportCSV('gov-idr')">⬇️ Export</button>
+        <button class="btn btn-outline btn-sm" onclick="batchCalcCoupons('gov-idr')" title="Hitung last & next coupon otomatis dari jatuh tempo">🔄 Hitung Kupon</button>
         <button class="btn btn-primary btn-sm" onclick="openAddModal('gov-idr')">+ Tambah</button>
       </div>
     </div>
@@ -241,6 +242,7 @@
         </div>
         <button class="btn btn-outline btn-sm" onclick="openUploadModalFor('gov-usd')">⬆️ CSV</button>
         <button class="btn btn-outline btn-sm" onclick="exportCSV('gov-usd')">⬇️ Export</button>
+        <button class="btn btn-outline btn-sm" onclick="batchCalcCoupons('gov-usd')" title="Hitung last & next coupon otomatis dari jatuh tempo">🔄 Hitung Kupon</button>
         <button class="btn btn-primary btn-sm" onclick="openAddModal('gov-usd')">+ Tambah</button>
       </div>
     </div>
@@ -279,6 +281,7 @@
         </div>
         <button class="btn btn-outline btn-sm" onclick="openUploadModalFor('korp-idr')">⬆️ CSV</button>
         <button class="btn btn-outline btn-sm" onclick="exportCSV('korp-idr')">⬇️ Export</button>
+        <button class="btn btn-outline btn-sm" onclick="batchCalcCoupons('korp-idr')" title="Hitung last & next coupon otomatis dari jatuh tempo">🔄 Hitung Kupon</button>
         <button class="btn btn-primary btn-sm" onclick="openAddModal('korp-idr')">+ Tambah</button>
       </div>
     </div>
@@ -317,6 +320,7 @@
         </div>
         <button class="btn btn-outline btn-sm" onclick="openUploadModalFor('korp-usd')">⬆️ CSV</button>
         <button class="btn btn-outline btn-sm" onclick="exportCSV('korp-usd')">⬇️ Export</button>
+        <button class="btn btn-outline btn-sm" onclick="batchCalcCoupons('korp-usd')" title="Hitung last & next coupon otomatis dari jatuh tempo">🔄 Hitung Kupon</button>
         <button class="btn btn-primary btn-sm" onclick="openAddModal('korp-usd')">+ Tambah</button>
       </div>
     </div>
@@ -763,6 +767,106 @@
   }
 
   function closeFormModal(e) { if (e.target === document.getElementById('formModal')) { document.getElementById('fCategory').disabled = false; document.getElementById('formModal').classList.remove('open'); } }
+
+  // ===== BATCH HITUNG KUPON OTOMATIS =====
+  // Logika: anchor = jatuh_tempo, mundur kelipatan 6 bulan
+  // Referensi "hari ini" = tanggal_update (bukan Date.now())
+  function calcCouponsFromMaturity(jatuh_tempo, tanggal_update) {
+    if (!jatuh_tempo) return { last: null, next: null };
+
+    function addMonths(d, m) {
+      const r = new Date(d);
+      r.setMonth(r.getMonth() + m);
+      return r;
+    }
+    function toISO(d) {
+      return d.getFullYear() + '-' +
+        String(d.getMonth() + 1).padStart(2, '0') + '-' +
+        String(d.getDate()).padStart(2, '0');
+    }
+
+    const maturity = new Date(jatuh_tempo);
+    const ref      = tanggal_update ? new Date(tanggal_update) : new Date();
+    ref.setHours(0, 0, 0, 0);
+
+    // Hasilkan semua tanggal kupon: mundur dari jatuh_tempo kelipatan 6 bulan
+    // sampai jauh ke belakang (maks 60 tahun = 120 periode)
+    const dates = [];
+    for (let i = 0; i <= 120; i++) {
+      const d = addMonths(maturity, -6 * i);
+      dates.push(d);
+      // Hentikan kalau sudah > 60 tahun sebelum maturity
+      if (i > 0 && maturity.getFullYear() - d.getFullYear() > 60) break;
+    }
+    // Urutkan ascending
+    dates.sort((a, b) => a - b);
+
+    // Cari last (≤ ref) dan next (> ref)
+    let last = null, next = null;
+    for (const d of dates) {
+      if (d <= ref) last = d;
+      else if (!next) next = d;
+    }
+
+    return {
+      last: last ? toISO(last) : null,
+      next: next ? toISO(next) : null
+    };
+  }
+
+  async function batchCalcCoupons(cat) {
+    const btn = document.querySelector(`button[onclick="batchCalcCoupons('${cat}')"]`);
+    const origText = btn ? btn.textContent : '';
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ Menghitung...'; }
+
+    try {
+      if (!window._supabase) throw new Error('Supabase belum siap');
+
+      // Ambil semua record kategori ini
+      const { data: rows, error } = await window._supabase
+        .from('obligasi_products')
+        .select('id, jatuh_tempo, tanggal_update, last_coupon_date, next_coupon_date')
+        .eq('category', cat);
+
+      if (error) throw error;
+      if (!rows || rows.length === 0) {
+        showToast('Tidak ada data untuk dihitung.', 'info');
+        return;
+      }
+
+      let updated = 0, skipped = 0;
+
+      // Proses batch — update per record
+      for (const row of rows) {
+        if (!row.jatuh_tempo) { skipped++; continue; }
+
+        const { last, next } = calcCouponsFromMaturity(row.jatuh_tempo, row.tanggal_update);
+
+        // Skip kalau tidak ada perubahan
+        if (row.last_coupon_date === last && row.next_coupon_date === next) {
+          skipped++;
+          continue;
+        }
+
+        const { error: updErr } = await window._supabase
+          .from('obligasi_products')
+          .update({ last_coupon_date: last, next_coupon_date: next })
+          .eq('id', row.id);
+
+        if (updErr) { console.warn('Update error', row.id, updErr); skipped++; }
+        else updated++;
+      }
+
+      showToast(`✅ ${updated} obligasi diperbarui, ${skipped} dilewati.`, 'success');
+      await loadAllData(); // refresh semua tabel
+
+    } catch (e) {
+      console.error('batchCalcCoupons error:', e);
+      showToast('Gagal: ' + e.message, 'error');
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = origText; }
+    }
+  }
 
   // ===== AUTO KALKULASI TANGGAL KUPON =====
   function autoCalcCouponDates() {
