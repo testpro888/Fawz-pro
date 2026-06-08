@@ -268,73 +268,15 @@
 
   // ============================================================
   // COUPON DATE CALCULATION
-  // Hasilkan semua tanggal kupon untuk suatu obligasi
-  // yang jatuh di bulan/tahun tertentu
+  // Hanya tampilkan obligasi yang next_coupon_date jatuh di bulan ini
   // ============================================================
   function getCouponDatesInMonth(item, year, month) {
-    const results = [];
-
-    // Helper: tambah bulan ke date
-    function addMonths(d, n) {
-      const r = new Date(d);
-      r.setMonth(r.getMonth() + n);
-      return r;
+    if (!item.next_coupon_date) return [];
+    const d = new Date(item.next_coupon_date);
+    if (d.getFullYear() === year && d.getMonth() + 1 === month) {
+      return [d.getDate()];
     }
-    function toYMD(d) {
-      return d.getFullYear() + '-' +
-        String(d.getMonth()+1).padStart(2,'0') + '-' +
-        String(d.getDate()).padStart(2,'0');
-    }
-    function inTargetMonth(d) {
-      return d.getFullYear() === year && d.getMonth()+1 === month;
-    }
-
-    // ── Strategi 1: punya tanggal_listing + kupon_freq → generate jadwal penuh
-    if (item.tanggal_listing && item.kupon_freq) {
-      const freq     = parseInt(item.kupon_freq);
-      const listing  = new Date(item.tanggal_listing);
-      const maturity = item.jatuh_tempo ? new Date(item.jatuh_tempo) : null;
-
-      let cursor = addMonths(listing, freq);
-      let safety = 0;
-
-      while (safety++ < 600) {
-        if (maturity && cursor > maturity) break;
-        if (cursor.getFullYear() > year + 1) break; // cukup lihat sampai tahun depan
-        if (inTargetMonth(cursor)) results.push(cursor.getDate());
-        if (cursor.getFullYear() === year && cursor.getMonth()+1 > month) break;
-        cursor = addMonths(cursor, freq);
-      }
-      if (results.length) return [...new Set(results)].sort((a,b)=>a-b);
-    }
-
-    // ── Strategi 2: punya next_coupon_date + kupon_freq → cari mundur & maju
-    if (item.next_coupon_date && item.kupon_freq) {
-      const freq   = parseInt(item.kupon_freq);
-      const anchor = new Date(item.next_coupon_date);
-
-      // Cari semua tanggal kupon di bulan target dengan anchor sebagai titik referensi
-      const targetStart = new Date(year, month-1, 1);
-      const targetEnd   = new Date(year, month, 0);
-
-      // Geser anchor sampai berada di area target
-      let d = new Date(anchor);
-      // mundurkan ke sebelum target
-      while (d > targetEnd) d = addMonths(d, -freq);
-      // majukan sampai masuk target atau terlewat
-      while (d < targetStart) d = addMonths(d, freq);
-
-      if (inTargetMonth(d)) results.push(d.getDate());
-      if (results.length) return results;
-    }
-
-    // ── Strategi 3: cek apakah next_coupon_date jatuh di bulan ini
-    if (item.next_coupon_date) {
-      const d = new Date(item.next_coupon_date);
-      if (inTargetMonth(d)) results.push(d.getDate());
-    }
-
-    return [...new Set(results)].sort((a,b)=>a-b);
+    return [];
   }
 
   // ============================================================
