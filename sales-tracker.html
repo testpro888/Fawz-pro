@@ -608,7 +608,7 @@
     const _gr = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember');
     if (!_gr) { window.location.replace('login.html'); return; }
     const _gu = JSON.parse(_gr);
-    if (!['head_account', 'admin'].includes(_gu.role)) { window.location.replace('dashboard.html'); return; }
+    if (!['head_account', 'admin', 'head_sales'].includes(_gu.role)) { window.location.replace('dashboard.html'); return; }
 
     try {
       // Load leads

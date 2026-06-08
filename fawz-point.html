@@ -162,14 +162,8 @@
         return;
       }
 
-      // Role-based access: "sales" → redirect to dashboard
-      if (user.role === 'sales') {
-        window.location.replace('dashboard.html');
-        return;
-      }
-
-      // Only allow "admin" and "head_account" roles
-      if (user.role !== 'admin' && user.role !== 'head_account') {
+      // Role-based access: only allow specific roles
+      if (!['head_account', 'admin', 'head_sales'].includes(user.role)) {
         window.location.replace('dashboard.html');
         return;
       }

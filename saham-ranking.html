@@ -69,7 +69,7 @@
       try { user = JSON.parse(raw); } catch (e) { sessionStorage.removeItem('fawz_user'); window.location.replace('login.html'); return; }
       if (!user || typeof user !== 'object' || !user.name || !user.username || !user.role) { sessionStorage.removeItem('fawz_user'); window.location.replace('login.html'); return; }
       if (user.role === 'sales') { window.location.replace('dashboard.html'); return; }
-      if (user.role !== 'admin' && user.role !== 'head_account') { window.location.replace('dashboard.html'); return; }
+      if (!['head_account', 'admin', 'head_sales', 'treasury'].includes(user.role)) { window.location.replace('dashboard.html'); return; }
       sessionStorage.setItem('fawz_user', raw);
     })();
   </script>

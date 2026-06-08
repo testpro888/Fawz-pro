@@ -438,7 +438,7 @@
       sessionStorage.setItem('fawz_user', raw);
       // ── ROLE GUARD ──
       const _gu = JSON.parse(raw);
-      if (!['head_account','admin'].includes(_gu.role)) { window.location.replace('dashboard.html'); return; }
+      if (!['head_account','admin','head_sales'].includes(_gu.role)) { window.location.replace('dashboard.html'); return; }
     })();
   </script>
 </head>

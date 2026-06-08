@@ -430,7 +430,7 @@
 
     // ── ROLE GUARD ──
     const _gu = JSON.parse(raw);
-    if (!['head_account', 'admin', 'sales'].includes(_gu.role)) { window.location.replace('dashboard.html'); return; }
+    if (!['head_account', 'admin', 'sales', 'head_sales'].includes(_gu.role)) { window.location.replace('dashboard.html'); return; }
     curUser = JSON.parse(raw);
     // Hanya head_account & treasury yang bisa mark paid
     canPay = ['head_account','treasury'].includes(curUser.role);
