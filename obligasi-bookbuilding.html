@@ -340,11 +340,16 @@
     <input type="hidden" id="ordPsId"/>
 
     <div class="form-grid">
-      <div class="form-group">
+      <div class="form-group" style="position:relative;">
         <label class="form-label">Client Code <span class="req">*</span></label>
-        <select class="form-select" id="ordClientCode" onchange="onClientSelect()">
-          <option value="">-- Pilih Client --</option>
-        </select>
+        <input class="form-input" id="ordClientSearch" type="text" placeholder="Ketik kode atau nama client..." autocomplete="off"
+          oninput="filterClientDropdown()"
+          onfocus="openClientDropdown()"
+          onkeydown="onClientSearchKey(event)"
+          style="padding-right:30px;"/>
+        <span style="position:absolute;right:10px;top:34px;color:#bbb;font-size:0.8rem;pointer-events:none;">▾</span>
+        <div id="ordClientDropdown" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:500;background:#fff;border:1.5px solid #e0e0ef;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.12);max-height:220px;overflow-y:auto;"></div>
+        <input type="hidden" id="ordClientCode"/>
       </div>
       <div class="form-group">
         <label class="form-label">Nama Client</label>
@@ -947,9 +952,11 @@
 
     // Reset form
     document.getElementById('ordClientCode').value = '';
+    document.getElementById('ordClientSearch').value = '';
     document.getElementById('ordClientName').value = '';
     document.getElementById('ordUnit').value = '';
     document.getElementById('ordAmount').value = '';
+    closeClientDropdown();
     document.getElementById('ordSekuritas').innerHTML = '<option value="">-- Pilih Sekuritas --</option>';
 
     // Load clients for this sales
@@ -1030,8 +1037,8 @@
   }
 
   async function loadMyClients() {
-    const select = document.getElementById('ordClientCode');
-    select.innerHTML = '<option value="">-- Memuat client... --</option>';
+    const searchEl = document.getElementById('ordClientSearch');
+    if (searchEl) { searchEl.value = ''; searchEl.placeholder = 'Memuat client...'; searchEl.disabled = true; }
 
     try {
       let clients = [];
@@ -1065,19 +1072,97 @@
 
       clients.sort((a, b) => (a.client_name || '').localeCompare(b.client_name || ''));
       myClients = clients;
-      select.innerHTML = '<option value="">-- Pilih Client --</option>';
-      myClients.forEach(c => {
-        const opt = document.createElement('option');
-        opt.value = c.client_id;
-        opt.textContent = c.client_id + ' — ' + c.client_name;
-        opt.dataset.name = c.client_name;
-        select.appendChild(opt);
-      });
+
+      if (searchEl) { searchEl.placeholder = 'Ketik kode atau nama client...'; searchEl.disabled = false; }
+      renderClientDropdown(myClients);
     } catch(e) {
       console.error('Load clients error:', e);
-      select.innerHTML = '<option value="">-- Gagal memuat client --</option>';
+      if (searchEl) { searchEl.placeholder = 'Gagal memuat client'; searchEl.disabled = false; }
     }
   }
+
+  // ── Searchable client dropdown ──
+  let clientDropFocusIdx = -1;
+
+  function renderClientDropdown(list) {
+    const dd = document.getElementById('ordClientDropdown');
+    if (!list.length) {
+      dd.innerHTML = '<div style="padding:10px 14px;color:#bbb;font-size:0.82rem;">Tidak ada client ditemukan</div>';
+      return;
+    }
+    dd.innerHTML = list.map((c, i) =>
+      `<div class="client-dd-item" data-idx="${i}" data-id="${esc(c.client_id)}" data-name="${esc(c.client_name)}"
+        onmousedown="selectClientItem('${esc(c.client_id)}','${esc(c.client_name.replace(/'/g,"\\'"))}')"
+        onmouseover="clientDropFocusIdx=${i};highlightClientItem()"
+        style="padding:9px 14px;cursor:pointer;font-size:0.83rem;border-bottom:1px solid #f5f5fa;display:flex;gap:8px;align-items:baseline;">
+        <span style="font-family:monospace;font-weight:700;color:#0d0d2b;flex-shrink:0;">${esc(c.client_id)}</span>
+        <span style="color:#555;">${esc(c.client_name)}</span>
+      </div>`
+    ).join('');
+    clientDropFocusIdx = -1;
+  }
+
+  function openClientDropdown() {
+    filterClientDropdown();
+    document.getElementById('ordClientDropdown').style.display = 'block';
+  }
+
+  function closeClientDropdown() {
+    document.getElementById('ordClientDropdown').style.display = 'none';
+  }
+
+  function filterClientDropdown() {
+    const q = (document.getElementById('ordClientSearch').value || '').toLowerCase();
+    const filtered = q
+      ? myClients.filter(c =>
+          (c.client_id || '').toLowerCase().includes(q) ||
+          (c.client_name || '').toLowerCase().includes(q))
+      : myClients;
+    renderClientDropdown(filtered);
+    document.getElementById('ordClientDropdown').style.display = 'block';
+  }
+
+  function selectClientItem(clientId, clientName) {
+    document.getElementById('ordClientCode').value = clientId;
+    document.getElementById('ordClientSearch').value = clientId + ' — ' + clientName;
+    closeClientDropdown();
+    onClientSelect();
+  }
+
+  function highlightClientItem() {
+    document.querySelectorAll('.client-dd-item').forEach((el, i) => {
+      el.style.background = i === clientDropFocusIdx ? '#fffbf3' : '';
+    });
+  }
+
+  function onClientSearchKey(e) {
+    const items = document.querySelectorAll('.client-dd-item');
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      clientDropFocusIdx = Math.min(clientDropFocusIdx + 1, items.length - 1);
+      highlightClientItem();
+      items[clientDropFocusIdx]?.scrollIntoView({ block: 'nearest' });
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      clientDropFocusIdx = Math.max(clientDropFocusIdx - 1, 0);
+      highlightClientItem();
+      items[clientDropFocusIdx]?.scrollIntoView({ block: 'nearest' });
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (clientDropFocusIdx >= 0 && items[clientDropFocusIdx]) {
+        const el = items[clientDropFocusIdx];
+        selectClientItem(el.dataset.id, el.dataset.name);
+      }
+    } else if (e.key === 'Escape') {
+      closeClientDropdown();
+    }
+  }
+
+  // Tutup dropdown saat klik di luar
+  document.addEventListener('click', function(e) {
+    const wrap = document.getElementById('ordClientSearch')?.closest('.form-group');
+    if (wrap && !wrap.contains(e.target)) closeClientDropdown();
+  });
 
   async function onClientSelect() {
     const clientId = document.getElementById('ordClientCode').value;
