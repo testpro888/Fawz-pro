@@ -669,7 +669,27 @@
 
   // ─── STATS ───────────────────────────────────────────────
   function renderStats() {
-    const total  = filtered.reduce((s,r) => s + r.komisi, 0);
+    const oblTotal = filtered.reduce((s, r) => s + r.komisi, 0);
+
+    // Hitung komisi saham dari sahamRows sesuai filter tanggal aktif
+    const dateFrom = document.getElementById('filterDateFrom').value;
+    const dateTo   = document.getElementById('filterDateTo').value;
+    const filterSalesVal = document.getElementById('filterSales').value;
+
+    const salesFeeMap = {};
+    sahamRows.forEach(r => {
+      if (dateFrom && r.tanggal < dateFrom) return;
+      if (dateTo   && r.tanggal > dateTo)   return;
+      if (filterSalesVal && r.sales_name !== filterSalesVal) return;
+      const key = (r.sales_name || '—').toLowerCase().trim();
+      salesFeeMap[key] = (salesFeeMap[key] || 0) + (parseFloat(r.fee) || 0);
+    });
+    const sahamKomisiTotal = Object.values(salesFeeMap).reduce((sum, fee) => {
+      const rate = fee >= DEFAULT_TARGET_FEE ? RATE_ABOVE_TARGET : RATE_BELOW_TARGET;
+      return sum + fee * rate;
+    }, 0);
+
+    const total = oblTotal + sahamKomisiTotal;
 
     document.getElementById('sTotal').textContent    = fmtRp(total);
     document.getElementById('sTotalTx').textContent  = `${filtered.length} transaksi`;
@@ -693,12 +713,31 @@
     // Komisi Berjalan = hanya transaksi bulan ini (reset tiap tanggal 1)
     const now = new Date();
     const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0,10);
-    const bulanIni = allRows.filter(r => (r.tanggal || '') >= firstOfMonth);
-    const totalBerjalan = bulanIni.reduce((s,r) => s + r.komisi, 0);
-    const bulanLabel = now.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+    const lastOfMonth  = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().slice(0,10);
+    const bulanLabel   = now.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+
+    // Komisi dari obligasi/reksadana/waran
+    const bulanObl = allRows.filter(r => (r.tanggal || '') >= firstOfMonth && (r.tanggal || '') <= lastOfMonth);
+    const komisiObl = bulanObl.reduce((s, r) => s + r.komisi, 0);
+
+    // Komisi dari saham (target-based, per-sales)
+    const salesFeeMap = {};
+    sahamRows.forEach(r => {
+      if (!r.tanggal || r.tanggal < firstOfMonth || r.tanggal > lastOfMonth) return;
+      const key = (r.sales_name || '—').toLowerCase().trim();
+      salesFeeMap[key] = (salesFeeMap[key] || 0) + (parseFloat(r.fee) || 0);
+    });
+    const komisiSaham = Object.values(salesFeeMap).reduce((sum, fee) => {
+      const rate = fee >= DEFAULT_TARGET_FEE ? RATE_ABOVE_TARGET : RATE_BELOW_TARGET;
+      return sum + fee * rate;
+    }, 0);
+
+    const totalBerjalan = komisiObl + komisiSaham;
+    const jumlahTrx     = bulanObl.length + sahamRows.filter(r =>
+      r.tanggal && r.tanggal >= firstOfMonth && r.tanggal <= lastOfMonth).length;
 
     document.getElementById('bannerTotal').textContent = fmtRpFull(totalBerjalan);
-    document.getElementById('bannerSub').textContent   = `${bulanIni.length} transaksi · ${bulanLabel}`;
+    document.getElementById('bannerSub').textContent   = `${jumlahTrx} transaksi · ${bulanLabel}`;
   }
 
   // ─── KOMISI PER SALES (TARGET-BASED) ────────────────────
