@@ -213,12 +213,22 @@
     }
   }
 
+  let _loginAttempts = 0;
+  let _loginLockedUntil = 0;
+
   async function doLogin() {
     const username = document.getElementById('username').value.trim();
     const password = document.getElementById('password').value;
 
     if (!username || !password) {
       showMsg('error', '⚠️ Username dan password wajib diisi.');
+      return;
+    }
+
+    // Brute-force protection
+    if (Date.now() < _loginLockedUntil) {
+      const sisa = Math.ceil((_loginLockedUntil - Date.now()) / 1000);
+      showMsg('error', `⏳ Terlalu banyak percobaan. Coba lagi dalam ${sisa} detik.`);
       return;
     }
 
@@ -229,36 +239,43 @@
 
       const { data, error } = await window._supabase
         .from('accounts')
-        .select('*')
+        .select('id, username, name, role')
         .eq('username', username)
         .eq('password', password)
         .single();
 
-      let foundUser = data;
-
-      // Fallback: head account hardcode jika belum ada di database
-      if (!foundUser && username === 'fawzheadaccount' && password === 'fawz12345') {
-        foundUser = { username: 'fawzheadaccount', password: 'fawz12345', role: 'head_account', name: 'Muhammad Razaq Arafi' };
-      }
-
-      if (foundUser) {
-        // Jangan simpan password di session
-        const sessionUser = { username: foundUser.username, name: foundUser.name, role: foundUser.role, id: foundUser.id || null };
+      if (data) {
+        _loginAttempts = 0;
+        // Simpan hanya data non-sensitif — tidak menyimpan password
+        const sessionUser = {
+          username: data.username,
+          name:     data.name,
+          role:     data.role,
+          id:       data.id || null
+        };
         sessionStorage.setItem('fawz_user', JSON.stringify(sessionUser));
 
         if (document.getElementById('remember').checked) {
-          localStorage.setItem('fawz_user_remember', JSON.stringify(sessionUser));
+          // Simpan dengan expiry 30 hari
+          const expiry = Date.now() + 30 * 24 * 60 * 60 * 1000;
+          localStorage.setItem('fawz_user_remember', JSON.stringify({ ...sessionUser, _exp: expiry }));
         }
 
         showMsg('success', '✅ Login berhasil! Mengalihkan...');
         setTimeout(() => { window.location.href = 'dashboard.html'; }, 1000);
       } else {
-        showMsg('error', '❌ Username atau password salah. Silakan coba lagi.');
+        _loginAttempts++;
+        if (_loginAttempts >= 5) {
+          _loginLockedUntil = Date.now() + 30_000; // kunci 30 detik
+          _loginAttempts = 0;
+          showMsg('error', '🔒 Terlalu banyak percobaan. Akun dikunci 30 detik.');
+        } else {
+          showMsg('error', `❌ Username atau password salah. (${_loginAttempts}/5)`);
+        }
         document.getElementById('password').value = '';
         setLoading(false);
       }
     } catch (err) {
-      console.error('Login error:', err);
       showMsg('error', '⚠️ Gagal terhubung ke server. Periksa koneksi internet Anda.');
       setLoading(false);
     }

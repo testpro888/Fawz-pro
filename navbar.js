@@ -43,7 +43,19 @@
 
   /* ── 1. SESSION SYNC ── */
   const ss  = sessionStorage.getItem('fawz_user');
-  const ls  = localStorage.getItem('fawz_user_remember');
+  let ls    = localStorage.getItem('fawz_user_remember');
+
+  // Cek expiry pada remember-me
+  if (ls) {
+    try {
+      const parsed = JSON.parse(ls);
+      if (parsed._exp && Date.now() > parsed._exp) {
+        localStorage.removeItem('fawz_user_remember');
+        ls = null;
+      }
+    } catch(e) { localStorage.removeItem('fawz_user_remember'); ls = null; }
+  }
+
   const raw = ss || ls;
 
   if (!raw) {
@@ -261,18 +273,22 @@
         return;
       }
 
+      // Escape helper untuk mencegah XSS
+      const _esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+
       list.innerHTML = data.map(o => {
         const isUnread = !_notifReadIds.includes(o.id);
         const nominal  = Number(o.nominal || 0).toLocaleString('id-ID');
-        const seri     = o.seri || '—';
-        const nasabah  = o.customer_name || '—';
-        const sales    = o.sales_pic || '—';
+        const seri     = _esc(o.seri || '—');
+        const nasabah  = _esc(o.customer_name || '—');
+        const sales    = _esc(o.sales_pic || '—');
         const time     = o.created_at ? fmtTimeAgo(o.created_at) : '';
         const cat      = { 'gov-idr':'Gov IDR','gov-usd':'Gov USD','korp-idr':'Korp IDR','korp-usd':'Korp USD' }[o.category] || '';
-        return `<div class="notif-item ${isUnread ? 'unread' : ''}" onclick="onNotifClick('${o.id}')">
+        const safeId   = _esc(String(o.id));
+        return `<div class="notif-item ${isUnread ? 'unread' : ''}" onclick="onNotifClick('${safeId}')">
           <div class="notif-dot"></div>
           <div class="notif-content">
-            <div class="notif-title">📋 Order ${seri} ${cat ? '· '+cat : ''}</div>
+            <div class="notif-title">📋 Order ${seri} ${cat ? '· '+_esc(cat) : ''}</div>
             <div class="notif-sub">Nasabah: <strong>${nasabah}</strong> · Sales: ${sales}</div>
             <div class="notif-sub">Nominal: Rp ${nominal}</div>
             <div class="notif-time">${time}</div>

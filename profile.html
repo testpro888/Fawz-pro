@@ -533,7 +533,7 @@
       await waitSupabase();
 
       if (curUser.username === 'fawzheadaccount') {
-        if (oldPass !== 'fawz12345' && oldPass !== (curUser.password || '')) {
+        if (oldPass !== (curUser.password || '')) {
           showFb('passFeedback','❌ Password lama tidak sesuai.','error');
           btn.disabled = false; btn.textContent = 'Simpan Password'; return;
         }
@@ -543,7 +543,7 @@
           .update({ password: newPass })
           .eq('username', 'fawzheadaccount');
         if (error) console.warn('Head account update:', error);
-        sessionStorage.setItem('fawz_user', JSON.stringify({...curUser, password: newPass}));
+        // Jangan simpan password di session — hanya update timestamp login
         showFb('passFeedback','✅ Password berhasil diubah! Logout dalam 2 detik...','success');
         clearPassForm();
         setTimeout(doLogout, 2000);
