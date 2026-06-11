@@ -25,19 +25,24 @@
         const curUser = raw ? JSON.parse(raw) : null;
         window._curUser = curUser;
         const db = window._supabase;
-        const isSales = curUser?.role === 'sales';
-        const salesName = curUser?.name || '';
-        const canSeeAll = ['head_account','admin','treasury'].includes(curUser?.role);
+        const isSales    = curUser?.role === 'sales';
+        const isTreasury = curUser?.role === 'treasury';
+        const salesName  = curUser?.name || '';
+        const canSeeAll  = ['head_account','admin','treasury'].includes(curUser?.role);
 
         // 1. Bonds — dari bb_orders
         let qBonds = db.from('bb_orders').select('*').order('created_at', { ascending: false });
         if (isSales) qBonds = qBonds.eq('sales_pic', salesName);
         const { data: bondsData } = await qBonds;
 
-        // 2. Saham — dari saham_transaksi
-        let qSaham = db.from('saham_transaksi').select('*').order('tanggal', { ascending: false });
-        if (isSales) qSaham = qSaham.eq('sales_name', salesName);
-        const { data: sahamData } = await qSaham;
+        // 2. Saham — dari saham_transaksi (skip untuk treasury/Bonds)
+        let sahamData = [];
+        if (!isTreasury) {
+          let qSaham = db.from('saham_transaksi').select('*').order('tanggal', { ascending: false });
+          if (isSales) qSaham = qSaham.eq('sales_name', salesName);
+          const { data } = await qSaham;
+          sahamData = data || [];
+        }
 
         // Normalisasi bonds
         const bonds = (bondsData || []).map(r => ({

@@ -146,16 +146,45 @@
         const salesName = u.name || '';
 
         const now = new Date();
-        const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0,10);
-        const lastDay  = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().slice(0,10);
+        const firstDay  = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0,10);
+        const lastDay   = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().slice(0,10);
         const monthLabel = now.toLocaleString('id-ID', { month: 'long', year: 'numeric' });
 
-        // Konstanta komisi (sama dengan sales-commission.html)
+        const fmtRp = v => 'Rp ' + Math.round(v).toLocaleString('id-ID');
+
+        // ── Treasury (Bonds): hanya data obligasi dari bb_orders ──
+        if (role === 'treasury') {
+          const { data: oblData } = await _sbDash
+            .from('bb_orders')
+            .select('nominal')
+            .gte('created_at', firstDay + 'T00:00:00')
+            .lte('created_at', lastDay + 'T23:59:59');
+
+          const rows       = oblData || [];
+          const totalNom   = rows.reduce((s, r) => s + (parseFloat(r.nominal) || 0), 0);
+          const jumlahTrx  = rows.length;
+
+          const elTrxVal   = document.getElementById('sumTransaksiValue');
+          const elTrxBadge = document.getElementById('sumTransaksiBadge');
+          const elRevVal   = document.getElementById('sumRevenueValue');
+          const elRevBadge = document.getElementById('sumRevenueBadge');
+          const elKomVal   = document.getElementById('sumKomisiValue');
+          const elKomBadge = document.getElementById('sumKomisiBadge');
+
+          if (elTrxVal)   elTrxVal.textContent   = fmtRp(totalNom);
+          if (elTrxBadge) elTrxBadge.textContent = jumlahTrx.toLocaleString('id-ID') + ' Transaksi';
+          if (elRevVal)   elRevVal.textContent    = fmtRp(0);
+          if (elRevBadge) elRevBadge.textContent  = monthLabel;
+          if (elKomVal)   elKomVal.textContent    = fmtRp(0);
+          if (elKomBadge) elKomBadge.textContent  = monthLabel;
+          return;
+        }
+
+        // ── Semua role lain: dari saham_transaksi ──
         const DEFAULT_TARGET_FEE = 10_000_000;
         const RATE_ABOVE_TARGET  = 0.12;
         const RATE_BELOW_TARGET  = 0.05;
 
-        // Query saham_transaksi bulan ini
         let q = _sbDash
           .from('saham_transaksi')
           .select('volume, fee, sales_name')
@@ -174,7 +203,6 @@
         const totalFee    = rows.reduce((s, r) => s + (parseFloat(r.fee)    || 0), 0);
         const jumlahTrx   = rows.length;
 
-        // Hitung total komisi: per-sales dengan target-based rate lalu dijumlah
         const salesFeeMap = {};
         rows.forEach(r => {
           const key = (r.sales_name || '—').toLowerCase().trim();
@@ -184,8 +212,6 @@
           const rate = fee >= DEFAULT_TARGET_FEE ? RATE_ABOVE_TARGET : RATE_BELOW_TARGET;
           return sum + fee * rate;
         }, 0);
-
-        const fmtRp = v => 'Rp ' + Math.round(v).toLocaleString('id-ID');
 
         const elTrxVal   = document.getElementById('sumTransaksiValue');
         const elTrxBadge = document.getElementById('sumTransaksiBadge');
