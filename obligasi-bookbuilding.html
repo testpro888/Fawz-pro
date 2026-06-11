@@ -288,7 +288,26 @@
 
   <!-- PILIHAN OBLIGASI LAIN -->
   <div class="other-section">
-    <div class="section-label">Pilihan Obligasi Lainnya</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
+      <div class="section-label" style="margin-bottom:0;">Pilihan Obligasi Lainnya</div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div style="position:relative;">
+          <span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);color:#bbb;font-size:0.85rem;pointer-events:none;">🔍</span>
+          <input type="text" id="otherSearchInput" placeholder="Cari seri, tipe..." autocomplete="off"
+            oninput="filterOtherTable(this.value)"
+            style="padding:8px 12px 8px 34px;border:1.5px solid #e0e0ef;border-radius:10px;font-family:'Inter',sans-serif;font-size:0.82rem;outline:none;width:220px;transition:border-color 0.2s;"
+            onfocus="this.style.borderColor='#f5a623'" onblur="this.style.borderColor='#e0e0ef'"/>
+        </div>
+        <select id="otherCatFilter" onchange="filterOtherTable(document.getElementById('otherSearchInput').value)"
+          style="padding:8px 12px;border:1.5px solid #e0e0ef;border-radius:10px;font-family:'Inter',sans-serif;font-size:0.82rem;outline:none;cursor:pointer;background:#fff;">
+          <option value="">Semua Tipe</option>
+          <option value="gov-idr">Gov IDR</option>
+          <option value="gov-usd">Gov USD</option>
+          <option value="korp-idr">Korp IDR</option>
+          <option value="korp-usd">Korp USD</option>
+        </select>
+      </div>
+    </div>
     <div class="other-table-card">
       <div class="other-table-wrap">
         <table class="other-table">
@@ -708,8 +727,13 @@
     finally { btn.textContent = 'Simpan'; btn.disabled = false; }
   }
 
+  function filterOtherTable(q) {
+    const cat = document.getElementById('otherCatFilter')?.value || '';
+    renderOtherTable(q, cat);
+  }
+
   // ===== OTHER OBLIGASI TABLE =====
-  function renderOtherTable() {
+  function renderOtherTable(searchQ, catFilter) {
     const recIds = new Set(recItems.map(r => r.ps_id || r.psId || r.id));
     const canEdit = canManageRec();
     let allItems = [];
@@ -718,6 +742,13 @@
         if (!recIds.has(item.id)) allItems.push({ ...item, category: cat });
       });
     });
+
+    // Apply search + category filter
+    const q   = (searchQ || '').toLowerCase().trim();
+    const cat = catFilter || '';
+    if (q)   allItems = allItems.filter(i => (i.seri||'').toLowerCase().includes(q) || (CAT_LABEL[i.category]||'').toLowerCase().includes(q));
+    if (cat) allItems = allItems.filter(i => i.category === cat);
+
     allItems.sort((a,b) => (a.seri||'').localeCompare(b.seri||''));
 
     const tbody = document.getElementById('otherObligasiBody');
