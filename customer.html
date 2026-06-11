@@ -547,9 +547,15 @@
         .from('customers')
         .select('*, customer_securities(*)')
         .order('created_at', { ascending: false });
-      // Sales hanya bisa lihat customer miliknya sendiri
+      // Sales hanya bisa lihat customer miliknya sendiri (case-insensitive, juga cek by username)
       if (cu.role === 'sales') {
-        query = query.eq('sales_person_name', cu.name || '');
+        const salesName = (cu.name || '').trim();
+        // Coba match by name (case-insensitive)
+        // Supabase tidak support OR filter langsung di client SDK dengan ilike,
+        // jadi load semua lalu filter di client untuk sales
+        query = query.or(
+          `sales_person_name.ilike.${salesName},referral_agents.ilike.%${salesName}%`
+        );
       }
       const { data, error } = await query;
       if (error) throw error;
