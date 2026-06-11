@@ -29,7 +29,7 @@
     }
 
     .nav-brand { display: flex; align-items: center; gap: 12px; text-decoration: none; }
-    .nav-brand img { height: 36px; filter: drop-shadow(0 0 8px rgba(245,166,35,0.4)); }
+    .nav-brand img { height: 52px; filter: drop-shadow(0 0 8px rgba(245,166,35,0.4)); }
     .brand-fallback { font-size: 1.4rem; font-weight: 700; color: var(--gold); letter-spacing: 1px; }
     .brand-badge {
       background: linear-gradient(135deg, var(--gold), var(--gold-light));
@@ -149,6 +149,65 @@
 
     /* ===== RIGHT SIDE ===== */
     .nav-right { display: flex; align-items: center; gap: 14px; }
+
+    /* ── NAVBAR SEARCH ── */
+    .nav-search-wrap {
+      position: relative;
+      display: flex; align-items: center;
+    }
+    .nav-search-input {
+      width: 0; padding: 0; opacity: 0; pointer-events: none;
+      background: rgba(255,255,255,0.1); border: 1.5px solid transparent;
+      border-radius: 20px; color: #fff; font-family: 'Inter', sans-serif;
+      font-size: 0.82rem; outline: none;
+      transition: width 0.3s ease, opacity 0.3s ease, padding 0.3s ease, border-color 0.3s;
+    }
+    .nav-search-wrap.open .nav-search-input {
+      width: 220px; padding: 7px 36px 7px 14px; opacity: 1; pointer-events: auto;
+      border-color: rgba(245,166,35,0.5);
+    }
+    .nav-search-input::placeholder { color: rgba(255,255,255,0.45); }
+    .nav-search-btn {
+      width: 34px; height: 34px; border-radius: 10px; border: none;
+      background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.8);
+      cursor: pointer; font-size: 0.95rem; display: flex; align-items: center; justify-content: center;
+      transition: background 0.2s; flex-shrink: 0;
+      position: relative; z-index: 2;
+    }
+    .nav-search-btn:hover { background: rgba(255,255,255,0.18); }
+    .nav-search-wrap.open .nav-search-btn { background: rgba(245,166,35,0.2); color: var(--gold); }
+    .nav-search-clear {
+      position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+      background: none; border: none; color: rgba(255,255,255,0.5); cursor: pointer;
+      font-size: 0.75rem; padding: 2px 4px; display: none;
+    }
+    .nav-search-wrap.open .nav-search-clear { display: block; }
+
+    /* Search results dropdown */
+    .nav-search-results {
+      display: none; position: absolute; top: calc(100% + 8px); right: 0;
+      width: 360px; background: #fff; border-radius: 14px;
+      box-shadow: 0 12px 40px rgba(13,13,43,0.2); border: 1px solid #e0e0ef;
+      overflow: hidden; z-index: 99999; max-height: 400px; overflow-y: auto;
+    }
+    .nav-search-wrap.open .nav-search-results.has-results { display: block; }
+    .nsr-header { padding: 10px 16px; font-size: 0.68rem; font-weight: 700; color: #bbb; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #f0f0f5; }
+    .nsr-item {
+      display: flex; align-items: center; gap: 12px; padding: 10px 16px;
+      cursor: pointer; border-bottom: 1px solid #f8f8fc; transition: background 0.12s;
+      text-decoration: none;
+    }
+    .nsr-item:hover { background: #fffbf3; }
+    .nsr-item:last-child { border-bottom: none; }
+    .nsr-seri { font-family: monospace; font-weight: 700; font-size: 0.88rem; color: #0d0d2b; min-width: 80px; }
+    .nsr-cat { font-size: 0.65rem; font-weight: 700; padding: 2px 8px; border-radius: 10px; flex-shrink: 0; }
+    .nsr-cat-gov-idr  { background: #e8f8f0; color: #1e7e4e; }
+    .nsr-cat-gov-usd  { background: #e8f0ff; color: #2d4abf; }
+    .nsr-cat-korp-idr { background: #fff8ec; color: #b37a00; }
+    .nsr-cat-korp-usd { background: #fdf0ff; color: #7b3ff2; }
+    .nsr-detail { flex: 1; font-size: 0.75rem; color: #888; }
+    .nsr-kupon { font-size: 0.8rem; font-weight: 700; color: #f5a623; flex-shrink: 0; }
+    .nsr-empty { padding: 24px 16px; text-align: center; color: #bbb; font-size: 0.85rem; }
 
     /* ── NOTIFICATION BELL ── */
     .notif-bell {
@@ -526,6 +585,15 @@
 
   <!-- Right -->
   <div class="nav-right">
+
+    <!-- Search Obligasi -->
+    <div class="nav-search-wrap" id="navSearchWrap">
+      <button class="nav-search-btn" onclick="toggleNavSearch()" title="Cari Obligasi">🔍</button>
+      <input class="nav-search-input" id="navSearchInput" type="text" placeholder="Cari seri obligasi..."
+        oninput="onNavSearch(this.value)" onkeydown="onNavSearchKey(event)" autocomplete="off"/>
+      <button class="nav-search-clear" onclick="clearNavSearch()">✕</button>
+      <div class="nav-search-results" id="navSearchResults"></div>
+    </div>
 
     <!-- Notification Bell — hanya untuk role treasury (Bonds) -->
     <div class="notif-bell" id="notifBell" style="display:none;" onclick="toggleNotifPanel()">

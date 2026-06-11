@@ -441,6 +441,101 @@
     }
   });
 
+  /* ── 5c. NAVBAR SEARCH — cari obligasi dari obligasi_products ── */
+  let _navSearchTimer = null;
+  let _navSearchData  = null; // cache hasil fetch
+
+  window.toggleNavSearch = function() {
+    const wrap = document.getElementById('navSearchWrap');
+    if (!wrap) return;
+    const isOpen = wrap.classList.toggle('open');
+    if (isOpen) {
+      setTimeout(() => document.getElementById('navSearchInput')?.focus(), 150);
+      if (!_navSearchData) _prefetchObligasi();
+    } else {
+      clearNavSearch();
+    }
+  };
+
+  window.clearNavSearch = function() {
+    const inp = document.getElementById('navSearchInput');
+    const res = document.getElementById('navSearchResults');
+    if (inp) inp.value = '';
+    if (res) { res.innerHTML = ''; res.classList.remove('has-results'); }
+  };
+
+  async function _prefetchObligasi() {
+    try {
+      if (!window._supabase) return;
+      const { data } = await window._supabase
+        .from('obligasi_products')
+        .select('seri, kupon, category, jatuh_tempo, harga_jual, harga_beli, yield')
+        .order('seri', { ascending: true });
+      _navSearchData = data || [];
+    } catch(e) { console.warn('Search prefetch error:', e); }
+  }
+
+  window.onNavSearch = function(q) {
+    clearTimeout(_navSearchTimer);
+    _navSearchTimer = setTimeout(() => _runNavSearch(q), 200);
+  };
+
+  window.onNavSearchKey = function(e) {
+    if (e.key === 'Escape') {
+      document.getElementById('navSearchWrap')?.classList.remove('open');
+      clearNavSearch();
+    }
+  };
+
+  const _nEsc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const _catLabel = { 'gov-idr':'Gov IDR','gov-usd':'Gov USD','korp-idr':'Korp IDR','korp-usd':'Korp USD' };
+
+  async function _runNavSearch(q) {
+    const res = document.getElementById('navSearchResults');
+    if (!res) return;
+    const query = (q || '').trim().toLowerCase();
+    if (query.length < 1) { res.innerHTML = ''; res.classList.remove('has-results'); return; }
+
+    if (!_navSearchData) await _prefetchObligasi();
+    const pool = _navSearchData || [];
+
+    const matched = pool.filter(r =>
+      (r.seri || '').toLowerCase().includes(query)
+    ).slice(0, 12);
+
+    res.classList.add('has-results');
+
+    if (!matched.length) {
+      res.innerHTML = `<div class="nsr-empty">Tidak ada obligasi "<strong>${_nEsc(q)}</strong>"</div>`;
+      return;
+    }
+
+    res.innerHTML = `<div class="nsr-header">Hasil Pencarian (${matched.length})</div>` +
+      matched.map(r => {
+        const cat    = r.category || '';
+        const label  = _catLabel[cat] || cat;
+        const kupon  = r.kupon != null ? Number(r.kupon).toFixed(3) + '%' : '—';
+        const jt     = r.jatuh_tempo ? new Date(r.jatuh_tempo).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}) : '—';
+        const offer  = r.harga_beli != null ? Number(r.harga_beli).toFixed(2) : '—';
+        const page   = cat.startsWith('gov') ? 'obligasi-pasar-sekunder.html' : (cat.startsWith('korp') ? 'obligasi-pasar-sekunder.html' : 'obligasi-pasar-sekunder.html');
+        return `<a class="nsr-item" href="${page}">
+          <span class="nsr-seri">${_nEsc(r.seri)}</span>
+          <span class="nsr-cat nsr-cat-${_nEsc(cat)}">${label}</span>
+          <span class="nsr-detail">JT: ${jt} · Offer: ${offer}</span>
+          <span class="nsr-kupon">${kupon}</span>
+        </a>`;
+      }).join('');
+  }
+
+  // Tutup search saat klik di luar
+  document.addEventListener('click', function(e) {
+    const wrap = document.getElementById('navSearchWrap');
+    if (wrap && !wrap.contains(e.target)) {
+      wrap.classList.remove('open');
+      clearNavSearch();
+    }
+  });
+
   /* ── 6. FETCH & INJECT NAVBAR HTML, LALU INIT ── */
   fetch('navbar.html')
     .then(r => r.text())
