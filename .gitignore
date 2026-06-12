@@ -5,3 +5,5 @@ analytics-new.html
 analytics-template.html
 analytics-working.html
 .kiro/
+.env
+.env.local
