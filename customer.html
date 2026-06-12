@@ -575,7 +575,7 @@
         filteredCustomers = [...allCustomers];
         currentPage = 1;
         renderTable(filteredCustomers);
-        updateSummary();
+        updateStats();
         return;
       }
       const { data, error } = await query;
