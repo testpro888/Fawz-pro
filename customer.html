@@ -574,7 +574,7 @@
         allCustomers.sort((a,b) => (b.createdAt||'').localeCompare(a.createdAt||''));
         filteredCustomers = [...allCustomers];
         currentPage = 1;
-        renderTable();
+        renderTable(filteredCustomers);
         updateSummary();
         return;
       }
