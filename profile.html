@@ -412,13 +412,24 @@
     if (!confirm(`Hapus akun "${name}" (@${username})?\n\nTindakan ini tidak dapat dibatalkan.`)) return;
     try {
       await waitSupabase();
+      let deleteError = null;
       if (docId) {
         const { error } = await window._supabase
           .from('accounts')
           .delete()
           .eq('id', docId);
-        if (error) throw error;
+        deleteError = error;
+      } else if (username) {
+        // Fallback: hapus berdasarkan username jika id tidak tersedia
+        const { error } = await window._supabase
+          .from('accounts')
+          .delete()
+          .eq('username', username);
+        deleteError = error;
+      } else {
+        throw new Error('ID dan username tidak tersedia, tidak dapat menghapus.');
       }
+      if (deleteError) throw deleteError;
       showFb('accFeedback', `✅ Akun "${name}" berhasil dihapus.`, 'success');
       await loadAccountList();
     } catch (err) {
