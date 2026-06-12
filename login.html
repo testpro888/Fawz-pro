@@ -245,6 +245,9 @@
         .eq('password', password)
         .single();
 
+      // PGRST116 = no rows found (akun tidak ada / salah password)
+      if (error && error.code !== 'PGRST116') throw error;
+
       if (data) {
         _loginAttempts = 0;
         // Simpan hanya data non-sensitif — tidak menyimpan password
@@ -277,6 +280,7 @@
         setLoading(false);
       }
     } catch (err) {
+      console.error('Login error:', err);
       showMsg('error', '⚠️ Gagal terhubung ke server. Periksa koneksi internet Anda.');
       setLoading(false);
     }
