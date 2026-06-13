@@ -718,7 +718,8 @@
       const hasTab   = r.fotoTabungan ? 'has' : '';
 
       const commCell = canWriteComm ? `<td class="commission-badge-cell" style="white-space:nowrap;font-size:0.75rem;">
-        <button style="height:26px;padding:0 10px;border-radius:6px;border:1px solid #e0e0ee;background:#fff;color:#333;font-size:0.72rem;cursor:pointer;" onclick="openCommissionModal('${r.id}','${(r.nama||'').replace(/'/g,"\\'")}')">⚙ Komisi</button>
+        <button style="height:26px;padding:0 10px;border-radius:6px;border:1px solid var(--gold);background:#fff;color:#333;font-size:0.72rem;cursor:pointer;margin-bottom:4px;" onclick="openCommissionModal('${r.id}','${(r.nama||'').replace(/'/g,"\\'")}')">⚙ Komisi</button>
+        <div class="comm-badge-info" style="font-size:0.68rem;color:#888;"></div>
       </td>` : '';
 
       return `<tr data-sales-id="${r.id}">
@@ -1145,19 +1146,22 @@
     var CS = window.CommissionSettings;
     document.querySelectorAll('[data-sales-id]').forEach(function(row) {
       var salesId = row.dataset.salesId;
-      var cell = row.querySelector('.commission-badge-cell');
-      if (!cell) return;
+      // Only update the badge info div, not the button
+      var badgeDiv = row.querySelector('.comm-badge-info');
+      if (!badgeDiv) return;
       var s = commissionSettingsCache[salesId];
       if (s) {
         // Custom settings (Req 4.4)
-        cell.innerHTML = '<span style="display:inline-block;padding:2px 8px;border-radius:12px;background:#e8f0fe;color:#1a56db;font-size:0.68rem;font-weight:700;">Kustom</span>' +
-          '<small style="display:block;color:#555;margin-top:3px;">Target: ' + CS.formatTargetFeeDisplay(s.target_fee) + '</small>' +
-          '<small style="display:block;color:#555;">&ge;: ' + (s.rate_above*100).toFixed(1) + '% / &lt;: ' + (s.rate_below*100).toFixed(1) + '%</small>';
+        badgeDiv.innerHTML =
+          '<span style="display:inline-block;padding:1px 7px;border-radius:10px;background:#e8f0fe;color:#1a56db;font-size:0.65rem;font-weight:700;">Kustom</span>' +
+          '<div style="color:#555;margin-top:2px;">Target: ' + CS.formatTargetFeeDisplay(s.target_fee) + '</div>' +
+          '<div style="color:#555;">&ge;: ' + (s.rate_above*100).toFixed(1) + '% / &lt;: ' + (s.rate_below*100).toFixed(1) + '%</div>';
       } else {
         // Global Default (Req 4.2)
-        cell.innerHTML = '<span style="display:inline-block;padding:2px 8px;border-radius:12px;background:#f0f0f8;color:#888;font-size:0.68rem;font-weight:700;">Default</span>' +
-          '<small style="display:block;color:#aaa;margin-top:3px;">Target: ' + CS.formatTargetFeeDisplay(CS.GLOBAL_DEFAULT.target_fee) + '</small>' +
-          '<small style="display:block;color:#aaa;">&ge;: 12% / &lt;: 5%</small>';
+        badgeDiv.innerHTML =
+          '<span style="display:inline-block;padding:1px 7px;border-radius:10px;background:#f0f0f8;color:#888;font-size:0.65rem;font-weight:700;">Default</span>' +
+          '<div style="color:#aaa;margin-top:2px;">Target: ' + CS.formatTargetFeeDisplay(CS.GLOBAL_DEFAULT.target_fee) + '</div>' +
+          '<div style="color:#aaa;">&ge;: 12% / &lt;: 5%</div>';
       }
     });
   }
