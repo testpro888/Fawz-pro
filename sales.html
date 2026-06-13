@@ -528,8 +528,10 @@
       <div class="page-title">Data Sales</div>
       <div class="page-subtitle">Kelola seluruh tim sales Fawz Pro</div>
     </div>
-    <button class="btn-add" onclick="openModal()">＋ Tambah Sales</button>
-    <button id="btnSync" onclick="syncSalesFromAccounts()" style="height:38px;padding:0 18px;border-radius:8px;border:1.5px solid var(--gold);background:#fff;color:var(--gold);font-family:'Inter',sans-serif;font-size:0.82rem;font-weight:600;cursor:pointer;margin-left:8px;">🔄 Sync Akun</button>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <button class="btn-add" onclick="openModal()">＋ Tambah Sales</button>
+      <button id="btnSync" onclick="syncSalesFromAccounts()" style="height:38px;padding:0 18px;border-radius:8px;border:1.5px solid var(--gold);background:#fff;color:var(--gold);font-family:'Inter',sans-serif;font-size:0.82rem;font-weight:600;cursor:pointer;">🔄 Sync Akun</button>
+    </div>
   </div>
 
   <!-- Stats Strip -->
@@ -563,7 +565,6 @@
       <table>
         <thead>
           <tr>
-            <th>Kode Sales</th>
             <th>Nama</th>
             <th>No NPWP</th>
             <th>No Hp</th>
@@ -790,7 +791,6 @@
       </td>` : '';
 
       return `<tr data-sales-id="${r.id}">
-        <td><strong style="color:var(--navy)">${r.kode||'—'}</strong></td>
         <td>
           <div class="name-cell">
             <div class="sales-avatar" onclick="${r.fotoDiri ? `openLightbox('${r.fotoDiri}')` : ''}">
