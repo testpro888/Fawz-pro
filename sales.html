@@ -38,34 +38,72 @@
           console.warn('Tidak bisa fetch accounts (mungkin RLS):', accErr.message);
         }
 
-        if (!accErr && accounts && accounts.length > 0) {
-          const existingNames = new Set((rows||[]).map(r => (r.nama||'').toLowerCase().trim()));
-          const toInsert = [];
+        const existingNames = new Set((rows||[]).map(r => (r.nama||'').toLowerCase().trim()));
+        const toInsert = [];
 
+        if (!accErr && accounts && accounts.length > 0) {
           accounts.forEach(acc => {
             const accName = (acc.name||'').toLowerCase().trim();
             if (accName && !existingNames.has(accName)) {
               toInsert.push({
                 nama: acc.name,
-                
                 kode: acc.username ? acc.username.toUpperCase().substring(0,8) : '',
                 tipe: 'RM',
                 created_at: new Date().toISOString()
               });
+              existingNames.add(accName);
             }
           });
+        }
 
-          if (toInsert.length > 0) {
-            const { error: insErr } = await supabase.from('sales').insert(toInsert);
-            if (insErr) console.warn('Auto-insert sales error:', insErr.message);
-            // Re-fetch after insert
-            const { data: refreshed } = await supabase
-              .from('sales').select('*').order('created_at', { ascending: false });
-            window._allSales = refreshed || [];
-            renderTable(window._allSales);
-            loadCommissionSettings(currentPeriod);
-            return;
-          }
+        // Auto-sync dari nama sales yang ada di transaksi (bb_orders, saham_transaksi, dll)
+        try {
+          const txSources = [
+            supabase.from('bb_orders').select('sales_pic').not('sales_pic', 'is', null).limit(500),
+            supabase.from('pasar_sekunder_orders').select('sales_name').not('sales_name', 'is', null).limit(500),
+            supabase.from('reksadana_transactions').select('sales_name').not('sales_name', 'is', null).limit(500),
+            supabase.from('saham_transaksi').select('sales_name').not('sales_name', 'is', null).limit(500),
+          ];
+          const results = await Promise.allSettled(txSources.map(q => q));
+          const txNames = new Set();
+          const extractors = ['sales_pic','sales_name','sales_name','sales_name'];
+          results.forEach((res, i) => {
+            if (res.status === 'fulfilled' && res.value.data) {
+              res.value.data.forEach(r => {
+                const n = (r[extractors[i]]||'').trim();
+                if (n) txNames.add(n);
+              });
+            }
+          });
+          txNames.forEach(name => {
+            const key = name.toLowerCase().trim();
+            if (key && !existingNames.has(key)) {
+              // Buat kode dari 2 kata pertama nama
+              const words = name.trim().split(/\s+/);
+              const kode = words.slice(0,2).map(w => w.substring(0,3).toUpperCase()).join('');
+              toInsert.push({
+                nama: name,
+                kode: kode.substring(0,8),
+                tipe: 'RM',
+                created_at: new Date().toISOString()
+              });
+              existingNames.add(key);
+            }
+          });
+        } catch(txErr) {
+          console.warn('Auto-sync dari transaksi error:', txErr.message);
+        }
+
+        if (toInsert.length > 0) {
+          const { error: insErr } = await supabase.from('sales').insert(toInsert);
+          if (insErr) console.warn('Auto-insert sales error:', insErr.message);
+          // Re-fetch after insert
+          const { data: refreshed } = await supabase
+            .from('sales').select('*').order('created_at', { ascending: false });
+          window._allSales = refreshed || [];
+          renderTable(window._allSales);
+          loadCommissionSettings(currentPeriod);
+          return;
         }
 
         window._allSales = rows || [];
@@ -83,39 +121,68 @@
       const btn = document.getElementById('btnSync');
       if (btn) { btn.disabled = true; btn.textContent = 'Menyinkronkan...'; }
       try {
+        const { data: existing } = await supabase.from('sales').select('nama');
+        const existingNames = new Set((existing||[]).map(r => (r.nama||'').toLowerCase().trim()));
+        const toInsert = [];
+
+        // 1. Sync dari akun dengan role sales/head_sales
         const { data: accounts, error: accErr } = await supabase
           .from('accounts')
           .select('id, name, username, role')
           .in('role', ['sales', 'head_sales']);
 
-        if (accErr) throw accErr;
-        if (!accounts || accounts.length === 0) {
-          alert('Tidak ada akun Sales/Head Sales yang ditemukan.');
-          return;
+        if (!accErr && accounts && accounts.length > 0) {
+          accounts
+            .filter(acc => acc.name && !existingNames.has(acc.name.toLowerCase().trim()))
+            .forEach(acc => {
+              toInsert.push({
+                nama: acc.name,
+                kode: acc.username ? acc.username.toUpperCase().substring(0,8) : '',
+                tipe: 'RM',
+                created_at: new Date().toISOString()
+              });
+              existingNames.add(acc.name.toLowerCase().trim());
+            });
         }
 
-        const { data: existing } = await supabase.from('sales').select('nama');
-        const existingNames = new Set((existing||[]).map(r => (r.nama||'').toLowerCase().trim()));
-
-        const toInsert = accounts
-          .filter(acc => acc.name && !existingNames.has(acc.name.toLowerCase().trim()))
-          .map(acc => ({
-            nama: acc.name,
-            
-            kode: acc.username ? acc.username.toUpperCase().substring(0,8) : '',
-            tipe: 'RM',
-            created_at: new Date().toISOString()
-          }));
+        // 2. Sync dari nama sales yang muncul di transaksi
+        const txSources = [
+          supabase.from('bb_orders').select('sales_pic').not('sales_pic', 'is', null).limit(500),
+          supabase.from('pasar_sekunder_orders').select('sales_name').not('sales_name', 'is', null).limit(500),
+          supabase.from('reksadana_transactions').select('sales_name').not('sales_name', 'is', null).limit(500),
+          supabase.from('saham_transaksi').select('sales_name').not('sales_name', 'is', null).limit(500),
+        ];
+        const results = await Promise.allSettled(txSources.map(q => q));
+        const extractors = ['sales_pic','sales_name','sales_name','sales_name'];
+        results.forEach((res, i) => {
+          if (res.status === 'fulfilled' && res.value.data) {
+            res.value.data.forEach(r => {
+              const name = (r[extractors[i]]||'').trim();
+              const key = name.toLowerCase().trim();
+              if (name && !existingNames.has(key)) {
+                const words = name.trim().split(/\s+/);
+                const kode = words.slice(0,2).map(w => w.substring(0,3).toUpperCase()).join('').substring(0,8);
+                toInsert.push({
+                  nama: name,
+                  kode,
+                  tipe: 'RM',
+                  created_at: new Date().toISOString()
+                });
+                existingNames.add(key);
+              }
+            });
+          }
+        });
 
         if (toInsert.length === 0) {
-          alert('Semua akun Sales sudah tersinkronisasi di Data Sales.');
+          alert('Semua Sales sudah tersinkronisasi di Data Sales.');
           return;
         }
 
         const { error: insErr } = await supabase.from('sales').insert(toInsert);
         if (insErr) throw insErr;
 
-        alert(`✅ Berhasil menambahkan ${toInsert.length} sales baru dari akun pengguna!`);
+        alert(`✅ Berhasil menambahkan ${toInsert.length} sales baru!`);
         await loadSales();
       } catch(e) {
         console.error('Sync error:', e);
