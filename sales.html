@@ -756,36 +756,6 @@
 
     // Render commission badges after table is built
     if (canWriteComm) renderCommissionBadges();
-  }-navy);">${r.kode||'—'}</strong></td>
-        <td>
-          <div class="name-cell">
-            <div class="sales-avatar" onclick="${r.fotoDiri ? `openLightbox('${r.fotoDiri}')` : ''}">
-              ${r.fotoDiri ? `<img src="${r.fotoDiri}" alt=""/>` : initials}
-            </div>
-            <div>
-              <div class="name-text">${r.nama||'—'}</div>
-              <div class="code-text">${r.nik||r.email||''}</div>
-            </div>
-          </div>
-        </td>
-        <td>${r.npwp||'—'}</td>
-        <td>${r.hp||'—'}</td>
-        <td style="color:#555;font-size:0.78rem;">${r.email||'—'}</td>
-        <td>${r.kota||'—'}</td>
-        <td>
-          <div class="doc-icons">
-            <div class="doc-icon ${hasDiri}" title="Foto Diri" onclick="${r.fotoDiri?`openLightbox('${r.fotoDiri}')`:''}" style="${r.fotoDiri?'cursor:pointer;':'cursor:default;'}">👤</div>
-            <div class="doc-icon ${hasKTP}"   title="Foto KTP"  onclick="${r.fotoKTP?`openLightbox('${r.fotoKTP}')`:''}"   style="${r.fotoKTP?'cursor:pointer;':'cursor:default;'}">🪪</div>
-            <div class="doc-icon ${hasSelfie}" title="Selfie+KTP" onclick="${r.fotoSelfie?`openLightbox('${r.fotoSelfie}')`:''}" style="${r.fotoSelfie?'cursor:pointer;':'cursor:default;'}">🤳</div>
-            <div class="doc-icon ${hasTab}"   title="Buku Tabungan" onclick="${r.fotoTabungan?`openLightbox('${r.fotoTabungan}')`:''}" style="${r.fotoTabungan?'cursor:pointer;':'cursor:default;'}">📒</div>
-          </div>
-        </td>
-        <td>
-          <button class="action-btn btn-edit" onclick="openEdit('${r.id}')">✏ Edit</button>
-          <button class="action-btn btn-del"  onclick="deleteSales('${r.id}','${(r.nama||'').replace(/'/g,"\\'")}')">🗑</button>
-        </td>
-      </tr>`;
-    }).join('');
   }
 
   function renderStats(rows) {
