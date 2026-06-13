@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
+  <script src="config.js"></script>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Fawz Pro | Bond Calculator</title>
@@ -376,8 +377,8 @@
 // =============================================
 // SUPABASE INIT
 // =============================================
-const SUPABASE_URL = 'https://yhmrfluehibfapvtxcfi.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlobXJmbHVlaGliZmFwdnR4Y2ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNjEzODUsImV4cCI6MjA5NDczNzM4NX0.se_H4n_eLsf81d_1GH5sqsPCpX89MHewlPuuNkY6qcU';
+const SUPABASE_URL = (window.__FAWZ_CONFIG__ || {}).supabaseUrl || '';
+    const SUPABASE_KEY = (window.__FAWZ_CONFIG__ || {}).supabaseKey || '';
 const _sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let allBonds = [];         // all bonds from DB

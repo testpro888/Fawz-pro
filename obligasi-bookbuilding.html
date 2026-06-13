@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
+  <script src="config.js"></script>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Fawz Pro | Bookbuilding Obligasi</title>
@@ -8,8 +9,8 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script>
-    const SUPABASE_URL = 'https://yhmrfluehibfapvtxcfi.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlobXJmbHVlaGliZmFwdnR4Y2ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNjEzODUsImV4cCI6MjA5NDczNzM4NX0.se_H4n_eLsf81d_1GH5sqsPCpX89MHewlPuuNkY6qcU';
+    const SUPABASE_URL = (window.__FAWZ_CONFIG__ || {}).supabaseUrl || '';
+    const SUPABASE_KEY = (window.__FAWZ_CONFIG__ || {}).supabaseKey || '';
     try { window._supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); }
     catch(e) { console.error('Supabase init error:', e); }
     window.addEventListener('DOMContentLoaded', () => {
@@ -288,7 +289,26 @@
 
   <!-- PILIHAN OBLIGASI LAIN -->
   <div class="other-section">
-    <div class="section-label">Pilihan Obligasi Lainnya</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
+      <div class="section-label" style="margin-bottom:0;">Pilihan Obligasi Lainnya</div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div style="position:relative;">
+          <span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);color:#bbb;font-size:0.85rem;pointer-events:none;">🔍</span>
+          <input type="text" id="otherSearchInput" placeholder="Cari seri, tipe..." autocomplete="off"
+            oninput="filterOtherTable(this.value)"
+            style="padding:8px 12px 8px 34px;border:1.5px solid #e0e0ef;border-radius:10px;font-family:'Inter',sans-serif;font-size:0.82rem;outline:none;width:220px;transition:border-color 0.2s;"
+            onfocus="this.style.borderColor='#f5a623'" onblur="this.style.borderColor='#e0e0ef'"/>
+        </div>
+        <select id="otherCatFilter" onchange="filterOtherTable(document.getElementById('otherSearchInput').value)"
+          style="padding:8px 12px;border:1.5px solid #e0e0ef;border-radius:10px;font-family:'Inter',sans-serif;font-size:0.82rem;outline:none;cursor:pointer;background:#fff;">
+          <option value="">Semua Tipe</option>
+          <option value="gov-idr">Gov IDR</option>
+          <option value="gov-usd">Gov USD</option>
+          <option value="korp-idr">Korp IDR</option>
+          <option value="korp-usd">Korp USD</option>
+        </select>
+      </div>
+    </div>
     <div class="other-table-card">
       <div class="other-table-wrap">
         <table class="other-table">
@@ -356,6 +376,11 @@
         <div class="form-group">
           <label class="form-label">Nama Client</label>
           <input class="form-input" id="ordClientName" readonly style="background:#f5f5f5;"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Harga Offer <span class="req">*</span></label>
+          <input class="form-input" id="ordOfferInput" type="number" step="0.0001" placeholder="Contoh: 102.05" oninput="calcNominalFromUnit()" style="border-color:#f5a623;"/>
+          <div style="font-size:.68rem;color:#888;margin-top:3px;">Harga offer dari data: <span id="ordOfferRef">—</span></div>
         </div>
         <div class="form-group">
           <label class="form-label">Unit Amount <span class="req">*</span></label>
@@ -434,6 +459,7 @@
           <div><span style="color:#888;">Seri:</span> <strong id="sellInfoSeri">—</strong></div>
           <div><span style="color:#888;">Kupon:</span> <strong id="sellInfoKupon">—</strong></div>
           <div><span style="color:#888;">YTM:</span> <strong id="sellInfoYtm">—</strong></div>
+          <div><span style="color:#888;">Bid:</span> <strong id="sellInfoBid">—</strong></div>
           <div><span style="color:#888;">Offer:</span> <strong id="sellInfoOffer">—</strong></div>
           <div><span style="color:#888;">Jatuh Tempo:</span> <strong id="sellInfoJatuhTempo">—</strong></div>
         </div>
@@ -468,6 +494,12 @@
 
     <!-- FORM SELL (shared) -->
     <div class="form-grid">
+      <!-- Harga Bid input -->
+      <div class="form-group">
+        <label class="form-label">Harga Bid <span class="req">*</span></label>
+        <input class="form-input" id="sellBidInput" type="number" step="0.0001" placeholder="Contoh: 100.32" oninput="calcSellNominal()" style="border-color:#e74c3c;"/>
+        <div style="font-size:.68rem;color:#888;margin-top:3px;">Harga bid dari data: <span id="sellBidRef">—</span></div>
+      </div>
       <!-- Client Code -->
       <div class="form-group" style="position:relative;">
         <label class="form-label">Client Code <span class="req">*</span></label>
@@ -501,6 +533,21 @@
         <label class="form-label">Unit <span style="font-size:.65rem;color:#888;">(Otomatis)</span></label>
         <input class="form-input" id="sellUnit" readonly style="background:#f5f5f5;"/>
       </div>
+      <!-- Nominal Amount (calculated) -->
+      <div class="form-group">
+        <label class="form-label">Nominal Amount</label>
+        <input class="form-input" id="sellNominalAmount" readonly style="background:#f5f5f5;"/>
+      </div>
+      <!-- Accrued Interest (calculated) -->
+      <div class="form-group">
+        <label class="form-label">Accrued Interest</label>
+        <input class="form-input" id="sellAccrued" readonly style="background:#f5f5f5;"/>
+      </div>
+      <!-- Total Nominal (calculated) -->
+      <div class="form-group">
+        <label class="form-label">Total Nominal Terima/Kredit</label>
+        <input class="form-input" id="sellTotalNominal" readonly style="background:#f5f5f5;font-weight:700;"/>
+      </div>
       <!-- Sekuritas -->
       <div class="form-group">
         <label class="form-label">Sekuritas <span class="req">*</span></label>
@@ -511,7 +558,7 @@
       <!-- Settlement -->
       <div class="form-group">
         <label class="form-label">Tgl. Settlement <span style="font-size:.65rem;color:#888;">(H+2 hari kerja)</span></label>
-        <input class="form-input" id="sellSettlement" type="date"/>
+        <input class="form-input" id="sellSettlement" type="date" onchange="calcSellNominal()"/>
       </div>
       <!-- Next Coupon Date -->
       <div class="form-group">
@@ -708,8 +755,13 @@
     finally { btn.textContent = 'Simpan'; btn.disabled = false; }
   }
 
+  function filterOtherTable(q) {
+    const cat = document.getElementById('otherCatFilter')?.value || '';
+    renderOtherTable(q, cat);
+  }
+
   // ===== OTHER OBLIGASI TABLE =====
-  function renderOtherTable() {
+  function renderOtherTable(searchQ, catFilter) {
     const recIds = new Set(recItems.map(r => r.ps_id || r.psId || r.id));
     const canEdit = canManageRec();
     let allItems = [];
@@ -718,6 +770,13 @@
         if (!recIds.has(item.id)) allItems.push({ ...item, category: cat });
       });
     });
+
+    // Apply search + category filter
+    const q   = (searchQ || '').toLowerCase().trim();
+    const cat = catFilter || '';
+    if (q)   allItems = allItems.filter(i => (i.seri||'').toLowerCase().includes(q) || (CAT_LABEL[i.category]||'').toLowerCase().includes(q));
+    if (cat) allItems = allItems.filter(i => i.category === cat);
+
     allItems.sort((a,b) => (a.seri||'').localeCompare(b.seri||''));
 
     const tbody = document.getElementById('otherObligasiBody');
@@ -957,6 +1016,11 @@
     document.getElementById('ordCategory').value = category;
     document.getElementById('ordPsId').value = found.id;
 
+    // Pre-fill offer input with data price as default, user can override
+    const defaultOffer = found.harga_beli || found.hargaBeli || '';
+    document.getElementById('ordOfferInput').value = defaultOffer ? Number(defaultOffer).toFixed(4) : '';
+    document.getElementById('ordOfferRef').textContent = defaultOffer ? Number(defaultOffer).toFixed(2) : '—';
+
     // Calculate T+2 settlement (skip weekends)
     const settlement = calcT2();
     document.getElementById('ordSettlement').value = settlement;
@@ -974,6 +1038,7 @@
     document.getElementById('ordAmount').value = '';
     document.getElementById('ordAccrued').value = '';
     document.getElementById('ordTotalNominal').value = '';
+    document.getElementById('ordOfferInput').value = '';
     closeClientDropdown();
     document.getElementById('ordSekuritas').innerHTML = '<option value="">-- Pilih Sekuritas --</option>';
 
@@ -1049,8 +1114,8 @@
 
     const ob = orderObligasi || {};
 
-    // Nominal Amount = Unit Amount × (Offer / 100)
-    const offerPrice    = parseFloat(ob.harga_beli) || parseFloat(ob.hargaBeli) || 100;
+    // Nominal Amount = Unit Amount × (Offer input / 100) — pakai harga yang diketik user
+    const offerPrice    = parseFloat(document.getElementById('ordOfferInput').value) || parseFloat(ob.harga_beli) || parseFloat(ob.hargaBeli) || 100;
     const nominalAmount = unitAmount * (offerPrice / 100);
 
     // Accrued Interest = YEARFRAC(Last Coupon, Settlement) × Unit Amount × Coupon Rate
@@ -1291,7 +1356,7 @@
         kupon_berikut: nextCoupon || null,
         harga_beli: ob.harga_beli || ob.hargaBeli || null,
         harga_jual: ob.harga_jual || ob.hargaJual || null,
-        harga_beli_sales: ob.harga_beli || ob.hargaBeli || null,
+        harga_beli_sales: parseFloat(document.getElementById('ordOfferInput').value) || ob.harga_beli || ob.hargaBeli || null,
         harga_jual_sales: ob.harga_jual || ob.hargaJual || null,
         ytm: ob.yield || null,
         client_id: clientId,
@@ -1350,6 +1415,11 @@
     document.getElementById('sellObligasiInfo').style.display = 'none';
     document.getElementById('sellClientName').value = '';
     document.getElementById('sellClientCodeManual').value = '';
+    document.getElementById('sellBidInput').value = '';
+    document.getElementById('sellBidRef').textContent = '—';
+    document.getElementById('sellNominalAmount').value = '';
+    document.getElementById('sellAccrued').value = '';
+    document.getElementById('sellTotalNominal').value = '';
 
     // Reset sell picker filters
     document.querySelectorAll('#sellModal .picker-filter-btn').forEach((b,i) => b.classList.toggle('active', i===0));
@@ -1445,14 +1515,21 @@
     document.getElementById('sellInfoSeri').textContent = obl.seri || '—';
     document.getElementById('sellInfoKupon').textContent = obl.kupon != null ? Number(obl.kupon).toFixed(3) + '%' : '—';
     document.getElementById('sellInfoYtm').textContent = obl.yield != null ? Number(obl.yield).toFixed(4) + '%' : '—';
-    document.getElementById('sellInfoOffer').textContent = fmtHarga(obl.harga_jual || obl.hargaJual, !isUsd);
+    document.getElementById('sellInfoBid').textContent = fmtHarga(obl.harga_jual || obl.hargaJual, !isUsd);
+    document.getElementById('sellInfoOffer').textContent = fmtHarga(obl.harga_beli || obl.hargaBeli, !isUsd);
     document.getElementById('sellInfoJatuhTempo').textContent = fmtDate(obl.jatuh_tempo || obl.jatuhTempo);
+
+    // Pre-fill bid input with data bid price as default, user can override
+    const defaultBid = obl.harga_jual || obl.hargaJual || '';
+    document.getElementById('sellBidInput').value = defaultBid ? Number(defaultBid).toFixed(4) : '';
+    document.getElementById('sellBidRef').textContent = defaultBid ? Number(defaultBid).toFixed(2) : '—';
 
     // Auto-fill next coupon from obligasi data
     const nextCoupon = obl.next_coupon_date || obl.nextCouponDate || obl.kupon_berikut || '';
     if (nextCoupon) document.getElementById('sellNextCoupon').value = nextCoupon;
 
     document.getElementById('sellObligasiInfo').style.display = '';
+    calcSellNominal();
   }
 
   function formatSellAmountInput(el) {
@@ -1468,6 +1545,54 @@
   function calcSellUnit() {
     const amount = getSellAmountRaw();
     document.getElementById('sellUnit').value = amount >= 100 ? Math.floor(amount / 100).toLocaleString('id-ID') : '';
+    calcSellNominal();
+  }
+
+  function calcSellNominal() {
+    const amount = getSellAmountRaw(); // Unit Amount yang diketik (face value / nominal)
+    if (!amount) {
+      document.getElementById('sellUnit').value = '';
+      document.getElementById('sellNominalAmount').value = '';
+      document.getElementById('sellAccrued').value = '';
+      document.getElementById('sellTotalNominal').value = '';
+      return;
+    }
+
+    // Unit = Amount / 100
+    const unit = Math.floor(amount / 100);
+    document.getElementById('sellUnit').value = unit.toLocaleString('id-ID');
+
+    // Pakai harga bid yang diketik user
+    const bidPrice = parseFloat(document.getElementById('sellBidInput').value) || 100;
+    const nominalAmount = amount * (bidPrice / 100);
+
+    // Accrued Interest — pakai data obligasi terpilih (jika list mode) atau manual
+    let lastCouponStr = '';
+    let couponRate = 0;
+    if (sellMode === 'list' && sellSelectedObl) {
+      lastCouponStr = sellSelectedObl.last_coupon_date || sellSelectedObl.lastCouponDate || '';
+      couponRate = parseFloat(sellSelectedObl.kupon) || 0;
+    } else if (sellMode === 'manual') {
+      couponRate = parseFloat(document.getElementById('sellManualKupon').value) || 0;
+    }
+    const settlementStr = document.getElementById('sellSettlement').value || '';
+
+    let accruedInterest = 0;
+    if (lastCouponStr && settlementStr && couponRate > 0) {
+      const lastCouponDate = new Date(lastCouponStr);
+      const settlementDate = new Date(settlementStr);
+      if (!isNaN(lastCouponDate) && !isNaN(settlementDate) && settlementDate > lastCouponDate) {
+        const diffDays = (settlementDate - lastCouponDate) / (1000 * 60 * 60 * 24);
+        const yearFrac = diffDays / 360;
+        accruedInterest = yearFrac * amount * (couponRate / 100);
+      }
+    }
+
+    const totalNominal = nominalAmount + accruedInterest;
+    const fmtRp = v => 'Rp ' + Math.round(v).toLocaleString('id-ID');
+    document.getElementById('sellNominalAmount').value  = fmtRp(nominalAmount);
+    document.getElementById('sellAccrued').value        = fmtRp(accruedInterest);
+    document.getElementById('sellTotalNominal').value   = fmtRp(totalNominal);
   }
 
   function toggleSellClientManual() {
@@ -1557,6 +1682,9 @@
       if (!offer) { showToast('Isi Offer (Harga)', 'error'); return; }
     }
 
+    // Harga bid yang diketik user (override harga data)
+    const bidSales = parseFloat(document.getElementById('sellBidInput').value) || offer || null;
+
     // Client
     const isManualClient = document.getElementById('sellClientManualToggle').checked;
     let clientId, clientName;
@@ -1599,7 +1727,7 @@
         jatuh_tempo: jatuhTempo || null,
         kupon_berikut: nextCoupon || null,
         harga_jual: offer || null,
-        harga_jual_sales: offer || null,
+        harga_jual_sales: bidSales || null,
         ytm: ytm || null,
         client_id: clientId,
         customer_name: clientName,

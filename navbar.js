@@ -18,8 +18,9 @@
   /* ── 0b. SUPABASE INIT (jika belum ada di halaman) ── */
   (function() {
     if (window._supabase) return; // sudah diinit oleh halaman
-    const SUPABASE_URL = 'https://yhmrfluehibfapvtxcfi.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlobXJmbHVlaGliZmFwdnR4Y2ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNjEzODUsImV4cCI6MjA5NDczNzM4NX0.se_H4n_eLsf81d_1GH5sqsPCpX89MHewlPuuNkY6qcU';
+    const SUPABASE_URL = (window.__FAWZ_CONFIG__ || {}).supabaseUrl || '';
+    const SUPABASE_KEY = (window.__FAWZ_CONFIG__ || {}).supabaseKey || '';
+    if (!SUPABASE_URL || !SUPABASE_KEY) { console.warn('Fawz: config.js belum dimuat'); return; }
     // Tunggu supabase SDK tersedia (dimuat lewat CDN di head)
     const tryInit = () => {
       if (window.supabase && window.supabase.createClient) {

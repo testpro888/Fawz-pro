@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
+  <script src="config.js"></script>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Fawz Pro | Data Customer</title>
@@ -9,8 +10,8 @@
   <!-- Supabase SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script>
-    const SUPABASE_URL = 'https://yhmrfluehibfapvtxcfi.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlobXJmbHVlaGliZmFwdnR4Y2ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNjEzODUsImV4cCI6MjA5NDczNzM4NX0.se_H4n_eLsf81d_1GH5sqsPCpX89MHewlPuuNkY6qcU';
+    const SUPABASE_URL = (window.__FAWZ_CONFIG__ || {}).supabaseUrl || '';
+    const SUPABASE_KEY = (window.__FAWZ_CONFIG__ || {}).supabaseKey || '';
     const _sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     window._supabase = _sb;
 
@@ -549,7 +550,33 @@
         .order('created_at', { ascending: false });
       // Sales hanya bisa lihat customer miliknya sendiri
       if (cu.role === 'sales') {
-        query = query.eq('sales_person_name', cu.name || '');
+        const salesName = (cu.name || '').trim();
+        // Filter di client-side agar case-insensitive bekerja dengan benar
+        // Load semua dulu, lalu filter
+        const salesNameLower = salesName.toLowerCase();
+        const { data: allData, error: allErr } = await query;
+        if (allErr) throw allErr;
+        const filtered = (allData || []).filter(r => {
+          const pic = (r.sales_person_name || '').toLowerCase();
+          const ref = (r.referral_agents || '').toLowerCase();
+          return pic === salesNameLower || ref.includes(salesNameLower);
+        });
+        allCustomers = filtered.map(r => {
+          const mapped = mapCustomerRow(r);
+          const sec = r.customer_securities && r.customer_securities[0];
+          if (sec) {
+            mapped.ksei_single_id = sec.ksei_single_id || mapped.ksei_single_id || '';
+            mapped.rdn_number     = sec.rdn_number     || mapped.rdn_number     || '';
+            mapped.sekuritas      = sec.sekuritas_name || mapped.sekuritas      || '';
+          }
+          return mapped;
+        });
+        allCustomers.sort((a,b) => (b.createdAt||'').localeCompare(a.createdAt||''));
+        filteredCustomers = [...allCustomers];
+        currentPage = 1;
+        renderTable(filteredCustomers);
+        updateStats();
+        return;
       }
       const { data, error } = await query;
       if (error) throw error;
