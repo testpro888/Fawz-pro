@@ -99,6 +99,14 @@
       }
     }
 
+    // Daily Activity Report — admin, treasury, head_account
+    if (['admin', 'treasury', 'head_account'].includes(user.role)) {
+      const el = document.getElementById('dailyActivityLink');
+      if (el) el.style.display = 'flex';
+      const mob = document.getElementById('mobDailyActivity');
+      if (mob) mob.style.display = 'flex';
+    }
+
     // Kelola Akun hanya untuk head_account
     if (user.role === 'head_account') {
       const el = document.getElementById('manageAccountsLink');

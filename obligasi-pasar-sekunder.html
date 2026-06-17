@@ -229,11 +229,11 @@
           <span class="search-icon">🔍</span>
           <input type="text" placeholder="Cari seri..." oninput="applySearch('gov-idr', this.value)" id="search-gov-idr"/>
         </div>
-        <button class="btn btn-outline btn-sm" onclick="openUploadModalFor('gov-idr')">CSV</button>
-        <button class="btn btn-teal btn-sm" onclick="openPriceUpdateModal('gov-idr')" title="Update harga massal via CSV">⬆ Update Harga</button>
-        <button class="btn btn-outline btn-sm" onclick="exportCSV('gov-idr')">Export</button>
+        <button class="btn btn-outline btn-sm" data-sales-hide onclick="openUploadModalFor('gov-idr')">CSV</button>
+        <button class="btn btn-teal btn-sm" data-sales-hide onclick="openPriceUpdateModal('gov-idr')" title="Update harga massal via CSV">⬆ Update Harga</button>
+        <button class="btn btn-outline btn-sm" data-sales-hide onclick="exportCSV('gov-idr')">Export</button>
         <button class="btn btn-outline btn-sm" onclick="batchCalcCoupons('gov-idr')" title="Hitung last & next coupon otomatis dari jatuh tempo">Hitung Kupon</button>
-        <button class="btn btn-primary btn-sm" onclick="openAddModal('gov-idr')">+ Tambah</button>
+        <button class="btn btn-primary btn-sm" data-sales-hide onclick="openAddModal('gov-idr')">+ Tambah</button>
       </div>
     </div>
     <div class="table-card">
@@ -269,11 +269,11 @@
           <span class="search-icon">🔍</span>
           <input type="text" placeholder="Cari seri..." oninput="applySearch('gov-usd', this.value)" id="search-gov-usd"/>
         </div>
-        <button class="btn btn-outline btn-sm" onclick="openUploadModalFor('gov-usd')">CSV</button>
-        <button class="btn btn-teal btn-sm" onclick="openPriceUpdateModal('gov-usd')" title="Update harga massal via CSV">⬆ Update Harga</button>
-        <button class="btn btn-outline btn-sm" onclick="exportCSV('gov-usd')">Export</button>
+        <button class="btn btn-outline btn-sm" data-sales-hide onclick="openUploadModalFor('gov-usd')">CSV</button>
+        <button class="btn btn-teal btn-sm" data-sales-hide onclick="openPriceUpdateModal('gov-usd')" title="Update harga massal via CSV">⬆ Update Harga</button>
+        <button class="btn btn-outline btn-sm" data-sales-hide onclick="exportCSV('gov-usd')">Export</button>
         <button class="btn btn-outline btn-sm" onclick="batchCalcCoupons('gov-usd')" title="Hitung last & next coupon otomatis dari jatuh tempo">Hitung Kupon</button>
-        <button class="btn btn-primary btn-sm" onclick="openAddModal('gov-usd')">+ Tambah</button>
+        <button class="btn btn-primary btn-sm" data-sales-hide onclick="openAddModal('gov-usd')">+ Tambah</button>
       </div>
     </div>
     <div class="table-card">
@@ -309,11 +309,11 @@
           <span class="search-icon">🔍</span>
           <input type="text" placeholder="Cari seri..." oninput="applySearch('korp-idr', this.value)" id="search-korp-idr"/>
         </div>
-        <button class="btn btn-outline btn-sm" onclick="openUploadModalFor('korp-idr')">CSV</button>
-        <button class="btn btn-teal btn-sm" onclick="openPriceUpdateModal('korp-idr')" title="Update harga massal via CSV">⬆ Update Harga</button>
-        <button class="btn btn-outline btn-sm" onclick="exportCSV('korp-idr')">Export</button>
+        <button class="btn btn-outline btn-sm" data-sales-hide onclick="openUploadModalFor('korp-idr')">CSV</button>
+        <button class="btn btn-teal btn-sm" data-sales-hide onclick="openPriceUpdateModal('korp-idr')" title="Update harga massal via CSV">⬆ Update Harga</button>
+        <button class="btn btn-outline btn-sm" data-sales-hide onclick="exportCSV('korp-idr')">Export</button>
         <button class="btn btn-outline btn-sm" onclick="batchCalcCoupons('korp-idr')" title="Hitung last & next coupon otomatis dari jatuh tempo">Hitung Kupon</button>
-        <button class="btn btn-primary btn-sm" onclick="openAddModal('korp-idr')">+ Tambah</button>
+        <button class="btn btn-primary btn-sm" data-sales-hide onclick="openAddModal('korp-idr')">+ Tambah</button>
       </div>
     </div>
     <div class="table-card">
@@ -349,11 +349,11 @@
           <span class="search-icon">🔍</span>
           <input type="text" placeholder="Cari seri..." oninput="applySearch('korp-usd', this.value)" id="search-korp-usd"/>
         </div>
-        <button class="btn btn-outline btn-sm" onclick="openUploadModalFor('korp-usd')">CSV</button>
-        <button class="btn btn-teal btn-sm" onclick="openPriceUpdateModal('korp-usd')" title="Update harga massal via CSV">⬆ Update Harga</button>
-        <button class="btn btn-outline btn-sm" onclick="exportCSV('korp-usd')">Export</button>
+        <button class="btn btn-outline btn-sm" data-sales-hide onclick="openUploadModalFor('korp-usd')">CSV</button>
+        <button class="btn btn-teal btn-sm" data-sales-hide onclick="openPriceUpdateModal('korp-usd')" title="Update harga massal via CSV">⬆ Update Harga</button>
+        <button class="btn btn-outline btn-sm" data-sales-hide onclick="exportCSV('korp-usd')">Export</button>
         <button class="btn btn-outline btn-sm" onclick="batchCalcCoupons('korp-usd')" title="Hitung last & next coupon otomatis dari jatuh tempo">Hitung Kupon</button>
-        <button class="btn btn-primary btn-sm" onclick="openAddModal('korp-usd')">+ Tambah</button>
+        <button class="btn btn-primary btn-sm" data-sales-hide onclick="openAddModal('korp-usd')">+ Tambah</button>
       </div>
     </div>
     <div class="table-card">
@@ -696,38 +696,19 @@
   }
 
   function applySalesRestrictions() {
-    // Sembunyikan tombol CSV, Update Harga, Export, dan Tambah untuk role sales
-    // Jalankan setelah DOM siap — kita pakai MutationObserver / DOMContentLoaded sudah selesai
-    function hideBtns() {
-      // Semua tombol di section-actions per tab
-      CATEGORIES.forEach(cat => {
-        const panel = document.getElementById('panel-' + cat);
-        if (!panel) return;
-        panel.querySelectorAll('.section-actions .btn').forEach(btn => {
-          const txt = btn.textContent.trim();
-          if (
-            txt === 'CSV' ||
-            txt.includes('Update Harga') ||
-            txt === 'Export' ||
-            txt.includes('Tambah')
-          ) btn.style.display = 'none';
-        });
-        // Sembunyikan juga kolom Aksi (Edit/Hapus) di tabel
-        panel.querySelectorAll('tbody .action-btns').forEach(el => el.style.display = 'none');
-      });
-      // Sembunyikan header kolom Aksi
-      document.querySelectorAll('thead th:last-child').forEach(th => {
-        if (th.textContent.trim() === 'Aksi') th.style.display = 'none';
-      });
-    }
-    // Jalankan setelah render pertama selesai
-    setTimeout(hideBtns, 0);
-    // Pasang observer supaya tetap tersembunyi setelah re-render tabel
-    const observer = new MutationObserver(hideBtns);
-    CATEGORIES.forEach(cat => {
-      const tbody = document.getElementById('tbody-' + cat);
-      if (tbody) observer.observe(tbody, { childList: true, subtree: true });
+    // Sembunyikan semua tombol bertanda data-sales-hide
+    document.querySelectorAll('[data-sales-hide]').forEach(el => el.style.display = 'none');
+    // Sembunyikan kolom Aksi di thead
+    document.querySelectorAll('thead th:last-child').forEach(th => {
+      if (th.textContent.trim() === 'Aksi') th.style.display = 'none';
     });
+    // Sembunyikan cell Aksi di tbody setiap kali tabel dirender ulang
+    // Patch renderTable agar strip kolom aksi untuk sales
+    const _orig = window.renderTable;
+    window.renderTable = function(cat) {
+      _orig(cat);
+      document.querySelectorAll('#tbody-' + cat + ' .action-btns').forEach(el => el.closest('td').style.display = 'none');
+    };
   }
   // ===== TABS =====
   function switchTab(cat) {

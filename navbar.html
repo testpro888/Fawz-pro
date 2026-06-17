@@ -560,6 +560,7 @@
           <div class="user-dd-email" id="ddUserEmail">—</div>
         </div>
         <a class="user-dd-item" href="profile.html">⚙️ Profil Saya</a>
+        <a class="user-dd-item" id="dailyActivityLink" href="daily-activity.html" style="display:none">Daily Activity Report</a>
         <a class="user-dd-item" id="manageAccountsLink" href="profile.html#kelola" style="display:none">👥 Kelola Akun</a>
         <div class="user-dd-item logout" onclick="doLogout()">Keluar</div>
       </div>
@@ -591,6 +592,11 @@
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
       Profil Saya
     </a>
+
+    <!-- Daily Activity Report — admin, treasury, head_account -->
+    <a class="drawer-home mob-override" href="daily-activity.html" id="mobDailyActivity" style="display:none;">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="14" x2="10" y2="14"/><line x1="12" y1="14" x2="16" y2="14"/><line x1="8" y1="18" x2="10" y2="18"/></svg>
+      Daily Activity Report
 
     <!-- Keluar -->
     <div class="drawer-home mob-override" onclick="doLogout()" style="color:#f87171;cursor:pointer;">
