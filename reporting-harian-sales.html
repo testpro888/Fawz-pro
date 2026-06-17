@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <script src="config.js"></script>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Fawz Pro | Reporting Harian Sales</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script>
+    const SUPABASE_URL = (window.__FAWZ_CONFIG__ || {}).supabaseUrl || '';
+    const SUPABASE_KEY = (window.__FAWZ_CONFIG__ || {}).supabaseKey || '';
+    const _sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  </script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --navy: #0d0d2b; --gold: #f5a623; --gold-light: #ffc857;
+      --bg: #f4f5fb; --white: #fff; --border: #e0e0ef; --text: #1a1a3a; --gray: #888;
+      --nav-h: 68px; --green: #27ae60; --red: #e74c3c;
+    }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); min-height: 100vh; padding-top: var(--nav-h); color: var(--text); }
+
+    @keyframes fadeUp { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
+
+    .page-container { max-width: 860px; margin: 0 auto; padding: 36px 28px; }
+    .page-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 28px; flex-wrap: wrap; gap: 16px; animation: fadeUp 0.4s ease both; }
+    .page-title { font-size: 2rem; font-weight: 900; color: var(--navy); }
+    .page-subtitle { font-size: 0.88rem; color: var(--gray); margin-top: 4px; }
+    .title-underline { width: 48px; height: 3px; background: linear-gradient(90deg, var(--gold), var(--gold-light)); border-radius: 2px; margin-top: 8px; }
+
+    .btn { display: inline-flex; align-items: center; gap: 7px; padding: 11px 20px; border-radius: 10px; font-family: 'Inter', sans-serif; font-size: 0.875rem; font-weight: 600; cursor: pointer; transition: all 0.2s; border: none; }
+    .btn-primary { background: linear-gradient(135deg, var(--gold), #e8931a); color: #fff; box-shadow: 0 4px 14px rgba(245,166,35,0.35); }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(245,166,35,0.45); }
+    .btn-outline { background: #fff; color: var(--navy); border: 1.5px solid var(--border); }
+    .btn-outline:hover { border-color: var(--gold); color: var(--gold); }
+
+    /* Filter bar */
+    .filter-card { background: #fff; border-radius: 16px; padding: 20px 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); margin-bottom: 24px; animation: fadeUp 0.4s 0.05s ease both; }
+    .filter-row { display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap; }
+    .filter-group { display: flex; flex-direction: column; gap: 5px; }
+    .filter-label { font-size: 0.72rem; font-weight: 700; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
+    .filter-input { height: 40px; border: 1.5px solid var(--border); border-radius: 10px; padding: 0 14px; font-family: 'Inter', sans-serif; font-size: 0.85rem; color: var(--text); outline: none; }
+    .filter-input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(245,166,35,0.1); }
+
+    /* Result card */
+    .result-card { background: #fff; border-radius: 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); overflow: hidden; animation: fadeUp 0.4s 0.1s ease both; }
+    .result-header { background: var(--navy); padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; }
+    .result-title { color: #fff; font-weight: 700; font-size: 0.95rem; }
+    .result-body { padding: 0; }
+
+    /* Report text area */
+    .report-output-wrap { position: relative; }
+    .report-output {
+      width: 100%;
+      min-height: 460px;
+      padding: 20px 24px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.9rem;
+      line-height: 1.85;
+      border: none;
+      outline: none;
+      resize: vertical;
+      background: #fafafa;
+      color: var(--text);
+      border-radius: 0 0 16px 16px;
+    }
+
+    .copy-btn-wrap { padding: 14px 24px 18px; display: flex; gap: 10px; justify-content: flex-end; background: #fafafa; border-top: 1px solid var(--border); }
+    .copy-btn {
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 10px 22px; border-radius: 10px;
+      font-family: 'Inter', sans-serif; font-size: 0.875rem; font-weight: 600;
+      cursor: pointer; border: none;
+      background: linear-gradient(135deg, var(--gold), #e8931a);
+      color: #fff; box-shadow: 0 4px 14px rgba(245,166,35,0.35);
+      transition: all 0.2s;
+    }
+    .copy-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 22px rgba(245,166,35,0.45); }
+    .copy-btn.copied { background: linear-gradient(135deg, var(--green), #219a52); box-shadow: 0 4px 14px rgba(39,174,96,0.35); }
+
+    /* Loading / empty state */
+    .state-box { padding: 60px 20px; text-align: center; color: #bbb; background: #fafafa; border-radius: 0 0 16px 16px; font-size: 0.9rem; }
+    .state-box .icon { font-size: 2.5rem; margin-bottom: 12px; }
+
+    /* Toast */
+    .toast-container { position: fixed; bottom: 28px; right: 28px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+    .toast { padding: 14px 20px; border-radius: 12px; font-size: 0.875rem; font-weight: 500; box-shadow: 0 6px 24px rgba(0,0,0,0.15); animation: fadeUp 0.3s ease; max-width: 320px; }
+    .toast-success { background: #f0fff8; border: 1px solid #a8e6c1; color: #1e7e4e; }
+    .toast-error { background: #fff0f0; border: 1px solid #ffcccc; color: #c0392b; }
+
+    @media (max-width: 600px) {
+      .page-container { padding: 20px 14px; }
+      .filter-row { flex-direction: column; }
+      .report-output { font-size: 0.82rem; }
+    }
+  </style>
+
+  <script>
+    // Access Control — Admin only
+    (function() {
+      var raw = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember');
+      if (!raw) { window.location.replace('login.html'); return; }
+      var user;
+      try { user = JSON.parse(raw); } catch (e) { window.location.replace('login.html'); return; }
+      if (!user || !user.role) { window.location.replace('login.html'); return; }
+      if (user.role !== 'admin') { window.location.replace('dashboard.html'); return; }
+    })();
+  </script>
+</head>
+<body>
+
+<div id="navbar-placeholder"></div>
+<script src="navbar.js?v=2"></script>
+
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <div class="page-title">Reporting Harian Sales</div>
+      <div class="page-subtitle">Volume & Fee per Sales berdasarkan tanggal yang dipilih</div>
+      <div class="title-underline"></div>
+    </div>
+  </div>
+
+  <!-- Filter -->
+  <div class="filter-card">
+    <div class="filter-row">
+      <div class="filter-group">
+        <label class="filter-label">Tanggal</label>
+        <input type="date" id="filterDate" class="filter-input" style="min-width:180px;"/>
+      </div>
+      <button class="btn btn-primary" onclick="generateReport()" id="btnGenerate">
+        ⚡ Generate Report
+      </button>
+    </div>
+  </div>
+
+  <!-- Result -->
+  <div class="result-card">
+    <div class="result-header">
+      <span class="result-title" id="resultTitle">Hasil Report</span>
+    </div>
+    <div id="resultArea">
+      <div class="state-box">
+        <div class="icon">📊</div>
+        Pilih tanggal lalu klik <strong>Generate Report</strong>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+  // ── Daftar Sales Tetap Maybank ─────────────────────────────────────────
+  // Urutan sesuai permintaan. Nama ini dipakai untuk matching ke kolom sales_name di DB.
+  const SALES_LIST = [
+    'DERRY ELVRAS',
+    'FENNY',
+    'FRITZ (MAYBANK)',
+    'HARTO WIBOWO',
+    'HUSNI',
+    'PETIK PROFIT',
+    'RIVIN TANDIAH',
+    'SALLY MBI TJ PINANG',
+    'SUSANTO',
+    'SILVIA (MAYBANK SEKURITAS)',
+    'TJA HOCK',
+    'WINA GUNAWAN',
+    'YULIATY',
+    'ZURAINA'
+  ];
+
+  // ── Helpers ───────────────────────────────────────────────────────────
+  function formatRp(n) {
+    if (!n || n === 0) return '-';
+    return 'Rp ' + Number(n).toLocaleString('id-ID');
+  }
+
+  function formatDate(dateStr) {
+    // dateStr: "2026-06-12" → "12 June 2026"
+    if (!dateStr) return '';
+    const d = new Date(dateStr + 'T00:00:00');
+    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+  }
+
+  function showToast(msg, type) {
+    const c = document.getElementById('toastContainer');
+    const t = document.createElement('div');
+    t.className = 'toast toast-' + type;
+    t.textContent = msg;
+    c.appendChild(t);
+    setTimeout(() => t.remove(), 3500);
+  }
+
+  // ── Generate Report ───────────────────────────────────────────────────
+  async function generateReport() {
+    const dateVal = document.getElementById('filterDate').value;
+    if (!dateVal) {
+      showToast('Pilih tanggal terlebih dahulu', 'error');
+      return;
+    }
+
+    const btn = document.getElementById('btnGenerate');
+    btn.textContent = '⏳ Memuat...';
+    btn.disabled = true;
+
+    try {
+      // Fetch all transactions for the selected date
+      const { data, error } = await _sb
+        .from('saham_transaksi')
+        .select('sales_name, volume, fee')
+        .eq('tanggal', dateVal);
+
+      if (error) throw error;
+
+      const rows = data || [];
+
+      // Aggregate per sales — case-insensitive matching
+      const salesMap = {};
+      for (const r of rows) {
+        const rawName = (r.sales_name || '').trim();
+        // Try to match to canonical name in SALES_LIST (case-insensitive)
+        const canonical = SALES_LIST.find(
+          s => s.toLowerCase() === rawName.toLowerCase()
+        ) || rawName;
+        if (!salesMap[canonical]) salesMap[canonical] = { volume: 0, fee: 0 };
+        salesMap[canonical].volume += Number(r.volume) || 0;
+        salesMap[canonical].fee    += Number(r.fee)    || 0;
+      }
+
+      // Build text report
+      const formattedDate = formatDate(dateVal);
+      const lines = [];
+      lines.push('Report Harian Sales Maybank (' + formattedDate + ')');
+      lines.push('');
+
+      SALES_LIST.forEach((salesName, idx) => {
+        const entry = salesMap[salesName];
+        const volume = entry ? entry.volume : 0;
+        const fee    = entry ? entry.fee    : 0;
+
+        lines.push((idx + 1) + '. ' + salesName);
+        lines.push('Volume : ' + formatRp(volume));
+        lines.push('Fee : '    + formatRp(fee));
+        lines.push('');
+      });
+
+      const reportText = lines.join('\n').trimEnd();
+
+      // Render result area
+      document.getElementById('resultTitle').textContent =
+        'Report Harian Sales — ' + formattedDate;
+
+      document.getElementById('resultArea').innerHTML =
+        '<div class="report-output-wrap">' +
+          '<textarea class="report-output" id="reportText" readonly>' +
+            escapeHtml(reportText) +
+          '</textarea>' +
+        '</div>' +
+        '<div class="copy-btn-wrap">' +
+          '<button class="copy-btn" id="copyBtn" onclick="copyReport()">📋 Copy Report</button>' +
+        '</div>';
+
+    } catch (e) {
+      console.error('Report error:', e);
+      document.getElementById('resultArea').innerHTML =
+        '<div class="state-box"><div class="icon">⚠️</div>Gagal memuat data: ' +
+        escapeHtml(e.message || 'Terjadi kesalahan') + '</div>';
+      showToast('Gagal memuat data', 'error');
+    }
+
+    btn.textContent = '⚡ Generate Report';
+    btn.disabled = false;
+  }
+
+  function escapeHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  // ── Copy to Clipboard ─────────────────────────────────────────────────
+  function copyReport() {
+    const ta = document.getElementById('reportText');
+    if (!ta) return;
+    const text = ta.value;
+
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text).then(function() {
+        showCopied();
+      }).catch(function() {
+        fallbackCopy(ta);
+      });
+    } else {
+      fallbackCopy(ta);
+    }
+  }
+
+  function fallbackCopy(ta) {
+    ta.select();
+    ta.setSelectionRange(0, 99999);
+    try {
+      document.execCommand('copy');
+      showCopied();
+    } catch(e) {
+      showToast('Gagal menyalin teks', 'error');
+    }
+    window.getSelection().removeAllRanges();
+  }
+
+  function showCopied() {
+    const btn = document.getElementById('copyBtn');
+    if (btn) {
+      btn.textContent = '✅ Tersalin!';
+      btn.classList.add('copied');
+      setTimeout(function() {
+        btn.textContent = '📋 Copy Report';
+        btn.classList.remove('copied');
+      }, 2000);
+    }
+    showToast('Report berhasil disalin ke clipboard!', 'success');
+  }
+
+  // ── Init ──────────────────────────────────────────────────────────────
+  window.addEventListener('DOMContentLoaded', function() {
+    // Default ke hari ini
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('filterDate').value = today;
+  });
+</script>
+</body>
+</html>
