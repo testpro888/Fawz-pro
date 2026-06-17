@@ -267,7 +267,7 @@
 
   <!-- Header -->
   <div class="page-header">
-    <h1>📋 Daily Activity Report</h1>
+    <h1>Daily Activity Report</h1>
     <div class="page-header-underline"></div>
     <p>Tracking progress pekerjaan harian per jobdesk</p>
   </div>
@@ -333,7 +333,7 @@
 
     <!-- Left: Job List -->
     <div class="job-panel">
-      <div class="panel-title">📁 Jobdesk</div>
+      <div class="panel-title">Jobdesk</div>
       <div id="jobList">
         <div style="color:#bbb;font-size:0.85rem;padding:8px;">Memuat...</div>
       </div>
@@ -354,7 +354,7 @@
         </button>
       </div>
       <div id="timelineContent">
-        <div class="empty-timeline"><span>📂</span>Pilih jobdesk di sebelah kiri untuk melihat timeline progress.</div>
+        <div class="empty-timeline"><span>—</span>Pilih jobdesk di sebelah kiri untuk melihat timeline progress.</div>
       </div>
     </div>
   </div>
@@ -363,7 +363,7 @@
 <!-- ═══ MODAL: Tambah / Edit Jobdesk ═══ -->
 <div class="modal-overlay" id="modalJob" onclick="if(event.target===this)closeModal('modalJob')">
   <div class="modal">
-    <div class="modal-title" id="jobModalTitle">📁 Tambah Jobdesk Baru</div>
+    <div class="modal-title" id="jobModalTitle">Tambah Jobdesk Baru</div>
     <div class="modal-sub" id="jobModalSub">Masukkan nama tugas / jobdesk yang akan di-tracking</div>
     <div class="form-group">
       <label class="form-label">Nama Jobdesk <span style="color:#e74c3c">*</span></label>
@@ -388,7 +388,7 @@
 <!-- ═══ MODAL: Tambah / Edit Entry Progress ═══ -->
 <div class="modal-overlay" id="modalEntry" onclick="if(event.target===this)closeModal('modalEntry')">
   <div class="modal">
-    <div class="modal-title" id="entryModalTitle">📝 Update Progress</div>
+    <div class="modal-title" id="entryModalTitle">Update Progress</div>
     <div class="modal-sub" id="entryModalSub"></div>
     <div class="form-group">
       <label class="form-label">Tanggal Progress <span style="color:#e74c3c">*</span></label>
@@ -397,11 +397,11 @@
     <div class="form-group">
       <label class="form-label">Status <span style="color:#e74c3c">*</span></label>
       <select class="form-select" id="inputEntryStatus">
-        <option value="inprogress">🔵 In Progress</option>
-        <option value="pending">🟡 Pending</option>
-        <option value="finished">🟢 Finished</option>
-        <option value="cancelled">🔴 Cancelled</option>
-        <option value="returned">🟣 Return</option>
+        <option value="inprogress">In Progress</option>
+        <option value="pending">Pending</option>
+        <option value="finished">Finished</option>
+        <option value="cancelled">Cancelled</option>
+        <option value="returned">Return</option>
       </select>
     </div>
     <div class="form-group">
@@ -456,7 +456,7 @@ async function init() {
 
   if (!ALLOWED_ROLES.includes(curUser.role)) {
     document.querySelector('.page-container').innerHTML =
-      '<div style="text-align:center;padding:80px 20px;color:#aaa;"><span style="font-size:3rem;">🔒</span><br><br>Halaman ini hanya untuk Admin, Bonds, dan Head Account.</div>';
+      '<div style="text-align:center;padding:80px 20px;color:#aaa;"><br><br>Halaman ini hanya untuk Admin, Bonds, dan Head Account.</div>';
     return;
   }
 
@@ -606,7 +606,7 @@ function resetTimeline() {
   document.getElementById('timelineMeta').textContent  = '';
   document.getElementById('btnAddEntry').style.display = 'none';
   document.getElementById('timelineContent').innerHTML =
-    '<div class="empty-timeline"><span>📂</span>Pilih jobdesk di sebelah kiri untuk melihat timeline progress.</div>';
+    '<div class="empty-timeline"><span>—</span>Pilih jobdesk di sebelah kiri untuk melihat timeline progress.</div>';
 }
 
 /* ── RENDER TIMELINE ── */
@@ -625,7 +625,7 @@ function renderTimeline(job) {
   if (!entries.length) {
     content.innerHTML = `
       <div class="empty-timeline">
-        <span>📝</span>
+        <span></span>
         Belum ada update progress.<br>
         Klik <strong>+ Update Progress</strong> untuk mencatat perkembangan.
       </div>`;
@@ -634,8 +634,8 @@ function renderTimeline(job) {
 
   const editDeleteBtns = (e) => canEdit ? `
     <div class="tl-actions">
-      <button class="btn-edit-entry" onclick="openEditEntryModal('${esc(e.id)}')">✏️ Edit</button>
-      <button class="btn-del-entry"  onclick="deleteEntry('${esc(e.id)}')">🗑 Hapus</button>
+      <button class="btn-edit-entry" onclick="openEditEntryModal('${esc(e.id)}')">Edit</button>
+      <button class="btn-del-entry"  onclick="deleteEntry('${esc(e.id)}')">Hapus</button>
     </div>` : '';
 
   content.innerHTML = `<div class="timeline">${entries.map(e => {
@@ -662,18 +662,34 @@ function renderTimeline(job) {
 
   // Add edit/delete for the job itself (top right)
   if (canEdit) {
-    const hdr = document.getElementById('timelineHeader') || document.querySelector('.timeline-header');
+    const hdr = document.querySelector('.timeline-header');
     if (!document.getElementById('jobEditBtn')) {
       const editBtn = document.createElement('button');
       editBtn.id = 'jobEditBtn';
       editBtn.className = 'btn-ghost';
       editBtn.style.cssText = 'font-size:0.8rem;padding:7px 14px;';
-      editBtn.textContent = '✏️ Edit Jobdesk';
+      editBtn.textContent = 'Edit Jobdesk';
       editBtn.onclick = () => openEditJobModal(job.id);
-      document.querySelector('.timeline-header').appendChild(editBtn);
+      hdr.appendChild(editBtn);
+
+      const delBtn = document.createElement('button');
+      delBtn.id = 'jobDelBtn';
+      delBtn.className = 'btn-del-entry';
+      delBtn.style.cssText = 'font-size:0.8rem;padding:7px 14px;';
+      delBtn.textContent = 'Hapus Jobdesk';
+      delBtn.onclick = () => deleteJob(job.id, job.name);
+      hdr.appendChild(delBtn);
     } else {
       document.getElementById('jobEditBtn').onclick = () => openEditJobModal(job.id);
+      const delBtn = document.getElementById('jobDelBtn');
+      if (delBtn) delBtn.onclick = () => deleteJob(job.id, job.name);
     }
+  } else {
+    // Sembunyikan tombol edit/hapus jobdesk jika tidak punya akses
+    const eb = document.getElementById('jobEditBtn');
+    const db = document.getElementById('jobDelBtn');
+    if (eb) eb.style.display = 'none';
+    if (db) db.style.display = 'none';
   }
 }
 
@@ -863,7 +879,7 @@ function openOverviewDetail(jobId, userName) {
     : '';
 
   const entryHtml = entries.length === 0
-    ? '<div class="empty-timeline" style="padding:24px;"><span>📝</span>Belum ada update progress.</div>'
+    ? '<div class="empty-timeline" style="padding:24px;"><span></span>Belum ada update progress.</div>'
     : `<div class="timeline">${entries.map(e => {
         const dateFmt = new Date(e.entry_date).toLocaleDateString('id-ID', {weekday:'long',day:'numeric',month:'long',year:'numeric'});
         const sc = e.status || 'pending';
@@ -899,7 +915,7 @@ function closeModal(id) { document.getElementById(id).classList.remove('open'); 
 /* Job Modal — Add */
 function openAddJobModal() {
   editJobId = null;
-  document.getElementById('jobModalTitle').textContent = '📁 Tambah Jobdesk Baru';
+  document.getElementById('jobModalTitle').textContent = 'Tambah Jobdesk Baru';
   document.getElementById('inputJobName').value  = '';
   document.getElementById('inputJobDate').value  = new Date().toISOString().slice(0,10);
   document.getElementById('inputJobDesc').value  = '';
@@ -912,7 +928,7 @@ function openEditJobModal(jobId) {
   editJobId = jobId;
   const job = allJobs.find(j => j.id === jobId);
   if (!job) return;
-  document.getElementById('jobModalTitle').textContent = '✏️ Edit Jobdesk';
+  document.getElementById('jobModalTitle').textContent = 'Edit Jobdesk';
   document.getElementById('inputJobName').value  = job.name || '';
   document.getElementById('inputJobDate').value  = job.start_date || '';
   document.getElementById('inputJobDesc').value  = job.description || '';
@@ -924,8 +940,8 @@ async function saveJob() {
   const name = document.getElementById('inputJobName').value.trim();
   const date = document.getElementById('inputJobDate').value;
   const desc = document.getElementById('inputJobDesc').value.trim();
-  if (!name) { showFb('jobFeedback','⚠️ Nama jobdesk wajib diisi.','error'); return; }
-  if (!date) { showFb('jobFeedback','⚠️ Tanggal mulai wajib diisi.','error'); return; }
+  if (!name) { showFb('jobFeedback','Nama jobdesk wajib diisi.','error'); return; }
+  if (!date) { showFb('jobFeedback','Tanggal mulai wajib diisi.','error'); return; }
 
   const btn = document.getElementById('btnSaveJob');
   btn.disabled = true;
@@ -948,7 +964,7 @@ async function saveJob() {
     await loadData();
   } catch(e) {
     console.error(e);
-    showFb('jobFeedback', '⚠️ Gagal menyimpan. ' + (e.message || ''), 'error');
+    showFb('jobFeedback', 'Gagal menyimpan. ' + (e.message || ''), 'error');
   }
   btn.disabled = false;
   btn.textContent = 'Simpan';
@@ -960,7 +976,7 @@ async function saveJob() {
 function openAddEntryModal() {
   if (!selectedJob) return;
   editEntryId = null;
-  document.getElementById('entryModalTitle').textContent = '📝 Update Progress';
+  document.getElementById('entryModalTitle').textContent = 'Update Progress';
   document.getElementById('entryModalSub').textContent   = selectedJob.name;
   document.getElementById('inputEntryDate').value   = new Date().toISOString().slice(0,10);
   document.getElementById('inputEntryStatus').value = 'inprogress';
@@ -975,7 +991,7 @@ function openEditEntryModal(entryId) {
   editEntryId = entryId;
   const entry = allEntries.find(e => e.id === entryId);
   if (!entry) return;
-  document.getElementById('entryModalTitle').textContent = '✏️ Edit Progress';
+  document.getElementById('entryModalTitle').textContent = 'Edit Progress';
   document.getElementById('entryModalSub').textContent   = selectedJob ? selectedJob.name : '';
   document.getElementById('inputEntryDate').value   = entry.entry_date || '';
   document.getElementById('inputEntryStatus').value = entry.status || 'pending';
@@ -990,8 +1006,8 @@ async function saveEntry() {
   const status = document.getElementById('inputEntryStatus').value;
   const notes  = document.getElementById('inputEntryNotes').value.trim();
 
-  if (!date)   { showFb('entryFeedback','⚠️ Tanggal wajib diisi.','error'); return; }
-  if (!status) { showFb('entryFeedback','⚠️ Status wajib dipilih.','error'); return; }
+  if (!date)   { showFb('entryFeedback','Tanggal wajib diisi.','error'); return; }
+  if (!status) { showFb('entryFeedback','Status wajib dipilih.','error'); return; }
 
   const btn = document.getElementById('btnSaveEntry');
   btn.disabled = true;
@@ -1015,7 +1031,7 @@ async function saveEntry() {
     await loadData();
   } catch(e) {
     console.error(e);
-    showFb('entryFeedback', '⚠️ Gagal menyimpan. ' + (e.message || ''), 'error');
+    showFb('entryFeedback', 'Gagal menyimpan. ' + (e.message || ''), 'error');
   }
   btn.disabled = false;
   btn.textContent = editEntryId ? 'Update' : 'Simpan';
@@ -1033,6 +1049,27 @@ async function deleteEntry(entryId) {
     await loadData();
   } catch(e) {
     alert('Gagal menghapus: ' + (e.message || ''));
+  }
+}
+
+/* ── DELETE JOB ── */
+async function deleteJob(jobId, jobName) {
+  if (!confirm(`Hapus jobdesk "${jobName}"?\n\nSemua entri progress di dalamnya juga akan dihapus. Tindakan ini tidak dapat dibatalkan.`)) return;
+  try {
+    // Entries akan terhapus otomatis via ON DELETE CASCADE
+    const { error } = await window._supabase
+      .from('daily_activity_jobs')
+      .delete()
+      .eq('id', jobId);
+    if (error) throw error;
+    selectedJob = null;
+    // Hapus tombol edit/hapus jobdesk dari header
+    document.getElementById('jobEditBtn')?.remove();
+    document.getElementById('jobDelBtn')?.remove();
+    document.getElementById('btnAddEntry').style.display = 'none';
+    await loadData();
+  } catch(e) {
+    alert('Gagal menghapus jobdesk: ' + (e.message || ''));
   }
 }
 
