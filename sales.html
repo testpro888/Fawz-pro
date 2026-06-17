@@ -7,6 +7,9 @@
   <title>Fawz Pro | Data Sales</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 
+  <!-- Commission Settings Module -->
+  <script src="js/commission-settings.js"></script>
+
   <!-- Supabase SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script>
@@ -35,37 +38,77 @@
           console.warn('Tidak bisa fetch accounts (mungkin RLS):', accErr.message);
         }
 
-        if (!accErr && accounts && accounts.length > 0) {
-          const existingNames = new Set((rows||[]).map(r => (r.nama||'').toLowerCase().trim()));
-          const toInsert = [];
+        const existingNames = new Set((rows||[]).map(r => (r.nama||'').toLowerCase().trim()));
+        const toInsert = [];
 
+        if (!accErr && accounts && accounts.length > 0) {
           accounts.forEach(acc => {
             const accName = (acc.name||'').toLowerCase().trim();
             if (accName && !existingNames.has(accName)) {
               toInsert.push({
                 nama: acc.name,
-                
                 kode: acc.username ? acc.username.toUpperCase().substring(0,8) : '',
                 tipe: 'RM',
                 created_at: new Date().toISOString()
               });
+              existingNames.add(accName);
             }
           });
+        }
 
-          if (toInsert.length > 0) {
-            const { error: insErr } = await supabase.from('sales').insert(toInsert);
-            if (insErr) console.warn('Auto-insert sales error:', insErr.message);
-            // Re-fetch after insert
-            const { data: refreshed } = await supabase
-              .from('sales').select('*').order('created_at', { ascending: false });
-            window._allSales = refreshed || [];
-            renderTable(window._allSales);
-            return;
-          }
+        // Auto-sync dari nama sales yang ada di transaksi (bb_orders, saham_transaksi, dll)
+        try {
+          const txSources = [
+            supabase.from('bb_orders').select('sales_pic').not('sales_pic', 'is', null).limit(500),
+            supabase.from('pasar_sekunder_orders').select('sales_name').not('sales_name', 'is', null).limit(500),
+            supabase.from('reksadana_transactions').select('sales_name').not('sales_name', 'is', null).limit(500),
+            supabase.from('saham_transaksi').select('sales_name').not('sales_name', 'is', null).limit(500),
+          ];
+          const results = await Promise.allSettled(txSources.map(q => q));
+          const txNames = new Set();
+          const extractors = ['sales_pic','sales_name','sales_name','sales_name'];
+          results.forEach((res, i) => {
+            if (res.status === 'fulfilled' && res.value.data) {
+              res.value.data.forEach(r => {
+                const n = (r[extractors[i]]||'').trim();
+                if (n) txNames.add(n);
+              });
+            }
+          });
+          txNames.forEach(name => {
+            const key = name.toLowerCase().trim();
+            if (key && !existingNames.has(key)) {
+              // Buat kode dari 2 kata pertama nama
+              const words = name.trim().split(/\s+/);
+              const kode = words.slice(0,2).map(w => w.substring(0,3).toUpperCase()).join('');
+              toInsert.push({
+                nama: name,
+                kode: kode.substring(0,8),
+                tipe: 'RM',
+                created_at: new Date().toISOString()
+              });
+              existingNames.add(key);
+            }
+          });
+        } catch(txErr) {
+          console.warn('Auto-sync dari transaksi error:', txErr.message);
+        }
+
+        if (toInsert.length > 0) {
+          const { error: insErr } = await supabase.from('sales').insert(toInsert);
+          if (insErr) console.warn('Auto-insert sales error:', insErr.message);
+          // Re-fetch after insert
+          const { data: refreshed } = await supabase
+            .from('sales').select('*').order('created_at', { ascending: false });
+          window._allSales = refreshed || [];
+          renderTable(window._allSales);
+          loadCommissionSettings(currentPeriod);
+          return;
         }
 
         window._allSales = rows || [];
         renderTable(window._allSales);
+        loadCommissionSettings(currentPeriod);
       } catch(e) {
         console.error('Gagal load sales:', e);
         document.getElementById('tableBody').innerHTML =
@@ -78,39 +121,68 @@
       const btn = document.getElementById('btnSync');
       if (btn) { btn.disabled = true; btn.textContent = 'Menyinkronkan...'; }
       try {
+        const { data: existing } = await supabase.from('sales').select('nama');
+        const existingNames = new Set((existing||[]).map(r => (r.nama||'').toLowerCase().trim()));
+        const toInsert = [];
+
+        // 1. Sync dari akun dengan role sales/head_sales
         const { data: accounts, error: accErr } = await supabase
           .from('accounts')
           .select('id, name, username, role')
           .in('role', ['sales', 'head_sales']);
 
-        if (accErr) throw accErr;
-        if (!accounts || accounts.length === 0) {
-          alert('Tidak ada akun Sales/Head Sales yang ditemukan.');
-          return;
+        if (!accErr && accounts && accounts.length > 0) {
+          accounts
+            .filter(acc => acc.name && !existingNames.has(acc.name.toLowerCase().trim()))
+            .forEach(acc => {
+              toInsert.push({
+                nama: acc.name,
+                kode: acc.username ? acc.username.toUpperCase().substring(0,8) : '',
+                tipe: 'RM',
+                created_at: new Date().toISOString()
+              });
+              existingNames.add(acc.name.toLowerCase().trim());
+            });
         }
 
-        const { data: existing } = await supabase.from('sales').select('nama');
-        const existingNames = new Set((existing||[]).map(r => (r.nama||'').toLowerCase().trim()));
-
-        const toInsert = accounts
-          .filter(acc => acc.name && !existingNames.has(acc.name.toLowerCase().trim()))
-          .map(acc => ({
-            nama: acc.name,
-            
-            kode: acc.username ? acc.username.toUpperCase().substring(0,8) : '',
-            tipe: 'RM',
-            created_at: new Date().toISOString()
-          }));
+        // 2. Sync dari nama sales yang muncul di transaksi
+        const txSources = [
+          supabase.from('bb_orders').select('sales_pic').not('sales_pic', 'is', null).limit(500),
+          supabase.from('pasar_sekunder_orders').select('sales_name').not('sales_name', 'is', null).limit(500),
+          supabase.from('reksadana_transactions').select('sales_name').not('sales_name', 'is', null).limit(500),
+          supabase.from('saham_transaksi').select('sales_name').not('sales_name', 'is', null).limit(500),
+        ];
+        const results = await Promise.allSettled(txSources.map(q => q));
+        const extractors = ['sales_pic','sales_name','sales_name','sales_name'];
+        results.forEach((res, i) => {
+          if (res.status === 'fulfilled' && res.value.data) {
+            res.value.data.forEach(r => {
+              const name = (r[extractors[i]]||'').trim();
+              const key = name.toLowerCase().trim();
+              if (name && !existingNames.has(key)) {
+                const words = name.trim().split(/\s+/);
+                const kode = words.slice(0,2).map(w => w.substring(0,3).toUpperCase()).join('').substring(0,8);
+                toInsert.push({
+                  nama: name,
+                  kode,
+                  tipe: 'RM',
+                  created_at: new Date().toISOString()
+                });
+                existingNames.add(key);
+              }
+            });
+          }
+        });
 
         if (toInsert.length === 0) {
-          alert('Semua akun Sales sudah tersinkronisasi di Data Sales.');
+          alert('Semua Sales sudah tersinkronisasi di Data Sales.');
           return;
         }
 
         const { error: insErr } = await supabase.from('sales').insert(toInsert);
         if (insErr) throw insErr;
 
-        alert(`✅ Berhasil menambahkan ${toInsert.length} sales baru dari akun pengguna!`);
+        alert(`✅ Berhasil menambahkan ${toInsert.length} sales baru!`);
         await loadSales();
       } catch(e) {
         console.error('Sync error:', e);
@@ -456,8 +528,10 @@
       <div class="page-title">Data Sales</div>
       <div class="page-subtitle">Kelola seluruh tim sales Fawz Pro</div>
     </div>
-    <button class="btn-add" onclick="openModal()">＋ Tambah Sales</button>
-    <button id="btnSync" onclick="syncSalesFromAccounts()" style="height:38px;padding:0 18px;border-radius:8px;border:1.5px solid var(--gold);background:#fff;color:var(--gold);font-family:'Inter',sans-serif;font-size:0.82rem;font-weight:600;cursor:pointer;margin-left:8px;">🔄 Sync Akun</button>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <button class="btn-add" onclick="openModal()">＋ Tambah Sales</button>
+      <button id="btnSync" onclick="syncSalesFromAccounts()" style="height:38px;padding:0 18px;border-radius:8px;border:1.5px solid var(--gold);background:#fff;color:var(--gold);font-family:'Inter',sans-serif;font-size:0.82rem;font-weight:600;cursor:pointer;">🔄 Sync Akun</button>
+    </div>
   </div>
 
   <!-- Stats Strip -->
@@ -491,7 +565,6 @@
       <table>
         <thead>
           <tr>
-            <th>Kode Sales</th>
             <th>Nama</th>
             <th>No NPWP</th>
             <th>No Hp</th>
@@ -499,6 +572,7 @@
             <th>Kota</th>
             <th>Dokumen</th>
             <th>Aksi</th>
+            <th id="thKomisi" style="display:none;">Komisi</th>
           </tr>
         </thead>
         <tbody id="tableBody">
@@ -615,6 +689,44 @@
   </div>
 </div>
 
+<!-- ── Commission Settings Modal (Req 2.1, 2.2) ── -->
+<div class="modal-overlay" id="commissionModalOverlay" onclick="if(event.target===this)closeCommissionModal()" style="z-index:1200;">
+  <div class="modal" style="width:480px;">
+    <div class="modal-header">
+      <div class="modal-title">⚙ Pengaturan Komisi — <span id="modalCommSalesName" style="color:var(--gold);"></span></div>
+      <button class="modal-close" onclick="closeCommissionModal()">✕</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <!-- Target Fee -->
+      <div class="form-group">
+        <label class="form-label">Target Fee (Rp) <span class="req">*</span></label>
+        <input type="number" class="form-control" id="fTargetFee" min="1" step="1" placeholder="10000000" oninput="updateTargetFeePreview()"/>
+        <small id="targetFeePreview" style="color:#888;font-size:0.73rem;"></small>
+        <small id="errTargetFee" style="color:#c00;font-size:0.73rem;display:none;"></small>
+      </div>
+      <!-- Rate Above -->
+      <div class="form-group">
+        <label class="form-label">Rate ≥ Target (%) <span class="req">*</span></label>
+        <input type="number" class="form-control" id="fRateAbove" step="0.1" min="1" max="100" placeholder="12"/>
+        <small id="errRateAbove" style="color:#c00;font-size:0.73rem;display:none;"></small>
+      </div>
+      <!-- Rate Below -->
+      <div class="form-group">
+        <label class="form-label">Rate &lt; Target (%) <span class="req">*</span></label>
+        <input type="number" class="form-control" id="fRateBelow" step="0.1" min="1" max="100" placeholder="5"/>
+        <small id="errRateBelow" style="color:#c00;font-size:0.73rem;display:none;"></small>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeCommissionModal()">Batal</button>
+      <button class="btn-save" id="btnSaveCommission" onclick="saveCommissionSettings()">
+        <div class="spinner" id="commSpinner"></div>
+        <span>Simpan</span>
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- ── Lightbox ── -->
 <div class="lightbox" id="lightbox" onclick="closeLightbox()">
   <button class="lightbox-close" onclick="closeLightbox()">✕</button>
@@ -628,6 +740,12 @@
   let filteredRows = [];
   let editId = null;
   const photoData = { diri: null, ktp: null, selfie: null, tabungan: null };
+
+  // Commission settings state (Req 4.1, 4.5)
+  var commissionSettingsCache = {}; // { [salesId]: { target_fee, rate_above, rate_below } }
+  var currentEditSalesId = null;
+  var currentEditSalesName = null;
+  var currentPeriod = new Date().toISOString().slice(0, 7); // YYYY-MM
 
   /* ─── Render Table ─── */
   function renderTable(rows) {
@@ -644,8 +762,13 @@
     const slice = filteredRows.slice(start, start + PER_PAGE);
     const tbody = document.getElementById('tableBody');
 
+    // Determine if current user can write commission settings (Req 7.1)
+    const curUserRaw = sessionStorage.getItem('fawz_user');
+    const curU = curUserRaw ? JSON.parse(curUserRaw) : {};
+    const canWriteComm = window.CommissionSettings && window.CommissionSettings.canWriteSettings(curU.role);
+
     if (!slice.length) {
-      tbody.innerHTML = `<tr><td colspan="8">
+      tbody.innerHTML = `<tr><td colspan="${canWriteComm ? 9 : 8}">
         <div class="empty-state">
           <div class="empty-icon">👥</div>
           <div style="font-size:0.9rem;color:#999;font-weight:600;">Belum ada data sales</div>
@@ -662,8 +785,12 @@
       const hasSelfie= r.fotoSelfie   ? 'has' : '';
       const hasTab   = r.fotoTabungan ? 'has' : '';
 
-      return `<tr>
-        <td><strong style="color:var(--navy);">${r.kode||'—'}</strong></td>
+      const commCell = canWriteComm ? `<td class="commission-badge-cell" style="white-space:nowrap;font-size:0.75rem;">
+        <button style="height:26px;padding:0 10px;border-radius:6px;border:1px solid var(--gold);background:#fff;color:#333;font-size:0.72rem;cursor:pointer;margin-bottom:4px;" onclick="openCommissionModal('${r.id}','${(r.nama||'').replace(/'/g,"\\'")}')">⚙ Komisi</button>
+        <div class="comm-badge-info" style="font-size:0.68rem;color:#888;"></div>
+      </td>` : '';
+
+      return `<tr data-sales-id="${r.id}">
         <td>
           <div class="name-cell">
             <div class="sales-avatar" onclick="${r.fotoDiri ? `openLightbox('${r.fotoDiri}')` : ''}">
@@ -691,8 +818,12 @@
           <button class="action-btn btn-edit" onclick="openEdit('${r.id}')">✏ Edit</button>
           <button class="action-btn btn-del"  onclick="deleteSales('${r.id}','${(r.nama||'').replace(/'/g,"\\'")}')">🗑</button>
         </td>
+        ${commCell}
       </tr>`;
     }).join('');
+
+    // Render commission badges after table is built
+    if (canWriteComm) renderCommissionBadges();
   }
 
   function renderStats(rows) {
@@ -936,6 +1067,187 @@
     a.click();
   }
 
+  /* ─── Commission Settings Functions (Req 2.1–2.11, 3.1–3.7, 4.1–4.5, 7.1–7.5) ─── */
+
+  async function loadCommissionSettings(period) {
+    try {
+      const { data, error } = await window._supabase
+        .from('sales_commission_settings')
+        .select('sales_id, target_fee, rate_above, rate_below')
+        .eq('period', period);
+      if (error) throw error;
+      commissionSettingsCache = {};
+      (data || []).forEach(function(r) { commissionSettingsCache[r.sales_id] = r; });
+      renderCommissionBadges();
+    } catch(e) {
+      console.error('loadCommissionSettings error:', e);
+      // Non-fatal — don't block main table render
+    }
+  }
+
+  function openCommissionModal(salesId, salesName) {
+    if (!window.CommissionSettings) return;
+    const curU = JSON.parse(sessionStorage.getItem('fawz_user') || '{}');
+    if (!window.CommissionSettings.canWriteSettings(curU.role)) {
+      showCommToast('Anda tidak memiliki izin untuk mengubah pengaturan komisi', true);
+      console.error({ username: curU.username, role: curU.role, timestamp: new Date().toISOString() });
+      return;
+    }
+    currentEditSalesId = salesId;
+    currentEditSalesName = salesName;
+    document.getElementById('modalCommSalesName').textContent = salesName;
+
+    // Clear previous errors (Req 2.6–2.8)
+    ['errTargetFee','errRateAbove','errRateBelow'].forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) { el.textContent = ''; el.style.display = 'none'; }
+    });
+
+    // Pre-populate with cache or Global_Default (Req 2.3, 2.4)
+    var s = commissionSettingsCache[salesId] || window.CommissionSettings.GLOBAL_DEFAULT;
+    document.getElementById('fTargetFee').value = s.target_fee;
+    document.getElementById('fRateAbove').value = parseFloat((s.rate_above * 100).toFixed(4));
+    document.getElementById('fRateBelow').value = parseFloat((s.rate_below * 100).toFixed(4));
+    updateTargetFeePreview();
+
+    document.getElementById('commissionModalOverlay').classList.add('open');
+  }
+
+  function closeCommissionModal() {
+    document.getElementById('commissionModalOverlay').classList.remove('open');
+    currentEditSalesId = null;
+    currentEditSalesName = null;
+  }
+
+  function updateTargetFeePreview() {
+    // Live Rupiah preview (Req 9.5, 6.8)
+    if (!window.CommissionSettings) return;
+    var val = parseInt(document.getElementById('fTargetFee').value, 10);
+    var preview = document.getElementById('targetFeePreview');
+    if (preview) {
+      preview.textContent = isNaN(val) || val <= 0 ? '' :
+        window.CommissionSettings.formatTargetFeeDisplay(val);
+    }
+  }
+
+  async function saveCommissionSettings() {
+    if (!window.CommissionSettings) return;
+    var CS = window.CommissionSettings;
+    var curU = JSON.parse(sessionStorage.getItem('fawz_user') || '{}');
+
+    // Client-side role check (Req 7.3, 7.4)
+    if (!CS.canWriteSettings(curU.role)) {
+      showCommToast('Anda tidak memiliki izin untuk mengubah pengaturan komisi', true);
+      console.error({ username: curU.username || curU.name, role: curU.role, timestamp: new Date().toISOString() });
+      return;
+    }
+
+    var targetFeeRaw = document.getElementById('fTargetFee').value;
+    var rateAboveRaw = document.getElementById('fRateAbove').value;
+    var rateBelowRaw = document.getElementById('fRateBelow').value;
+    var GD = CS.GLOBAL_DEFAULT;
+
+    // Apply defaults for empty fields (Req 9.3, 9.4)
+    var formData = {
+      salesId: currentEditSalesId,
+      salesName: currentEditSalesName,
+      targetFee: targetFeeRaw === '' ? GD.target_fee : parseInt(targetFeeRaw, 10),
+      rateAbovePct: rateAboveRaw === '' ? GD.rate_above * 100 : parseFloat(rateAboveRaw),
+      rateBelowPct: rateBelowRaw === '' ? GD.rate_below * 100 : parseFloat(rateBelowRaw),
+    };
+
+    // Validate (Req 3.7, 9.1)
+    var validation = CS.validateSettingsInput(formData);
+    var fieldMap = { targetFee: 'errTargetFee', rateAbovePct: 'errRateAbove', rateBelowPct: 'errRateBelow' };
+    Object.keys(fieldMap).forEach(function(key) {
+      var el = document.getElementById(fieldMap[key]);
+      if (!el) return;
+      if (validation.errors[key]) { el.textContent = validation.errors[key]; el.style.display = ''; }
+      else { el.textContent = ''; el.style.display = 'none'; }
+    });
+    if (!validation.valid) return;
+
+    // Rate inversion warning (Req 2.9, 2.10, 9.6)
+    if (validation.warnRateInversion) {
+      if (!confirm('Rate ≥ target lebih kecil dari rate < target — apakah Anda yakin?')) return;
+    }
+
+    var payload = CS.buildSettingsPayload(formData, currentPeriod, curU.username || curU.name || '');
+    var btn = document.getElementById('btnSaveCommission');
+    if (btn) { btn.disabled = true; document.getElementById('commSpinner').style.display = 'block'; }
+
+    try {
+      var { error } = await window._supabase
+        .from('sales_commission_settings')
+        .upsert(payload, { onConflict: 'sales_id,period' });
+      if (error) throw error;
+
+      // Update local cache (Req 3.2)
+      commissionSettingsCache[currentEditSalesId] = {
+        sales_id: currentEditSalesId,
+        target_fee: payload.target_fee,
+        rate_above: payload.rate_above,
+        rate_below: payload.rate_below
+      };
+      renderCommissionBadges();
+      closeCommissionModal();
+      showCommToast('Pengaturan komisi berhasil disimpan', false);
+    } catch(e) {
+      console.error('saveCommissionSettings error:', e);
+      showCommToast('Gagal menyimpan: ' + e.message, true);
+    } finally {
+      if (btn) { btn.disabled = false; document.getElementById('commSpinner').style.display = 'none'; }
+    }
+  }
+
+  function renderCommissionBadges() {
+    // Only run for authorized users (Req 7.1)
+    if (!window.CommissionSettings) return;
+    var curU = JSON.parse(sessionStorage.getItem('fawz_user') || '{}');
+    if (!window.CommissionSettings.canWriteSettings(curU.role)) return;
+
+    // Show the "Komisi" header column
+    var thKomisi = document.getElementById('thKomisi');
+    if (thKomisi) thKomisi.style.display = '';
+
+    var CS = window.CommissionSettings;
+    document.querySelectorAll('[data-sales-id]').forEach(function(row) {
+      var salesId = row.dataset.salesId;
+      // Only update the badge info div, not the button
+      var badgeDiv = row.querySelector('.comm-badge-info');
+      if (!badgeDiv) return;
+      var s = commissionSettingsCache[salesId];
+      if (s) {
+        // Custom settings (Req 4.4)
+        badgeDiv.innerHTML =
+          '<span style="display:inline-block;padding:1px 7px;border-radius:10px;background:#e8f0fe;color:#1a56db;font-size:0.65rem;font-weight:700;">Kustom</span>' +
+          '<div style="color:#555;margin-top:2px;">Target: ' + CS.formatTargetFeeDisplay(s.target_fee) + '</div>' +
+          '<div style="color:#555;">&ge;: ' + (s.rate_above*100).toFixed(1) + '% / &lt;: ' + (s.rate_below*100).toFixed(1) + '%</div>';
+      } else {
+        // Global Default (Req 4.2)
+        badgeDiv.innerHTML =
+          '<span style="display:inline-block;padding:1px 7px;border-radius:10px;background:#f0f0f8;color:#888;font-size:0.65rem;font-weight:700;">Default</span>' +
+          '<div style="color:#aaa;margin-top:2px;">Target: ' + CS.formatTargetFeeDisplay(CS.GLOBAL_DEFAULT.target_fee) + '</div>' +
+          '<div style="color:#aaa;">&ge;: 12% / &lt;: 5%</div>';
+      }
+    });
+  }
+
+  function showCommToast(message, isError) {
+    var container = document.getElementById('commToastContainer');
+    if (!container) return;
+    var toast = document.createElement('div');
+    toast.style.cssText = 'padding:12px 18px;border-radius:10px;font-size:0.82rem;font-weight:500;box-shadow:0 4px 16px rgba(0,0,0,0.12);animation:fadeUp 0.3s ease;max-width:300px;';
+    if (isError) {
+      toast.style.background = '#fff0f0'; toast.style.border = '1px solid #ffcccc'; toast.style.color = '#c0392b';
+    } else {
+      toast.style.background = '#f0fff8'; toast.style.border = '1px solid #a8e6c1'; toast.style.color = '#1e7e4e';
+    }
+    toast.textContent = message;
+    container.appendChild(toast);
+    setTimeout(function() { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 4000);
+  }
+
   /* ─── Init fallback ─── */
   window.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
@@ -946,6 +1258,8 @@
     }, 5000);
   });
 </script>
+<!-- Toast container for commission notifications -->
+<div id="commToastContainer" style="position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px;"></div>
 
 </body>
 </html>

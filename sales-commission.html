@@ -8,6 +8,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="js/commission-settings.js"></script>
   <script>
     const SUPABASE_URL = (window.__FAWZ_CONFIG__ || {}).supabaseUrl || '';
     const SUPABASE_KEY = (window.__FAWZ_CONFIG__ || {}).supabaseKey || '';
@@ -263,7 +264,7 @@
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:12px;">
       <div>
         <div style="font-size:1.1rem;font-weight:700;color:var(--navy);">💰 Komisi Per Sales</div>
-        <div style="font-size:.82rem;color:var(--gray);margin-top:3px;">
+        <div style="font-size:.82rem;color:var(--gray);margin-top:3px;" id="commissionRateLabel">
           Target Rp 10.000.000 · ≥target: <strong style="color:#27ae60;">12%</strong> · &lt;target: <strong style="color:#e74c3c;">5%</strong>
         </div>
       </div>
@@ -405,9 +406,10 @@
   const RATE_REKSADANA = 0.005;  // 0.5% dari nominal
 
   // ── TARGET & RATE KOMISI SAHAM ──
-  const DEFAULT_TARGET_FEE = 10_000_000; // Rp 10 juta (default target bulanan)
-  const RATE_ABOVE_TARGET  = 0.12;       // 12% jika fee >= target
-  const RATE_BELOW_TARGET  = 0.05;       // 5%  jika fee <  target
+  // Hardcoded constants removed (Req 5.8) — values now loaded dynamically
+  // from sales_commission_settings via loadEffectiveSettings().
+  // Global_Default fallback is defined in js/commission-settings.js as
+  // CommissionSettings.GLOBAL_DEFAULT: { target_fee: 10_000_000, rate_above: 0.12, rate_below: 0.05 }
 
   const ROLE_LABELS = { head_account:'Head Account', admin:'Admin', sales:'Sales', treasury:'Treasury' };
 
@@ -418,6 +420,10 @@
   let paidMap    = {};   // { docId: { paid, paidAt, paidBy } }
   let curUser    = null;
   let canPay     = false;
+
+  // Effective commission settings per-period (Req 5.1, 5.5, 5.8)
+  // Populated by loadEffectiveSettings(period); keyed by sales_id (UUID)
+  var effectiveSettingsMap = {}; // { [sales_id]: SettingsRecord }
   let sortCol    = 'tanggal';
   let sortAsc    = false;
   let curPage    = 1;
@@ -454,7 +460,7 @@
     const ym = now2.getFullYear() + '-' + String(now2.getMonth()+1).padStart(2,'0');
     const elBulan = document.getElementById('filterBulanKomisi');
     if (elBulan) elBulan.value = ym;
-    renderCommissionPerSales();
+    await renderCommissionPerSales();
     renderCommissionHistory();
   }
 
@@ -686,7 +692,8 @@
       salesFeeMap[key] = (salesFeeMap[key] || 0) + (parseFloat(r.fee) || 0);
     });
     const sahamKomisiTotal = Object.values(salesFeeMap).reduce((sum, fee) => {
-      const rate = fee >= DEFAULT_TARGET_FEE ? RATE_ABOVE_TARGET : RATE_BELOW_TARGET;
+      const GD = window.CommissionSettings ? window.CommissionSettings.GLOBAL_DEFAULT : { target_fee: 10_000_000, rate_above: 0.12, rate_below: 0.05 };
+      const rate = fee >= GD.target_fee ? GD.rate_above : GD.rate_below;
       return sum + fee * rate;
     }, 0);
 
@@ -729,7 +736,8 @@
       salesFeeMap[key] = (salesFeeMap[key] || 0) + (parseFloat(r.fee) || 0);
     });
     const komisiSaham = Object.values(salesFeeMap).reduce((sum, fee) => {
-      const rate = fee >= DEFAULT_TARGET_FEE ? RATE_ABOVE_TARGET : RATE_BELOW_TARGET;
+      const GD = window.CommissionSettings ? window.CommissionSettings.GLOBAL_DEFAULT : { target_fee: 10_000_000, rate_above: 0.12, rate_below: 0.05 };
+      const rate = fee >= GD.target_fee ? GD.rate_above : GD.rate_below;
       return sum + fee * rate;
     }, 0);
 
@@ -742,6 +750,45 @@
   }
 
   // ─── KOMISI PER SALES (TARGET-BASED) ────────────────────
+
+  /**
+   * Fetches all commission settings for a given period in one batch (Req 5.5).
+   * On error, throws — caller must halt calculation and show error (Req 5.6, 8.7).
+   * @param {string} period — 'YYYY-MM'
+   */
+  async function loadEffectiveSettings(period) {
+    const { data, error } = await window._supabase
+      .from('sales_commission_settings')
+      .select('sales_id, sales_name, period, target_fee, rate_above, rate_below')
+      .eq('period', period);
+    if (error) throw error;
+    effectiveSettingsMap = {};
+    (data || []).forEach(function(r) {
+      effectiveSettingsMap[r.sales_id] = r;
+    });
+  }
+
+  /**
+   * Resolves EffectiveSettings for a given sales name key.
+   * Since saham_transaksi stores sales_name (text) not sales_id (UUID),
+   * we look up by sales_name case-insensitively.
+   * Falls back to GLOBAL_DEFAULT if no match found (Req 5.2).
+   */
+  function getSettingsForSalesByName(salesName) {
+    if (!window.CommissionSettings) {
+      return { target_fee: 10_000_000, rate_above: 0.12, rate_below: 0.05, isDefault: true };
+    }
+    const CS = window.CommissionSettings;
+    const key = (salesName || '').toLowerCase().trim();
+    const record = Object.values(effectiveSettingsMap).find(function(r) {
+      return (r.sales_name || '').toLowerCase().trim() === key;
+    });
+    if (record) {
+      return { target_fee: record.target_fee, rate_above: record.rate_above, rate_below: record.rate_below, isDefault: false };
+    }
+    return { ...CS.GLOBAL_DEFAULT };
+  }
+
   function calcSalesCommission(filterYM) {
     // filterYM = 'YYYY-MM' atau '' (semua)
     const salesMap = {};
@@ -765,64 +812,116 @@
       if (filterYM && !(r.tanggal || '').startsWith(filterYM)) return;
       const key = norm(r.salesNama);
       if (!salesMap[key]) salesMap[key] = { nama: r.salesNama, feeSaham: 0, feeObligasi: 0, feeReksadana: 0, feeWaran: 0 };
-      // Gunakan komisi yang sudah dihitung sebagai kontribusi fee
       if (r.sumber === 'obligasi')  salesMap[key].feeObligasi  += r.komisi;
       if (r.sumber === 'reksadana') salesMap[key].feeReksadana += r.komisi;
       if (r.sumber === 'waran')     salesMap[key].feeWaran     += r.komisi;
     });
 
-    // 3. Hitung komisi berdasarkan target
+    // 3. Hitung komisi menggunakan Effective_Settings dari database (Req 5.3, 5.4, 5.8)
+    const CS = window.CommissionSettings;
     return Object.values(salesMap).map(s => {
       const totalFee = s.feeSaham + s.feeObligasi + s.feeReksadana + s.feeWaran;
-      const rate     = totalFee >= DEFAULT_TARGET_FEE ? RATE_ABOVE_TARGET : RATE_BELOW_TARGET;
-      const komisi   = totalFee * rate;
-      return { ...s, totalFee, rate, komisi, hitTarget: totalFee >= DEFAULT_TARGET_FEE };
+      const effectiveSettings = getSettingsForSalesByName(s.nama);
+      const result = CS ? CS.calculateCommission(totalFee, effectiveSettings)
+        : { commission: totalFee * (totalFee >= effectiveSettings.target_fee ? effectiveSettings.rate_above : effectiveSettings.rate_below), rate: effectiveSettings.rate_above, hitTarget: totalFee >= effectiveSettings.target_fee };
+      return {
+        ...s, totalFee,
+        rate: result.rate,
+        komisi: result.commission,
+        hitTarget: result.hitTarget,
+        effectiveSettings: effectiveSettings
+      };
     }).sort((a, b) => b.totalFee - a.totalFee);
   }
 
-  function renderCommissionPerSales() {
+  async function renderCommissionPerSales() {
     const filterYM = document.getElementById('filterBulanKomisi')?.value || '';
-    const results  = calcSalesCommission(filterYM);
     const wrap     = document.getElementById('commissionPerSalesGrid');
     if (!wrap) return;
+
+    // Load Effective_Settings from DB for this period (Req 5.7)
+    if (filterYM) {
+      try {
+        await loadEffectiveSettings(filterYM);
+      } catch(e) {
+        console.error('loadEffectiveSettings error:', e, 'period:', filterYM);
+        wrap.innerHTML = '<div style="padding:32px;text-align:center;color:#c0392b;font-size:.88rem;">Gagal memuat pengaturan komisi. Coba refresh halaman.</div>';
+        showToast('Gagal memuat pengaturan komisi. Coba refresh halaman.', 'error');
+        return; // Halt — do NOT fall back to hardcoded (Req 5.6)
+      }
+    } else {
+      effectiveSettingsMap = {}; // No period = use Global_Default for all (Req 5.2)
+    }
+
+    const results = calcSalesCommission(filterYM);
 
     if (!results.length) {
       wrap.innerHTML = '<div style="padding:32px;text-align:center;color:#bbb;font-size:.88rem;">Belum ada data untuk ditampilkan</div>';
       return;
     }
 
-    wrap.innerHTML = results.map(s => `
+    const CS = window.CommissionSettings;
+
+    // Update default rate label
+    const GD = CS ? CS.GLOBAL_DEFAULT : { target_fee: 10_000_000, rate_above: 0.12, rate_below: 0.05 };
+    const labelEl = document.getElementById('commissionRateLabel');
+    if (labelEl) {
+      labelEl.innerHTML = `Default: Target ${CS ? CS.formatTargetFeeDisplay(GD.target_fee) : 'Rp '+GD.target_fee.toLocaleString('id-ID')} &middot; &ge;target: <strong style="color:#27ae60;">${(GD.rate_above*100).toFixed(0)}%</strong> &middot; &lt;target: <strong style="color:#e74c3c;">${(GD.rate_below*100).toFixed(0)}%</strong>`;
+    }
+
+    wrap.innerHTML = results.map(s => {
+      const es = s.effectiveSettings;
+      const targetFeeDisplay = CS ? CS.formatTargetFeeDisplay(es.target_fee) : 'Rp ' + es.target_fee.toLocaleString('id-ID');
+      const defaultLabel = es.isDefault ? ' <span style="font-size:.65rem;color:#aaa;">(Default)</span>' : '';
+
+      // Achievement status badge (Req 10.2, 10.3, 10.4)
+      let achieveBadge = '';
+      if (CS) {
+        const status = CS.getAchievementStatus(s.totalFee, es.target_fee);
+        if (status === 'TARGET_ACHIEVED')
+          achieveBadge = '<span style="font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:20px;background:#e8f8f0;color:#1e7e4e;">✓ TARGET</span>';
+        else if (status === 'BELOW_TARGET')
+          achieveBadge = '<span style="font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:20px;background:#fff0f0;color:#c0392b;">✗ BELOW TARGET</span>';
+        else
+          achieveBadge = '<span style="font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:20px;background:#fffbec;color:#b45309;">TARGET TIDAK VALID</span>';
+      }
+
+      // Achievement percentage (Req 10.5)
+      const achievePct = CS ? CS.calculateAchievementPercent(s.totalFee, es.target_fee) : null;
+      const pctDisplay = achievePct !== null
+        ? achievePct.toFixed(2) + '% dari target'
+        : Math.min(100, (es.target_fee > 0 ? (s.totalFee / es.target_fee) * 100 : 0)).toFixed(1) + '% dari target';
+
+      return `
       <div style="background:#fff;border-radius:14px;padding:22px;box-shadow:0 2px 10px rgba(0,0,0,.05);border-top:4px solid ${s.hitTarget ? '#27ae60' : '#e74c3c'};">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
           <div style="font-weight:700;font-size:.95rem;color:var(--navy);">${s.nama}</div>
-          <span style="font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:20px;${s.hitTarget ? 'background:#e8f8f0;color:#1e7e4e;' : 'background:#fff0f0;color:#c0392b;'}">
-            ${s.hitTarget ? '✓ TARGET' : '✗ BELOW TARGET'}
-          </span>
+          ${achieveBadge}
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:.8rem;margin-bottom:14px;">
-          <div><span style="color:#888;">Fee Saham</span><br><strong>${fmtRp(s.feeSaham)}</strong></div>
-          <div><span style="color:#888;">Fee Obligasi</span><br><strong>${fmtRp(s.feeObligasi)}</strong></div>
-          <div><span style="color:#888;">Fee Reksadana</span><br><strong>${fmtRp(s.feeReksadana)}</strong></div>
-          <div><span style="color:#888;">Fee Waran</span><br><strong>${fmtRp(s.feeWaran)}</strong></div>
+          <div><span style="color:#888;">Fee Saham</span><br><strong>${fmtRpFull(s.feeSaham)}</strong></div>
+          <div><span style="color:#888;">Fee Obligasi</span><br><strong>${fmtRpFull(s.feeObligasi)}</strong></div>
+          <div><span style="color:#888;">Fee Reksadana</span><br><strong>${fmtRpFull(s.feeReksadana)}</strong></div>
+          <div><span style="color:#888;">Fee Waran</span><br><strong>${fmtRpFull(s.feeWaran)}</strong></div>
         </div>
         <div style="border-top:1px solid #f0f0f5;padding-top:12px;display:flex;justify-content:space-between;align-items:center;">
           <div>
             <div style="font-size:.72rem;color:#888;text-transform:uppercase;letter-spacing:.5px;">Total Fee</div>
-            <div style="font-size:1.1rem;font-weight:700;color:var(--navy);">${fmtRp(s.totalFee)}</div>
-            <div style="font-size:.72rem;color:#888;margin-top:2px;">Target: ${fmtRp(DEFAULT_TARGET_FEE)}</div>
+            <div style="font-size:1.1rem;font-weight:700;color:var(--navy);">${fmtRpFull(s.totalFee)}</div>
+            <div style="font-size:.72rem;color:#888;margin-top:2px;">Target: ${targetFeeDisplay}${defaultLabel}</div>
           </div>
           <div style="text-align:right;">
-            <div style="font-size:.72rem;color:#888;text-transform:uppercase;letter-spacing:.5px;">Komisi (${(s.rate*100).toFixed(0)}%)</div>
-            <div style="font-size:1.3rem;font-weight:800;color:${s.hitTarget ? '#27ae60' : '#e74c3c'};">${fmtRp(s.komisi)}</div>
+            <div style="font-size:.72rem;color:#888;text-transform:uppercase;letter-spacing:.5px;">Komisi (${(s.rate*100).toFixed(1)}%)</div>
+            <div style="font-size:1.3rem;font-weight:800;color:${s.hitTarget ? '#27ae60' : '#e74c3c'};">${fmtRpFull(s.komisi)}</div>
           </div>
         </div>
         <!-- Progress bar -->
         <div style="margin-top:12px;background:#f0f0f5;border-radius:4px;height:6px;overflow:hidden;">
-          <div style="height:100%;border-radius:4px;background:${s.hitTarget ? 'linear-gradient(90deg,#27ae60,#4ede8a)' : 'linear-gradient(90deg,#e74c3c,#ff8c8c)'};width:${Math.min(100,(s.totalFee/DEFAULT_TARGET_FEE)*100).toFixed(1)}%;transition:width .5s;"></div>
+          <div style="height:100%;border-radius:4px;background:${s.hitTarget ? 'linear-gradient(90deg,#27ae60,#4ede8a)' : 'linear-gradient(90deg,#e74c3c,#ff8c8c)'};width:${Math.min(100, es.target_fee > 0 ? (s.totalFee/es.target_fee)*100 : 0).toFixed(1)}%;transition:width .5s;"></div>
         </div>
-        <div style="font-size:.7rem;color:#888;margin-top:4px;">${Math.min(100,(s.totalFee/DEFAULT_TARGET_FEE)*100).toFixed(1)}% dari target</div>
+        <div style="font-size:.7rem;color:#888;margin-top:4px;">${pctDisplay}</div>
       </div>
-    `).join('');
+    `}).join('');
   }
 
   // ─── HISTORY KOMISI PER BULAN ────────────────────────────

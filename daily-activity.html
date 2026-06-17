@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <script src="config.js"></script>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Fawz Pro | Daily Activity Report</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script>
+    const SUPABASE_URL = (window.__FAWZ_CONFIG__ || {}).supabaseUrl || '';
+    const SUPABASE_KEY = (window.__FAWZ_CONFIG__ || {}).supabaseKey || '';
+    window._supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    window._supabaseReady = true;
+  </script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --navy: #0d0d2b; --gold: #f5a623; --gold-light: #ffc857;
+      --nav-h: 68px; --bg: #f4f5fb;
+    }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); min-height: 100vh; padding-top: var(--nav-h); }
+    .page-container { max-width: 1100px; margin: 0 auto; padding: 40px 32px 80px; }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
+
+    .page-header { margin-bottom: 28px; animation: fadeUp 0.4s ease both; }
+    .page-header h1 { font-size: 2rem; font-weight: 900; color: var(--navy); line-height: 1.1; margin-bottom: 6px; }
+    .page-header-underline { width: 48px; height: 3px; background: linear-gradient(90deg, var(--gold), var(--gold-light)); border-radius: 2px; margin-bottom: 8px; }
+    .page-header p { color: #888; font-size: 0.9rem; }
+
+    /* ── TOOLBAR ── */
+    .toolbar {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px; flex-wrap: wrap;
+      background: #fff; border-radius: 14px; padding: 16px 22px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+      margin-bottom: 22px; animation: fadeUp 0.4s 0.05s ease both;
+    }
+    .toolbar-left { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .form-input, .form-select {
+      padding: 9px 14px; border: 1.5px solid #e0e0ef; border-radius: 10px;
+      font-family: 'Inter', sans-serif; font-size: 0.88rem; color: var(--navy);
+      outline: none; transition: border 0.2s, box-shadow 0.2s; background: #fafafa;
+    }
+    .form-input:focus, .form-select:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(245,166,35,0.1); background: #fff; }
+    .form-input::placeholder { color: #ccc; }
+
+    .btn-primary {
+      padding: 9px 22px; background: linear-gradient(135deg, var(--gold), #e8931a);
+      border: none; border-radius: 10px; cursor: pointer;
+      font-family: 'Inter', sans-serif; font-size: 0.88rem; font-weight: 600; color: #fff;
+      box-shadow: 0 4px 14px rgba(245,166,35,0.3); transition: transform 0.15s, box-shadow 0.15s;
+      display: inline-flex; align-items: center; gap: 6px;
+    }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(245,166,35,0.4); }
+    .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+    .btn-ghost {
+      padding: 9px 18px; border: 1.5px solid #e0e0ef; border-radius: 10px;
+      background: none; cursor: pointer; font-family: 'Inter', sans-serif;
+      font-size: 0.88rem; color: #666; transition: border-color 0.15s;
+    }
+    .btn-ghost:hover { border-color: #bbb; }
+
+    /* ── STATS ROW ── */
+    .stats-row {
+      display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px;
+      margin-bottom: 22px; animation: fadeUp 0.4s 0.1s ease both;
+    }
+    .stat-card {
+      background: #fff; border-radius: 14px; padding: 18px 20px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+      border-top: 3px solid transparent;
+    }
+    .stat-card.pending  { border-top-color: #f59e0b; }
+    .stat-card.finished { border-top-color: #10b981; }
+    .stat-card.cancelled{ border-top-color: #ef4444; }
+    .stat-card.returned { border-top-color: #8b5cf6; }
+    .stat-card.inprogress{border-top-color: #3b82f6; }
+    .stat-label { font-size: 0.7rem; font-weight: 700; color: #aaa; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px; }
+    .stat-num   { font-size: 2rem; font-weight: 800; color: var(--navy); line-height: 1; }
+    .stat-sub   { font-size: 0.72rem; color: #bbb; margin-top: 4px; }
+
+    /* ── MAIN GRID ── */
+    .main-grid { display: grid; grid-template-columns: 320px 1fr; gap: 22px; }
+
+    /* ── JOB LIST (LEFT) ── */
+    .job-panel {
+      background: #fff; border-radius: 16px; padding: 20px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+      animation: fadeUp 0.4s 0.15s ease both;
+      height: fit-content;
+    }
+    .panel-title { font-size: 0.72rem; font-weight: 700; color: #bbb; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+    .panel-title::after { content:''; flex:1; height:1px; background:#f0f0f5; }
+
+    .job-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 11px 12px; border-radius: 10px; cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+      border: 1.5px solid transparent; margin-bottom: 6px;
+    }
+    .job-item:hover { background: #fffbf3; border-color: rgba(245,166,35,0.2); }
+    .job-item.active { background: #fffbf3; border-color: var(--gold); }
+    .job-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .job-name { font-size: 0.88rem; font-weight: 500; color: var(--navy); flex: 1; }
+    .job-count { font-size: 0.72rem; font-weight: 700; background: #f0f0f5; color: #888; padding: 2px 8px; border-radius: 20px; }
+    .job-item.active .job-count { background: rgba(245,166,35,0.15); color: #b87e10; }
+    .job-last-status {
+      font-size: 0.62rem; font-weight: 700; padding: 2px 7px;
+      border-radius: 20px; letter-spacing: 0.3px; text-transform: uppercase; flex-shrink: 0;
+    }
+    .jls-inprogress { background: rgba(59,130,246,0.1);  color: #2563eb; }
+    .jls-pending    { background: rgba(245,158,11,0.12); color: #d97706; }
+    .jls-finished   { background: rgba(16,185,129,0.12); color: #059669; }
+    .jls-cancelled  { background: rgba(239,68,68,0.1);   color: #dc2626; }
+    .jls-returned   { background: rgba(139,92,246,0.1);  color: #7c3aed; }
+
+    /* ── TIMELINE PANEL (RIGHT) ── */
+    .timeline-panel {
+      background: #fff; border-radius: 16px; padding: 24px 28px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+      animation: fadeUp 0.4s 0.2s ease both;
+    }
+    .timeline-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }
+    .timeline-title { font-size: 1.15rem; font-weight: 700; color: var(--navy); }
+    .timeline-meta  { font-size: 0.78rem; color: #aaa; margin-top: 3px; }
+
+    /* ── TIMELINE ── */
+    .timeline { position: relative; padding-left: 28px; }
+    .timeline::before {
+      content: ''; position: absolute; left: 9px; top: 0; bottom: 0;
+      width: 2px; background: #f0f0f5; border-radius: 2px;
+    }
+    .tl-entry { position: relative; margin-bottom: 24px; }
+    .tl-entry:last-child { margin-bottom: 0; }
+    .tl-dot {
+      position: absolute; left: -24px; top: 4px;
+      width: 14px; height: 14px; border-radius: 50%;
+      border: 2px solid #fff;
+      box-shadow: 0 0 0 2px #f0f0f5;
+      z-index: 1;
+    }
+    .tl-dot.pending   { background: #f59e0b; box-shadow: 0 0 0 2px rgba(245,158,11,0.2); }
+    .tl-dot.finished  { background: #10b981; box-shadow: 0 0 0 2px rgba(16,185,129,0.2); }
+    .tl-dot.cancelled { background: #ef4444; box-shadow: 0 0 0 2px rgba(239,68,68,0.2); }
+    .tl-dot.returned  { background: #8b5cf6; box-shadow: 0 0 0 2px rgba(139,92,246,0.2); }
+    .tl-dot.inprogress{ background: #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,0.2); }
+
+    .tl-card {
+      background: #fafafa; border-radius: 12px; padding: 14px 16px;
+      border: 1.5px solid #f0f0f5;
+      transition: border-color 0.15s;
+    }
+    .tl-card:hover { border-color: #e0e0ef; }
+    .tl-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+    .tl-date { font-size: 0.72rem; font-weight: 700; color: #aaa; text-transform: uppercase; }
+    .tl-status-badge {
+      font-size: 0.68rem; font-weight: 700; padding: 3px 10px;
+      border-radius: 20px; letter-spacing: 0.5px; text-transform: uppercase;
+    }
+    .badge-pending   { background: rgba(245,158,11,0.12); color: #d97706; }
+    .badge-finished  { background: rgba(16,185,129,0.12); color: #059669; }
+    .badge-cancelled { background: rgba(239,68,68,0.1);   color: #dc2626; }
+    .badge-returned  { background: rgba(139,92,246,0.1);  color: #7c3aed; }
+    .badge-inprogress{ background: rgba(59,130,246,0.1);  color: #2563eb; }
+    .tl-notes { font-size: 0.84rem; color: #555; margin-top: 4px; font-style: italic; }
+    .tl-notes.empty { color: #ccc; font-style: italic; font-size: 0.78rem; }
+    .tl-author { font-size: 0.72rem; color: #bbb; margin-top: 6px; }
+    .tl-actions { display: flex; gap: 6px; margin-top: 8px; }
+    .btn-edit-entry { font-size: 0.72rem; padding: 4px 10px; border: 1.5px solid #e0e0ef; border-radius: 7px; background: none; cursor: pointer; color: #888; transition: border-color 0.15s, color 0.15s; }
+    .btn-edit-entry:hover { border-color: var(--gold); color: #e8931a; }
+    .btn-del-entry  { font-size: 0.72rem; padding: 4px 10px; border: 1.5px solid #ffe0e0; border-radius: 7px; background: none; cursor: pointer; color: #e74c3c; transition: background 0.15s, color 0.15s; }
+    .btn-del-entry:hover { background: #e74c3c; color: #fff; }
+
+    .empty-timeline { text-align: center; padding: 40px 20px; color: #bbb; font-size: 0.9rem; }
+    .empty-timeline span { font-size: 2.5rem; display: block; margin-bottom: 12px; }
+
+    /* ── MODAL ── */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(13,13,43,0.55);
+      z-index: 2000; display: flex; align-items: center; justify-content: center;
+      visibility: hidden; opacity: 0; pointer-events: none;
+      transition: opacity 0.2s, visibility 0.2s;
+      backdrop-filter: blur(2px);
+    }
+    .modal-overlay.open { visibility: visible; opacity: 1; pointer-events: auto; }
+    .modal {
+      background: #fff; border-radius: 20px; padding: 32px;
+      width: 100%; max-width: 540px; max-height: 90vh; overflow-y: auto;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+      transform: translateY(10px); transition: transform 0.2s;
+    }
+    .modal-overlay.open .modal { transform: translateY(0); }
+    .modal-title { font-size: 1.2rem; font-weight: 700; color: var(--navy); margin-bottom: 6px; }
+    .modal-sub   { font-size: 0.82rem; color: #aaa; margin-bottom: 24px; }
+    .form-group  { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+    .form-label  { font-size: 0.72rem; font-weight: 600; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
+    textarea.form-input { resize: vertical; min-height: 80px; }
+    .form-feedback { font-size: 0.82rem; padding: 10px 14px; border-radius: 8px; margin-bottom: 12px; display: none; }
+    .form-feedback.error   { background: #fff0f0; color: #e74c3c; display: block; }
+    .form-feedback.success { background: #e8f8f0; color: #27ae60; display: block; }
+    .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 6px; }
+    .mini-spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.4); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Admin-only badge */
+    .admin-badge { background: rgba(74,108,223,0.1); color: #4a6cdf; font-size: 0.68rem; font-weight: 700; padding: 2px 8px; border-radius: 20px; }
+
+    /* ── OVERVIEW TABLE (head_account) ── */
+    .overview-panel {
+      background: #fff; border-radius: 16px; padding: 24px 28px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+      margin-bottom: 22px; animation: fadeUp 0.4s 0.12s ease both;
+      display: none;
+    }
+    .overview-panel.visible { display: block; }
+    .tab-row {
+      display: flex; gap: 8px; margin-bottom: 22px; border-bottom: 2px solid #f0f0f5; padding-bottom: 0;
+    }
+    .tab-btn {
+      padding: 9px 20px; border: none; background: none; cursor: pointer;
+      font-family: 'Inter', sans-serif; font-size: 0.88rem; font-weight: 500; color: #aaa;
+      border-bottom: 2px solid transparent; margin-bottom: -2px;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .tab-btn.active { color: var(--navy); border-bottom-color: var(--gold); font-weight: 700; }
+    .tab-btn:hover  { color: var(--navy); }
+
+    .overview-table { width: 100%; border-collapse: collapse; }
+    .overview-table th {
+      font-size: 0.68rem; font-weight: 700; color: #bbb;
+      text-transform: uppercase; letter-spacing: 0.8px;
+      padding: 8px 12px; text-align: left; border-bottom: 1px solid #f0f0f5;
+    }
+    .overview-table td { padding: 11px 12px; font-size: 0.86rem; color: #333; border-bottom: 1px solid #f8f8fc; vertical-align: middle; }
+    .overview-table tr:last-child td { border-bottom: none; }
+    .overview-table tr:hover td { background: #fffbf3; cursor: pointer; }
+    .ov-user-chip {
+      display: inline-flex; align-items: center; gap: 6px;
+    }
+    .ov-avatar {
+      width: 26px; height: 26px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--navy), #1a0e4a);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.72rem; font-weight: 700; color: var(--gold); flex-shrink: 0;
+    }
+    .ov-role-tag { font-size: 0.68rem; padding: 2px 7px; border-radius: 10px; font-weight: 600; }
+    .ov-role-admin    { background: rgba(74,108,223,0.1);  color: #4a6cdf; }
+    .ov-role-treasury { background: rgba(139,92,246,0.1);  color: #7c3aed; }
+    .ov-role-head_account { background: rgba(245,166,35,0.15); color: #b87e10; }
+    .ov-empty { text-align: center; padding: 32px; color: #bbb; font-size: 0.88rem; }
+
+    @media (max-width: 900px) { .main-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 640px) {
+      .stats-row { grid-template-columns: repeat(2, 1fr); }
+      .page-container { padding: 20px 16px 60px; }
+      .toolbar { flex-direction: column; align-items: stretch; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="navbar-placeholder"></div>
+<script src="navbar.js"></script>
+
+<div class="page-container">
+
+  <!-- Header -->
+  <div class="page-header">
+    <h1>Daily Activity Report</h1>
+    <div class="page-header-underline"></div>
+    <p>Tracking progress pekerjaan harian per jobdesk</p>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <div class="toolbar-left">
+      <select class="form-select" id="filterMonth" onchange="loadData()" style="min-width:160px;">
+        <!-- populated by JS -->
+      </select>
+      <select class="form-select" id="filterUser" onchange="loadData()" style="min-width:160px; display:none;">
+        <option value="">Semua Pengguna</option>
+      </select>
+    </div>
+    <button class="btn-primary" onclick="openAddJobModal()">+ Tambah Jobdesk</button>
+  </div>
+
+  <!-- Tab row — admin & head_account -->
+  <div class="tab-row" id="tabRow" style="display:none;">
+    <button class="tab-btn active" id="tabMyActivity" onclick="switchTab('my')">Aktivitas Saya</button>
+    <button class="tab-btn"        id="tabAllActivity" onclick="switchTab('all')">Semua Progress Tim</button>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="stat-card inprogress">
+      <div class="stat-label">In Progress</div>
+      <div class="stat-num" id="statInprogress">0</div>
+      <div class="stat-sub">entri aktif</div>
+    </div>
+    <div class="stat-card pending">
+      <div class="stat-label">Pending</div>
+      <div class="stat-num" id="statPending">0</div>
+      <div class="stat-sub">menunggu</div>
+    </div>
+    <div class="stat-card finished">
+      <div class="stat-label">Finished</div>
+      <div class="stat-num" id="statFinished">0</div>
+      <div class="stat-sub">selesai</div>
+    </div>
+    <div class="stat-card cancelled">
+      <div class="stat-label">Cancelled</div>
+      <div class="stat-num" id="statCancelled">0</div>
+      <div class="stat-sub">dibatalkan</div>
+    </div>
+    <div class="stat-card returned">
+      <div class="stat-label">Return</div>
+      <div class="stat-num" id="statReturned">0</div>
+      <div class="stat-sub">dikembalikan</div>
+    </div>
+  </div>
+
+  <!-- Overview Panel — head_account semua progress tim -->
+  <div class="overview-panel" id="overviewPanel">
+    <div class="panel-title">Semua Progress Tim</div>
+    <div id="overviewContent">
+      <div class="ov-empty">Memuat...</div>
+    </div>
+  </div>
+
+  <!-- Main grid: jobdesk list + timeline -->
+  <div class="main-grid">
+
+    <!-- Left: Job List -->
+    <div class="job-panel">
+      <div class="panel-title">Jobdesk</div>
+      <div id="jobList">
+        <div style="color:#bbb;font-size:0.85rem;padding:8px;">Memuat...</div>
+      </div>
+      <div style="margin-top:12px;">
+        <button class="btn-ghost" style="width:100%;font-size:0.82rem;" onclick="openAddJobModal()">+ Jobdesk Baru</button>
+      </div>
+    </div>
+
+    <!-- Right: Timeline -->
+    <div class="timeline-panel">
+      <div class="timeline-header">
+        <div>
+          <div class="timeline-title" id="timelineTitle">Pilih jobdesk untuk melihat timeline</div>
+          <div class="timeline-meta" id="timelineMeta"></div>
+        </div>
+        <button class="btn-primary" id="btnAddEntry" onclick="openAddEntryModal()" style="display:none;">
+          + Update Progress
+        </button>
+        <div id="jobActionBtns" style="display:none; gap:8px;">
+          <button class="btn-ghost"     id="jobEditBtn" style="font-size:0.8rem;padding:7px 14px;">Edit Jobdesk</button>
+          <button class="btn-del-entry" id="jobDelBtn"  style="font-size:0.8rem;padding:7px 14px;">Hapus Jobdesk</button>
+        </div>
+      </div>
+      <div id="timelineContent">
+        <div class="empty-timeline"><span>—</span>Pilih jobdesk di sebelah kiri untuk melihat timeline progress.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: Tambah / Edit Jobdesk ═══ -->
+<div class="modal-overlay" id="modalJob" onclick="if(event.target===this)closeModal('modalJob')">
+  <div class="modal">
+    <div class="modal-title" id="jobModalTitle">Tambah Jobdesk Baru</div>
+    <div class="modal-sub" id="jobModalSub">Masukkan nama tugas / jobdesk yang akan di-tracking</div>
+    <div class="form-group">
+      <label class="form-label">Nama Jobdesk <span style="color:#e74c3c">*</span></label>
+      <input class="form-input" id="inputJobName" placeholder="contoh: Pengiriman Berkas, Follow Up Nasabah..."/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Tanggal Mulai <span style="color:#e74c3c">*</span></label>
+      <input class="form-input" type="date" id="inputJobDate"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Deskripsi (Opsional)</label>
+      <textarea class="form-input" id="inputJobDesc" placeholder="Deskripsi singkat tentang jobdesk ini..."></textarea>
+    </div>
+    <div class="form-feedback" id="jobFeedback"></div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeModal('modalJob')">Batal</button>
+      <button class="btn-primary" id="btnSaveJob" onclick="saveJob()">Simpan</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: Tambah / Edit Entry Progress ═══ -->
+<div class="modal-overlay" id="modalEntry" onclick="if(event.target===this)closeModal('modalEntry')">
+  <div class="modal">
+    <div class="modal-title" id="entryModalTitle">Update Progress</div>
+    <div class="modal-sub" id="entryModalSub"></div>
+    <div class="form-group">
+      <label class="form-label">Tanggal Progress <span style="color:#e74c3c">*</span></label>
+      <input class="form-input" type="date" id="inputEntryDate"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Status <span style="color:#e74c3c">*</span></label>
+      <select class="form-select" id="inputEntryStatus">
+        <option value="inprogress">In Progress</option>
+        <option value="pending">Pending</option>
+        <option value="finished">Finished</option>
+        <option value="cancelled">Cancelled</option>
+        <option value="returned">Return</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Catatan / Notes (Opsional)</label>
+      <textarea class="form-input" id="inputEntryNotes" placeholder="Tambahkan catatan progress, kendala, atau informasi penting..." rows="4"></textarea>
+    </div>
+    <div class="form-feedback" id="entryFeedback"></div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeModal('modalEntry')">Batal</button>
+      <button class="btn-primary" id="btnSaveEntry" onclick="saveEntry()">Simpan</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════
+   daily-activity.js — inline
+═══════════════════════════════════════════════ */
+
+const ALLOWED_ROLES = ['admin', 'treasury', 'head_account', 'sales', 'head_sales'];
+const STATUS_LABELS = {
+  inprogress: 'In Progress',
+  pending:    'Pending',
+  finished:   'Finished',
+  cancelled:  'Cancelled',
+  returned:   'Return'
+};
+const STATUS_DOT_CLASS = {
+  inprogress: 'inprogress',
+  pending:    'pending',
+  finished:   'finished',
+  cancelled:  'cancelled',
+  returned:   'returned'
+};
+const JOB_COLORS = [
+  '#f5a623','#3b82f6','#10b981','#8b5cf6','#ef4444',
+  '#f59e0b','#06b6d4','#84cc16','#ec4899','#6366f1'
+];
+
+let curUser      = null;
+let allJobs      = [];
+let allEntries   = [];
+let selectedJob  = null;
+let editJobId    = null;
+let editEntryId  = null;
+
+/* ── INIT ── */
+async function init() {
+  const raw = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember');
+  if (!raw) { window.location.href = 'login.html'; return; }
+  curUser = JSON.parse(raw);
+
+  if (!ALLOWED_ROLES.includes(curUser.role)) {
+    document.querySelector('.page-container').innerHTML =
+      '<div style="text-align:center;padding:80px 20px;color:#aaa;"><br><br>Halaman ini hanya untuk Admin, Bonds, dan Head Account.</div>';
+    return;
+  }
+
+  // Filter user & tab — admin dan head_account bisa lihat semua pengguna
+  populateMonthFilter();
+  const isManager = ['admin', 'head_account'].includes(curUser.role);
+  if (isManager) {
+    document.getElementById('filterUser').style.display = 'block';
+    document.getElementById('tabRow').style.display = 'flex';
+    await loadUserFilter();
+  }
+
+  await loadData();
+}
+
+/* ── MONTH FILTER ── */
+function populateMonthFilter() {
+  const sel = document.getElementById('filterMonth');
+  const now = new Date();
+  sel.innerHTML = '';
+  for (let i = 0; i < 12; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const val = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    const label = d.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+    const opt = document.createElement('option');
+    opt.value = val; opt.textContent = label;
+    if (i === 0) opt.selected = true;
+    sel.appendChild(opt);
+  }
+}
+
+async function loadUserFilter() {
+  const sel = document.getElementById('filterUser');
+  while (sel.options.length > 1) sel.remove(1);
+  try {
+    const { data } = await window._supabase
+      .from('accounts')
+      .select('username, name, role')
+      .order('name');
+    const ROLE_DISP2 = { admin:'Admin', treasury:'Bonds', head_account:'Head Account', sales:'Sales', head_sales:'Head Sales' };
+    if (data) {
+      data.forEach(u => {
+        const opt = document.createElement('option');
+        opt.value = u.username;
+        opt.textContent = (u.name || u.username) + ' (' + (ROLE_DISP2[u.role] || u.role) + ')';
+        sel.appendChild(opt);
+      });
+    }
+  } catch(e) { console.warn('loadUserFilter:', e); }
+}
+
+/* ── LOAD DATA ── */
+async function loadData() {
+  const month    = document.getElementById('filterMonth').value;
+  const filterU  = document.getElementById('filterUser')?.value || '';
+  const [yr, mo] = month.split('-');
+  const dateFrom = `${yr}-${mo}-01`;
+  const nextMo   = Number(mo) === 12 ? 1 : Number(mo) + 1;
+  const nextYr   = Number(mo) === 12 ? Number(yr) + 1 : Number(yr);
+  const dateTo   = `${nextYr}-${String(nextMo).padStart(2,'0')}-01`;
+
+  const isManager = ['admin', 'head_account'].includes(curUser.role);
+
+  try {
+    let jobQuery = window._supabase
+      .from('daily_activity_jobs')
+      .select('*')
+      .gte('start_date', dateFrom)
+      .lt('start_date', dateTo)
+      .order('start_date', { ascending: true });
+
+    // Manager lihat semua, atau filter per user jika dipilih
+    if (isManager) {
+      if (filterU) jobQuery = jobQuery.eq('created_by', filterU);
+      // else: tanpa filter — tampilkan semua user
+    } else {
+      jobQuery = jobQuery.eq('created_by', curUser.username);
+    }
+
+    const { data: jobs, error: jobErr } = await jobQuery;
+    if (jobErr) { console.error('jobs error:', jobErr); allJobs = []; }
+    else allJobs = jobs || [];
+
+    if (allJobs.length > 0) {
+      const jobIds = allJobs.map(j => j.id);
+      const { data: entries, error: entErr } = await window._supabase
+        .from('daily_activity_entries')
+        .select('*')
+        .in('job_id', jobIds)
+        .order('entry_date', { ascending: true });
+      if (entErr) { console.error('entries error:', entErr); allEntries = []; }
+      else allEntries = entries || [];
+    } else {
+      allEntries = [];
+    }
+
+    renderJobList();
+    updateStats();
+
+    if (selectedJob) {
+      const still = allJobs.find(j => j.id === selectedJob.id);
+      if (still) { selectedJob = still; renderTimeline(still); }
+      else { selectedJob = null; resetTimeline(); }
+    } else {
+      resetTimeline();
+    }
+
+  } catch(e) {
+    console.error('loadData error:', e);
+  }
+}
+</script>
+
+<script>
+/* ── RENDER JOB LIST ── */
+function renderJobList() {
+  const container = document.getElementById('jobList');
+  if (!allJobs.length) {
+    container.innerHTML = '<div style="color:#bbb;font-size:0.84rem;padding:8px;text-align:center;">Belum ada jobdesk.<br>Klik tombol + untuk menambah.</div>';
+    return;
+  }
+  const isManager = ['admin', 'head_account'].includes(curUser.role);
+  container.innerHTML = allJobs.map((job, idx) => {
+    const color    = JOB_COLORS[idx % JOB_COLORS.length];
+    const entries  = allEntries.filter(e => e.job_id === job.id)
+      .sort((a, b) => new Date(b.entry_date) - new Date(a.entry_date) || new Date(b.created_at||0) - new Date(a.created_at||0));
+    const isActive = selectedJob && selectedJob.id === job.id;
+    const lastEntry = entries[0];
+    const lastStatusBadge = lastEntry
+      ? `<span class="job-last-status jls-${lastEntry.status}">${STATUS_LABELS[lastEntry.status]}</span>`
+      : '';
+    const ownerTag = isManager && job.created_by !== curUser.username
+      ? `<div style="font-size:0.68rem;color:#bbb;margin-top:2px;padding-left:20px;">${esc(job.created_by)}</div>`
+      : '';
+    return `
+      <div class="job-item ${isActive ? 'active' : ''}" onclick="selectJob('${esc(job.id)}')">
+        <div style="width:100%;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div class="job-dot" style="background:${color};flex-shrink:0;"></div>
+            <div class="job-name" style="flex:1;">${esc(job.name)}</div>
+            ${lastStatusBadge}
+          </div>
+          ${ownerTag}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+/* ── SELECT JOB ── */
+function selectJob(jobId) {
+  const job = allJobs.find(j => j.id === jobId);
+  if (!job) return;
+  selectedJob = job;
+  renderJobList();
+  renderTimeline(job);
+
+  const isManager = ['admin', 'head_account'].includes(curUser.role);
+  const canEdit   = isManager || job.created_by === curUser.username;
+
+  document.getElementById('btnAddEntry').style.display = 'flex';
+
+  const actionBtns = document.getElementById('jobActionBtns');
+  if (canEdit) {
+    actionBtns.style.display = 'flex';
+    document.getElementById('jobEditBtn').onclick = () => openEditJobModal(job.id);
+    document.getElementById('jobDelBtn').onclick  = () => deleteJob(job.id, job.name);
+  } else {
+    actionBtns.style.display = 'none';
+  }
+}
+
+function resetTimeline() {
+  document.getElementById('timelineTitle').textContent = 'Pilih jobdesk untuk melihat timeline';
+  document.getElementById('timelineMeta').textContent  = '';
+  document.getElementById('btnAddEntry').style.display = 'none';
+  const ab = document.getElementById('jobActionBtns');
+  if (ab) ab.style.display = 'none';
+  document.getElementById('timelineContent').innerHTML =
+    '<div class="empty-timeline"><span>—</span>Pilih jobdesk di sebelah kiri untuk melihat timeline progress.</div>';
+}
+
+/* ── RENDER TIMELINE ── */
+function renderTimeline(job) {
+  document.getElementById('timelineTitle').textContent = job.name;
+  const startFmt = job.start_date ? new Date(job.start_date).toLocaleDateString('id-ID', {day:'numeric',month:'long',year:'numeric'}) : '';
+  const isManager = ['admin', 'head_account'].includes(curUser.role);
+  const canEdit   = isManager || job.created_by === curUser.username;
+
+  let meta = 'Dimulai: ' + startFmt;
+  if (job.description) meta += ' · ' + job.description;
+  if (isManager && job.created_by !== curUser.username) meta += ' · Oleh: ' + job.created_by;
+  document.getElementById('timelineMeta').textContent = meta;
+
+  const entries = allEntries.filter(e => e.job_id === job.id);
+  const content = document.getElementById('timelineContent');
+
+  if (!entries.length) {
+    content.innerHTML = `
+      <div class="empty-timeline">
+        <span></span>
+        Belum ada update progress.<br>
+        Klik <strong>+ Update Progress</strong> untuk mencatat perkembangan.
+      </div>`;
+    return;
+  }
+
+  const editDeleteBtns = (e) => canEdit ? `
+    <div class="tl-actions">
+      <button class="btn-edit-entry" onclick="openEditEntryModal('${esc(e.id)}')">Edit</button>
+      <button class="btn-del-entry"  onclick="deleteEntry('${esc(e.id)}')">Hapus</button>
+    </div>` : '';
+
+  content.innerHTML = `<div class="timeline">${entries.map(e => {
+    const dateFmt = new Date(e.entry_date).toLocaleDateString('id-ID', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
+    const statusClass = STATUS_DOT_CLASS[e.status] || 'pending';
+    const badgeClass  = 'badge-' + statusClass;
+    const noteHtml    = e.notes
+      ? `<div class="tl-notes">"${esc(e.notes)}"</div>`
+      : `<div class="tl-notes empty">— Tidak ada catatan —</div>`;
+    return `
+      <div class="tl-entry">
+        <div class="tl-dot ${statusClass}"></div>
+        <div class="tl-card">
+          <div class="tl-card-top">
+            <div class="tl-date">${dateFmt}</div>
+            <span class="tl-status-badge ${badgeClass}">${STATUS_LABELS[e.status] || e.status}</span>
+          </div>
+          ${noteHtml}
+          <div class="tl-author">Dicatat oleh: ${esc(e.created_by || '—')}</div>
+          ${editDeleteBtns(e)}
+        </div>
+      </div>`;
+  }).join('')}</div>`;
+}
+
+/* ── STATS — berdasarkan status TERAKHIR per jobdesk ── */
+function updateStats() {
+  const counts = { inprogress:0, pending:0, finished:0, cancelled:0, returned:0 };
+  allJobs.forEach(job => {
+    const entries = allEntries
+      .filter(e => e.job_id === job.id)
+      .sort((a, b) => new Date(b.entry_date) - new Date(a.entry_date) || new Date(b.created_at) - new Date(a.created_at));
+    if (entries.length > 0) {
+      const lastStatus = entries[0].status;
+      if (counts[lastStatus] !== undefined) counts[lastStatus]++;
+    }
+  });
+  document.getElementById('statInprogress').textContent = counts.inprogress;
+  document.getElementById('statPending').textContent    = counts.pending;
+  document.getElementById('statFinished').textContent   = counts.finished;
+  document.getElementById('statCancelled').textContent  = counts.cancelled;
+  document.getElementById('statReturned').textContent   = counts.returned;
+}
+
+/* ── TAB SWITCH (head_account only) ── */
+let currentTab = 'my';
+
+function switchTab(tab) {
+  currentTab = tab;
+  document.getElementById('tabMyActivity').classList.toggle('active',  tab === 'my');
+  document.getElementById('tabAllActivity').classList.toggle('active', tab === 'all');
+
+  const mainGrid    = document.querySelector('.main-grid');
+  const statsRow    = document.querySelector('.stats-row');
+  const overviewPanel = document.getElementById('overviewPanel');
+
+  if (tab === 'all') {
+    mainGrid.style.display    = 'none';
+    statsRow.style.display    = 'none';
+    overviewPanel.classList.add('visible');
+    renderOverview();
+  } else {
+    mainGrid.style.display    = '';
+    statsRow.style.display    = '';
+    overviewPanel.classList.remove('visible');
+  }
+}
+
+/* ── OVERVIEW TABLE (head_account) ── */
+let allOverviewData = []; // { user, jobs, entries }
+
+async function renderOverview() {
+  const content = document.getElementById('overviewContent');
+  content.innerHTML = '<div class="ov-empty">Memuat data tim...</div>';
+
+  try {
+    // Load all jobs + entries for allowed roles, no date filter
+    const month    = document.getElementById('filterMonth').value;
+    const [yr, mo] = month.split('-');
+    const dateFrom = `${yr}-${mo}-01`;
+    const nextMo   = Number(mo) + 1;
+    const nextYr   = nextMo > 12 ? Number(yr) + 1 : yr;
+    const dateTo   = `${String(nextYr)}-${String(nextMo > 12 ? 1 : nextMo).padStart(2,'0')}-01`;
+
+    const { data: jobs } = await window._supabase
+      .from('daily_activity_jobs')
+      .select('*')
+      .gte('start_date', dateFrom)
+      .lt('start_date', dateTo)
+      .order('start_date', { ascending: true });
+
+    if (!jobs || jobs.length === 0) {
+      content.innerHTML = '<div class="ov-empty">Tidak ada data jobdesk bulan ini.</div>';
+      return;
+    }
+
+    const jobIds = jobs.map(j => j.id);
+    const { data: entries } = await window._supabase
+      .from('daily_activity_entries')
+      .select('*')
+      .in('job_id', jobIds)
+      .order('entry_date', { ascending: false });
+
+    const allEntr = entries || [];
+
+    // Group by user
+    const userMap = {};
+    jobs.forEach(job => {
+      if (!userMap[job.created_by]) userMap[job.created_by] = { jobs: [], entries: [] };
+      userMap[job.created_by].jobs.push(job);
+    });
+    allEntr.forEach(e => {
+      const job = jobs.find(j => j.id === e.job_id);
+      if (job && userMap[job.created_by]) {
+        userMap[job.created_by].entries.push(e);
+      }
+    });
+
+    // Load user names from accounts
+    const usernames = Object.keys(userMap);
+    const { data: accounts } = await window._supabase
+      .from('accounts')
+      .select('username, name, role')
+      .in('username', usernames);
+    const acctMap = {};
+    (accounts || []).forEach(a => acctMap[a.username] = a);
+
+    const ROLE_DISP = { admin: 'Admin', treasury: 'Bonds', head_account: 'Head Account' };
+
+    // Build rows — one row per job, showing last status
+    const rows = [];
+    jobs.forEach(job => {
+      const user  = acctMap[job.created_by] || { username: job.created_by, name: job.created_by, role: '' };
+      const jentr = allEntr
+        .filter(e => e.job_id === job.id)
+        .sort((a, b) => new Date(b.entry_date) - new Date(a.entry_date) || new Date(b.created_at) - new Date(a.created_at));
+      const last   = jentr[0];
+      const startFmt = job.start_date ? new Date(job.start_date).toLocaleDateString('id-ID', {day:'numeric',month:'short',year:'numeric'}) : '—';
+      const lastDateFmt = last ? new Date(last.entry_date).toLocaleDateString('id-ID', {day:'numeric',month:'short',year:'numeric'}) : '—';
+      rows.push({ job, user, last, jentr, startFmt, lastDateFmt, roleDisp: ROLE_DISP[user.role] || user.role });
+    });
+
+    if (!rows.length) { content.innerHTML = '<div class="ov-empty">Tidak ada data.</div>'; return; }
+
+    const statusBadge = (s) => s
+      ? `<span class="tl-status-badge badge-${s}">${STATUS_LABELS[s] || s}</span>`
+      : '<span style="color:#ccc;font-size:0.78rem;">Belum ada update</span>';
+
+    content.innerHTML = `
+      <table class="overview-table">
+        <thead>
+          <tr>
+            <th>Nama Pengguna</th>
+            <th>Role</th>
+            <th>Jobdesk</th>
+            <th>Mulai</th>
+            <th>Update Terakhir</th>
+            <th>Status Terakhir</th>
+            <th>Total Update</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows.map(r => `
+            <tr onclick="openOverviewDetail('${esc(r.job.id)}','${esc(r.user.name || r.user.username)}')" title="Klik untuk lihat timeline lengkap">
+              <td>
+                <div class="ov-user-chip">
+                  <div class="ov-avatar">${esc((r.user.name || r.user.username)[0].toUpperCase())}</div>
+                  <span style="font-weight:500;">${esc(r.user.name || r.user.username)}</span>
+                </div>
+              </td>
+              <td><span class="ov-role-tag ov-role-${r.user.role}">${esc(r.roleDisp)}</span></td>
+              <td style="font-weight:500;max-width:200px;">${esc(r.job.name)}</td>
+              <td style="color:#aaa;">${r.startFmt}</td>
+              <td style="color:#aaa;">${r.last ? r.lastDateFmt : '—'}</td>
+              <td>${statusBadge(r.last ? r.last.status : null)}</td>
+              <td style="text-align:center;font-weight:700;color:var(--navy);">${r.jentr.length}</td>
+            </tr>`).join('')}
+        </tbody>
+      </table>`;
+
+    // Store for detail popup
+    allOverviewData = rows.map(r => ({ ...r, allEntries: allEntr }));
+
+  } catch(e) {
+    console.error('renderOverview error:', e);
+    content.innerHTML = '<div class="ov-empty" style="color:#e74c3c;">Gagal memuat data. Cek koneksi.</div>';
+  }
+}
+
+/* ── OVERVIEW DETAIL — tampilkan timeline 1 job di modal ── */
+function openOverviewDetail(jobId, userName) {
+  const row = allOverviewData.find(r => r.job.id === jobId);
+  if (!row) return;
+
+  // Temporarily set selectedJob dan allEntries agar renderTimeline bisa dipakai
+  const prevJob     = selectedJob;
+  const prevEntries = allEntries;
+
+  selectedJob = row.job;
+  allEntries  = row.allEntries;
+
+  // Build modal content
+  const entries = row.allEntries
+    .filter(e => e.job_id === jobId)
+    .sort((a, b) => new Date(a.entry_date) - new Date(b.entry_date));
+
+  const startFmt = row.job.start_date
+    ? new Date(row.job.start_date).toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'})
+    : '';
+
+  const entryHtml = entries.length === 0
+    ? '<div class="empty-timeline" style="padding:24px;"><span></span>Belum ada update progress.</div>'
+    : `<div class="timeline">${entries.map(e => {
+        const dateFmt = new Date(e.entry_date).toLocaleDateString('id-ID', {weekday:'long',day:'numeric',month:'long',year:'numeric'});
+        const sc = e.status || 'pending';
+        const noteHtml = e.notes
+          ? `<div class="tl-notes">"${esc(e.notes)}"</div>`
+          : `<div class="tl-notes empty">— Tidak ada catatan —</div>`;
+        return `<div class="tl-entry">
+          <div class="tl-dot ${sc}"></div>
+          <div class="tl-card">
+            <div class="tl-card-top">
+              <div class="tl-date">${dateFmt}</div>
+              <span class="tl-status-badge badge-${sc}">${STATUS_LABELS[sc]||sc}</span>
+            </div>
+            ${noteHtml}
+            <div class="tl-author">Dicatat oleh: ${esc(e.created_by||'—')}</div>
+          </div>
+        </div>`;
+      }).join('')}</div>`;
+
+  document.getElementById('detailModalTitle').textContent = row.job.name;
+  document.getElementById('detailModalSub').textContent   = userName + ' · Dimulai: ' + startFmt;
+  document.getElementById('detailModalBody').innerHTML    = entryHtml;
+  openModal('modalDetail');
+
+  selectedJob = prevJob;
+  allEntries  = prevEntries;
+}
+
+/* ── MODALS ── */
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+/* Job Modal — Add */
+function openAddJobModal() {
+  editJobId = null;
+  document.getElementById('jobModalTitle').textContent = 'Tambah Jobdesk Baru';
+  document.getElementById('inputJobName').value  = '';
+  document.getElementById('inputJobDate').value  = new Date().toISOString().slice(0,10);
+  document.getElementById('inputJobDesc').value  = '';
+  hideFb('jobFeedback');
+  openModal('modalJob');
+}
+
+/* Job Modal — Edit */
+function openEditJobModal(jobId) {
+  editJobId = jobId;
+  const job = allJobs.find(j => j.id === jobId);
+  if (!job) return;
+  document.getElementById('jobModalTitle').textContent = 'Edit Jobdesk';
+  document.getElementById('inputJobName').value  = job.name || '';
+  document.getElementById('inputJobDate').value  = job.start_date || '';
+  document.getElementById('inputJobDesc').value  = job.description || '';
+  hideFb('jobFeedback');
+  openModal('modalJob');
+}
+
+async function saveJob() {
+  const name = document.getElementById('inputJobName').value.trim();
+  const date = document.getElementById('inputJobDate').value;
+  const desc = document.getElementById('inputJobDesc').value.trim();
+  if (!name) { showFb('jobFeedback','Nama jobdesk wajib diisi.','error'); return; }
+  if (!date) { showFb('jobFeedback','Tanggal mulai wajib diisi.','error'); return; }
+
+  const btn = document.getElementById('btnSaveJob');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="mini-spinner"></span> Menyimpan...';
+
+  try {
+    if (editJobId) {
+      const { error } = await window._supabase
+        .from('daily_activity_jobs')
+        .update({ name, start_date: date, description: desc, updated_at: new Date().toISOString() })
+        .eq('id', editJobId);
+      if (error) throw error;
+    } else {
+      const { error } = await window._supabase
+        .from('daily_activity_jobs')
+        .insert({ name, start_date: date, description: desc, created_by: curUser.username });
+      if (error) throw error;
+    }
+    closeModal('modalJob');
+    await loadData();
+  } catch(e) {
+    console.error(e);
+    showFb('jobFeedback', 'Gagal menyimpan. ' + (e.message || ''), 'error');
+  }
+  btn.disabled = false;
+  btn.textContent = 'Simpan';
+}
+</script>
+
+<script>
+/* ── ENTRY MODAL — Add ── */
+function openAddEntryModal() {
+  if (!selectedJob) return;
+  editEntryId = null;
+  document.getElementById('entryModalTitle').textContent = 'Update Progress';
+  document.getElementById('entryModalSub').textContent   = selectedJob.name;
+  document.getElementById('inputEntryDate').value   = new Date().toISOString().slice(0,10);
+  document.getElementById('inputEntryStatus').value = 'inprogress';
+  document.getElementById('inputEntryNotes').value  = '';
+  hideFb('entryFeedback');
+  document.getElementById('btnSaveEntry').textContent = 'Simpan';
+  openModal('modalEntry');
+}
+
+/* ── ENTRY MODAL — Edit ── */
+function openEditEntryModal(entryId) {
+  editEntryId = entryId;
+  const entry = allEntries.find(e => e.id === entryId);
+  if (!entry) return;
+  document.getElementById('entryModalTitle').textContent = 'Edit Progress';
+  document.getElementById('entryModalSub').textContent   = selectedJob ? selectedJob.name : '';
+  document.getElementById('inputEntryDate').value   = entry.entry_date || '';
+  document.getElementById('inputEntryStatus').value = entry.status || 'pending';
+  document.getElementById('inputEntryNotes').value  = entry.notes || '';
+  hideFb('entryFeedback');
+  document.getElementById('btnSaveEntry').textContent = 'Update';
+  openModal('modalEntry');
+}
+
+async function saveEntry() {
+  const date   = document.getElementById('inputEntryDate').value;
+  const status = document.getElementById('inputEntryStatus').value;
+  const notes  = document.getElementById('inputEntryNotes').value.trim();
+
+  if (!date)   { showFb('entryFeedback','Tanggal wajib diisi.','error'); return; }
+  if (!status) { showFb('entryFeedback','Status wajib dipilih.','error'); return; }
+
+  const btn = document.getElementById('btnSaveEntry');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="mini-spinner"></span> Menyimpan...';
+
+  try {
+    if (editEntryId) {
+      const { error } = await window._supabase
+        .from('daily_activity_entries')
+        .update({ entry_date: date, status, notes, updated_at: new Date().toISOString() })
+        .eq('id', editEntryId);
+      if (error) throw error;
+    } else {
+      if (!selectedJob) throw new Error('No job selected');
+      const { error } = await window._supabase
+        .from('daily_activity_entries')
+        .insert({ job_id: selectedJob.id, entry_date: date, status, notes, created_by: curUser.username });
+      if (error) throw error;
+    }
+    closeModal('modalEntry');
+    await loadData();
+  } catch(e) {
+    console.error(e);
+    showFb('entryFeedback', 'Gagal menyimpan. ' + (e.message || ''), 'error');
+  }
+  btn.disabled = false;
+  btn.textContent = editEntryId ? 'Update' : 'Simpan';
+}
+
+/* ── DELETE ENTRY ── */
+async function deleteEntry(entryId) {
+  if (!confirm('Hapus entri progress ini?')) return;
+  try {
+    const { error } = await window._supabase
+      .from('daily_activity_entries')
+      .delete()
+      .eq('id', entryId);
+    if (error) throw error;
+    await loadData();
+  } catch(e) {
+    alert('Gagal menghapus: ' + (e.message || ''));
+  }
+}
+
+/* ── DELETE JOB ── */
+async function deleteJob(jobId, jobName) {
+  if (!confirm(`Hapus jobdesk "${jobName}"?\n\nSemua entri progress di dalamnya juga akan dihapus. Tindakan ini tidak dapat dibatalkan.`)) return;
+  try {
+    const { error } = await window._supabase
+      .from('daily_activity_jobs')
+      .delete()
+      .eq('id', jobId);
+    if (error) throw error;
+    selectedJob = null;
+    await loadData();
+  } catch(e) {
+    alert('Gagal menghapus jobdesk: ' + (e.message || ''));
+  }
+}
+
+/* ── HELPERS ── */
+function showFb(id, msg, type) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = msg;
+  el.className = 'form-feedback ' + type;
+}
+function hideFb(id) {
+  const el = document.getElementById(id);
+  if (el) { el.style.display = 'none'; el.className = 'form-feedback'; }
+}
+function esc(str) {
+  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+/* ── KEYBOARD ── */
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') ['modalJob','modalEntry','modalDetail'].forEach(id => closeModal(id));
+});
+
+window.addEventListener('DOMContentLoaded', init);
+</script>
+
+<!-- ═══ MODAL: Detail Timeline (overview head_account) ═══ -->
+<div class="modal-overlay" id="modalDetail" onclick="if(event.target===this)closeModal('modalDetail')">
+  <div class="modal" style="max-width:620px;">
+    <div class="modal-title" id="detailModalTitle"></div>
+    <div class="modal-sub"   id="detailModalSub" style="margin-bottom:20px;"></div>
+    <div id="detailModalBody" style="max-height:55vh;overflow-y:auto;padding-right:4px;"></div>
+    <div class="modal-footer" style="margin-top:20px;">
+      <button class="btn-ghost" onclick="closeModal('modalDetail')">Tutup</button>
+    </div>
+  </div>
+</div>
+</body>
+</html>

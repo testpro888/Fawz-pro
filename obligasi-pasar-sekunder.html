@@ -143,10 +143,37 @@
     .upload-hint { font-size: 0.78rem; color: var(--gray); margin-top: 6px; line-height: 1.6; }
     .upload-hint strong { color: var(--gold); }
     #csvFileInput { display: none; }
+    #csvPriceFileInput { display: none; }
     .csv-preview-box { margin-top: 14px; border: 1.5px solid var(--border); border-radius: 10px; overflow: hidden; max-height: 180px; overflow-y: auto; }
     .csv-preview-box table { font-size: 0.77rem; }
     .csv-preview-box thead th { padding: 7px 10px; }
     .csv-preview-box tbody td { padding: 6px 10px; }
+
+    /* Update price badge */
+    .badge-update { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 700; }
+    .badge-updated { background: #e8f8f0; color: #1e7e4e; }
+    .badge-inserted { background: #fff8e6; color: #c07800; }
+    .price-update-stats { display: flex; gap: 12px; margin-top: 12px; padding: 12px 16px; background: #f9f9ff; border-radius: 10px; border: 1px solid var(--border); font-size: 0.82rem; }
+    .stat-item { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+    .stat-num { font-size: 1.3rem; font-weight: 800; }
+    .stat-label { color: var(--gray); font-size: 0.72rem; }
+    .btn-teal { background: linear-gradient(135deg, #0d9488, #0f766e); color: #fff; box-shadow: 0 4px 14px rgba(13,148,136,0.3); }
+    .btn-teal:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(13,148,136,0.4); }
+
+    /* Upload category selector */
+    .upload-cat-btn {
+      padding: 8px 16px; border-radius: 8px; font-family: 'Inter', sans-serif;
+      font-size: 0.82rem; font-weight: 600; cursor: pointer;
+      border: 1.5px solid var(--border); background: #fff; color: var(--gray);
+      transition: all 0.18s;
+    }
+    .upload-cat-btn:hover { border-color: var(--gold); color: var(--gold); }
+    .upload-cat-btn.active { background: var(--navy); color: #fff; border-color: var(--navy); }
+
+    /* Format info box colors per cat */
+    .fmt-gov  { background: #f0fff8; border: 1.5px solid #a8e6c1; color: #145a32; }
+    .fmt-korp { background: #fffbf0; border: 1.5px solid #f5d78e; color: #7a5100; }
+    .fmt-usd  { background: #f0f4ff; border: 1.5px solid #c5d3ff; color: #1a3a7a; }
 
     /* Toast */
     .toast-container { position: fixed; bottom: 28px; right: 28px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
@@ -202,10 +229,11 @@
           <span class="search-icon">🔍</span>
           <input type="text" placeholder="Cari seri..." oninput="applySearch('gov-idr', this.value)" id="search-gov-idr"/>
         </div>
-        <button class="btn btn-outline btn-sm" onclick="openUploadModalFor('gov-idr')">CSV</button>
-        <button class="btn btn-outline btn-sm" onclick="exportCSV('gov-idr')">Export</button>
+        <button class="btn btn-outline btn-sm" data-sales-hide onclick="openUploadModalFor('gov-idr')">CSV</button>
+        <button class="btn btn-teal btn-sm" data-sales-hide onclick="openPriceUpdateModal('gov-idr')" title="Update harga massal via CSV">⬆ Update Harga</button>
+        <button class="btn btn-outline btn-sm" data-sales-hide onclick="exportCSV('gov-idr')">Export</button>
         <button class="btn btn-outline btn-sm" onclick="batchCalcCoupons('gov-idr')" title="Hitung last & next coupon otomatis dari jatuh tempo">Hitung Kupon</button>
-        <button class="btn btn-primary btn-sm" onclick="openAddModal('gov-idr')">+ Tambah</button>
+        <button class="btn btn-primary btn-sm" data-sales-hide onclick="openAddModal('gov-idr')">+ Tambah</button>
       </div>
     </div>
     <div class="table-card">
@@ -241,10 +269,11 @@
           <span class="search-icon">🔍</span>
           <input type="text" placeholder="Cari seri..." oninput="applySearch('gov-usd', this.value)" id="search-gov-usd"/>
         </div>
-        <button class="btn btn-outline btn-sm" onclick="openUploadModalFor('gov-usd')">CSV</button>
-        <button class="btn btn-outline btn-sm" onclick="exportCSV('gov-usd')">Export</button>
+        <button class="btn btn-outline btn-sm" data-sales-hide onclick="openUploadModalFor('gov-usd')">CSV</button>
+        <button class="btn btn-teal btn-sm" data-sales-hide onclick="openPriceUpdateModal('gov-usd')" title="Update harga massal via CSV">⬆ Update Harga</button>
+        <button class="btn btn-outline btn-sm" data-sales-hide onclick="exportCSV('gov-usd')">Export</button>
         <button class="btn btn-outline btn-sm" onclick="batchCalcCoupons('gov-usd')" title="Hitung last & next coupon otomatis dari jatuh tempo">Hitung Kupon</button>
-        <button class="btn btn-primary btn-sm" onclick="openAddModal('gov-usd')">+ Tambah</button>
+        <button class="btn btn-primary btn-sm" data-sales-hide onclick="openAddModal('gov-usd')">+ Tambah</button>
       </div>
     </div>
     <div class="table-card">
@@ -280,10 +309,11 @@
           <span class="search-icon">🔍</span>
           <input type="text" placeholder="Cari seri..." oninput="applySearch('korp-idr', this.value)" id="search-korp-idr"/>
         </div>
-        <button class="btn btn-outline btn-sm" onclick="openUploadModalFor('korp-idr')">CSV</button>
-        <button class="btn btn-outline btn-sm" onclick="exportCSV('korp-idr')">Export</button>
+        <button class="btn btn-outline btn-sm" data-sales-hide onclick="openUploadModalFor('korp-idr')">CSV</button>
+        <button class="btn btn-teal btn-sm" data-sales-hide onclick="openPriceUpdateModal('korp-idr')" title="Update harga massal via CSV">⬆ Update Harga</button>
+        <button class="btn btn-outline btn-sm" data-sales-hide onclick="exportCSV('korp-idr')">Export</button>
         <button class="btn btn-outline btn-sm" onclick="batchCalcCoupons('korp-idr')" title="Hitung last & next coupon otomatis dari jatuh tempo">Hitung Kupon</button>
-        <button class="btn btn-primary btn-sm" onclick="openAddModal('korp-idr')">+ Tambah</button>
+        <button class="btn btn-primary btn-sm" data-sales-hide onclick="openAddModal('korp-idr')">+ Tambah</button>
       </div>
     </div>
     <div class="table-card">
@@ -319,10 +349,11 @@
           <span class="search-icon">🔍</span>
           <input type="text" placeholder="Cari seri..." oninput="applySearch('korp-usd', this.value)" id="search-korp-usd"/>
         </div>
-        <button class="btn btn-outline btn-sm" onclick="openUploadModalFor('korp-usd')">CSV</button>
-        <button class="btn btn-outline btn-sm" onclick="exportCSV('korp-usd')">Export</button>
+        <button class="btn btn-outline btn-sm" data-sales-hide onclick="openUploadModalFor('korp-usd')">CSV</button>
+        <button class="btn btn-teal btn-sm" data-sales-hide onclick="openPriceUpdateModal('korp-usd')" title="Update harga massal via CSV">⬆ Update Harga</button>
+        <button class="btn btn-outline btn-sm" data-sales-hide onclick="exportCSV('korp-usd')">Export</button>
         <button class="btn btn-outline btn-sm" onclick="batchCalcCoupons('korp-usd')" title="Hitung last & next coupon otomatis dari jatuh tempo">Hitung Kupon</button>
-        <button class="btn btn-primary btn-sm" onclick="openAddModal('korp-usd')">+ Tambah</button>
+        <button class="btn btn-primary btn-sm" data-sales-hide onclick="openAddModal('korp-usd')">+ Tambah</button>
       </div>
     </div>
     <div class="table-card">
@@ -532,37 +563,95 @@
 
 <!-- MODAL: UPLOAD CSV -->
 <div class="modal-overlay" id="uploadModal" onclick="closeUploadModal(event)">
-  <div class="modal">
+  <div class="modal" style="width:780px;">
     <div class="modal-header">
-      <div class="modal-title">Upload CSV Obligasi</div>
+      <div class="modal-title">📂 Import Daftar Obligasi via CSV</div>
       <button class="modal-close" onclick="document.getElementById('uploadModal').classList.remove('open')">✕</button>
     </div>
+
+    <!-- Pilih Kategori -->
+    <div class="form-group" style="margin-bottom:16px;">
+      <label class="form-label">Target Kategori <span class="req">*</span></label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;" id="uploadCatBtns">
+        <button class="upload-cat-btn active" data-cat="gov-idr" onclick="selectUploadCat('gov-idr')">🏛 Pemerintah IDR</button>
+        <button class="upload-cat-btn" data-cat="gov-usd" onclick="selectUploadCat('gov-usd')">🏛 Pemerintah USD</button>
+        <button class="upload-cat-btn" data-cat="korp-idr" onclick="selectUploadCat('korp-idr')">🏢 Korporasi IDR</button>
+        <button class="upload-cat-btn" data-cat="korp-usd" onclick="selectUploadCat('korp-usd')">🏢 Korporasi USD</button>
+      </div>
+      <input type="hidden" id="uploadCategory" value="gov-idr"/>
+    </div>
+
+    <!-- Format Info Box — berubah sesuai kategori -->
+    <div id="csvFormatInfo" style="border-radius:12px;padding:14px 16px;margin-bottom:14px;font-size:0.81rem;line-height:1.8;"></div>
+
+    <!-- Upload Zone -->
+    <div class="upload-zone" id="uploadZone" onclick="document.getElementById('csvFileInput').click()"
+      ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
+      <div class="upload-icon">📂</div>
+      <div style="font-weight:600;color:var(--navy);">Klik atau drag & drop file CSV di sini</div>
+      <div class="upload-hint">Format file: <strong>.csv</strong> · Encoding: <strong>UTF-8</strong></div>
+    </div>
+    <input type="file" id="csvFileInput" accept=".csv" onchange="handleCSVFile(event)"/>
+
+    <div id="csvPreviewWrap" style="display:none; margin-top:12px;">
+      <div style="font-size:0.8rem;color:var(--gray);margin-bottom:6px;" id="csvPreviewInfo"></div>
+      <div class="csv-preview-box" id="csvPreview"></div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-outline btn-sm" onclick="downloadTemplate()">📥 Download Template</button>
+      <button class="btn btn-outline" onclick="document.getElementById('uploadModal').classList.remove('open')">Batal</button>
+      <button class="btn btn-primary" id="uploadSaveBtn" onclick="importCSV()" disabled>Import Data</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: UPDATE HARGA via CSV -->
+<div class="modal-overlay" id="priceUpdateModal" onclick="closePriceUpdateModal(event)">
+  <div class="modal" style="width:720px;">
+    <div class="modal-header">
+      <div class="modal-title">⬆ Update Harga via CSV</div>
+      <button class="modal-close" onclick="document.getElementById('priceUpdateModal').classList.remove('open')">✕</button>
+    </div>
+
+    <div style="background:#fffbf3;border:1.5px solid #f5e0a0;border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:0.82rem;color:#7a5100;line-height:1.7;">
+      <strong>📋 Format CSV yang didukung:</strong>
+      Kolom: <code style="background:#fff;padding:1px 6px;border-radius:4px;font-size:0.8rem;">Currency, Series, DueDate, Rating, Coupon, Bid, Offer, YTM</code><br>
+      Jika <strong>Series sudah ada</strong> → harga diperbarui. Jika <strong>Series belum ada</strong> → data baru ditambahkan.
+      Kolom <strong>Currency</strong> menentukan kategori otomatis (IDR/USD × Pemerintah/Korporasi).
+    </div>
+
     <div class="form-group" style="margin-bottom:14px;">
       <label class="form-label">Target Kategori</label>
-      <select class="form-select" id="uploadCategory">
+      <select class="form-select" id="priceUpdateCategory">
         <option value="gov-idr">Obligasi Pemerintah IDR</option>
         <option value="gov-usd">Obligasi Pemerintah USD</option>
         <option value="korp-idr">Obligasi Korporasi IDR</option>
         <option value="korp-usd">Obligasi Korporasi USD</option>
       </select>
     </div>
-    <div class="upload-zone" id="uploadZone" onclick="document.getElementById('csvFileInput').click()"
-      ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
-      <div class="upload-icon">📂</div>
-      <div style="font-weight:600;color:var(--navy);">Klik atau drag & drop file CSV</div>
+
+    <div class="upload-zone" id="priceUploadZone" onclick="document.getElementById('csvPriceFileInput').click()"
+      ondragover="handlePriceDragOver(event)" ondragleave="handlePriceDragLeave(event)" ondrop="handlePriceDrop(event)">
+      <div class="upload-icon">📊</div>
+      <div style="font-weight:600;color:var(--navy);">Klik atau drag & drop file CSV harga</div>
       <div class="upload-hint">
-        Header yang didukung: <strong>Seri, Kupon, JatuhTempo, Rating, LastCouponDate, NextCouponDate, HargaJual, HargaBeli, Yield, TanggalUpdate</strong>
+        Header wajib: <strong>Series, Bid, Offer, YTM</strong><br>
+        Header opsional: <strong>Currency, DueDate, Rating, Coupon</strong>
       </div>
     </div>
-    <input type="file" id="csvFileInput" accept=".csv" onchange="handleCSVFile(event)"/>
-    <div id="csvPreviewWrap" style="display:none; margin-top:12px;">
-      <div style="font-size:0.8rem;color:var(--gray);margin-bottom:6px;" id="csvPreviewInfo"></div>
-      <div class="csv-preview-box" id="csvPreview"></div>
+    <input type="file" id="csvPriceFileInput" accept=".csv" onchange="handlePriceCSVFile(event)"/>
+
+    <div id="pricePreviewWrap" style="display:none; margin-top:14px;">
+      <div class="price-update-stats" id="priceUpdateStats"></div>
+      <div style="font-size:0.8rem;color:var(--gray);margin: 10px 0 6px;" id="pricePreviewInfo"></div>
+      <div class="csv-preview-box" id="priceCSVPreview"></div>
     </div>
+
     <div class="modal-footer">
-      <button class="btn btn-outline btn-sm" onclick="downloadTemplate()">Template CSV</button>
-      <button class="btn btn-outline" onclick="document.getElementById('uploadModal').classList.remove('open')">Batal</button>
-      <button class="btn btn-primary" id="uploadSaveBtn" onclick="importCSV()" disabled>Import Data</button>
+      <button class="btn btn-outline btn-sm" onclick="downloadPriceTemplate()">📥 Template CSV</button>
+      <button class="btn btn-outline" onclick="document.getElementById('priceUpdateModal').classList.remove('open')">Batal</button>
+      <button class="btn btn-teal" id="priceUpdateSaveBtn" onclick="executePriceUpdate()" disabled>⬆ Proses Update</button>
     </div>
   </div>
 </div>
@@ -597,7 +686,29 @@
 
   // ===== AUTH — navbar UI dihandle navbar.html =====
   function initAuth() {
-    if (!sessionStorage.getItem('fawz_user')) { window.location.href = 'login.html'; }
+    const raw = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember');
+    if (!raw) { window.location.href = 'login.html'; return; }
+    try {
+      const user = JSON.parse(raw);
+      sessionStorage.setItem('fawz_user', raw);
+      if (user.role === 'sales') applySalesRestrictions();
+    } catch(e) { window.location.href = 'login.html'; }
+  }
+
+  function applySalesRestrictions() {
+    // Sembunyikan semua tombol bertanda data-sales-hide
+    document.querySelectorAll('[data-sales-hide]').forEach(el => el.style.display = 'none');
+    // Sembunyikan kolom Aksi di thead
+    document.querySelectorAll('thead th:last-child').forEach(th => {
+      if (th.textContent.trim() === 'Aksi') th.style.display = 'none';
+    });
+    // Sembunyikan cell Aksi di tbody setiap kali tabel dirender ulang
+    // Patch renderTable agar strip kolom aksi untuk sales
+    const _orig = window.renderTable;
+    window.renderTable = function(cat) {
+      _orig(cat);
+      document.querySelectorAll('#tbody-' + cat + ' .action-btns').forEach(el => el.closest('td').style.display = 'none');
+    };
   }
   // ===== TABS =====
   function switchTab(cat) {
@@ -1025,6 +1136,7 @@
     csvRows = []; csvTargetCat = activeTab;
     document.getElementById('uploadCategory').value = activeTab;
     resetUploadModal();
+    selectUploadCat(activeTab);
     document.getElementById('uploadModal').classList.add('open');
   }
 
@@ -1032,7 +1144,91 @@
     csvRows = []; csvTargetCat = cat;
     document.getElementById('uploadCategory').value = cat;
     resetUploadModal();
+    selectUploadCat(cat);
     document.getElementById('uploadModal').classList.add('open');
+  }
+
+  function selectUploadCat(cat) {
+    csvTargetCat = cat;
+    document.getElementById('uploadCategory').value = cat;
+    // update active button
+    document.querySelectorAll('.upload-cat-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.cat === cat);
+    });
+    renderCsvFormatInfo(cat);
+    // reset file & preview kalau kategori berubah
+    document.getElementById('csvFileInput').value = '';
+    document.getElementById('csvPreviewWrap').style.display = 'none';
+    document.getElementById('uploadSaveBtn').disabled = true;
+    csvRows = [];
+  }
+
+  const CSV_FORMAT = {
+    'gov-idr': {
+      label: '🏛 Obligasi Pemerintah IDR',
+      colorClass: 'fmt-gov',
+      wajib: ['Seri', 'Kupon', 'JatuhTempo', 'Bid', 'Offer', 'YTM'],
+      opsional: ['Name', 'ISIN', 'Issuer', 'Type', 'Type2', 'IssueDate', 'FirstCpnDate', 'LastCpnDate', 'NextCpnDate', 'AccrualDate', 'KuponFreq', 'Basis', 'PayType', 'HargaModal', 'ModalToSales', 'HargaToCustomer', 'TanggalUpdate'],
+      catatan: 'Kolom <strong>Rating</strong> dan <strong>Penerbit</strong> tidak diperlukan untuk obligasi pemerintah.',
+      contoh: `Seri,Name,ISIN,Issuer,Type,Type2,IssueDate,JatuhTempo,FirstCpnDate,LastCpnDate,NextCpnDate,AccrualDate,Kupon,KuponFreq,Basis,PayType,HargaModal,ModalToSales,HargaToCustomer,Bid,Offer,YTM,TanggalUpdate
+FR0037,FR0037,IDG000032704,Pemerintah RI,FR,Fixed,2006-09-15,2026-09-15,,2026-03-15,2026-09-15,,8.375,6,ACT/ACT,Bullet,,,, 100.86,102.24,6.6700,2026-06-06
+FR0042,FR0042,IDG000042703,Pemerintah RI,FR,Fixed,2012-01-15,2027-07-15,,2026-01-15,2026-07-15,,10.250,6,ACT/ACT,Bullet,,,,102.75,104.48,7.1200,2026-06-06
+FR0045,FR0045,IDG000045706,Pemerintah RI,FR,Fixed,2007-05-15,2037-05-15,,2026-05-15,2026-11-15,,9.750,6,ACT/ACT,Bullet,,,,120.57,122.77,6.9600,2026-06-06`,
+    },
+    'gov-usd': {
+      label: '🏛 Obligasi Pemerintah USD',
+      colorClass: 'fmt-usd',
+      wajib: ['Seri', 'Kupon', 'JatuhTempo', 'Bid', 'Offer', 'YTM'],
+      opsional: ['Name', 'ISIN', 'Issuer', 'Type', 'Type2', 'IssueDate', 'FirstCpnDate', 'LastCpnDate', 'NextCpnDate', 'AccrualDate', 'KuponFreq', 'Basis', 'PayType', 'HargaModal', 'ModalToSales', 'HargaToCustomer', 'TanggalUpdate'],
+      catatan: 'Untuk seri USD pemerintah (INDO, INDOIS). Harga dalam <strong>desimal titik</strong>, misal <code>98.50</code>.',
+      contoh: `Seri,Name,ISIN,Issuer,Type,Type2,IssueDate,JatuhTempo,FirstCpnDate,LastCpnDate,NextCpnDate,AccrualDate,Kupon,KuponFreq,Basis,PayType,HargaModal,ModalToSales,HargaToCustomer,Bid,Offer,YTM,TanggalUpdate
+INDO30,INDO30,USY20721BC05,Pemerintah RI,INDON,Fixed,2010-04-15,2030-04-15,,2026-04-15,2026-10-15,,3.850,6,ACT/ACT,Bullet,,,,95.50,96.25,4.5100,2026-06-06
+INDOIS29,INDOIS29,USY20721AC23,Pemerintah RI,INDOIS,Sukuk,2019-03-20,2029-03-20,,2026-03-20,2026-09-20,,4.450,6,ACT/ACT,Bullet,,,,97.00,98.00,4.9000,2026-06-06`,
+    },
+    'korp-idr': {
+      label: '🏢 Obligasi Korporasi IDR',
+      colorClass: 'fmt-korp',
+      wajib: ['Seri', 'Kupon', 'JatuhTempo', 'Rating', 'Bid', 'Offer', 'YTM'],
+      opsional: ['Name', 'ISIN', 'Penerbit', 'Issuer', 'Type', 'Type2', 'IssueDate', 'FirstCpnDate', 'LastCpnDate', 'NextCpnDate', 'AccrualDate', 'KuponFreq', 'Basis', 'PayType', 'HargaModal', 'ModalToSales', 'HargaToCustomer', 'TanggalUpdate'],
+      catatan: 'Kolom <strong>Rating</strong> wajib (AAA, AA+, A, BBB+, dll). <strong>Penerbit</strong> otomatis dari kode ticker jika kosong.',
+      contoh: `Seri,Name,ISIN,Penerbit,Issuer,Type,Type2,IssueDate,JatuhTempo,FirstCpnDate,LastCpnDate,NextCpnDate,AccrualDate,Rating,Kupon,KuponFreq,Basis,PayType,HargaModal,ModalToSales,HargaToCustomer,Bid,Offer,YTM,TanggalUpdate
+PPLN03CN3,Obligasi PLN III/2023,IDA000139306,PT Perusahaan Listrik Negara (Persero),PT PLN (Persero),Korporasi,Fixed,2023-06-10,2028-06-10,,2026-06-10,2026-12-10,,AAA,9.500,6,ACT/ACT,Bullet,,,,101.00,102.50,9.1000,2026-06-06
+BBRI02BCN2,Obligasi BRI II/2022,IDA000128407,PT Bank Rakyat Indonesia (Persero) Tbk,PT BRI Tbk,Korporasi,Fixed,2022-08-20,2027-08-20,,2026-02-20,2026-08-20,,AAA,7.250,6,ACT/ACT,Bullet,,,,100.50,101.25,6.9500,2026-06-06`,
+    },
+    'korp-usd': {
+      label: '🏢 Obligasi Korporasi USD',
+      colorClass: 'fmt-korp',
+      wajib: ['Seri', 'Kupon', 'JatuhTempo', 'Rating', 'Bid', 'Offer', 'YTM'],
+      opsional: ['Name', 'ISIN', 'Penerbit', 'Issuer', 'Type', 'Type2', 'IssueDate', 'FirstCpnDate', 'LastCpnDate', 'NextCpnDate', 'AccrualDate', 'KuponFreq', 'Basis', 'PayType', 'HargaModal', 'ModalToSales', 'HargaToCustomer', 'TanggalUpdate'],
+      catatan: 'Korporasi USD — harga dalam <strong>desimal titik</strong>. Rating wajib diisi.',
+      contoh: `Seri,Name,ISIN,Penerbit,Issuer,Type,Type2,IssueDate,JatuhTempo,FirstCpnDate,LastCpnDate,NextCpnDate,AccrualDate,Rating,Kupon,KuponFreq,Basis,PayType,HargaModal,ModalToSales,HargaToCustomer,Bid,Offer,YTM,TanggalUpdate
+TLKM25,Telkom USD Bond 2025,USY8564UAC94,PT Telkom Indonesia (Persero) Tbk,PT Telkom Indonesia,Korporasi,Fixed,2015-05-23,2025-05-23,,2025-05-23,2025-11-23,,AAA,4.875,6,ACT/ACT,Bullet,,,,99.75,100.25,4.9500,2026-06-06`,
+    },
+  };
+
+  function renderCsvFormatInfo(cat) {
+    const f = CSV_FORMAT[cat];
+    if (!f) return;
+    const box = document.getElementById('csvFormatInfo');
+    box.className = f.colorClass;
+    box.innerHTML = `
+      <div style="font-weight:700;font-size:0.85rem;margin-bottom:8px;">${f.label} — Format CSV</div>
+      <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:8px;">
+        <div>
+          <span style="font-weight:700;">Wajib:</span>
+          ${f.wajib.map(c => `<code style="background:rgba(255,255,255,0.6);padding:1px 7px;border-radius:4px;font-size:0.78rem;margin:0 2px;">${c}</code>`).join('')}
+        </div>
+        <div>
+          <span style="font-weight:700;">Opsional:</span>
+          ${f.opsional.map(c => `<code style="background:rgba(255,255,255,0.4);padding:1px 7px;border-radius:4px;font-size:0.78rem;margin:0 2px;opacity:0.85;">${c}</code>`).join('')}
+        </div>
+      </div>
+      <div style="margin-bottom:8px;">ℹ️ ${f.catatan}</div>
+      <details style="margin-top:4px;">
+        <summary style="cursor:pointer;font-weight:600;font-size:0.78rem;">📄 Lihat contoh isi CSV</summary>
+        <pre style="margin-top:8px;background:rgba(255,255,255,0.7);padding:10px;border-radius:8px;font-size:0.72rem;overflow-x:auto;white-space:pre;">${f.contoh}</pre>
+      </details>
+    `;
   }
 
   function resetUploadModal() {
@@ -1067,20 +1263,48 @@
 
   function mapCSVRow(obj) {
     const g = (...keys) => { for (const k of keys) if (obj[k] !== undefined && obj[k] !== '') return obj[k]; return ''; };
+    const parseNum = v => { if (!v) return null; const n = parseFloat(String(v).replace(',','.')); return isNaN(n) ? null : n; };
+    const parseDate = v => {
+      if (!v) return null;
+      const m1 = v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+      if (m1) return `${m1[3]}-${m1[2].padStart(2,'0')}-${m1[1].padStart(2,'0')}`;
+      const m2 = v.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
+      if (m2) return `${m2[3]}-${m2[2].padStart(2,'0')}-${m2[1].padStart(2,'0')}`;
+      if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
+      return null;
+    };
     const seri = g('seri','serie','series');
     const ticker = extractTicker(seri);
     return {
       seri,
-      kupon:            parseFloat(g('kupon','coupon')) || null,
-      jatuh_tempo:      g('jatuhtempo','jatuh_tempo','maturity','maturitydate'),
+      // Identifikasi
+      name:             g('name','nama','namaobligasi') || null,
+      isin:             g('isin') || null,
+      issuer:           g('issuer') || null,
+      bond_type:        g('type','bondtype','tipe') || null,
+      bond_type2:       g('type2','bondtype2','tipe2') || null,
+      // Tanggal
+      tanggal_listing:  parseDate(g('issuedate','issue_date','tanggallisting','tanggal_listing')),
+      jatuh_tempo:      parseDate(g('jatuhtempo','jatuh_tempo','maturity','maturitydate','duedate','due_date')) || g('jatuhtempo','jatuh_tempo','maturity','maturitydate','duedate','due_date'),
+      first_cpn_date:   parseDate(g('firstcpndate','first_cpn_date','firstcoupondate')),
+      last_coupon_date: parseDate(g('lastcpndate','lastcoupondate','last_coupon_date','lastcoupon','last_coupon')),
+      next_coupon_date: parseDate(g('nextcpndate','nextcoupondate','next_coupon_date','nextcoupon','next_coupon')),
+      accrual_date:     parseDate(g('accrualdate','accrual_date','accrual')),
+      // Detail kupon
       rating:           g('rating') || null,
-      penerbit:         g('penerbit','issuer','emiten') || (ISSUER_MAP[ticker] || null),
-      last_coupon_date: g('lastcoupondate','last_coupon_date','lastcoupon','last_coupon') || null,
-      next_coupon_date: g('nextcoupondate','next_coupon_date','nextcoupon','next_coupon') || null,
-      harga_jual:       parseFloat(g('hargajual','harga_jual','bid','bidprice')) || null,
-      harga_beli:       parseFloat(g('hargabeli','harga_beli','offer','offerprice','ask','askprice')) || null,
-      yield:            parseFloat(g('yield','ytm')) || null,
-      tanggal_update:   g('tanggalupdate','tanggal_update','updatedate','date') || new Date().toISOString().slice(0,10),
+      penerbit:         g('penerbit','emiten') || (ISSUER_MAP[ticker] || null),
+      kupon:            parseNum(g('kupon','coupon','couponrate')),
+      kupon_freq:       parseInt(g('kuponfreq','kupon_freq','freq','frequency')) || null,
+      day_count_basis:  g('basis','daycountbasis','day_count_basis') || null,
+      payment_type:     g('paytype','pay_type','paymenttype') || null,
+      // Harga
+      harga_modal:        parseNum(g('hargamodal','harga_modal')),
+      modal_to_sales:     parseNum(g('modaltosales','modal_to_sales')),
+      harga_to_customer:  parseNum(g('hargatocustomer','harga_to_customer')),
+      harga_jual:         parseNum(g('bid','hargajual','harga_jual','bidprice')),
+      harga_beli:         parseNum(g('offer','ask','hargabeli','harga_beli','offerprice','askprice')),
+      yield:              parseNum(g('ytm','yield','ytmpct','ytm%')),
+      tanggal_update:     g('tanggalupdate','tanggal_update','updatedate','date') || new Date().toISOString().slice(0,10),
     };
   }
 
@@ -1096,10 +1320,29 @@
   }
 
   function renderCSVPreview() {
+    const cat = document.getElementById('uploadCategory').value || csvTargetCat;
+    const isKorp = cat.startsWith('korp');
     document.getElementById('csvPreviewInfo').textContent = `${csvRows.length} data ditemukan. Preview 5 baris pertama:`;
     document.getElementById('csvPreview').innerHTML = `<table>
-      <thead><tr><th>Series</th><th>Coupon</th><th>Rating</th><th>Last Coupon</th><th>Next Coupon</th><th>Bid</th><th>Offer</th><th>YTM</th></tr></thead>
-      <tbody>${csvRows.slice(0,5).map(r=>`<tr><td>${esc(r.seri)}</td><td>${r.kupon??''}</td><td>${esc(r.rating||'')}</td><td>${r.last_coupon_date||''}</td><td>${r.next_coupon_date||''}</td><td>${r.harga_jual??''}</td><td>${r.harga_beli??''}</td><td>${r.yield??''}</td></tr>`).join('')}</tbody>
+      <thead><tr>
+        <th>Series</th>
+        ${isKorp ? '<th>Rating</th><th>Penerbit</th>' : ''}
+        <th>Jatuh Tempo</th><th>Coupon</th>
+        <th>Last Coupon</th><th>Next Coupon</th>
+        <th>Bid</th><th>Offer</th><th>YTM</th><th>Tgl. Update</th>
+      </tr></thead>
+      <tbody>${csvRows.slice(0,5).map(r=>`<tr>
+        <td style="font-weight:600;">${esc(r.seri)}</td>
+        ${isKorp ? `<td>${esc(r.rating||'—')}</td><td style="font-size:0.72rem;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(r.penerbit||'')}">${esc(r.penerbit||'—')}</td>` : ''}
+        <td>${r.jatuh_tempo||'—'}</td>
+        <td>${r.kupon != null ? r.kupon+'%' : '—'}</td>
+        <td>${r.last_coupon_date||'—'}</td>
+        <td>${r.next_coupon_date||'—'}</td>
+        <td style="color:#27ae60;">${r.harga_jual??'—'}</td>
+        <td style="color:#e74c3c;">${r.harga_beli??'—'}</td>
+        <td>${r.yield != null ? r.yield+'%' : '—'}</td>
+        <td style="font-size:0.72rem;">${r.tanggal_update||'—'}</td>
+      </tr>`).join('')}</tbody>
     </table>`;
     document.getElementById('csvPreviewWrap').style.display = 'block';
   }
@@ -1110,13 +1353,27 @@
     const btn = document.getElementById('uploadSaveBtn');
     btn.textContent = 'Mengimport...'; btn.disabled = true;
     try {
-      let success = 0;
+      let success = 0, skipped = 0;
       for (const row of csvRows) {
-        row.category = cat;
-        const { data: inserted, error } = await window._supabase.from('obligasi_products').insert(row).select().single();
+        // Bangun payload lengkap, strip null agar Supabase tidak error
+        const payload = { category: cat };
+        const fields = [
+          'seri','name','isin','issuer','bond_type','bond_type2',
+          'tanggal_listing','jatuh_tempo','first_cpn_date','last_coupon_date',
+          'next_coupon_date','accrual_date','rating','penerbit','kupon','kupon_freq',
+          'day_count_basis','payment_type','harga_modal','modal_to_sales',
+          'harga_to_customer','harga_jual','harga_beli','yield','tanggal_update'
+        ];
+        fields.forEach(f => { if (row[f] != null && row[f] !== '') payload[f] = row[f]; });
+
+        const { data: inserted, error } = await window._supabase
+          .from('obligasi_products').insert(payload).select().single();
         if (!error && inserted) {
           allData[cat].push(inserted);
           success++;
+        } else {
+          console.warn('Import skip:', row.seri, error?.message);
+          skipped++;
         }
       }
       allData[cat].sort((a,b) => (a.seri||'').localeCompare(b.seri||''));
@@ -1124,17 +1381,23 @@
       document.getElementById('uploadModal').classList.remove('open');
       renderTable(cat);
       switchTab(cat);
-      showToast(`${success} obligasi berhasil diimport ke ${CAT_LABEL[cat]}`, 'success');
-    } catch(e) { console.error(e); showToast('Gagal import data', 'error'); }
+      const msg = skipped > 0
+        ? `${success} berhasil diimport, ${skipped} gagal/dilewati`
+        : `${success} obligasi berhasil diimport ke ${CAT_LABEL[cat]}`;
+      showToast(msg, success > 0 ? 'success' : 'error');
+    } catch(e) { console.error(e); showToast('Gagal import data: ' + e.message, 'error'); }
     finally { btn.textContent = 'Import Data'; btn.disabled = false; }
   }
 
   function downloadTemplate() {
-    const H = 'Seri,Kupon,JatuhTempo,Rating,LastCouponDate,NextCouponDate,HargaJual,HargaBeli,Yield,TanggalUpdate';
-    const E = 'FR0100,6.375,2034-02-15,AAA,2025-01-15,2025-07-15,101.50,100.75,6.1234,2025-01-10';
-    const blob = new Blob([H+'\n'+E], {type:'text/csv'});
+    const cat = document.getElementById('uploadCategory').value || csvTargetCat || activeTab;
+    const f = CSV_FORMAT[cat];
+    if (!f) return;
+    // Ambil baris contoh dari format
+    const blob = new Blob([f.contoh], {type:'text/csv;charset=utf-8;'});
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-    a.download = 'template_obligasi_pasar_sekunder.csv'; a.click();
+    a.download = `template_import_${cat}.csv`; a.click();
+    showToast(`Template ${f.label} didownload`, 'success');
   }
 
   // ===== CSV EXPORT =====
@@ -1330,8 +1593,252 @@
   }
   document.getElementById('fCategory').addEventListener('change', toggleRatingField);
 
+  // ===== UPDATE HARGA via CSV =====
+  let priceRows = [], priceTargetCat = '';
+
+  function openPriceUpdateModal(cat) {
+    priceRows = []; priceTargetCat = cat;
+    document.getElementById('priceUpdateCategory').value = cat;
+    resetPriceUpdateModal();
+    document.getElementById('priceUpdateModal').classList.add('open');
+  }
+
+  function closePriceUpdateModal(e) {
+    if (e.target === document.getElementById('priceUpdateModal'))
+      document.getElementById('priceUpdateModal').classList.remove('open');
+  }
+
+  function resetPriceUpdateModal() {
+    document.getElementById('pricePreviewWrap').style.display = 'none';
+    document.getElementById('priceUpdateSaveBtn').disabled = true;
+    document.getElementById('csvPriceFileInput').value = '';
+    priceRows = [];
+  }
+
+  function handlePriceDragOver(e)  { e.preventDefault(); document.getElementById('priceUploadZone').classList.add('dragover'); }
+  function handlePriceDragLeave()  { document.getElementById('priceUploadZone').classList.remove('dragover'); }
+  function handlePriceDrop(e)      { e.preventDefault(); document.getElementById('priceUploadZone').classList.remove('dragover'); const f = e.dataTransfer.files[0]; if (f) processPriceCSVFile(f); }
+  function handlePriceCSVFile(e)   { const f = e.target.files[0]; if (f) processPriceCSVFile(f); }
+
+  function processPriceCSVFile(file) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const lines = e.target.result.trim().split('\n').filter(l => l.trim());
+      if (lines.length < 2) { showToast('File CSV kosong atau tidak valid', 'error'); return; }
+
+      const headers = lines[0].split(',').map(h => h.trim().replace(/"/g,'').toLowerCase().replace(/\s+/g,''));
+      priceRows = lines.slice(1).map(line => {
+        const vals = parseCSVLine(line);
+        const obj = {};
+        headers.forEach((h, i) => obj[h] = (vals[i]||'').trim().replace(/"/g,''));
+        return mapPriceCSVRow(obj);
+      }).filter(r => r.series);
+
+      const cat = document.getElementById('priceUpdateCategory').value;
+      const existing = allData[cat];
+      const existingSeries = new Set(existing.map(r => (r.seri||'').toUpperCase()));
+
+      let updateCount = 0, insertCount = 0;
+      priceRows.forEach(r => {
+        if (existingSeries.has((r.series||'').toUpperCase())) updateCount++;
+        else insertCount++;
+      });
+
+      renderPricePreview(updateCount, insertCount);
+      document.getElementById('priceUpdateSaveBtn').disabled = priceRows.length === 0;
+    };
+    reader.readAsText(file);
+  }
+
+  function mapPriceCSVRow(obj) {
+    const g = (...keys) => { for (const k of keys) if (obj[k] !== undefined && obj[k] !== '') return obj[k]; return ''; };
+    // Normalise comma decimal → dot
+    const parseNum = v => { if (!v) return null; const n = parseFloat(String(v).replace(',','.')); return isNaN(n) ? null : n; };
+    // Parse date (DD/MM/YYYY or YYYY-MM-DD or DD-MM-YYYY)
+    const parseDate = v => {
+      if (!v) return null;
+      // DD/MM/YYYY
+      const m1 = v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+      if (m1) return `${m1[3]}-${m1[2].padStart(2,'0')}-${m1[1].padStart(2,'0')}`;
+      // DD-MM-YYYY
+      const m2 = v.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
+      if (m2) return `${m2[3]}-${m2[2].padStart(2,'0')}-${m2[1].padStart(2,'0')}`;
+      // YYYY-MM-DD (sudah benar)
+      if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
+      return null;
+    };
+
+    return {
+      series:    g('series','seri','serie','bondcode','code'),
+      currency:  g('currency','ccy','mata_uang','matauang') || '',
+      due_date:  parseDate(g('duedate','due_date','maturity','jatuhtempo','jatuh_tempo','maturitydate')),
+      rating:    g('rating') || null,
+      coupon:    parseNum(g('coupon','kupon','couponrate')),
+      bid:       parseNum(g('bid','hargajual','harga_jual','bidprice')),
+      offer:     parseNum(g('offer','ask','hargabeli','harga_beli','offerprice','askprice')),
+      ytm:       parseNum(g('ytm','yield','ytmpct','ytm%')),
+    };
+  }
+
+  function renderPricePreview(updateCount, insertCount) {
+    // Stats bar
+    document.getElementById('priceUpdateStats').innerHTML = `
+      <div class="stat-item">
+        <span class="stat-num" style="color:var(--gold);">${priceRows.length}</span>
+        <span class="stat-label">Total Baris</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-num" style="color:#1e7e4e;">${updateCount}</span>
+        <span class="stat-label">Akan Diupdate</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-num" style="color:#c07800;">${insertCount}</span>
+        <span class="stat-label">Akan Ditambahkan</span>
+      </div>
+    `;
+
+    // Preview table (max 8 baris)
+    const cat = document.getElementById('priceUpdateCategory').value;
+    const existingSeries = new Set(allData[cat].map(r => (r.seri||'').toUpperCase()));
+    const previewData = priceRows.slice(0, 8);
+
+    document.getElementById('pricePreviewInfo').textContent =
+      `Preview ${previewData.length} dari ${priceRows.length} baris:`;
+
+    document.getElementById('priceCSVPreview').innerHTML = `
+      <table>
+        <thead><tr>
+          <th>Status</th><th>Series</th><th>Currency</th><th>Due Date</th>
+          <th>Rating</th><th>Coupon</th><th>Bid</th><th>Offer</th><th>YTM</th>
+        </tr></thead>
+        <tbody>
+          ${previewData.map(r => {
+            const isUpdate = existingSeries.has((r.series||'').toUpperCase());
+            const badge = isUpdate
+              ? '<span class="badge-update badge-updated">✓ Update</span>'
+              : '<span class="badge-update badge-inserted">+ Baru</span>';
+            return `<tr>
+              <td>${badge}</td>
+              <td style="font-weight:600;">${esc(r.series)}</td>
+              <td>${esc(r.currency||'—')}</td>
+              <td>${r.due_date||'—'}</td>
+              <td>${esc(r.rating||'—')}</td>
+              <td>${r.coupon != null ? r.coupon + '%' : '—'}</td>
+              <td style="color:#27ae60;">${r.bid != null ? r.bid : '—'}</td>
+              <td style="color:#e74c3c;">${r.offer != null ? r.offer : '—'}</td>
+              <td>${r.ytm != null ? r.ytm + '%' : '—'}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>`;
+
+    document.getElementById('pricePreviewWrap').style.display = 'block';
+  }
+
+  async function executePriceUpdate() {
+    if (!priceRows.length) return;
+    if (!window._supabase) { showToast('Koneksi database belum siap', 'error'); return; }
+
+    const cat = document.getElementById('priceUpdateCategory').value;
+    const btn = document.getElementById('priceUpdateSaveBtn');
+    btn.textContent = 'Memproses...'; btn.disabled = true;
+
+    const today = new Date().toISOString().slice(0, 10);
+    const existingMap = {};
+    allData[cat].forEach(r => { existingMap[(r.seri||'').toUpperCase()] = r; });
+
+    let updated = 0, inserted = 0, failed = 0;
+
+    try {
+      for (const row of priceRows) {
+        const seriesKey = (row.series||'').toUpperCase();
+        const existing = existingMap[seriesKey];
+
+        if (existing) {
+          // UPDATE: perbarui harga saja, jangan timpa field lain
+          const patch = { tanggal_update: today };
+          if (row.bid    != null)  patch.harga_jual = row.bid;
+          if (row.offer  != null)  patch.harga_beli = row.offer;
+          if (row.ytm    != null)  patch.yield      = row.ytm;
+          if (row.coupon != null)  patch.kupon      = row.coupon;
+          if (row.due_date)        patch.jatuh_tempo = row.due_date;
+          if (row.rating)          patch.rating      = row.rating;
+
+          const { error } = await window._supabase
+            .from('obligasi_products')
+            .update(patch)
+            .eq('id', existing.id);
+
+          if (error) { console.warn('Update error', row.series, error); failed++; }
+          else {
+            // Update local cache
+            Object.assign(existing, patch);
+            updated++;
+          }
+        } else {
+          // INSERT: tambah record baru
+          const newRow = {
+            seri:          row.series,
+            category:      cat,
+            harga_jual:    row.bid,
+            harga_beli:    row.offer,
+            yield:         row.ytm,
+            kupon:         row.coupon,
+            jatuh_tempo:   row.due_date,
+            rating:        row.rating,
+            tanggal_update: today,
+          };
+
+          const { data: insertedData, error } = await window._supabase
+            .from('obligasi_products')
+            .insert(newRow)
+            .select()
+            .single();
+
+          if (error) { console.warn('Insert error', row.series, error); failed++; }
+          else {
+            allData[cat].push(insertedData);
+            existingMap[(insertedData.seri||'').toUpperCase()] = insertedData;
+            inserted++;
+          }
+        }
+      }
+
+      allData[cat].sort((a,b) => (a.seri||'').localeCompare(b.seri||''));
+      filtered[cat] = [...allData[cat]];
+      renderTable(cat);
+      switchTab(cat);
+      document.getElementById('priceUpdateModal').classList.remove('open');
+
+      const parts = [];
+      if (updated) parts.push(`${updated} diperbarui`);
+      if (inserted) parts.push(`${inserted} ditambahkan`);
+      if (failed)  parts.push(`${failed} gagal`);
+      showToast('✅ ' + parts.join(', '), updated + inserted > 0 ? 'success' : 'error');
+
+    } catch(e) {
+      console.error('executePriceUpdate error:', e);
+      showToast('Gagal proses update: ' + e.message, 'error');
+    } finally {
+      btn.textContent = '⬆ Proses Update'; btn.disabled = false;
+    }
+  }
+
+  function downloadPriceTemplate() {
+    const H = 'Currency,Series,DueDate,Rating,Coupon,Bid,Offer,YTM';
+    const E1 = 'IDR,FR0037,15/09/2026,,8.375,100.86,102.24,6.6700';
+    const E2 = 'IDR,FR0042,15/07/2027,,10.250,102.75,104.48,7.1200';
+    const E3 = 'USD,INDO30,15/04/2030,,3.850,95.50,96.25,4.5100';
+    const E4 = 'IDR,PPLN03CN3,10/06/2028,AAA,9.500,101.00,102.50,9.1000';
+    const blob = new Blob([[H,E1,E2,E3,E4].join('\n')], {type:'text/csv'});
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+    a.download = 'template_update_harga_obligasi.csv'; a.click();
+  }
+
   // BOOT
   initAuth();
+  // Init format info untuk kategori default upload modal
+  renderCsvFormatInfo('gov-idr');
 </script>
 </body>
 </html>

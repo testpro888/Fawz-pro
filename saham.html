@@ -10,6 +10,7 @@
   <script src="js/saham-holidays.js"></script>
   <script src="js/saham-aggregation.js"></script>
   <script src="js/saham-validation.js"></script>
+  <script src="js/commission-settings.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script>
     const SUPABASE_URL = (window.__FAWZ_CONFIG__ || {}).supabaseUrl || '';
@@ -284,7 +285,10 @@
       </div>
       <div class="form-group">
         <label class="form-label">Sales Person <span style="color:#aaa;font-weight:400;">(Otomatis)</span></label>
-        <input class="form-input" id="fSalesName" placeholder="Terisi otomatis" readonly style="background:#f9f9fb;"/>
+        <select class="form-select" id="fSalesName">
+          <option value="">-- Pilih Sales --</option>
+        </select>
+        <small id="salesListMsg" class="text-danger"></small>
       </div>
       <div class="form-group">
         <label class="form-label">Volume Transaksi (Rp)</label>
@@ -365,6 +369,11 @@
   let curUser = null;
   let customers = [];
 
+  // Sales list cache — loaded once per page session (Req 1.7)
+  var salesList = [];
+  var salesListLoaded = false;
+  var salesListError = false;
+
   function getCurUser() {
     const raw = sessionStorage.getItem('fawz_user');
     return raw ? JSON.parse(raw) : null;
@@ -389,6 +398,7 @@
     // Head Sales bisa edit tapi lihat semua transaksi sales
 
     await loadCustomers();
+    loadSalesList(); // non-blocking — loads dropdown in background
     await loadData();
   }
 
@@ -868,7 +878,11 @@
     const c = customers.find(x => x.client_id === clientId);
     if (c) {
       document.getElementById('fClientName').value = c.client_name || '';
-      document.getElementById('fSalesName').value = c.sales_person_name || c.sales_name || c.sales || '';
+      if (salesListLoaded) {
+        autoSelectSales(c.sales_person_name || c.sales_name || c.sales || '');
+      } else {
+        document.getElementById('fSalesName').value = c.sales_person_name || c.sales_name || c.sales || '';
+      }
     }
   }
 
@@ -921,12 +935,77 @@
     dropdown.style.display = 'block';
   }
 
+  // ── Sales Dropdown Functions (Req 1.1–1.7) ──────────────────────────────
+
+  async function loadSalesList() {
+    if (salesListLoaded || salesListError) return;
+    try {
+      const { data, error } = await _sb.from('sales').select('id, nama').order('nama');
+      if (error) throw error;
+      salesList = data || [];
+      salesListLoaded = true;
+      populateSalesDropdown(salesList);
+    } catch (e) {
+      console.error('loadSalesList error:', e);
+      salesListError = true;
+      fallbackToSalesTextField('Gagal memuat daftar sales');
+    }
+  }
+
+  function populateSalesDropdown(list) {
+    const sel = document.getElementById('fSalesName');
+    if (!sel || sel.tagName !== 'SELECT') return;
+    // Keep first placeholder option, remove the rest
+    while (sel.options.length > 1) sel.remove(1);
+    list.forEach(function(s) {
+      const opt = document.createElement('option');
+      opt.value = s.nama; // store nama so sales_name in DB stays as text
+      opt.textContent = s.nama;
+      sel.appendChild(opt);
+    });
+    const msg = document.getElementById('salesListMsg');
+    if (msg) {
+      msg.textContent = list.length === 0 ? 'Belum ada data sales terdaftar' : '';
+    }
+  }
+
+  function autoSelectSales(customerSalesName) {
+    const sel = document.getElementById('fSalesName');
+    if (!sel) return;
+    if (!customerSalesName) { sel.value = ''; return; }
+    const match = salesList.find(function(s) {
+      return s.nama.toLowerCase() === customerSalesName.toLowerCase();
+    });
+    sel.value = match ? match.nama : '';
+  }
+
+  function fallbackToSalesTextField(errorMessage) {
+    const sel = document.getElementById('fSalesName');
+    if (!sel) return;
+    // Replace select with text input
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.id = 'fSalesName';
+    input.className = sel.className;
+    input.placeholder = 'Ketik nama sales...';
+    sel.parentNode.replaceChild(input, sel);
+    const msg = document.getElementById('salesListMsg');
+    if (msg) msg.textContent = errorMessage || 'Gagal memuat daftar sales';
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+
   function selectClient(clientId) {
     const c = customers.find(x => x.client_id === clientId);
     if (c) {
       document.getElementById('fClientId').value = c.client_id;
       document.getElementById('fClientName').value = c.client_name || '';
-      document.getElementById('fSalesName').value = c.sales_person_name || c.sales_name || '';
+      // Use autoSelectSales for case-insensitive match (Req 1.2–1.4)
+      if (salesListLoaded) {
+        autoSelectSales(c.sales_person_name || c.sales_name || '');
+      } else {
+        document.getElementById('fSalesName').value = c.sales_person_name || c.sales_name || '';
+      }
     }
     document.getElementById('clientDropdown').style.display = 'none';
   }
