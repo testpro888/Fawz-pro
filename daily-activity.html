@@ -285,7 +285,7 @@
     <button class="btn-primary" onclick="openAddJobModal()">+ Tambah Jobdesk</button>
   </div>
 
-  <!-- Tab row — hanya head_account -->
+  <!-- Tab row — admin & head_account -->
   <div class="tab-row" id="tabRow" style="display:none;">
     <button class="tab-btn active" id="tabMyActivity" onclick="switchTab('my')">Aktivitas Saya</button>
     <button class="tab-btn"        id="tabAllActivity" onclick="switchTab('all')">Semua Progress Tim</button>
@@ -352,9 +352,9 @@
         <button class="btn-primary" id="btnAddEntry" onclick="openAddEntryModal()" style="display:none;">
           + Update Progress
         </button>
-        <div id="jobActionBtns" style="display:none; gap:8px; display:none;">
-          <button class="btn-ghost"      id="jobEditBtn" style="font-size:0.8rem;padding:7px 14px;" onclick="">Edit Jobdesk</button>
-          <button class="btn-del-entry"  id="jobDelBtn"  style="font-size:0.8rem;padding:7px 14px;" onclick="">Hapus Jobdesk</button>
+        <div id="jobActionBtns" style="display:none; gap:8px;">
+          <button class="btn-ghost"     id="jobEditBtn" style="font-size:0.8rem;padding:7px 14px;">Edit Jobdesk</button>
+          <button class="btn-del-entry" id="jobDelBtn"  style="font-size:0.8rem;padding:7px 14px;">Hapus Jobdesk</button>
         </div>
       </div>
       <div id="timelineContent">
@@ -425,7 +425,7 @@
    daily-activity.js — inline
 ═══════════════════════════════════════════════ */
 
-const ALLOWED_ROLES = ['admin', 'treasury', 'head_account'];
+const ALLOWED_ROLES = ['admin', 'treasury', 'head_account', 'sales', 'head_sales'];
 const STATUS_LABELS = {
   inprogress: 'In Progress',
   pending:    'Pending',
@@ -464,9 +464,10 @@ async function init() {
     return;
   }
 
-  // Filter user (hanya head_account yang bisa lihat semua)
+  // Filter user & tab — admin dan head_account bisa lihat semua pengguna
   populateMonthFilter();
-  if (curUser.role === 'head_account') {
+  const isManager = ['admin', 'head_account'].includes(curUser.role);
+  if (isManager) {
     document.getElementById('filterUser').style.display = 'block';
     document.getElementById('tabRow').style.display = 'flex';
     await loadUserFilter();
@@ -493,17 +494,18 @@ function populateMonthFilter() {
 
 async function loadUserFilter() {
   const sel = document.getElementById('filterUser');
+  while (sel.options.length > 1) sel.remove(1);
   try {
     const { data } = await window._supabase
       .from('accounts')
       .select('username, name, role')
-      .in('role', ['admin', 'treasury', 'head_account'])
       .order('name');
+    const ROLE_DISP2 = { admin:'Admin', treasury:'Bonds', head_account:'Head Account', sales:'Sales', head_sales:'Head Sales' };
     if (data) {
       data.forEach(u => {
         const opt = document.createElement('option');
         opt.value = u.username;
-        opt.textContent = u.name + ' (' + (u.role === 'treasury' ? 'Bonds' : u.role === 'head_account' ? 'Head Account' : 'Admin') + ')';
+        opt.textContent = (u.name || u.username) + ' (' + (ROLE_DISP2[u.role] || u.role) + ')';
         sel.appendChild(opt);
       });
     }
@@ -513,13 +515,14 @@ async function loadUserFilter() {
 /* ── LOAD DATA ── */
 async function loadData() {
   const month    = document.getElementById('filterMonth').value;
-  const filterU  = document.getElementById('filterUser').value;
+  const filterU  = document.getElementById('filterUser')?.value || '';
   const [yr, mo] = month.split('-');
   const dateFrom = `${yr}-${mo}-01`;
-  const dateTo   = `${yr}-${String(Number(mo)+1).padStart(2,'0')}-01`;
+  const nextMo   = Number(mo) === 12 ? 1 : Number(mo) + 1;
+  const nextYr   = Number(mo) === 12 ? Number(yr) + 1 : Number(yr);
+  const dateTo   = `${nextYr}-${String(nextMo).padStart(2,'0')}-01`;
 
-  // Determine whose data to load
-  const targetUser = (curUser.role === 'head_account' && filterU) ? filterU : curUser.username;
+  const isManager = ['admin', 'head_account'].includes(curUser.role);
 
   try {
     let jobQuery = window._supabase
@@ -529,24 +532,27 @@ async function loadData() {
       .lt('start_date', dateTo)
       .order('start_date', { ascending: true });
 
-    if (curUser.role !== 'head_account') {
+    // Manager lihat semua, atau filter per user jika dipilih
+    if (isManager) {
+      if (filterU) jobQuery = jobQuery.eq('created_by', filterU);
+      // else: tanpa filter — tampilkan semua user
+    } else {
       jobQuery = jobQuery.eq('created_by', curUser.username);
-    } else if (filterU) {
-      jobQuery = jobQuery.eq('created_by', filterU);
     }
 
-    const { data: jobs } = await jobQuery;
-    allJobs = jobs || [];
+    const { data: jobs, error: jobErr } = await jobQuery;
+    if (jobErr) { console.error('jobs error:', jobErr); allJobs = []; }
+    else allJobs = jobs || [];
 
-    // Load all entries for these jobs
     if (allJobs.length > 0) {
       const jobIds = allJobs.map(j => j.id);
-      const { data: entries } = await window._supabase
+      const { data: entries, error: entErr } = await window._supabase
         .from('daily_activity_entries')
         .select('*')
         .in('job_id', jobIds)
         .order('entry_date', { ascending: true });
-      allEntries = entries || [];
+      if (entErr) { console.error('entries error:', entErr); allEntries = []; }
+      else allEntries = entries || [];
     } else {
       allEntries = [];
     }
@@ -554,7 +560,6 @@ async function loadData() {
     renderJobList();
     updateStats();
 
-    // Re-select job if still in list
     if (selectedJob) {
       const still = allJobs.find(j => j.id === selectedJob.id);
       if (still) { selectedJob = still; renderTimeline(still); }
@@ -577,20 +582,29 @@ function renderJobList() {
     container.innerHTML = '<div style="color:#bbb;font-size:0.84rem;padding:8px;text-align:center;">Belum ada jobdesk.<br>Klik tombol + untuk menambah.</div>';
     return;
   }
+  const isManager = ['admin', 'head_account'].includes(curUser.role);
   container.innerHTML = allJobs.map((job, idx) => {
     const color    = JOB_COLORS[idx % JOB_COLORS.length];
     const entries  = allEntries.filter(e => e.job_id === job.id)
-      .sort((a, b) => new Date(b.entry_date) - new Date(a.entry_date) || new Date(b.created_at) - new Date(a.created_at));
+      .sort((a, b) => new Date(b.entry_date) - new Date(a.entry_date) || new Date(b.created_at||0) - new Date(a.created_at||0));
     const isActive = selectedJob && selectedJob.id === job.id;
     const lastEntry = entries[0];
     const lastStatusBadge = lastEntry
       ? `<span class="job-last-status jls-${lastEntry.status}">${STATUS_LABELS[lastEntry.status]}</span>`
       : '';
+    const ownerTag = isManager && job.created_by !== curUser.username
+      ? `<div style="font-size:0.68rem;color:#bbb;margin-top:2px;padding-left:20px;">${esc(job.created_by)}</div>`
+      : '';
     return `
       <div class="job-item ${isActive ? 'active' : ''}" onclick="selectJob('${esc(job.id)}')">
-        <div class="job-dot" style="background:${color}"></div>
-        <div class="job-name">${esc(job.name)}</div>
-        ${lastStatusBadge}
+        <div style="width:100%;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div class="job-dot" style="background:${color};flex-shrink:0;"></div>
+            <div class="job-name" style="flex:1;">${esc(job.name)}</div>
+            ${lastStatusBadge}
+          </div>
+          ${ownerTag}
+        </div>
       </div>`;
   }).join('');
 }
@@ -602,13 +616,19 @@ function selectJob(jobId) {
   selectedJob = job;
   renderJobList();
   renderTimeline(job);
+
+  const isManager = ['admin', 'head_account'].includes(curUser.role);
+  const canEdit   = isManager || job.created_by === curUser.username;
+
   document.getElementById('btnAddEntry').style.display = 'flex';
-  const canEdit = curUser.role === 'head_account' || job.created_by === curUser.username;
+
   const actionBtns = document.getElementById('jobActionBtns');
-  if (actionBtns && canEdit) {
+  if (canEdit) {
     actionBtns.style.display = 'flex';
     document.getElementById('jobEditBtn').onclick = () => openEditJobModal(job.id);
     document.getElementById('jobDelBtn').onclick  = () => deleteJob(job.id, job.name);
+  } else {
+    actionBtns.style.display = 'none';
   }
 }
 
@@ -626,10 +646,12 @@ function resetTimeline() {
 function renderTimeline(job) {
   document.getElementById('timelineTitle').textContent = job.name;
   const startFmt = job.start_date ? new Date(job.start_date).toLocaleDateString('id-ID', {day:'numeric',month:'long',year:'numeric'}) : '';
-  const canEdit  = curUser.role === 'head_account' || job.created_by === curUser.username;
+  const isManager = ['admin', 'head_account'].includes(curUser.role);
+  const canEdit   = isManager || job.created_by === curUser.username;
 
   let meta = 'Dimulai: ' + startFmt;
   if (job.description) meta += ' · ' + job.description;
+  if (isManager && job.created_by !== curUser.username) meta += ' · Oleh: ' + job.created_by;
   document.getElementById('timelineMeta').textContent = meta;
 
   const entries = allEntries.filter(e => e.job_id === job.id);
