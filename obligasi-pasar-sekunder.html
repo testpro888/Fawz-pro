@@ -686,7 +686,48 @@
 
   // ===== AUTH — navbar UI dihandle navbar.html =====
   function initAuth() {
-    if (!sessionStorage.getItem('fawz_user')) { window.location.href = 'login.html'; }
+    const raw = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember');
+    if (!raw) { window.location.href = 'login.html'; return; }
+    try {
+      const user = JSON.parse(raw);
+      sessionStorage.setItem('fawz_user', raw);
+      if (user.role === 'sales') applySalesRestrictions();
+    } catch(e) { window.location.href = 'login.html'; }
+  }
+
+  function applySalesRestrictions() {
+    // Sembunyikan tombol CSV, Update Harga, Export, dan Tambah untuk role sales
+    // Jalankan setelah DOM siap — kita pakai MutationObserver / DOMContentLoaded sudah selesai
+    function hideBtns() {
+      // Semua tombol di section-actions per tab
+      CATEGORIES.forEach(cat => {
+        const panel = document.getElementById('panel-' + cat);
+        if (!panel) return;
+        panel.querySelectorAll('.section-actions .btn').forEach(btn => {
+          const txt = btn.textContent.trim();
+          if (
+            txt === 'CSV' ||
+            txt.includes('Update Harga') ||
+            txt === 'Export' ||
+            txt.includes('Tambah')
+          ) btn.style.display = 'none';
+        });
+        // Sembunyikan juga kolom Aksi (Edit/Hapus) di tabel
+        panel.querySelectorAll('tbody .action-btns').forEach(el => el.style.display = 'none');
+      });
+      // Sembunyikan header kolom Aksi
+      document.querySelectorAll('thead th:last-child').forEach(th => {
+        if (th.textContent.trim() === 'Aksi') th.style.display = 'none';
+      });
+    }
+    // Jalankan setelah render pertama selesai
+    setTimeout(hideBtns, 0);
+    // Pasang observer supaya tetap tersembunyi setelah re-render tabel
+    const observer = new MutationObserver(hideBtns);
+    CATEGORIES.forEach(cat => {
+      const tbody = document.getElementById('tbody-' + cat);
+      if (tbody) observer.observe(tbody, { childList: true, subtree: true });
+    });
   }
   // ===== TABS =====
   function switchTab(cat) {
