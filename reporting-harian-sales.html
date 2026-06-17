@@ -32,8 +32,6 @@
     .btn { display: inline-flex; align-items: center; gap: 7px; padding: 11px 20px; border-radius: 10px; font-family: 'Inter', sans-serif; font-size: 0.875rem; font-weight: 600; cursor: pointer; transition: all 0.2s; border: none; }
     .btn-primary { background: linear-gradient(135deg, var(--gold), #e8931a); color: #fff; box-shadow: 0 4px 14px rgba(245,166,35,0.35); }
     .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(245,166,35,0.45); }
-    .btn-outline { background: #fff; color: var(--navy); border: 1.5px solid var(--border); }
-    .btn-outline:hover { border-color: var(--gold); color: var(--gold); }
 
     /* Filter bar */
     .filter-card { background: #fff; border-radius: 16px; padding: 20px 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); margin-bottom: 24px; animation: fadeUp 0.4s 0.05s ease both; }
@@ -45,9 +43,8 @@
 
     /* Result card */
     .result-card { background: #fff; border-radius: 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); overflow: hidden; animation: fadeUp 0.4s 0.1s ease both; }
-    .result-header { background: var(--navy); padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; }
+    .result-header { background: var(--navy); padding: 16px 24px; }
     .result-title { color: #fff; font-weight: 700; font-size: 0.95rem; }
-    .result-body { padding: 0; }
 
     /* Report text area */
     .report-output-wrap { position: relative; }
@@ -63,10 +60,9 @@
       resize: vertical;
       background: #fafafa;
       color: var(--text);
-      border-radius: 0 0 16px 16px;
     }
 
-    .copy-btn-wrap { padding: 14px 24px 18px; display: flex; gap: 10px; justify-content: flex-end; background: #fafafa; border-top: 1px solid var(--border); }
+    .copy-btn-wrap { padding: 14px 24px 18px; display: flex; gap: 10px; justify-content: flex-end; background: #fafafa; border-top: 1px solid var(--border); border-radius: 0 0 16px 16px; }
     .copy-btn {
       display: inline-flex; align-items: center; gap: 7px;
       padding: 10px 22px; border-radius: 10px;
@@ -81,7 +77,6 @@
 
     /* Loading / empty state */
     .state-box { padding: 60px 20px; text-align: center; color: #bbb; background: #fafafa; border-radius: 0 0 16px 16px; font-size: 0.9rem; }
-    .state-box .icon { font-size: 2.5rem; margin-bottom: 12px; }
 
     /* Toast */
     .toast-container { position: fixed; bottom: 28px; right: 28px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
@@ -117,7 +112,7 @@
   <div class="page-header">
     <div>
       <div class="page-title">Reporting Harian Sales</div>
-      <div class="page-subtitle">Volume & Fee per Sales berdasarkan tanggal yang dipilih</div>
+      <div class="page-subtitle">Volume & Fee per Sales berdasarkan bulan dari tanggal yang dipilih</div>
       <div class="title-underline"></div>
     </div>
   </div>
@@ -130,7 +125,7 @@
         <input type="date" id="filterDate" class="filter-input" style="min-width:180px;"/>
       </div>
       <button class="btn btn-primary" onclick="generateReport()" id="btnGenerate">
-        ⚡ Generate Report
+        Generate Report
       </button>
     </div>
   </div>
@@ -142,7 +137,6 @@
     </div>
     <div id="resultArea">
       <div class="state-box">
-        <div class="icon">📊</div>
         Pilih tanggal lalu klik <strong>Generate Report</strong>
       </div>
     </div>
@@ -153,7 +147,6 @@
 
 <script>
   // ── Daftar Sales Tetap Maybank ─────────────────────────────────────────
-  // Urutan sesuai permintaan. Nama ini dipakai untuk matching ke kolom sales_name di DB.
   const SALES_LIST = [
     'DERRY ELVRAS',
     'FENNY',
@@ -190,7 +183,7 @@
     t.className = 'toast toast-' + type;
     t.textContent = msg;
     c.appendChild(t);
-    setTimeout(() => t.remove(), 3500);
+    setTimeout(function() { t.remove(); }, 3500);
   }
 
   // ── Generate Report ───────────────────────────────────────────────────
@@ -202,41 +195,61 @@
     }
 
     const btn = document.getElementById('btnGenerate');
-    btn.textContent = '⏳ Memuat...';
+    btn.textContent = 'Memuat...';
     btn.disabled = true;
 
     try {
-      // Fetch all transactions for the selected date
-      const { data, error } = await _sb
-        .from('saham_transaksi')
-        .select('sales_name, volume, fee')
-        .eq('tanggal', dateVal);
+      // Derive month range from the selected date
+      const [year, mon] = dateVal.split('-').map(Number);
+      const startDate = year + '-' + String(mon).padStart(2, '0') + '-01';
+      const lastDay   = new Date(year, mon, 0).getDate();
+      const endDate   = year + '-' + String(mon).padStart(2, '0') + '-' + String(lastDay).padStart(2, '0');
 
-      if (error) throw error;
+      // Fetch all transactions for the entire month — paginated
+      var rows = [];
+      var pageSize = 1000;
+      var offset = 0;
+      var hasMore = true;
 
-      const rows = data || [];
+      while (hasMore) {
+        const { data, error } = await _sb
+          .from('saham_transaksi')
+          .select('sales_name, volume, fee')
+          .gte('tanggal', startDate)
+          .lte('tanggal', endDate)
+          .range(offset, offset + pageSize - 1);
 
-      // Aggregate per sales — case-insensitive matching
+        if (error) throw error;
+        var chunk = data || [];
+        rows = rows.concat(chunk);
+        if (chunk.length < pageSize) {
+          hasMore = false;
+        } else {
+          offset += pageSize;
+        }
+      }
+
+      // Aggregate per sales — case-insensitive matching to canonical name
       const salesMap = {};
-      for (const r of rows) {
+      for (var i = 0; i < rows.length; i++) {
+        const r = rows[i];
         const rawName = (r.sales_name || '').trim();
-        // Try to match to canonical name in SALES_LIST (case-insensitive)
-        const canonical = SALES_LIST.find(
-          s => s.toLowerCase() === rawName.toLowerCase()
-        ) || rawName;
+        const canonical = SALES_LIST.find(function(s) {
+          return s.toLowerCase() === rawName.toLowerCase();
+        }) || rawName;
         if (!salesMap[canonical]) salesMap[canonical] = { volume: 0, fee: 0 };
         salesMap[canonical].volume += Number(r.volume) || 0;
         salesMap[canonical].fee    += Number(r.fee)    || 0;
       }
 
-      // Build text report
+      // Build text report — judul pakai tanggal yang dipilih
       const formattedDate = formatDate(dateVal);
       const lines = [];
       lines.push('Report Harian Sales Maybank (' + formattedDate + ')');
       lines.push('');
 
-      SALES_LIST.forEach((salesName, idx) => {
-        const entry = salesMap[salesName];
+      SALES_LIST.forEach(function(salesName, idx) {
+        const entry  = salesMap[salesName];
         const volume = entry ? entry.volume : 0;
         const fee    = entry ? entry.fee    : 0;
 
@@ -248,7 +261,7 @@
 
       const reportText = lines.join('\n').trimEnd();
 
-      // Render result area
+      // Render result
       document.getElementById('resultTitle').textContent =
         'Report Harian Sales — ' + formattedDate;
 
@@ -259,18 +272,18 @@
           '</textarea>' +
         '</div>' +
         '<div class="copy-btn-wrap">' +
-          '<button class="copy-btn" id="copyBtn" onclick="copyReport()">📋 Copy Report</button>' +
+          '<button class="copy-btn" id="copyBtn" onclick="copyReport()">Copy Report</button>' +
         '</div>';
 
     } catch (e) {
       console.error('Report error:', e);
       document.getElementById('resultArea').innerHTML =
-        '<div class="state-box"><div class="icon">⚠️</div>Gagal memuat data: ' +
+        '<div class="state-box">Gagal memuat data: ' +
         escapeHtml(e.message || 'Terjadi kesalahan') + '</div>';
       showToast('Gagal memuat data', 'error');
     }
 
-    btn.textContent = '⚡ Generate Report';
+    btn.textContent = 'Generate Report';
     btn.disabled = false;
   }
 
@@ -314,10 +327,10 @@
   function showCopied() {
     const btn = document.getElementById('copyBtn');
     if (btn) {
-      btn.textContent = '✅ Tersalin!';
+      btn.textContent = 'Tersalin!';
       btn.classList.add('copied');
       setTimeout(function() {
-        btn.textContent = '📋 Copy Report';
+        btn.textContent = 'Copy Report';
         btn.classList.remove('copied');
       }, 2000);
     }
@@ -326,7 +339,6 @@
 
   // ── Init ──────────────────────────────────────────────────────────────
   window.addEventListener('DOMContentLoaded', function() {
-    // Default ke hari ini
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('filterDate').value = today;
   });
