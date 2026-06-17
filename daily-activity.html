@@ -105,6 +105,15 @@
     .job-name { font-size: 0.88rem; font-weight: 500; color: var(--navy); flex: 1; }
     .job-count { font-size: 0.72rem; font-weight: 700; background: #f0f0f5; color: #888; padding: 2px 8px; border-radius: 20px; }
     .job-item.active .job-count { background: rgba(245,166,35,0.15); color: #b87e10; }
+    .job-last-status {
+      font-size: 0.62rem; font-weight: 700; padding: 2px 7px;
+      border-radius: 20px; letter-spacing: 0.3px; text-transform: uppercase; flex-shrink: 0;
+    }
+    .jls-inprogress { background: rgba(59,130,246,0.1);  color: #2563eb; }
+    .jls-pending    { background: rgba(245,158,11,0.12); color: #d97706; }
+    .jls-finished   { background: rgba(16,185,129,0.12); color: #059669; }
+    .jls-cancelled  { background: rgba(239,68,68,0.1);   color: #dc2626; }
+    .jls-returned   { background: rgba(139,92,246,0.1);  color: #7c3aed; }
 
     /* ── TIMELINE PANEL (RIGHT) ── */
     .timeline-panel {
@@ -197,6 +206,50 @@
     /* Admin-only badge */
     .admin-badge { background: rgba(74,108,223,0.1); color: #4a6cdf; font-size: 0.68rem; font-weight: 700; padding: 2px 8px; border-radius: 20px; }
 
+    /* ── OVERVIEW TABLE (head_account) ── */
+    .overview-panel {
+      background: #fff; border-radius: 16px; padding: 24px 28px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+      margin-bottom: 22px; animation: fadeUp 0.4s 0.12s ease both;
+      display: none;
+    }
+    .overview-panel.visible { display: block; }
+    .tab-row {
+      display: flex; gap: 8px; margin-bottom: 22px; border-bottom: 2px solid #f0f0f5; padding-bottom: 0;
+    }
+    .tab-btn {
+      padding: 9px 20px; border: none; background: none; cursor: pointer;
+      font-family: 'Inter', sans-serif; font-size: 0.88rem; font-weight: 500; color: #aaa;
+      border-bottom: 2px solid transparent; margin-bottom: -2px;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .tab-btn.active { color: var(--navy); border-bottom-color: var(--gold); font-weight: 700; }
+    .tab-btn:hover  { color: var(--navy); }
+
+    .overview-table { width: 100%; border-collapse: collapse; }
+    .overview-table th {
+      font-size: 0.68rem; font-weight: 700; color: #bbb;
+      text-transform: uppercase; letter-spacing: 0.8px;
+      padding: 8px 12px; text-align: left; border-bottom: 1px solid #f0f0f5;
+    }
+    .overview-table td { padding: 11px 12px; font-size: 0.86rem; color: #333; border-bottom: 1px solid #f8f8fc; vertical-align: middle; }
+    .overview-table tr:last-child td { border-bottom: none; }
+    .overview-table tr:hover td { background: #fffbf3; cursor: pointer; }
+    .ov-user-chip {
+      display: inline-flex; align-items: center; gap: 6px;
+    }
+    .ov-avatar {
+      width: 26px; height: 26px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--navy), #1a0e4a);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.72rem; font-weight: 700; color: var(--gold); flex-shrink: 0;
+    }
+    .ov-role-tag { font-size: 0.68rem; padding: 2px 7px; border-radius: 10px; font-weight: 600; }
+    .ov-role-admin    { background: rgba(74,108,223,0.1);  color: #4a6cdf; }
+    .ov-role-treasury { background: rgba(139,92,246,0.1);  color: #7c3aed; }
+    .ov-role-head_account { background: rgba(245,166,35,0.15); color: #b87e10; }
+    .ov-empty { text-align: center; padding: 32px; color: #bbb; font-size: 0.88rem; }
+
     @media (max-width: 900px) { .main-grid { grid-template-columns: 1fr; } }
     @media (max-width: 640px) {
       .stats-row { grid-template-columns: repeat(2, 1fr); }
@@ -232,6 +285,12 @@
     <button class="btn-primary" onclick="openAddJobModal()">+ Tambah Jobdesk</button>
   </div>
 
+  <!-- Tab row — hanya head_account -->
+  <div class="tab-row" id="tabRow" style="display:none;">
+    <button class="tab-btn active" id="tabMyActivity" onclick="switchTab('my')">Aktivitas Saya</button>
+    <button class="tab-btn"        id="tabAllActivity" onclick="switchTab('all')">Semua Progress Tim</button>
+  </div>
+
   <!-- Stats -->
   <div class="stats-row">
     <div class="stat-card inprogress">
@@ -258,6 +317,14 @@
       <div class="stat-label">Return</div>
       <div class="stat-num" id="statReturned">0</div>
       <div class="stat-sub">dikembalikan</div>
+    </div>
+  </div>
+
+  <!-- Overview Panel — head_account semua progress tim -->
+  <div class="overview-panel" id="overviewPanel">
+    <div class="panel-title">Semua Progress Tim</div>
+    <div id="overviewContent">
+      <div class="ov-empty">Memuat...</div>
     </div>
   </div>
 
@@ -397,6 +464,7 @@ async function init() {
   populateMonthFilter();
   if (curUser.role === 'head_account') {
     document.getElementById('filterUser').style.display = 'block';
+    document.getElementById('tabRow').style.display = 'flex';
     await loadUserFilter();
   }
 
@@ -507,13 +575,18 @@ function renderJobList() {
   }
   container.innerHTML = allJobs.map((job, idx) => {
     const color    = JOB_COLORS[idx % JOB_COLORS.length];
-    const entries  = allEntries.filter(e => e.job_id === job.id);
+    const entries  = allEntries.filter(e => e.job_id === job.id)
+      .sort((a, b) => new Date(b.entry_date) - new Date(a.entry_date) || new Date(b.created_at) - new Date(a.created_at));
     const isActive = selectedJob && selectedJob.id === job.id;
+    const lastEntry = entries[0];
+    const lastStatusBadge = lastEntry
+      ? `<span class="job-last-status jls-${lastEntry.status}">${STATUS_LABELS[lastEntry.status]}</span>`
+      : '';
     return `
       <div class="job-item ${isActive ? 'active' : ''}" onclick="selectJob('${esc(job.id)}')">
         <div class="job-dot" style="background:${color}"></div>
         <div class="job-name">${esc(job.name)}</div>
-        <span class="job-count">${entries.length}</span>
+        ${lastStatusBadge}
       </div>`;
   }).join('');
 }
@@ -604,15 +677,219 @@ function renderTimeline(job) {
   }
 }
 
-/* ── STATS ── */
+/* ── STATS — berdasarkan status TERAKHIR per jobdesk ── */
 function updateStats() {
   const counts = { inprogress:0, pending:0, finished:0, cancelled:0, returned:0 };
-  allEntries.forEach(e => { if (counts[e.status] !== undefined) counts[e.status]++; });
+  allJobs.forEach(job => {
+    const entries = allEntries
+      .filter(e => e.job_id === job.id)
+      .sort((a, b) => new Date(b.entry_date) - new Date(a.entry_date) || new Date(b.created_at) - new Date(a.created_at));
+    if (entries.length > 0) {
+      const lastStatus = entries[0].status;
+      if (counts[lastStatus] !== undefined) counts[lastStatus]++;
+    }
+  });
   document.getElementById('statInprogress').textContent = counts.inprogress;
   document.getElementById('statPending').textContent    = counts.pending;
   document.getElementById('statFinished').textContent   = counts.finished;
   document.getElementById('statCancelled').textContent  = counts.cancelled;
   document.getElementById('statReturned').textContent   = counts.returned;
+}
+
+/* ── TAB SWITCH (head_account only) ── */
+let currentTab = 'my';
+
+function switchTab(tab) {
+  currentTab = tab;
+  document.getElementById('tabMyActivity').classList.toggle('active',  tab === 'my');
+  document.getElementById('tabAllActivity').classList.toggle('active', tab === 'all');
+
+  const mainGrid    = document.querySelector('.main-grid');
+  const statsRow    = document.querySelector('.stats-row');
+  const overviewPanel = document.getElementById('overviewPanel');
+
+  if (tab === 'all') {
+    mainGrid.style.display    = 'none';
+    statsRow.style.display    = 'none';
+    overviewPanel.classList.add('visible');
+    renderOverview();
+  } else {
+    mainGrid.style.display    = '';
+    statsRow.style.display    = '';
+    overviewPanel.classList.remove('visible');
+  }
+}
+
+/* ── OVERVIEW TABLE (head_account) ── */
+let allOverviewData = []; // { user, jobs, entries }
+
+async function renderOverview() {
+  const content = document.getElementById('overviewContent');
+  content.innerHTML = '<div class="ov-empty">Memuat data tim...</div>';
+
+  try {
+    // Load all jobs + entries for allowed roles, no date filter
+    const month    = document.getElementById('filterMonth').value;
+    const [yr, mo] = month.split('-');
+    const dateFrom = `${yr}-${mo}-01`;
+    const nextMo   = Number(mo) + 1;
+    const nextYr   = nextMo > 12 ? Number(yr) + 1 : yr;
+    const dateTo   = `${String(nextYr)}-${String(nextMo > 12 ? 1 : nextMo).padStart(2,'0')}-01`;
+
+    const { data: jobs } = await window._supabase
+      .from('daily_activity_jobs')
+      .select('*')
+      .gte('start_date', dateFrom)
+      .lt('start_date', dateTo)
+      .order('start_date', { ascending: true });
+
+    if (!jobs || jobs.length === 0) {
+      content.innerHTML = '<div class="ov-empty">Tidak ada data jobdesk bulan ini.</div>';
+      return;
+    }
+
+    const jobIds = jobs.map(j => j.id);
+    const { data: entries } = await window._supabase
+      .from('daily_activity_entries')
+      .select('*')
+      .in('job_id', jobIds)
+      .order('entry_date', { ascending: false });
+
+    const allEntr = entries || [];
+
+    // Group by user
+    const userMap = {};
+    jobs.forEach(job => {
+      if (!userMap[job.created_by]) userMap[job.created_by] = { jobs: [], entries: [] };
+      userMap[job.created_by].jobs.push(job);
+    });
+    allEntr.forEach(e => {
+      const job = jobs.find(j => j.id === e.job_id);
+      if (job && userMap[job.created_by]) {
+        userMap[job.created_by].entries.push(e);
+      }
+    });
+
+    // Load user names from accounts
+    const usernames = Object.keys(userMap);
+    const { data: accounts } = await window._supabase
+      .from('accounts')
+      .select('username, name, role')
+      .in('username', usernames);
+    const acctMap = {};
+    (accounts || []).forEach(a => acctMap[a.username] = a);
+
+    const ROLE_DISP = { admin: 'Admin', treasury: 'Bonds', head_account: 'Head Account' };
+
+    // Build rows — one row per job, showing last status
+    const rows = [];
+    jobs.forEach(job => {
+      const user  = acctMap[job.created_by] || { username: job.created_by, name: job.created_by, role: '' };
+      const jentr = allEntr
+        .filter(e => e.job_id === job.id)
+        .sort((a, b) => new Date(b.entry_date) - new Date(a.entry_date) || new Date(b.created_at) - new Date(a.created_at));
+      const last   = jentr[0];
+      const startFmt = job.start_date ? new Date(job.start_date).toLocaleDateString('id-ID', {day:'numeric',month:'short',year:'numeric'}) : '—';
+      const lastDateFmt = last ? new Date(last.entry_date).toLocaleDateString('id-ID', {day:'numeric',month:'short',year:'numeric'}) : '—';
+      rows.push({ job, user, last, jentr, startFmt, lastDateFmt, roleDisp: ROLE_DISP[user.role] || user.role });
+    });
+
+    if (!rows.length) { content.innerHTML = '<div class="ov-empty">Tidak ada data.</div>'; return; }
+
+    const statusBadge = (s) => s
+      ? `<span class="tl-status-badge badge-${s}">${STATUS_LABELS[s] || s}</span>`
+      : '<span style="color:#ccc;font-size:0.78rem;">Belum ada update</span>';
+
+    content.innerHTML = `
+      <table class="overview-table">
+        <thead>
+          <tr>
+            <th>Nama Pengguna</th>
+            <th>Role</th>
+            <th>Jobdesk</th>
+            <th>Mulai</th>
+            <th>Update Terakhir</th>
+            <th>Status Terakhir</th>
+            <th>Total Update</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows.map(r => `
+            <tr onclick="openOverviewDetail('${esc(r.job.id)}','${esc(r.user.name || r.user.username)}')" title="Klik untuk lihat timeline lengkap">
+              <td>
+                <div class="ov-user-chip">
+                  <div class="ov-avatar">${esc((r.user.name || r.user.username)[0].toUpperCase())}</div>
+                  <span style="font-weight:500;">${esc(r.user.name || r.user.username)}</span>
+                </div>
+              </td>
+              <td><span class="ov-role-tag ov-role-${r.user.role}">${esc(r.roleDisp)}</span></td>
+              <td style="font-weight:500;max-width:200px;">${esc(r.job.name)}</td>
+              <td style="color:#aaa;">${r.startFmt}</td>
+              <td style="color:#aaa;">${r.last ? r.lastDateFmt : '—'}</td>
+              <td>${statusBadge(r.last ? r.last.status : null)}</td>
+              <td style="text-align:center;font-weight:700;color:var(--navy);">${r.jentr.length}</td>
+            </tr>`).join('')}
+        </tbody>
+      </table>`;
+
+    // Store for detail popup
+    allOverviewData = rows.map(r => ({ ...r, allEntries: allEntr }));
+
+  } catch(e) {
+    console.error('renderOverview error:', e);
+    content.innerHTML = '<div class="ov-empty" style="color:#e74c3c;">Gagal memuat data. Cek koneksi.</div>';
+  }
+}
+
+/* ── OVERVIEW DETAIL — tampilkan timeline 1 job di modal ── */
+function openOverviewDetail(jobId, userName) {
+  const row = allOverviewData.find(r => r.job.id === jobId);
+  if (!row) return;
+
+  // Temporarily set selectedJob dan allEntries agar renderTimeline bisa dipakai
+  const prevJob     = selectedJob;
+  const prevEntries = allEntries;
+
+  selectedJob = row.job;
+  allEntries  = row.allEntries;
+
+  // Build modal content
+  const entries = row.allEntries
+    .filter(e => e.job_id === jobId)
+    .sort((a, b) => new Date(a.entry_date) - new Date(b.entry_date));
+
+  const startFmt = row.job.start_date
+    ? new Date(row.job.start_date).toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'})
+    : '';
+
+  const entryHtml = entries.length === 0
+    ? '<div class="empty-timeline" style="padding:24px;"><span>📝</span>Belum ada update progress.</div>'
+    : `<div class="timeline">${entries.map(e => {
+        const dateFmt = new Date(e.entry_date).toLocaleDateString('id-ID', {weekday:'long',day:'numeric',month:'long',year:'numeric'});
+        const sc = e.status || 'pending';
+        const noteHtml = e.notes
+          ? `<div class="tl-notes">"${esc(e.notes)}"</div>`
+          : `<div class="tl-notes empty">— Tidak ada catatan —</div>`;
+        return `<div class="tl-entry">
+          <div class="tl-dot ${sc}"></div>
+          <div class="tl-card">
+            <div class="tl-card-top">
+              <div class="tl-date">${dateFmt}</div>
+              <span class="tl-status-badge badge-${sc}">${STATUS_LABELS[sc]||sc}</span>
+            </div>
+            ${noteHtml}
+            <div class="tl-author">Dicatat oleh: ${esc(e.created_by||'—')}</div>
+          </div>
+        </div>`;
+      }).join('')}</div>`;
+
+  document.getElementById('detailModalTitle').textContent = row.job.name;
+  document.getElementById('detailModalSub').textContent   = userName + ' · Dimulai: ' + startFmt;
+  document.getElementById('detailModalBody').innerHTML    = entryHtml;
+  openModal('modalDetail');
+
+  selectedJob = prevJob;
+  allEntries  = prevEntries;
 }
 
 /* ── MODALS ── */
@@ -776,10 +1053,22 @@ function esc(str) {
 
 /* ── KEYBOARD ── */
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') ['modalJob','modalEntry'].forEach(id => closeModal(id));
+  if (e.key === 'Escape') ['modalJob','modalEntry','modalDetail'].forEach(id => closeModal(id));
 });
 
 window.addEventListener('DOMContentLoaded', init);
 </script>
+
+<!-- ═══ MODAL: Detail Timeline (overview head_account) ═══ -->
+<div class="modal-overlay" id="modalDetail" onclick="if(event.target===this)closeModal('modalDetail')">
+  <div class="modal" style="max-width:620px;">
+    <div class="modal-title" id="detailModalTitle"></div>
+    <div class="modal-sub"   id="detailModalSub" style="margin-bottom:20px;"></div>
+    <div id="detailModalBody" style="max-height:55vh;overflow-y:auto;padding-right:4px;"></div>
+    <div class="modal-footer" style="margin-top:20px;">
+      <button class="btn-ghost" onclick="closeModal('modalDetail')">Tutup</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
