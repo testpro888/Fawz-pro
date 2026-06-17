@@ -199,11 +199,10 @@
     btn.disabled = true;
 
     try {
-      // Derive month range from the selected date
+      // Query from the 1st of the month up to (and including) the selected date
       const [year, mon] = dateVal.split('-').map(Number);
       const startDate = year + '-' + String(mon).padStart(2, '0') + '-01';
-      const lastDay   = new Date(year, mon, 0).getDate();
-      const endDate   = year + '-' + String(mon).padStart(2, '0') + '-' + String(lastDay).padStart(2, '0');
+      const endDate   = dateVal; // e.g. pilih 12/6 → 1/6 s/d 12/6
 
       // Fetch all transactions for the entire month — paginated
       var rows = [];
