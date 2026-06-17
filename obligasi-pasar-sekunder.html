@@ -1146,33 +1146,41 @@
       label: '🏛 Obligasi Pemerintah IDR',
       colorClass: 'fmt-gov',
       wajib: ['Seri', 'Kupon', 'JatuhTempo', 'Bid', 'Offer', 'YTM'],
-      opsional: ['LastCouponDate', 'NextCouponDate', 'TanggalUpdate'],
+      opsional: ['Name', 'ISIN', 'Issuer', 'Type', 'Type2', 'IssueDate', 'FirstCpnDate', 'LastCpnDate', 'NextCpnDate', 'AccrualDate', 'KuponFreq', 'Basis', 'PayType', 'HargaModal', 'ModalToSales', 'HargaToCustomer', 'TanggalUpdate'],
       catatan: 'Kolom <strong>Rating</strong> dan <strong>Penerbit</strong> tidak diperlukan untuk obligasi pemerintah.',
-      contoh: 'Seri,Kupon,JatuhTempo,Bid,Offer,YTM,LastCouponDate,NextCouponDate,TanggalUpdate\nFR0037,8.375,2026-09-15,100.86,102.24,6.6700,2026-03-15,2026-09-15,2026-06-15\nFR0042,10.250,2027-07-15,102.75,104.48,7.1200,2026-01-15,2026-07-15,2026-06-15',
+      contoh: `Seri,Name,ISIN,Issuer,Type,Type2,IssueDate,JatuhTempo,FirstCpnDate,LastCpnDate,NextCpnDate,AccrualDate,Kupon,KuponFreq,Basis,PayType,HargaModal,ModalToSales,HargaToCustomer,Bid,Offer,YTM,TanggalUpdate
+FR0037,FR0037,IDG000032704,Pemerintah RI,FR,Fixed,2006-09-15,2026-09-15,,2026-03-15,2026-09-15,,8.375,6,ACT/ACT,Bullet,,,, 100.86,102.24,6.6700,2026-06-06
+FR0042,FR0042,IDG000042703,Pemerintah RI,FR,Fixed,2012-01-15,2027-07-15,,2026-01-15,2026-07-15,,10.250,6,ACT/ACT,Bullet,,,,102.75,104.48,7.1200,2026-06-06
+FR0045,FR0045,IDG000045706,Pemerintah RI,FR,Fixed,2007-05-15,2037-05-15,,2026-05-15,2026-11-15,,9.750,6,ACT/ACT,Bullet,,,,120.57,122.77,6.9600,2026-06-06`,
     },
     'gov-usd': {
       label: '🏛 Obligasi Pemerintah USD',
       colorClass: 'fmt-usd',
       wajib: ['Seri', 'Kupon', 'JatuhTempo', 'Bid', 'Offer', 'YTM'],
-      opsional: ['LastCouponDate', 'NextCouponDate', 'TanggalUpdate'],
+      opsional: ['Name', 'ISIN', 'Issuer', 'Type', 'Type2', 'IssueDate', 'FirstCpnDate', 'LastCpnDate', 'NextCpnDate', 'AccrualDate', 'KuponFreq', 'Basis', 'PayType', 'HargaModal', 'ModalToSales', 'HargaToCustomer', 'TanggalUpdate'],
       catatan: 'Untuk seri USD pemerintah (INDO, INDOIS). Harga dalam <strong>desimal titik</strong>, misal <code>98.50</code>.',
-      contoh: 'Seri,Kupon,JatuhTempo,Bid,Offer,YTM,TanggalUpdate\nINDO30,3.850,2030-04-15,95.50,96.25,4.5100,2026-06-15\nINDOIS29,4.450,2029-03-20,97.00,98.00,4.9000,2026-06-15',
+      contoh: `Seri,Name,ISIN,Issuer,Type,Type2,IssueDate,JatuhTempo,FirstCpnDate,LastCpnDate,NextCpnDate,AccrualDate,Kupon,KuponFreq,Basis,PayType,HargaModal,ModalToSales,HargaToCustomer,Bid,Offer,YTM,TanggalUpdate
+INDO30,INDO30,USY20721BC05,Pemerintah RI,INDON,Fixed,2010-04-15,2030-04-15,,2026-04-15,2026-10-15,,3.850,6,ACT/ACT,Bullet,,,,95.50,96.25,4.5100,2026-06-06
+INDOIS29,INDOIS29,USY20721AC23,Pemerintah RI,INDOIS,Sukuk,2019-03-20,2029-03-20,,2026-03-20,2026-09-20,,4.450,6,ACT/ACT,Bullet,,,,97.00,98.00,4.9000,2026-06-06`,
     },
     'korp-idr': {
       label: '🏢 Obligasi Korporasi IDR',
       colorClass: 'fmt-korp',
       wajib: ['Seri', 'Kupon', 'JatuhTempo', 'Rating', 'Bid', 'Offer', 'YTM'],
-      opsional: ['Penerbit', 'LastCouponDate', 'NextCouponDate', 'TanggalUpdate'],
-      catatan: 'Kolom <strong>Rating</strong> wajib diisi (AAA, AA+, A, BBB+, dll). Kolom <strong>Penerbit</strong> akan otomatis terisi dari kode ticker jika kosong.',
-      contoh: 'Seri,Kupon,JatuhTempo,Rating,Penerbit,Bid,Offer,YTM,TanggalUpdate\nPPLN03CN3,9.500,2028-06-10,AAA,PT PLN (Persero),101.00,102.50,9.1000,2026-06-15\nBBRI02BCN2,7.250,2027-08-20,AAA,PT BRI Tbk,100.50,101.25,6.9500,2026-06-15',
+      opsional: ['Name', 'ISIN', 'Penerbit', 'Issuer', 'Type', 'Type2', 'IssueDate', 'FirstCpnDate', 'LastCpnDate', 'NextCpnDate', 'AccrualDate', 'KuponFreq', 'Basis', 'PayType', 'HargaModal', 'ModalToSales', 'HargaToCustomer', 'TanggalUpdate'],
+      catatan: 'Kolom <strong>Rating</strong> wajib (AAA, AA+, A, BBB+, dll). <strong>Penerbit</strong> otomatis dari kode ticker jika kosong.',
+      contoh: `Seri,Name,ISIN,Penerbit,Issuer,Type,Type2,IssueDate,JatuhTempo,FirstCpnDate,LastCpnDate,NextCpnDate,AccrualDate,Rating,Kupon,KuponFreq,Basis,PayType,HargaModal,ModalToSales,HargaToCustomer,Bid,Offer,YTM,TanggalUpdate
+PPLN03CN3,Obligasi PLN III/2023,IDA000139306,PT Perusahaan Listrik Negara (Persero),PT PLN (Persero),Korporasi,Fixed,2023-06-10,2028-06-10,,2026-06-10,2026-12-10,,AAA,9.500,6,ACT/ACT,Bullet,,,,101.00,102.50,9.1000,2026-06-06
+BBRI02BCN2,Obligasi BRI II/2022,IDA000128407,PT Bank Rakyat Indonesia (Persero) Tbk,PT BRI Tbk,Korporasi,Fixed,2022-08-20,2027-08-20,,2026-02-20,2026-08-20,,AAA,7.250,6,ACT/ACT,Bullet,,,,100.50,101.25,6.9500,2026-06-06`,
     },
     'korp-usd': {
       label: '🏢 Obligasi Korporasi USD',
-      colorClass: 'fmt-korp fmt-usd',
+      colorClass: 'fmt-korp',
       wajib: ['Seri', 'Kupon', 'JatuhTempo', 'Rating', 'Bid', 'Offer', 'YTM'],
-      opsional: ['Penerbit', 'LastCouponDate', 'NextCouponDate', 'TanggalUpdate'],
+      opsional: ['Name', 'ISIN', 'Penerbit', 'Issuer', 'Type', 'Type2', 'IssueDate', 'FirstCpnDate', 'LastCpnDate', 'NextCpnDate', 'AccrualDate', 'KuponFreq', 'Basis', 'PayType', 'HargaModal', 'ModalToSales', 'HargaToCustomer', 'TanggalUpdate'],
       catatan: 'Korporasi USD — harga dalam <strong>desimal titik</strong>. Rating wajib diisi.',
-      contoh: 'Seri,Kupon,JatuhTempo,Rating,Penerbit,Bid,Offer,YTM,TanggalUpdate\nTLKM25,4.875,2025-05-23,AAA,PT Telkom Indonesia,99.75,100.25,4.9500,2026-06-15',
+      contoh: `Seri,Name,ISIN,Penerbit,Issuer,Type,Type2,IssueDate,JatuhTempo,FirstCpnDate,LastCpnDate,NextCpnDate,AccrualDate,Rating,Kupon,KuponFreq,Basis,PayType,HargaModal,ModalToSales,HargaToCustomer,Bid,Offer,YTM,TanggalUpdate
+TLKM25,Telkom USD Bond 2025,USY8564UAC94,PT Telkom Indonesia (Persero) Tbk,PT Telkom Indonesia,Korporasi,Fixed,2015-05-23,2025-05-23,,2025-05-23,2025-11-23,,AAA,4.875,6,ACT/ACT,Bullet,,,,99.75,100.25,4.9500,2026-06-06`,
     },
   };
 
@@ -1247,16 +1255,34 @@
     const ticker = extractTicker(seri);
     return {
       seri,
-      kupon:            parseNum(g('kupon','coupon','couponrate')) ,
+      // Identifikasi
+      name:             g('name','nama','namaobligasi') || null,
+      isin:             g('isin') || null,
+      issuer:           g('issuer') || null,
+      bond_type:        g('type','bondtype','tipe') || null,
+      bond_type2:       g('type2','bondtype2','tipe2') || null,
+      // Tanggal
+      tanggal_listing:  parseDate(g('issuedate','issue_date','tanggallisting','tanggal_listing')),
       jatuh_tempo:      parseDate(g('jatuhtempo','jatuh_tempo','maturity','maturitydate','duedate','due_date')) || g('jatuhtempo','jatuh_tempo','maturity','maturitydate','duedate','due_date'),
+      first_cpn_date:   parseDate(g('firstcpndate','first_cpn_date','firstcoupondate')),
+      last_coupon_date: parseDate(g('lastcpndate','lastcoupondate','last_coupon_date','lastcoupon','last_coupon')),
+      next_coupon_date: parseDate(g('nextcpndate','nextcoupondate','next_coupon_date','nextcoupon','next_coupon')),
+      accrual_date:     parseDate(g('accrualdate','accrual_date','accrual')),
+      // Detail kupon
       rating:           g('rating') || null,
-      penerbit:         g('penerbit','issuer','emiten') || (ISSUER_MAP[ticker] || null),
-      last_coupon_date: g('lastcoupondate','last_coupon_date','lastcoupon','last_coupon') || null,
-      next_coupon_date: g('nextcoupondate','next_coupon_date','nextcoupon','next_coupon') || null,
-      harga_jual:       parseNum(g('bid','hargajual','harga_jual','bidprice')),
-      harga_beli:       parseNum(g('offer','ask','hargabeli','harga_beli','offerprice','askprice')),
-      yield:            parseNum(g('ytm','yield','ytmpct','ytm%')),
-      tanggal_update:   g('tanggalupdate','tanggal_update','updatedate','date') || new Date().toISOString().slice(0,10),
+      penerbit:         g('penerbit','emiten') || (ISSUER_MAP[ticker] || null),
+      kupon:            parseNum(g('kupon','coupon','couponrate')),
+      kupon_freq:       parseInt(g('kuponfreq','kupon_freq','freq','frequency')) || null,
+      day_count_basis:  g('basis','daycountbasis','day_count_basis') || null,
+      payment_type:     g('paytype','pay_type','paymenttype') || null,
+      // Harga
+      harga_modal:        parseNum(g('hargamodal','harga_modal')),
+      modal_to_sales:     parseNum(g('modaltosales','modal_to_sales')),
+      harga_to_customer:  parseNum(g('hargatocustomer','harga_to_customer')),
+      harga_jual:         parseNum(g('bid','hargajual','harga_jual','bidprice')),
+      harga_beli:         parseNum(g('offer','ask','hargabeli','harga_beli','offerprice','askprice')),
+      yield:              parseNum(g('ytm','yield','ytmpct','ytm%')),
+      tanggal_update:     g('tanggalupdate','tanggal_update','updatedate','date') || new Date().toISOString().slice(0,10),
     };
   }
 
@@ -1305,13 +1331,27 @@
     const btn = document.getElementById('uploadSaveBtn');
     btn.textContent = 'Mengimport...'; btn.disabled = true;
     try {
-      let success = 0;
+      let success = 0, skipped = 0;
       for (const row of csvRows) {
-        row.category = cat;
-        const { data: inserted, error } = await window._supabase.from('obligasi_products').insert(row).select().single();
+        // Bangun payload lengkap, strip null agar Supabase tidak error
+        const payload = { category: cat };
+        const fields = [
+          'seri','name','isin','issuer','bond_type','bond_type2',
+          'tanggal_listing','jatuh_tempo','first_cpn_date','last_coupon_date',
+          'next_coupon_date','accrual_date','rating','penerbit','kupon','kupon_freq',
+          'day_count_basis','payment_type','harga_modal','modal_to_sales',
+          'harga_to_customer','harga_jual','harga_beli','yield','tanggal_update'
+        ];
+        fields.forEach(f => { if (row[f] != null && row[f] !== '') payload[f] = row[f]; });
+
+        const { data: inserted, error } = await window._supabase
+          .from('obligasi_products').insert(payload).select().single();
         if (!error && inserted) {
           allData[cat].push(inserted);
           success++;
+        } else {
+          console.warn('Import skip:', row.seri, error?.message);
+          skipped++;
         }
       }
       allData[cat].sort((a,b) => (a.seri||'').localeCompare(b.seri||''));
@@ -1319,8 +1359,11 @@
       document.getElementById('uploadModal').classList.remove('open');
       renderTable(cat);
       switchTab(cat);
-      showToast(`${success} obligasi berhasil diimport ke ${CAT_LABEL[cat]}`, 'success');
-    } catch(e) { console.error(e); showToast('Gagal import data', 'error'); }
+      const msg = skipped > 0
+        ? `${success} berhasil diimport, ${skipped} gagal/dilewati`
+        : `${success} obligasi berhasil diimport ke ${CAT_LABEL[cat]}`;
+      showToast(msg, success > 0 ? 'success' : 'error');
+    } catch(e) { console.error(e); showToast('Gagal import data: ' + e.message, 'error'); }
     finally { btn.textContent = 'Import Data'; btn.disabled = false; }
   }
 
