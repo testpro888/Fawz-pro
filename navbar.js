@@ -99,8 +99,8 @@
       }
     }
 
-    // Daily Activity Report — admin, treasury, head_account
-    if (['admin', 'treasury', 'head_account'].includes(user.role)) {
+    // Daily Activity Report — semua role kecuali treasury
+    if (['admin', 'treasury', 'head_account', 'sales', 'head_sales'].includes(user.role)) {
       const el = document.getElementById('dailyActivityLink');
       if (el) el.style.display = 'flex';
       const mob = document.getElementById('mobDailyActivity');
