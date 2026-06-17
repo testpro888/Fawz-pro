@@ -352,6 +352,10 @@
         <button class="btn-primary" id="btnAddEntry" onclick="openAddEntryModal()" style="display:none;">
           + Update Progress
         </button>
+        <div id="jobActionBtns" style="display:none; gap:8px; display:none;">
+          <button class="btn-ghost"      id="jobEditBtn" style="font-size:0.8rem;padding:7px 14px;" onclick="">Edit Jobdesk</button>
+          <button class="btn-del-entry"  id="jobDelBtn"  style="font-size:0.8rem;padding:7px 14px;" onclick="">Hapus Jobdesk</button>
+        </div>
       </div>
       <div id="timelineContent">
         <div class="empty-timeline"><span>—</span>Pilih jobdesk di sebelah kiri untuk melihat timeline progress.</div>
@@ -599,12 +603,21 @@ function selectJob(jobId) {
   renderJobList();
   renderTimeline(job);
   document.getElementById('btnAddEntry').style.display = 'flex';
+  const canEdit = curUser.role === 'head_account' || job.created_by === curUser.username;
+  const actionBtns = document.getElementById('jobActionBtns');
+  if (actionBtns && canEdit) {
+    actionBtns.style.display = 'flex';
+    document.getElementById('jobEditBtn').onclick = () => openEditJobModal(job.id);
+    document.getElementById('jobDelBtn').onclick  = () => deleteJob(job.id, job.name);
+  }
 }
 
 function resetTimeline() {
   document.getElementById('timelineTitle').textContent = 'Pilih jobdesk untuk melihat timeline';
   document.getElementById('timelineMeta').textContent  = '';
   document.getElementById('btnAddEntry').style.display = 'none';
+  const ab = document.getElementById('jobActionBtns');
+  if (ab) ab.style.display = 'none';
   document.getElementById('timelineContent').innerHTML =
     '<div class="empty-timeline"><span>—</span>Pilih jobdesk di sebelah kiri untuk melihat timeline progress.</div>';
 }
@@ -659,38 +672,6 @@ function renderTimeline(job) {
         </div>
       </div>`;
   }).join('')}</div>`;
-
-  // Add edit/delete for the job itself (top right)
-  if (canEdit) {
-    const hdr = document.querySelector('.timeline-header');
-    if (!document.getElementById('jobEditBtn')) {
-      const editBtn = document.createElement('button');
-      editBtn.id = 'jobEditBtn';
-      editBtn.className = 'btn-ghost';
-      editBtn.style.cssText = 'font-size:0.8rem;padding:7px 14px;';
-      editBtn.textContent = 'Edit Jobdesk';
-      editBtn.onclick = () => openEditJobModal(job.id);
-      hdr.appendChild(editBtn);
-
-      const delBtn = document.createElement('button');
-      delBtn.id = 'jobDelBtn';
-      delBtn.className = 'btn-del-entry';
-      delBtn.style.cssText = 'font-size:0.8rem;padding:7px 14px;';
-      delBtn.textContent = 'Hapus Jobdesk';
-      delBtn.onclick = () => deleteJob(job.id, job.name);
-      hdr.appendChild(delBtn);
-    } else {
-      document.getElementById('jobEditBtn').onclick = () => openEditJobModal(job.id);
-      const delBtn = document.getElementById('jobDelBtn');
-      if (delBtn) delBtn.onclick = () => deleteJob(job.id, job.name);
-    }
-  } else {
-    // Sembunyikan tombol edit/hapus jobdesk jika tidak punya akses
-    const eb = document.getElementById('jobEditBtn');
-    const db = document.getElementById('jobDelBtn');
-    if (eb) eb.style.display = 'none';
-    if (db) db.style.display = 'none';
-  }
 }
 
 /* ── STATS — berdasarkan status TERAKHIR per jobdesk ── */
@@ -1056,17 +1037,12 @@ async function deleteEntry(entryId) {
 async function deleteJob(jobId, jobName) {
   if (!confirm(`Hapus jobdesk "${jobName}"?\n\nSemua entri progress di dalamnya juga akan dihapus. Tindakan ini tidak dapat dibatalkan.`)) return;
   try {
-    // Entries akan terhapus otomatis via ON DELETE CASCADE
     const { error } = await window._supabase
       .from('daily_activity_jobs')
       .delete()
       .eq('id', jobId);
     if (error) throw error;
     selectedJob = null;
-    // Hapus tombol edit/hapus jobdesk dari header
-    document.getElementById('jobEditBtn')?.remove();
-    document.getElementById('jobDelBtn')?.remove();
-    document.getElementById('btnAddEntry').style.display = 'none';
     await loadData();
   } catch(e) {
     alert('Gagal menghapus jobdesk: ' + (e.message || ''));
