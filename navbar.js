@@ -144,6 +144,9 @@
       'saham-ranking.html'            : ['head_account', 'admin', 'head_sales'],
       'fawz-point.html'               : ['head_account', 'admin', 'head_sales'],
 
+      // Reporting dropdown (Product section)
+      'reporting-harian-sales.html' : ['admin'],
+
       // Revenue dropdown
       'analytics.html'         : ['head_account', 'admin', 'sales', 'head_sales'],
       'revenue-data.html'      : ['head_account', 'admin', 'sales', 'head_sales'],
