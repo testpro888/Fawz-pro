@@ -193,9 +193,12 @@
 
   <!-- Tabel Volume -->
   <div class="rekap-section" style="margin-top:0;">
-    <div class="rekap-title" style="display:flex;align-items:center;justify-content:space-between;">
+    <div class="rekap-title" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
       Tabel Volume
-      <button class="btn btn-outline" style="padding:6px 14px;font-size:0.75rem;color:var(--red);border-color:#ffcccc;" onclick="bulkDeleteByType('volume')">Hapus Semua Volume Bulan Ini</button>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <button class="btn btn-outline" style="padding:6px 14px;font-size:0.75rem;color:#27ae60;border-color:#a8e6c1;" onclick="exportTableCSV('volume')">⬇ Export CSV</button>
+        <button class="btn btn-outline" style="padding:6px 14px;font-size:0.75rem;color:var(--red);border-color:#ffcccc;" onclick="bulkDeleteByType('volume')">Hapus Semua Volume Bulan Ini</button>
+      </div>
     </div>
     <div class="table-wrapper">
       <div style="overflow-x:auto;max-height:440px;overflow-y:auto;">
@@ -222,9 +225,12 @@
 
   <!-- Tabel Fee -->
   <div class="rekap-section">
-    <div class="rekap-title" style="display:flex;align-items:center;justify-content:space-between;">
+    <div class="rekap-title" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
       Tabel Fee
-      <button class="btn btn-outline" style="padding:6px 14px;font-size:0.75rem;color:var(--red);border-color:#ffcccc;" onclick="bulkDeleteByType('fee')">Hapus Semua Fee Bulan Ini</button>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <button class="btn btn-outline" style="padding:6px 14px;font-size:0.75rem;color:#27ae60;border-color:#a8e6c1;" onclick="exportTableCSV('fee')">⬇ Export CSV</button>
+        <button class="btn btn-outline" style="padding:6px 14px;font-size:0.75rem;color:var(--red);border-color:#ffcccc;" onclick="bulkDeleteByType('fee')">Hapus Semua Fee Bulan Ini</button>
+      </div>
     </div>
     <div class="table-wrapper">
       <div style="overflow-x:auto;max-height:440px;overflow-y:auto;">
@@ -586,6 +592,37 @@
 
   // Store rekap entries globally for search filtering
   let rekapEntries = [];
+
+  function exportTableCSV(type) {
+    const data = type === 'volume' ? volumeData : feeData;
+    if (!data || !data.length) {
+      showToast('Tidak ada data untuk diekspor.', 'error');
+      return;
+    }
+    const month = document.getElementById('filterMonth').value || 'semua';
+    const valueCol = type === 'volume' ? 'Volume (Rp)' : 'Fee (Rp)';
+    const header = ['#', 'Tanggal', 'Client ID', 'Nama', valueCol, 'Sales', 'Catatan'];
+    const rows = data.map((r, i) => [
+      i + 1,
+      r.tanggal || '',
+      r.client_id || '',
+      '"' + (r.client_name || '').replace(/"/g, '""') + '"',
+      parseFloat(type === 'volume' ? r.volume : r.fee) || 0,
+      '"' + toTitleCase(r.sales_name || '').replace(/"/g, '""') + '"',
+      '"' + (r.catatan || '').replace(/"/g, '""') + '"'
+    ]);
+    const csvContent = [header.join(','), ...rows.map(r => r.join(','))].join('\r\n');
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'saham-' + type + '-' + month + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('Export ' + (type === 'volume' ? 'Volume' : 'Fee') + ' berhasil diunduh.', 'success');
+  }
 
   function renderRekap() {
     const map = {};
