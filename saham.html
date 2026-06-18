@@ -1034,6 +1034,26 @@
 
   window.addEventListener('DOMContentLoaded', initPage);
 
+  // Strip commas (and dots used as thousand separators) on paste into Volume & Fee fields
+  // e.g. "1,200,000" or "1.200.000" → "1200000"
+  ['fVolume', 'fFee'].forEach(function(id) {
+    document.addEventListener('DOMContentLoaded', function() {
+      var el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener('paste', function(e) {
+        e.preventDefault();
+        var pasted = (e.clipboardData || window.clipboardData).getData('text') || '';
+        // Remove everything that is not a digit
+        var cleaned = pasted.replace(/[^\d]/g, '');
+        if (cleaned !== '') {
+          el.value = cleaned;
+          // Trigger input event so any listeners are notified
+          el.dispatchEvent(new Event('input'));
+        }
+      });
+    });
+  });
+
   // === CSV Upload Functions ===
   let csvRows = [];
 
