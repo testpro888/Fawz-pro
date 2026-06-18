@@ -78,6 +78,35 @@
     /* Loading / empty state */
     .state-box { padding: 60px 20px; text-align: center; color: #bbb; background: #fafafa; border-radius: 0 0 16px 16px; font-size: 0.9rem; }
 
+    /* Trade Recap section */
+    .recap-card { background: #fff; border-radius: 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); overflow: hidden; animation: fadeUp 0.4s 0.15s ease both; margin-top: 24px; }
+    .recap-header { background: linear-gradient(135deg, #1a2a5e, #0d0d2b); padding: 16px 24px; display: flex; align-items: center; gap: 10px; }
+    .recap-title { color: #fff; font-weight: 700; font-size: 0.95rem; }
+    .recap-badge { background: var(--gold); color: #fff; font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .recap-body { padding: 20px 24px; background: #fafafa; }
+    .recap-output {
+      width: 100%;
+      min-height: 180px;
+      padding: 18px 20px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.9rem;
+      line-height: 2;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      outline: none;
+      resize: vertical;
+      background: #fff;
+      color: var(--text);
+    }
+    .recap-meta { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 14px; }
+    .recap-stat { flex: 1; min-width: 150px; background: #fff; border: 1.5px solid var(--border); border-radius: 12px; padding: 14px 16px; }
+    .recap-stat-label { font-size: 0.7rem; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+    .recap-stat-value { font-size: 1.05rem; font-weight: 800; color: var(--navy); }
+    .recap-stat-value.green { color: var(--green); }
+    .recap-stat-sub { font-size: 0.72rem; color: #888; margin-top: 2px; }
+    .recap-copy-wrap { padding: 0 24px 20px; display: flex; justify-content: flex-end; background: #fafafa; }
+    .recap-state { padding: 40px 20px; text-align: center; color: #bbb; font-size: 0.9rem; }
+
     /* Toast */
     .toast-container { position: fixed; bottom: 28px; right: 28px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
     .toast { padding: 14px 20px; border-radius: 12px; font-size: 0.875rem; font-weight: 500; box-shadow: 0 6px 24px rgba(0,0,0,0.15); animation: fadeUp 0.3s ease; max-width: 320px; }
@@ -130,6 +159,17 @@
     </div>
   </div>
 
+  <!-- Trade Recap Maybank -->
+  <div class="recap-card" id="tradeRecapCard">
+    <div class="recap-header">
+      <span class="recap-title">Trade Recap Maybank</span>
+      <span class="recap-badge">Recap</span>
+    </div>
+    <div id="tradeRecapArea">
+      <div class="recap-state">Pilih tanggal lalu klik <strong>Generate Report</strong></div>
+    </div>
+  </div>
+
   <!-- Result -->
   <div class="result-card">
     <div class="result-header">
@@ -168,6 +208,12 @@
   function formatRp(n) {
     if (!n || n === 0) return '-';
     return 'Rp ' + Number(n).toLocaleString('id-ID');
+  }
+
+  // Plain number format tanpa "Rp" prefix, pakai titik sebagai separator ribuan
+  function formatRpPlain(n) {
+    if (!n && n !== 0) return '0';
+    return Number(n).toLocaleString('id-ID');
   }
 
   function formatDate(dateStr) {
@@ -228,7 +274,103 @@
         }
       }
 
-      // Aggregate per sales — case-insensitive matching to canonical name
+      // ── Fetch rows for YTD (Jan 1 current year → selected date) ──────
+      const ytdStart = year + '-01-01';
+      var ytdRows = [];
+      offset = 0; hasMore = true;
+      while (hasMore) {
+        const { data, error } = await _sb
+          .from('saham_transaksi')
+          .select('fee, tanggal, client_id')
+          .gte('tanggal', ytdStart)
+          .lte('tanggal', endDate)
+          .range(offset, offset + pageSize - 1);
+        if (error) throw error;
+        var chunk = data || [];
+        ytdRows = ytdRows.concat(chunk);
+        if (chunk.length < pageSize) hasMore = false;
+        else offset += pageSize;
+      }
+
+      // ── Fetch rows for selected date only (trade recap) ───────────────
+      var dayRows = [];
+      offset = 0; hasMore = true;
+      while (hasMore) {
+        const { data, error } = await _sb
+          .from('saham_transaksi')
+          .select('fee, volume, client_id')
+          .eq('tanggal', dateVal)
+          .range(offset, offset + pageSize - 1);
+        if (error) throw error;
+        var chunk = data || [];
+        dayRows = dayRows.concat(chunk);
+        if (chunk.length < pageSize) hasMore = false;
+        else offset += pageSize;
+      }
+
+      // ── Compute Trade Recap values ────────────────────────────────────
+      const MTD_TARGET = 333333334;
+      const YTD_TARGET = 3600000000;
+
+      // Daily totals
+      const tradeFee    = dayRows.reduce(function(s, r) { return s + (Number(r.fee) || 0); }, 0);
+      const tradeVolume = dayRows.reduce(function(s, r) { return s + (Number(r.volume) || 0); }, 0);
+      const totalCust   = new Set(dayRows.map(function(r) { return r.client_id; })).size;
+
+      // MTD fee (1st of month → selected date)
+      const mtdFee = rows.reduce(function(s, r) { return s + (Number(r.fee) || 0); }, 0);
+      const mtdPct = (mtdFee / MTD_TARGET * 100).toFixed(1);
+
+      // YTD fee
+      const ytdFee = ytdRows.reduce(function(s, r) { return s + (Number(r.fee) || 0); }, 0);
+      const ytdPct = (ytdFee / YTD_TARGET * 100).toFixed(1);
+
+      // ── Build Trade Recap text ────────────────────────────────────────
+      const formattedDate = formatDate(dateVal);
+      const recapLines = [
+        'Report Trade Recap Maybank ' + formattedDate,
+        'Trade Fee    : ' + formatRpPlain(tradeFee),
+        'Trade Amount : ' + formatRpPlain(tradeVolume),
+        'Total Cust Trading : ' + totalCust + ' nasabah',
+        'Total Fee MTD  : ' + formatRpPlain(mtdFee) + ' / 333.333.334 (' + mtdPct + '% tercapai)',
+        'Total YTD Target : ' + formatRpPlain(ytdFee) + ' / 3.600.000.000 (' + ytdPct + '% tercapai)',
+      ];
+      const recapText = recapLines.join('\n');
+
+      // ── Render Trade Recap section ────────────────────────────────────
+      document.getElementById('tradeRecapArea').innerHTML =
+        '<div class="recap-body">' +
+          '<div class="recap-meta">' +
+            '<div class="recap-stat">' +
+              '<div class="recap-stat-label">Trade Fee</div>' +
+              '<div class="recap-stat-value">' + formatRp(tradeFee) + '</div>' +
+            '</div>' +
+            '<div class="recap-stat">' +
+              '<div class="recap-stat-label">Trade Amount</div>' +
+              '<div class="recap-stat-value">' + formatRp(tradeVolume) + '</div>' +
+            '</div>' +
+            '<div class="recap-stat">' +
+              '<div class="recap-stat-label">Total Cust Trading</div>' +
+              '<div class="recap-stat-value">' + totalCust + ' nasabah</div>' +
+            '</div>' +
+            '<div class="recap-stat">' +
+              '<div class="recap-stat-label">MTD Target</div>' +
+              '<div class="recap-stat-value green">' + mtdPct + '%</div>' +
+              '<div class="recap-stat-sub">' + formatRp(mtdFee) + ' / 333.333.334</div>' +
+            '</div>' +
+            '<div class="recap-stat">' +
+              '<div class="recap-stat-label">YTD Target</div>' +
+              '<div class="recap-stat-value green">' + ytdPct + '%</div>' +
+              '<div class="recap-stat-sub">' + formatRp(ytdFee) + ' / 3.600.000.000</div>' +
+            '</div>' +
+          '</div>' +
+          '<textarea class="recap-output" id="recapText" readonly>' + escapeHtml(recapText) + '</textarea>' +
+        '</div>' +
+        '<div class="recap-copy-wrap">' +
+          '<button class="copy-btn" id="copyRecapBtn" onclick="copyRecap()">Copy Recap</button>' +
+        '</div>';
+
+      // ── Aggregate per sales for harian report ─────────────────────────
       const salesMap = {};
       for (var i = 0; i < rows.length; i++) {
         const r = rows[i];
@@ -242,7 +384,6 @@
       }
 
       // Build text report — judul pakai tanggal yang dipilih
-      const formattedDate = formatDate(dateVal);
       const lines = [];
       lines.push('Report Harian Sales Maybank (' + formattedDate + ')');
       lines.push('');
@@ -279,6 +420,8 @@
       document.getElementById('resultArea').innerHTML =
         '<div class="state-box">Gagal memuat data: ' +
         escapeHtml(e.message || 'Terjadi kesalahan') + '</div>';
+      document.getElementById('tradeRecapArea').innerHTML =
+        '<div class="recap-state">Gagal memuat data recap.</div>';
       showToast('Gagal memuat data', 'error');
     }
 
@@ -292,6 +435,47 @@
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;');
+  }
+
+  // ── Copy Recap ────────────────────────────────────────────────────────
+  function copyRecap() {
+    const ta = document.getElementById('recapText');
+    if (!ta) return;
+    const text = ta.value;
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text).then(function() {
+        showCopiedRecap();
+      }).catch(function() {
+        fallbackCopyRecap(ta);
+      });
+    } else {
+      fallbackCopyRecap(ta);
+    }
+  }
+
+  function fallbackCopyRecap(ta) {
+    ta.select();
+    ta.setSelectionRange(0, 99999);
+    try {
+      document.execCommand('copy');
+      showCopiedRecap();
+    } catch(e) {
+      showToast('Gagal menyalin teks', 'error');
+    }
+    window.getSelection().removeAllRanges();
+  }
+
+  function showCopiedRecap() {
+    const btn = document.getElementById('copyRecapBtn');
+    if (btn) {
+      btn.textContent = 'Tersalin!';
+      btn.classList.add('copied');
+      setTimeout(function() {
+        btn.textContent = 'Copy Recap';
+        btn.classList.remove('copied');
+      }, 2000);
+    }
+    showToast('Trade Recap berhasil disalin ke clipboard!', 'success');
   }
 
   // ── Copy to Clipboard ─────────────────────────────────────────────────
