@@ -379,6 +379,12 @@
     return raw ? JSON.parse(raw) : null;
   }
 
+  // Normalisasi nama sales ke Title Case agar konsisten di seluruh tampilan
+  function toTitleCase(str) {
+    if (!str) return str;
+    return str.toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+  }
+
   async function initPage() {
     curUser = getCurUser();
     const now = new Date();
@@ -541,7 +547,7 @@
           <td><strong>${r.client_id || '—'}</strong></td>
           <td>${r.client_name || '—'}</td>
           <td style="font-weight:600;">${formatRp(r.volume)}</td>
-          <td>${r.sales_name || '—'}</td>
+          <td>${toTitleCase(r.sales_name) || '—'}</td>
           <td style="font-size:0.78rem;color:#888;">${r.catatan || '—'}</td>
           <td>${isSales ? '' : `<button onclick="deleteRow('${r.id}')" style="border:none;background:#fff0f0;color:var(--red);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:0.75rem;">Hapus</button> <button onclick="editRow('${r.id}')" style="border:none;background:#f0f8ff;color:#2d4abf;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:0.75rem;">Edit</button>`}</td>
         </tr>
@@ -560,7 +566,7 @@
           <td><strong>${r.client_id || '—'}</strong></td>
           <td>${r.client_name || '—'}</td>
           <td style="color:var(--green);font-weight:600;">${formatRp(r.fee)}</td>
-          <td>${r.sales_name || '—'}</td>
+          <td>${toTitleCase(r.sales_name) || '—'}</td>
           <td style="font-size:0.78rem;color:#888;">${r.catatan || '—'}</td>
           <td>${isSales ? '' : `<button onclick="deleteRow('${r.id}')" style="border:none;background:#fff0f0;color:var(--red);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:0.75rem;">Hapus</button> <button onclick="editRow('${r.id}')" style="border:none;background:#f0f8ff;color:#2d4abf;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:0.75rem;">Edit</button>`}</td>
         </tr>
