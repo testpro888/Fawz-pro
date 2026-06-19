@@ -98,8 +98,26 @@
     .btn-task-edit:hover { border-color:var(--gold); color:#e8931a; }
     .btn-task-del  { font-size:.72rem; padding:5px 12px; border:1.5px solid #ffe0e0; border-radius:8px; background:none; cursor:pointer; color:#e74c3c; transition:background .15s; }
     .btn-task-del:hover { background:#e74c3c; color:#fff; }
+    .btn-reply { font-size:.72rem; padding:5px 12px; border:1.5px solid #dbeafe; border-radius:8px; background:none; cursor:pointer; color:#2563eb; transition:background .15s,border-color .15s; }
+    .btn-reply:hover { background:#eff6ff; border-color:#93c5fd; }
 
     .done-note { font-size:.76rem; color:#059669; background:rgba(16,185,129,.08); padding:6px 10px; border-radius:8px; margin-top:8px; font-style:italic; }
+
+    /* Reply thread */
+    .reply-thread { margin-top:12px; border-top:1px solid #f0f0f5; padding-top:10px; display:flex; flex-direction:column; gap:8px; }
+    .reply-item { background:#f8f9fe; border-radius:10px; padding:10px 12px; border-left:3px solid #c7d2fe; }
+    .reply-item.own { border-left-color:var(--gold); background:#fffbf3; }
+    .reply-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:4px; }
+    .reply-author { font-size:.72rem; font-weight:700; color:var(--navy); }
+    .reply-role   { font-size:.66rem; color:#888; margin-left:6px; font-weight:400; }
+    .reply-time   { font-size:.66rem; color:#bbb; }
+    .reply-body   { font-size:.82rem; color:#444; line-height:1.5; }
+    .reply-del-btn { font-size:.62rem; color:#e74c3c; background:none; border:none; cursor:pointer; padding:0 4px; opacity:0; transition:opacity .15s; }
+    .reply-item:hover .reply-del-btn { opacity:1; }
+
+    /* Modal reply */
+    .reply-list-modal { max-height:280px; overflow-y:auto; display:flex; flex-direction:column; gap:8px; margin-bottom:16px; padding-right:2px; }
+    .reply-list-modal .reply-item { margin:0; }
     .empty-state { text-align:center; padding:60px 20px; color:#bbb; font-size:.9rem; }
     .empty-state span { font-size:3rem; display:block; margin-bottom:14px; }
 
@@ -166,9 +184,9 @@
   </div>
 
   <div class="tab-row">
-    <button class="tab-btn active" id="tabInbox"  onclick="switchTab('inbox')">📥 Task untuk Saya</button>
-    <button class="tab-btn"        id="tabMySent" onclick="switchTab('sent')">📤 Task dari Saya</button>
-    <button class="tab-btn"        id="tabAll"    onclick="switchTab('all')" style="display:none;">👥 Semua Task</button>
+    <button class="tab-btn active" id="tabInbox"  onclick="switchTab('inbox')">Task untuk Saya</button>
+    <button class="tab-btn"        id="tabMySent" onclick="switchTab('sent')">Task dari Saya</button>
+    <button class="tab-btn"        id="tabAll"    onclick="switchTab('all')" style="display:none;">Semua Task</button>
   </div>
 
   <div class="stats-row">
@@ -257,7 +275,7 @@
 <!-- MODAL: Acc Done -->
 <div class="modal-overlay" id="modalDone" onclick="if(event.target===this)closeModal('modalDone')">
   <div class="modal" style="max-width:460px;">
-    <div class="modal-title">✅ Acc Selesai Task</div>
+    <div class="modal-title">Acc Selesai Task</div>
     <div class="modal-sub" id="doneModalSub"></div>
     <div class="form-group">
       <label class="form-label">Catatan Penyelesaian (Opsional)</label>
@@ -266,7 +284,7 @@
     <div class="form-feedback" id="doneFeedback"></div>
     <div class="modal-footer">
       <button class="btn-ghost" onclick="closeModal('modalDone')">Batal</button>
-      <button class="btn-acc" id="btnConfirmDone" onclick="confirmDone()">✅ Konfirmasi Selesai</button>
+      <button class="btn-acc" id="btnConfirmDone" onclick="confirmDone()">Konfirmasi Selesai</button>
     </div>
   </div>
 </div>
@@ -438,7 +456,7 @@ function renderTasks() {
   const tasks = getFilteredTasks();
   const grid  = document.getElementById('tasksGrid');
   if (!tasks.length) {
-    grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;"><span>📋</span>Tidak ada task ditemukan.<br><span style="font-size:.82rem;">Klik <strong>+ Beri Task</strong> untuk membuat task baru.</span></div>';
+    grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;"><span style="font-size:2.5rem;display:block;margin-bottom:14px;">—</span>Tidak ada task ditemukan.<br><span style="font-size:.82rem;">Klik <strong>+ Beri Task</strong> untuk membuat task baru.</span></div>';
     return;
   }
   grid.innerHTML = tasks.map(t => buildTaskCard(t)).join('');
@@ -469,20 +487,21 @@ function buildTaskCard(t) {
   const creatorName = creator ? (creator.name || creator.username) : t.created_by;
 
   const doneBlock = isDone && t.notes
-    ? '<div class="done-note">💬 "' + esc(t.notes) + '"</div>' : '';
+    ? '<div class="done-note">"' + esc(t.notes) + '"</div>' : '';
 
-  let timestamps = '<span>📅 Dibuat: ' + fmtDateTime(t.created_at) + '</span>';
+  let timestamps = '<span>Dibuat: ' + fmtDateTime(t.created_at) + '</span>';
   if (t.assigned_at && t.assigned_at !== t.created_at) {
-    timestamps += '<span>📨 Dikirim: ' + fmtDateTime(t.assigned_at) + '</span>';
+    timestamps += '<span>Dikirim: ' + fmtDateTime(t.assigned_at) + '</span>';
   }
   if (isDone && t.done_at) {
     const doneByUser = allUsers.find(x => x.username === t.done_by);
     const doneByName = doneByUser ? (doneByUser.name || doneByUser.username) : (t.done_by || '—');
-    timestamps += '<span class="ts-done">✅ Selesai: ' + fmtDateTime(t.done_at) + ' oleh ' + esc(doneByName) + '</span>';
+    timestamps += '<span class="ts-done">Selesai: ' + fmtDateTime(t.done_at) + ' oleh ' + esc(doneByName) + '</span>';
   }
 
   let actionBtns = '';
-  if (canAcc)    actionBtns += '<button class="btn-acc"       onclick="openDoneModal(\'' + esc(t.id) + '\')">✅ Acc Done</button>';
+  if (canAcc)    actionBtns += '<button class="btn-acc"       onclick="openDoneModal(\'' + esc(t.id) + '\')">Acc Done</button>';
+  actionBtns += '<button class="btn-reply" onclick="openReplyModal(\'' + esc(t.id) + '\')">Reply</button>';
   if (canEdit)   actionBtns += '<button class="btn-task-edit" onclick="openEditTaskModal(\'' + esc(t.id) + '\')">Edit</button>';
   if (canDelete) actionBtns += '<button class="btn-task-del"  onclick="deleteTask(\'' + esc(t.id) + '\',\'' + esc(t.title) + '\')">Hapus</button>';
 
@@ -493,15 +512,15 @@ function buildTaskCard(t) {
     '</div>' +
     (t.description
       ? '<div class="task-desc">'       + esc(t.description) + '</div>'
-      : '<div class="task-desc empty">— Tidak ada deskripsi —</div>') +
+      : '<div class="task-desc empty">Tidak ada deskripsi</div>') +
     '<div class="task-meta-row">' +
-      '<span class="meta-chip role">🎯 Untuk: ' + esc(assigneeTxt) + '</span>' +
-      '<span class="meta-chip from">👤 Dari: '  + esc(creatorName) + ' (' + esc(fromLabel) + ')</span>' +
+      '<span class="meta-chip role">Untuk: ' + esc(assigneeTxt) + '</span>' +
+      '<span class="meta-chip from">Dari: '  + esc(creatorName) + ' (' + esc(fromLabel) + ')</span>' +
     '</div>' +
     doneBlock +
     '<div class="task-timestamps">' + timestamps + '</div>' +
     '<div class="task-footer">' +
-      '<span class="status-badge ' + (isDone ? 'sb-done' : 'sb-pending') + '">' + (isDone ? '✅ Selesai' : '🔴 Belum Selesai') + '</span>' +
+      '<span class="status-badge ' + (isDone ? 'sb-done' : 'sb-pending') + '">' + (isDone ? 'Selesai' : 'Belum Selesai') + '</span>' +
       '<div style="display:flex;gap:6px;flex-wrap:wrap;">' + actionBtns + '</div>' +
     '</div>' +
   '</div>';
@@ -661,7 +680,7 @@ async function confirmDone() {
     showFb('doneFeedback', 'Gagal: ' + (e.message || ''), 'error');
   }
   btn.disabled  = false;
-  btn.innerHTML = '✅ Konfirmasi Selesai';
+  btn.innerHTML = 'Konfirmasi Selesai';
   accTaskId     = null;
 }
 
@@ -676,9 +695,117 @@ async function deleteTask(taskId, taskTitle) {
 }
 
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') ['modalTask','modalDone'].forEach(id => closeModal(id));
+  if (e.key === 'Escape') ['modalTask','modalDone','modalReply'].forEach(id => closeModal(id));
 });
 window.addEventListener('DOMContentLoaded', init);
+</script>
+
+<!-- MODAL: Reply -->
+<div class="modal-overlay" id="modalReply" onclick="if(event.target===this)closeModal('modalReply')">
+  <div class="modal" style="max-width:520px;">
+    <div class="modal-title" id="replyModalTitle">Diskusi Task</div>
+    <div class="modal-sub" id="replyModalSub"></div>
+    <div class="reply-list-modal" id="replyListModal">
+      <div style="color:#bbb;font-size:.85rem;text-align:center;padding:20px;">Memuat balasan...</div>
+    </div>
+    <div class="form-group" style="margin-bottom:8px;">
+      <textarea class="form-input" id="inputReplyText" placeholder="Tulis balasan atau komentar..." rows="3" style="resize:vertical;"></textarea>
+    </div>
+    <div class="form-feedback" id="replyFeedback"></div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeModal('modalReply')">Tutup</button>
+      <button class="btn-primary" id="btnSendReply" onclick="sendReply()">Kirim Balasan</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ── REPLY SYSTEM ── */
+let replyTaskId = null;
+
+async function openReplyModal(taskId) {
+  replyTaskId = taskId;
+  const t = allTasks.find(x => x.id === taskId);
+  if (!t) return;
+  document.getElementById('replyModalTitle').textContent = 'Diskusi: ' + esc(t.title);
+  document.getElementById('replyModalSub').textContent   = 'Balasan dan komentar untuk task ini';
+  document.getElementById('inputReplyText').value        = '';
+  hideFb('replyFeedback');
+  openModal('modalReply');
+  await loadReplies(taskId);
+}
+
+async function loadReplies(taskId) {
+  const list = document.getElementById('replyListModal');
+  list.innerHTML = '<div style="color:#bbb;font-size:.85rem;text-align:center;padding:20px;">Memuat...</div>';
+  try {
+    const { data, error } = await window._supabase
+      .from('job_task_replies')
+      .select('*')
+      .eq('task_id', taskId)
+      .order('created_at', { ascending: true });
+    if (error) throw error;
+    renderReplies(data || [], list);
+  } catch(e) {
+    list.innerHTML = '<div style="color:#e74c3c;font-size:.82rem;text-align:center;padding:16px;">Gagal memuat: ' + esc(e.message||'') + '</div>';
+  }
+}
+
+function renderReplies(replies, container) {
+  if (!replies.length) {
+    container.innerHTML = '<div style="color:#bbb;font-size:.85rem;text-align:center;padding:20px;">Belum ada balasan. Mulai diskusi!</div>';
+    return;
+  }
+  container.innerHTML = replies.map(r => {
+    const isOwn     = r.created_by === curUser.username;
+    const author    = allUsers.find(x => x.username === r.created_by);
+    const name      = author ? (author.name || author.username) : r.created_by;
+    const roleLabel = ROLE_LABELS[r.created_role] || r.created_role;
+    const canDel    = isOwn || ['admin','head_account'].includes(curUser.role);
+    return '<div class="reply-item ' + (isOwn ? 'own' : '') + '">' +
+      '<div class="reply-header">' +
+        '<div><span class="reply-author">' + esc(name) + '</span><span class="reply-role">(' + esc(roleLabel) + ')</span></div>' +
+        '<div style="display:flex;align-items:center;gap:6px;">' +
+          '<span class="reply-time">' + fmtDateTime(r.created_at) + '</span>' +
+          (canDel ? '<button class="reply-del-btn" onclick="deleteReply(\'' + esc(r.id) + '\')">Hapus</button>' : '') +
+        '</div>' +
+      '</div>' +
+      '<div class="reply-body">' + esc(r.body) + '</div>' +
+    '</div>';
+  }).join('');
+  container.scrollTop = container.scrollHeight;
+}
+
+async function sendReply() {
+  const body = document.getElementById('inputReplyText').value.trim();
+  if (!body) { showFb('replyFeedback', 'Tulis balasan terlebih dahulu.', 'error'); return; }
+  const btn = document.getElementById('btnSendReply');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="mini-spinner"></span>';
+  hideFb('replyFeedback');
+  try {
+    const now = new Date().toISOString();
+    const { error } = await window._supabase
+      .from('job_task_replies')
+      .insert({ task_id: replyTaskId, body, created_by: curUser.username, created_role: curUser.role, created_at: now });
+    if (error) throw error;
+    document.getElementById('inputReplyText').value = '';
+    await loadReplies(replyTaskId);
+  } catch(e) {
+    showFb('replyFeedback', 'Gagal kirim: ' + (e.message || 'Cek koneksi.'), 'error');
+  }
+  btn.disabled = false;
+  btn.textContent = 'Kirim Balasan';
+}
+
+async function deleteReply(replyId) {
+  if (!confirm('Hapus balasan ini?')) return;
+  try {
+    const { error } = await window._supabase.from('job_task_replies').delete().eq('id', replyId);
+    if (error) throw error;
+    await loadReplies(replyTaskId);
+  } catch(e) { alert('Gagal hapus: ' + (e.message||'')); }
+}
 </script>
 </body>
 </html>
