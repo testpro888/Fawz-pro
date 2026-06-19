@@ -98,8 +98,19 @@
     .btn-task-edit:hover { border-color:var(--gold); color:#e8931a; }
     .btn-task-del  { font-size:.72rem; padding:5px 12px; border:1.5px solid #ffe0e0; border-radius:8px; background:none; cursor:pointer; color:#e74c3c; transition:background .15s; }
     .btn-task-del:hover { background:#e74c3c; color:#fff; }
-    .btn-reply { font-size:.72rem; padding:5px 12px; border:1.5px solid #dbeafe; border-radius:8px; background:none; cursor:pointer; color:#2563eb; transition:background .15s,border-color .15s; }
+    .btn-reply { font-size:.72rem; padding:5px 12px; border:1.5px solid #dbeafe; border-radius:8px; background:none; cursor:pointer; color:#2563eb; transition:background .15s,border-color .15s; display:inline-flex; align-items:center; gap:5px; position:relative; }
     .btn-reply:hover { background:#eff6ff; border-color:#93c5fd; }
+    .btn-reply .reply-unread-dot {
+      width:7px; height:7px; border-radius:50%;
+      background:#e74c3c;
+      display:inline-block;
+      flex-shrink:0;
+      animation: pulse-dot 1.8s infinite;
+    }
+    @keyframes pulse-dot {
+      0%,100% { transform:scale(1); opacity:1; }
+      50%      { transform:scale(1.3); opacity:.7; }
+    }
 
     .done-note { font-size:.76rem; color:#059669; background:rgba(16,185,129,.08); padding:6px 10px; border-radius:8px; margin-top:8px; font-style:italic; }
 
@@ -307,6 +318,32 @@ let currentTab = 'inbox';
 let editTaskId = null;
 let accTaskId  = null;
 
+// Unread reply tracking: { taskId: 'ISO timestamp terakhir dibaca' }
+let replyLastRead  = {};   // dimuat dari localStorage
+let replyLatest    = {};   // { taskId: 'ISO timestamp reply terbaru' }
+
+function _replyReadKey() {
+  return 'fawz_reply_read_' + (curUser ? curUser.username : 'anon');
+}
+function loadReplyReadState() {
+  try { replyLastRead = JSON.parse(localStorage.getItem(_replyReadKey()) || '{}'); }
+  catch(e) { replyLastRead = {}; }
+}
+function saveReplyReadState() {
+  localStorage.setItem(_replyReadKey(), JSON.stringify(replyLastRead));
+}
+function markReplyRead(taskId) {
+  replyLastRead[taskId] = new Date().toISOString();
+  saveReplyReadState();
+}
+function hasUnreadReply(taskId) {
+  const latest = replyLatest[taskId];
+  if (!latest) return false;
+  const lastRead = replyLastRead[taskId];
+  if (!lastRead) return true;
+  return new Date(latest) > new Date(lastRead);
+}
+
 /* INIT */
 async function init() {
   const raw = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember');
@@ -321,6 +358,7 @@ async function init() {
   if (curUser.role === 'head_account') {
     document.getElementById('tabAll').style.display = '';
   }
+  loadReplyReadState();
   await loadUsers();
   await loadTasks();
 }
@@ -386,6 +424,7 @@ async function loadTasks() {
     }
 
     allTasks = allData;
+    await loadReplyLatest();
     renderTasks();
     updateStats();
   } catch(e) {
@@ -393,6 +432,29 @@ async function loadTasks() {
     document.getElementById('tasksGrid').innerHTML =
       '<div style="color:#e74c3c;padding:20px;grid-column:1/-1;text-align:center;">Gagal memuat task: ' + (e.message || 'Periksa koneksi.') + '</div>';
   }
+}
+
+/* LOAD LATEST REPLY TIMESTAMPS — untuk unread indicator */
+async function loadReplyLatest() {
+  if (!allTasks.length) return;
+  try {
+    const ids = allTasks.map(t => t.id);
+    // Fetch reply terbaru per task dalam satu query
+    const { data, error } = await window._supabase
+      .from('job_task_replies')
+      .select('task_id, created_at, created_by')
+      .in('task_id', ids)
+      .order('created_at', { ascending: false });
+    if (error) return;
+    // Ambil yang terbaru per task_id, abaikan reply dari user sendiri
+    replyLatest = {};
+    (data || []).forEach(r => {
+      if (r.created_by === curUser.username) return; // reply sendiri tidak dihitung unread
+      if (!replyLatest[r.task_id]) {
+        replyLatest[r.task_id] = r.created_at;
+      }
+    });
+  } catch(e) { /* silent */ }
 }
 
 /* FILTER */
@@ -501,7 +563,8 @@ function buildTaskCard(t) {
 
   let actionBtns = '';
   if (canAcc)    actionBtns += '<button class="btn-acc"       onclick="openDoneModal(\'' + esc(t.id) + '\')">Acc Done</button>';
-  actionBtns += '<button class="btn-reply" onclick="openReplyModal(\'' + esc(t.id) + '\')">Reply</button>';
+  const unreadDot = hasUnreadReply(t.id) ? '<span class="reply-unread-dot"></span>' : '';
+  actionBtns += '<button class="btn-reply" id="replyBtn_' + esc(t.id) + '" onclick="openReplyModal(\'' + esc(t.id) + '\')">' + unreadDot + 'Reply</button>';
   if (canEdit)   actionBtns += '<button class="btn-task-edit" onclick="openEditTaskModal(\'' + esc(t.id) + '\')">Edit</button>';
   if (canDelete) actionBtns += '<button class="btn-task-del"  onclick="deleteTask(\'' + esc(t.id) + '\',\'' + esc(t.title) + '\')">Hapus</button>';
 
@@ -732,6 +795,15 @@ async function openReplyModal(taskId) {
   document.getElementById('inputReplyText').value        = '';
   hideFb('replyFeedback');
   openModal('modalReply');
+
+  // Mark sebagai sudah dibaca & hapus unread dot
+  markReplyRead(taskId);
+  const btn = document.getElementById('replyBtn_' + taskId);
+  if (btn) {
+    const dot = btn.querySelector('.reply-unread-dot');
+    if (dot) dot.remove();
+  }
+
   await loadReplies(taskId);
 }
 
@@ -790,6 +862,7 @@ async function sendReply() {
       .insert({ task_id: replyTaskId, body, created_by: curUser.username, created_role: curUser.role, created_at: now });
     if (error) throw error;
     document.getElementById('inputReplyText').value = '';
+    markReplyRead(replyTaskId);
     await loadReplies(replyTaskId);
   } catch(e) {
     showFb('replyFeedback', 'Gagal kirim: ' + (e.message || 'Cek koneksi.'), 'error');
