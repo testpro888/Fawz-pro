@@ -299,7 +299,8 @@ async function init() {
       '<div style="text-align:center;padding:80px;color:#aaa;">Akses tidak diizinkan.</div>';
     return;
   }
-  if (['admin','head_account','head_sales'].includes(curUser.role)) {
+  // Hanya head_account yang bisa lihat semua task
+  if (curUser.role === 'head_account') {
     document.getElementById('tabAll').style.display = '';
   }
   await loadUsers();
@@ -317,18 +318,62 @@ async function loadUsers() {
 /* LOAD TASKS */
 async function loadTasks() {
   try {
-    const { data, error } = await window._supabase
-      .from('job_tasks')
-      .select('*')
-      .order('created_at', { ascending: false });
-    if (error) throw error;
-    allTasks = data || [];
+    let allData = [];
+
+    if (curUser.role === 'head_account') {
+      // Head account lihat semua task
+      const { data, error } = await window._supabase
+        .from('job_tasks')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      allData = data || [];
+    } else {
+      // Fetch task yang SAYA BUAT
+      const { data: sent, error: e1 } = await window._supabase
+        .from('job_tasks')
+        .select('*')
+        .eq('created_by', curUser.username)
+        .order('created_at', { ascending: false });
+      if (e1) throw e1;
+
+      // Fetch task yang DITUJUKAN KE ROLE SAYA (semua user di role)
+      const { data: roleInbox, error: e2 } = await window._supabase
+        .from('job_tasks')
+        .select('*')
+        .eq('assigned_role', curUser.role)
+        .is('assigned_to', null)
+        .order('created_at', { ascending: false });
+      if (e2) throw e2;
+
+      // Fetch task yang DITUJUKAN KHUSUS KE SAYA
+      const { data: myInbox, error: e3 } = await window._supabase
+        .from('job_tasks')
+        .select('*')
+        .eq('assigned_role', curUser.role)
+        .eq('assigned_to', curUser.username)
+        .order('created_at', { ascending: false });
+      if (e3) throw e3;
+
+      // Gabungkan & deduplicate berdasarkan id
+      const merged = [...(sent || []), ...(roleInbox || []), ...(myInbox || [])];
+      const seen = new Set();
+      allData = merged.filter(t => {
+        if (seen.has(t.id)) return false;
+        seen.add(t.id);
+        return true;
+      });
+      // Sort by created_at desc
+      allData.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    }
+
+    allTasks = allData;
     renderTasks();
     updateStats();
   } catch(e) {
     console.error('loadTasks:', e);
     document.getElementById('tasksGrid').innerHTML =
-      '<div style="color:#e74c3c;padding:20px;grid-column:1/-1;text-align:center;">Gagal memuat task. Periksa koneksi.</div>';
+      '<div style="color:#e74c3c;padding:20px;grid-column:1/-1;text-align:center;">Gagal memuat task: ' + (e.message || 'Periksa koneksi.') + '</div>';
   }
 }
 
@@ -337,18 +382,25 @@ function getFilteredTasks() {
   const statusF   = document.getElementById('filterStatus').value;
   const roleF     = document.getElementById('filterRole').value;
   const priorityF = document.getElementById('filterPriority').value;
-  let tasks = [...allTasks];
+  let tasks;
+
   if (currentTab === 'inbox') {
-    tasks = tasks.filter(t =>
+    // Task yang ditujukan ke role / user saya
+    tasks = allTasks.filter(t =>
       t.assigned_role === curUser.role &&
       (!t.assigned_to || t.assigned_to === curUser.username)
     );
   } else if (currentTab === 'sent') {
-    tasks = tasks.filter(t => t.created_by === curUser.username);
+    // Task yang saya buat
+    tasks = allTasks.filter(t => t.created_by === curUser.username);
+  } else {
+    // Tab 'all' — hanya tersedia untuk head_account, tampilkan semua data
+    tasks = [...allTasks];
   }
-  if (statusF)   tasks = tasks.filter(t => t.status   === statusF);
+
+  if (statusF)   tasks = tasks.filter(t => t.status        === statusF);
   if (roleF)     tasks = tasks.filter(t => t.assigned_role === roleF);
-  if (priorityF) tasks = tasks.filter(t => t.priority  === priorityF);
+  if (priorityF) tasks = tasks.filter(t => t.priority      === priorityF);
   return tasks;
 }
 
@@ -531,6 +583,7 @@ async function saveTask() {
   const btn = document.getElementById('btnSaveTask');
   btn.disabled = true;
   btn.innerHTML = '<span class="mini-spinner"></span> Menyimpan...';
+  hideFb('taskFeedback');
 
   try {
     if (editTaskId) {
@@ -548,26 +601,29 @@ async function saveTask() {
       if (error) throw error;
     } else {
       const now = new Date().toISOString();
+      const payload = {
+        title,
+        description:   desc       || null,
+        assigned_role: assignRole,
+        assigned_to:   assignTo   || null,
+        created_by:    curUser.username,
+        created_role:  curUser.role,
+        priority:      priority   || 'normal',
+        status:        'pending',
+        assigned_at:   now,
+        created_at:    now,
+        updated_at:    now
+      };
       const { error } = await window._supabase
         .from('job_tasks')
-        .insert({
-          title,
-          description:   desc       || null,
-          assigned_role: assignRole,
-          assigned_to:   assignTo   || null,
-          created_by:    curUser.username,
-          created_role:  curUser.role,
-          priority,
-          status:        'pending',
-          assigned_at:   now
-        });
+        .insert(payload);
       if (error) throw error;
     }
     closeModal('modalTask');
     await loadTasks();
   } catch(e) {
-    console.error(e);
-    showFb('taskFeedback', 'Gagal menyimpan: ' + (e.message || 'Cek koneksi.'), 'error');
+    console.error('saveTask error:', e);
+    showFb('taskFeedback', 'Gagal menyimpan: ' + (e.message || 'Cek koneksi atau izin akses.'), 'error');
   }
 
   btn.disabled = false;
