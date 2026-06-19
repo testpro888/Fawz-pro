@@ -47,7 +47,7 @@
     .table-wrapper { background: #fff; border-radius: 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); overflow: hidden; animation: fadeUp 0.4s 0.12s ease both; }
     table { width: 100%; border-collapse: collapse; font-size: 0.84rem; }
     thead { background: var(--navy); }
-    thead th { padding: 13px 14px; text-align: left; font-weight: 600; color: #fff; font-size: 0.76rem; letter-spacing: 0.3px; white-space: nowrap; }
+    thead th { padding: 13px 14px; text-align: left; font-weight: 600; color: #fff; font-size: 0.76rem; letter-spacing: 0.3px; white-space: nowrap; position: sticky; top: 0; z-index: 2; background: var(--navy); }
     tbody tr { border-bottom: 1px solid #f5f5fc; transition: background 0.15s; }
     tbody tr:hover { background: #fffbf3; }
     tbody td { padding: 11px 14px; color: #333; vertical-align: middle; }
@@ -116,7 +116,7 @@
 
   <!-- Transaction Table -->
   <div class="section-title">Daftar Transaksi</div>
-  <div class="table-wrapper">
+  <div class="table-wrapper" style="overflow:auto;max-height:720px;">
     <table>
       <thead>
         <tr>
@@ -130,39 +130,27 @@
           <th>Catatan</th>
         </tr>
       </thead>
+      <tbody id="transactionBody">
+        <tr><td colspan="8"><div class="empty-state">Memuat data...</div></td></tr>
+      </tbody>
     </table>
-    <div style="max-height:680px;overflow-y:auto;">
-      <table>
-        <tbody id="transactionBody">
-          <tr><td colspan="8"><div class="empty-state">Memuat data...</div></td></tr>
-        </tbody>
-      </table>
-    </div>
   </div>
 
   <!-- Ranking Section -->
   <div class="section-title">Ranking Volume (Top 20)</div>
-  <div class="table-wrapper">
+  <div class="table-wrapper" style="overflow:auto;max-height:560px;">
     <table>
       <thead><tr><th>Rank</th><th>Client Code</th><th>Customer Name</th><th>Sales</th><th>Total Volume</th><th>Total Fee</th></tr></thead>
+      <tbody id="volumeRankingBody"><tr><td colspan="6" class="empty-state">Memuat...</td></tr></tbody>
     </table>
-    <div style="max-height:520px;overflow-y:auto;">
-      <table>
-        <tbody id="volumeRankingBody"><tr><td colspan="6" class="empty-state">Memuat...</td></tr></tbody>
-      </table>
-    </div>
   </div>
 
   <div class="section-title">Ranking Fee (Top 20)</div>
-  <div class="table-wrapper">
+  <div class="table-wrapper" style="overflow:auto;max-height:560px;">
     <table>
       <thead><tr><th>Rank</th><th>Client Code</th><th>Customer Name</th><th>Sales</th><th>Total Volume</th><th>Total Fee</th></tr></thead>
+      <tbody id="feeRankingBody"><tr><td colspan="6" class="empty-state">Memuat...</td></tr></tbody>
     </table>
-    <div style="max-height:520px;overflow-y:auto;">
-      <table>
-        <tbody id="feeRankingBody"><tr><td colspan="6" class="empty-state">Memuat...</td></tr></tbody>
-      </table>
-    </div>
   </div>
 
   <!-- High Volume Clients Section -->
@@ -174,7 +162,7 @@
       <span id="hvCount" style="font-size:0.78rem;color:var(--gray);"></span>
     </div>
   </div>
-  <div class="table-wrapper">
+  <div class="table-wrapper" style="overflow:auto;max-height:640px;">
     <table>
       <thead>
         <tr>
@@ -187,12 +175,10 @@
           <th>Jumlah Transaksi</th>
         </tr>
       </thead>
+      <tbody id="highVolumeBody">
+        <tr><td colspan="7"><div class="empty-state">Memuat data...</div></td></tr>
+      </tbody>
     </table>
-    <div style="max-height:600px;overflow-y:auto;">
-      <table>
-        <tbody id="highVolumeBody"><tr><td colspan="7"><div class="empty-state">Memuat data...</div></td></tr></tbody>
-      </table>
-    </div>
   </div>
 </div>
 
