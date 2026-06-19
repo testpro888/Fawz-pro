@@ -225,7 +225,67 @@
 
   }
 
-  /* ── 4. NOTIFICATIONS (treasury/Bonds only) ── */
+  /* ── 4b. TASK PENDING INDICATOR (semua role) ── */
+  function initTaskIndicator(user) {
+    // Semua role yang punya akses job-report
+    const allowedRoles = ['admin', 'treasury', 'head_account', 'sales', 'head_sales'];
+    if (!allowedRoles.includes(user.role)) return;
+
+    waitForSupabase(() => {
+      fetchPendingTasks(user);
+      setInterval(() => fetchPendingTasks(user), 60000);
+    });
+  }
+
+  async function fetchPendingTasks(user) {
+    if (!window._supabase) return;
+    try {
+      let count = 0;
+
+      if (user.role === 'head_account') {
+        // Head account: hitung semua task pending
+        const { count: c, error } = await window._supabase
+          .from('job_tasks')
+          .select('id', { count: 'exact', head: true })
+          .eq('status', 'pending');
+        if (!error) count = c || 0;
+      } else {
+        // Task yang ditujukan ke seluruh role (assigned_to null)
+        const { count: c1 } = await window._supabase
+          .from('job_tasks')
+          .select('id', { count: 'exact', head: true })
+          .eq('status', 'pending')
+          .eq('assigned_role', user.role)
+          .is('assigned_to', null);
+
+        // Task yang ditujukan khusus ke user ini
+        const { count: c2 } = await window._supabase
+          .from('job_tasks')
+          .select('id', { count: 'exact', head: true })
+          .eq('status', 'pending')
+          .eq('assigned_role', user.role)
+          .eq('assigned_to', user.username);
+
+        count = (c1 || 0) + (c2 || 0);
+      }
+
+      // Update badge di link Job Report
+      const badge = document.getElementById('jobReportBadge');
+      const mobBadge = document.getElementById('mobJobReportBadge');
+      const cnt = count || 0;
+
+      if (badge) {
+        badge.textContent = cnt > 99 ? '99+' : cnt;
+        badge.style.display = cnt > 0 ? 'inline-flex' : 'none';
+      }
+      if (mobBadge) {
+        mobBadge.textContent = cnt > 99 ? '99+' : cnt;
+        mobBadge.style.display = cnt > 0 ? 'inline-flex' : 'none';
+      }
+    } catch(e) { /* silent */ }
+  }
+
+
   let _notifReadIds = [];
 
   function initNotifications(user) {
@@ -482,6 +542,9 @@
       // Init notifications untuk treasury
       const _rawUser = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember');
       if (_rawUser) initNotifications(JSON.parse(_rawUser));
+
+      // Init task pending indicator untuk semua role
+      if (_rawUser) initTaskIndicator(JSON.parse(_rawUser));
 
       // Event delegation untuk drawer group accordion
       document.addEventListener('click', function(e) {
