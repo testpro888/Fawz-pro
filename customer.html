@@ -1268,12 +1268,18 @@
   function processCSVFile(file) {
     const reader = new FileReader();
     reader.onload = e => {
-      const lines = e.target.result.trim().split('\n').filter(l => l.trim());
+      const text = e.target.result.trim();
+      const lines = text.split(/\r?\n/).filter(l => l.trim());
       if (lines.length < 2) { showToast('File CSV kosong atau tidak valid', 'error'); return; }
-      const headers = lines[0].split(',').map(h => h.trim().replace(/"/g,''));
+
+      // Auto-detect separator: semicolon atau koma
+      const firstLine = lines[0];
+      const sep = (firstLine.split(';').length > firstLine.split(',').length) ? ';' : ',';
+
+      const headers = parseCSVLine(lines[0], sep).map(h => h.trim().replace(/^"|"$/g,''));
       const headersLower = headers.map(h => h.toLowerCase());
       csvRows = lines.slice(1).map(line => {
-        const vals = parseCSVLine(line);
+        const vals = parseCSVLine(line, sep);
         const obj = {};
         headers.forEach((h, i) => { obj[h] = vals[i]||''; obj[headersLower[i]] = vals[i]||''; });
         return mapRow(obj);
@@ -1281,17 +1287,18 @@
       renderCSVPreview();
       document.getElementById('uploadSaveBtn').disabled = csvRows.length === 0;
     };
-    reader.readAsText(file);
+    // Coba UTF-8 dulu, fallback ke latin1 jika ada karakter aneh
+    reader.readAsText(file, 'UTF-8');
   }
 
-  function parseCSVLine(line) {
+  function parseCSVLine(line, sep = ',') {
     const result = []; let cur = '', inQ = false;
     for (const ch of line) {
       if (ch === '"') { inQ = !inQ; }
-      else if (ch === ',' && !inQ) { result.push(cur); cur = ''; }
+      else if (ch === sep && !inQ) { result.push(cur.trim().replace(/^"|"$/g,'')); cur = ''; }
       else cur += ch;
     }
-    result.push(cur);
+    result.push(cur.trim().replace(/^"|"$/g,''));
     return result;
   }
 
@@ -1327,8 +1334,10 @@
     btn.textContent = 'Mengimport...'; btn.disabled = true;
     try {
       let success = 0, errors = [];
+
+      // Pisahkan rows yang punya client_id (upsert) dan yang tidak (insert)
+      const rowsWithId = [], rowsWithoutId = [];
       for (const row of csvRows) {
-        // Map camelCase CSV fields → snake_case Supabase columns
         const supaRow = {
           client_id:                 row.clientID || null,
           client_name:               row.clientName || null,
@@ -1354,62 +1363,47 @@
           active_date:               parseDateField(row.activeDate),
           closed_date:               parseDateField(row.closedDate),
         };
-        // Remove null/empty values to avoid constraint issues
         Object.keys(supaRow).forEach(k => { if (supaRow[k] === null || supaRow[k] === '') delete supaRow[k]; });
-        // Ensure client_name exists
         if (!supaRow.client_name) continue;
-
-        let result;
-        if (supaRow.client_id) {
-          // Upsert jika ada client_id (update jika sudah ada)
-          result = await window._supabase
-            .from('customers')
-            .upsert(supaRow, { onConflict: 'client_id' })
-            .select()
-            .single();
-        } else {
-          // Insert biasa jika tidak ada client_id
-          result = await window._supabase
-            .from('customers')
-            .insert(supaRow)
-            .select()
-            .single();
-        }
-        const { data: inserted, error } = result;
-        if (!error && inserted) {
-          // Insert securities data (RDN + bank pribadi) ke customer_securities
-          const secRow = {
-            customer_id: inserted.id,
-            sekuritas_name: 'Maybank',
-            rdn_bank_name: row.savingsBankID || row.SavingsBankID || null,
-            rdn_account_no: row.savingsID || row.SavingsID || null,
-            sec_client_id: row.clientID || row.ClientID || null,
-            sid: row.kseiSingleID || row.KSEISingleID || null,
-            personal_bank_name: row.bankAccountID || row.BankAccountID || null,
-            personal_account_no: row.bankAccountNo || row.BankAccountNo || null,
-            personal_account_name: row.bankAccountName || row.BankAccountName || null,
-          };
-          // Always insert securities row (even if some fields empty)
-          const { error: secErr } = await window._supabase.from('customer_securities').insert(secRow);
-          if (secErr) console.warn('Securities insert error:', secErr.message, secRow);
-
-          // Map with extra fields for display
-          const mapped = mapCustomerRow(inserted);
-          mapped.bankAccountNo = row.bankAccountNo || '';
-          mapped.bankAccountID = row.bankAccountID || '';
-          mapped.bankAccountName = row.bankAccountName || '';
-          allCustomers.unshift(mapped);
-          success++;
-        } else if (error) {
-          errors.push(`${row.clientID || row.clientName}: ${error.message}`);
-        }
+        if (supaRow.client_id) rowsWithId.push({ supaRow, row });
+        else rowsWithoutId.push({ supaRow, row });
       }
+
+      const BATCH = 100;
+
+      // Batch upsert rows dengan client_id
+      for (let i = 0; i < rowsWithId.length; i += BATCH) {
+        const batch = rowsWithId.slice(i, i + BATCH);
+        btn.textContent = `Mengimport... (${Math.min(i + BATCH, rowsWithId.length)}/${rowsWithId.length})`;
+        const { data: upserted, error } = await window._supabase
+          .from('customers')
+          .upsert(batch.map(b => b.supaRow), { onConflict: 'client_id' })
+          .select();
+        if (error) { errors.push(`Batch upsert error: ${error.message}`); }
+        else { success += (upserted || []).length; }
+      }
+
+      // Batch insert rows tanpa client_id
+      for (let i = 0; i < rowsWithoutId.length; i += BATCH) {
+        const batch = rowsWithoutId.slice(i, i + BATCH);
+        btn.textContent = `Mengimport... (${Math.min(i + BATCH, rowsWithoutId.length)}/${rowsWithoutId.length})`;
+        const { data: inserted, error } = await window._supabase
+          .from('customers')
+          .insert(batch.map(b => b.supaRow))
+          .select();
+        if (error) { errors.push(`Batch insert error: ${error.message}`); }
+        else { success += (inserted || []).length; }
+      }
+
       document.getElementById('uploadModal').classList.remove('open');
+      // Reload data dari server supaya tampilan up-to-date
+      await loadCustomers();
       applyFilters(); updateStats(); populateFilters();
       if (success > 0) showToast(`${success} customer berhasil diimport`, 'success');
       if (errors.length > 0) {
         console.warn('Import errors:', errors);
         if (success === 0) showToast(`Gagal import: ${errors[0]}`, 'error');
+        else showToast(`${success} berhasil, ${errors.length} batch gagal. Cek console.`, 'warning');
       }
     } catch (e) { console.error(e); showToast('Gagal import: ' + e.message, 'error'); }
     finally { btn.textContent = 'Import Data'; btn.disabled = false; }
