@@ -89,7 +89,7 @@
     </div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;">
       <a href="saham.html" class="btn btn-outline">← Transaksi Saham</a>
-      <a href="fawz-point.html" class="btn btn-outline">⭐ Fawz Point</a>
+      <a href="fawz-point.html" class="btn btn-outline">Fawz Point</a>
     </div>
   </div>
 
@@ -115,7 +115,7 @@
   </div>
 
   <!-- Transaction Table -->
-  <div class="section-title">📋 Daftar Transaksi</div>
+  <div class="section-title">Daftar Transaksi</div>
   <div class="table-wrapper">
     <table>
       <thead>
@@ -134,14 +134,14 @@
     <div style="max-height:680px;overflow-y:auto;">
       <table>
         <tbody id="transactionBody">
-          <tr><td colspan="8"><div class="empty-state">⏳ Memuat data...</div></td></tr>
+          <tr><td colspan="8"><div class="empty-state">Memuat data...</div></td></tr>
         </tbody>
       </table>
     </div>
   </div>
 
   <!-- Ranking Section -->
-  <div class="section-title">🏆 Ranking Volume (Top 20)</div>
+  <div class="section-title">Ranking Volume (Top 20)</div>
   <div class="table-wrapper">
     <table>
       <thead><tr><th>Rank</th><th>Client Code</th><th>Customer Name</th><th>Sales</th><th>Total Volume</th><th>Total Fee</th></tr></thead>
@@ -153,7 +153,7 @@
     </div>
   </div>
 
-  <div class="section-title">🏆 Ranking Fee (Top 20)</div>
+  <div class="section-title">Ranking Fee (Top 20)</div>
   <div class="table-wrapper">
     <table>
       <thead><tr><th>Rank</th><th>Client Code</th><th>Customer Name</th><th>Sales</th><th>Total Volume</th><th>Total Fee</th></tr></thead>
@@ -167,7 +167,7 @@
 
   <!-- High Volume Clients Section -->
   <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-top:32px;margin-bottom:14px;" class="section-title-row">
-    <div class="section-title" style="margin:0;">💎 Client Volume &gt; 100 Juta</div>
+    <div class="section-title" style="margin:0;">Client Volume &gt; 100 Juta</div>
     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
       <label style="font-size:0.78rem;font-weight:600;color:var(--navy);">Bulan:</label>
       <input type="month" id="hvMonthFilter" style="height:36px;border:1px solid var(--border);border-radius:8px;padding:0 12px;font-family:'Inter',sans-serif;font-size:0.8rem;color:var(--text);outline:none;" onchange="renderHighVolumeTable()"/>
@@ -190,7 +190,7 @@
     </table>
     <div style="max-height:600px;overflow-y:auto;">
       <table>
-        <tbody id="highVolumeBody"><tr><td colspan="7"><div class="empty-state">⏳ Memuat data...</div></td></tr></tbody>
+        <tbody id="highVolumeBody"><tr><td colspan="7"><div class="empty-state">Memuat data...</div></td></tr></tbody>
       </table>
     </div>
   </div>
@@ -243,7 +243,7 @@
     var month = document.getElementById('hvMonthFilter').value;
     if (!month) return;
     var tbody = document.getElementById('highVolumeBody');
-    tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state">⏳ Memuat data...</div></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state">Memuat data...</div></td></tr>';
 
     fetchTransactionsByMonth(month).then(function(transactions) {
       // Aggregate by client
@@ -264,7 +264,7 @@
       document.getElementById('hvCount').textContent = highVol.length + ' client';
 
       if (!highVol.length) {
-        tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state">📭 Tidak ada client dengan volume &gt; 100 juta bulan ini</div></td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state">Tidak ada client dengan volume &gt; 100 juta bulan ini</div></td></tr>';
         return;
       }
       tbody.innerHTML = highVol.map(function(c, i) {
@@ -280,7 +280,7 @@
       }).join('');
     }).catch(function(e) {
       console.error(e);
-      tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state">❌ Gagal memuat data</div></td></tr>';
+      tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state">Gagal memuat data</div></td></tr>';
     });
   }
 
@@ -318,7 +318,7 @@
       // Render transaction table
       var tbody = document.getElementById('transactionBody');
       if (!transactions.length) {
-        tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state">📭 Tidak ada transaksi untuk bulan ini</div></td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state">Tidak ada transaksi untuk bulan ini</div></td></tr>';
       } else {
         tbody.innerHTML = transactions.map(function(r, i) {
           return '<tr>' +
@@ -339,7 +339,7 @@
 
     } catch(e) {
       console.error('Load error:', e);
-      document.getElementById('transactionBody').innerHTML = '<tr><td colspan="8"><div class="empty-state">❌ Gagal memuat data</div></td></tr>';
+      document.getElementById('transactionBody').innerHTML = '<tr><td colspan="8"><div class="empty-state">Gagal memuat data</div></td></tr>';
     }
   }
 
