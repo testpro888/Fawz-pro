@@ -27,7 +27,7 @@
       const allowed = ['head_sales', 'admin', 'head_account', 'sales'];
       if (!allowed.includes(role)) {
         document.addEventListener('DOMContentLoaded', () => {
-          document.body.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;min-height:100vh;font-family:Inter,sans-serif;background:#f4f5fb;flex-direction:column;gap:16px;"><div style="font-size:3rem;">🚫</div><div style="font-size:1.2rem;font-weight:700;color:#0d0d2b;">Akses Ditolak</div><div style="color:#888;font-size:.9rem;">Halaman ini hanya untuk Head Sales, Admin, Head Account, dan Sales (Petik Profit).</div><a href="dashboard.html" style="margin-top:12px;background:#f5a623;color:#fff;padding:10px 24px;border-radius:10px;text-decoration:none;font-weight:600;">Kembali ke Dashboard</a></div>`;
+          document.body.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;min-height:100vh;font-family:Inter,sans-serif;background:#f4f5fb;flex-direction:column;gap:16px;"><div style="font-size:1.2rem;font-weight:700;color:#0d0d2b;">Akses Ditolak</div><div style="color:#888;font-size:.9rem;">Halaman ini hanya untuk Head Sales, Admin, Head Account, dan Sales (Petik Profit).</div><a href="dashboard.html" style="margin-top:12px;background:#f5a623;color:#fff;padding:10px 24px;border-radius:10px;text-decoration:none;font-weight:600;">Kembali ke Dashboard</a></div>`;
         });
       }
       window._curUser = u;
@@ -175,6 +175,24 @@
 
     @media (max-width: 900px) { .stats-row { grid-template-columns: 1fr 1fr; } }
     @media (max-width: 600px) { .stats-row { grid-template-columns: 1fr; } .form-grid { grid-template-columns: 1fr; } .page-header { flex-direction: column; } }
+
+    /* Custom client search dropdown */
+    .client-dropdown {
+      position: absolute; top: calc(100% + 2px); left: 0; right: 0;
+      background: #fff; border: 1.5px solid var(--border); border-radius: 10px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.12); z-index: 500;
+      max-height: 220px; overflow-y: auto;
+    }
+    .client-dd-item {
+      padding: 9px 13px; cursor: pointer; transition: background 0.12s;
+      display: flex; flex-direction: column; gap: 2px;
+      border-bottom: 1px solid #f5f5fa;
+    }
+    .client-dd-item:last-child { border-bottom: none; }
+    .client-dd-item:hover, .client-dd-item.focused { background: #fffbf3; }
+    .client-dd-id   { font-size: 0.78rem; font-weight: 700; color: var(--navy); font-family: monospace; }
+    .client-dd-name { font-size: 0.8rem; color: var(--gray); }
+    .client-dd-empty { padding: 12px 14px; font-size: 0.82rem; color: #bbb; text-align: center; }
   </style>
 </head>
 <body>
@@ -187,7 +205,7 @@
 <div class="page-container">
   <div class="page-header">
     <div>
-      <div class="page-title">🤝 Referral Agent Dashboard</div>
+      <div class="page-title">Referral Agent Dashboard</div>
       <div class="page-subtitle">Kelola klien referral, langganan Petik Profit, dan komisi agent</div>
       <div class="title-underline"></div>
     </div>
@@ -207,7 +225,7 @@
   <!-- Toolbar -->
   <div class="toolbar">
     <div class="search-wrap">
-      <span class="search-icon">🔍</span>
+      <span class="search-icon" style="font-style:normal;font-size:.85rem;color:#aaa;">&#128269;</span>
       <input type="text" id="searchInput" placeholder="Cari Client ID atau nama..." oninput="applyFilters()"/>
     </div>
     <select class="filter-select" id="filterStatus" onchange="applyFilters()">
@@ -242,7 +260,7 @@
           </tr>
         </thead>
         <tbody id="referralTableBody">
-          <tr><td colspan="10"><div class="empty-state"><div class="empty-icon">⏳</div><p>Memuat data...</p></div></td></tr>
+          <tr><td colspan="10"><div class="empty-state"><p>Memuat data...</p></div></td></tr>
         </tbody>
       </table>
     </div>
@@ -266,13 +284,13 @@
     <input type="hidden" id="editDocId"/>
 
     <!-- Client -->
-    <div class="form-section-title">👤 Data Klien</div>
+    <div class="form-section-title">Data Klien</div>
     <div class="form-grid">
-      <div class="form-group">
+      <div class="form-group" style="position:relative;">
         <label class="form-label">Client ID <span class="req">*</span></label>
-        <input class="form-input" id="fClientID" placeholder="Pilih atau ketik Client ID"
-          oninput="onClientIDInput()" list="clientIDList"/>
-        <datalist id="clientIDList"></datalist>
+        <input class="form-input" id="fClientID" placeholder="Ketik untuk mencari Client ID..."
+          oninput="onClientIDInput()" autocomplete="off" onkeydown="onClientIDKey(event)" onfocus="showClientDropdown()"/>
+        <div id="clientDropdown" class="client-dropdown" style="display:none;"></div>
         <div class="form-hint">Ketik untuk mencari dari Data Customer</div>
       </div>
       <div class="form-group">
@@ -282,7 +300,7 @@
     </div>
 
     <!-- Langganan -->
-    <div class="form-section-title" style="margin-top:8px;">🏅 Langganan Petik Profit</div>
+    <div class="form-section-title" style="margin-top:8px;">Langganan Petik Profit</div>
     <div class="form-grid">
       <div class="form-group">
         <label class="form-label">Status <span class="req">*</span></label>
@@ -311,7 +329,7 @@
     </div>
 
     <!-- Commission -->
-    <div class="form-section-title" style="margin-top:8px;">💰 Komisi</div>
+    <div class="form-section-title" style="margin-top:8px;">Komisi</div>
     <div id="commInfoGrid" class="comm-info-grid" style="margin-bottom:14px;"></div>
 
     <div class="toggle-row">
@@ -336,7 +354,7 @@
 
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="document.getElementById('formModal').classList.remove('open')">Batal</button>
-      <button class="btn btn-primary" onclick="saveReferral()">💾 Simpan</button>
+      <button class="btn btn-primary" onclick="saveReferral()">Simpan</button>
     </div>
   </div>
 </div>
@@ -345,7 +363,7 @@
 <div class="modal-overlay" id="qrModal" onclick="closeQRModal(event)">
   <div class="modal modal-sm qr-modal">
     <div class="modal-header">
-      <div class="modal-title">📲 QR Code Referral</div>
+      <div class="modal-title">QR Code Referral</div>
       <button class="modal-close" onclick="document.getElementById('qrModal').classList.remove('open')">✕</button>
     </div>
     <div style="text-align:center;">
@@ -357,7 +375,7 @@
       <div style="font-size:0.75rem;color:var(--gray);margin-top:8px;" id="qrLinkText">—</div>
     </div>
     <div class="modal-footer" style="justify-content:center;">
-      <button class="btn btn-outline btn-sm" onclick="downloadQR()">⬇️ Download QR</button>
+      <button class="btn btn-outline btn-sm" onclick="downloadQR()">Download QR</button>
       <button class="btn btn-primary btn-sm" onclick="document.getElementById('qrModal').classList.remove('open')">Tutup</button>
     </div>
   </div>
@@ -440,20 +458,12 @@ async function loadReferralClients() {
     const { data: custs } = await _sb.from('customers').select('client_id, client_name');
     _allCustomers = custs || [];
 
-    // Populate datalist
-    const dl = document.getElementById('clientIDList');
-    if (dl) {
-      dl.innerHTML = _allCustomers.map(c =>
-        `<option value="${_esc(c.client_id)}">${_esc(c.client_id)} — ${_esc(c.client_name||'')}</option>`
-      ).join('');
-    }
-
     applyFilters();
     updateStats();
   } catch(e) {
     console.error('Gagal load referral:', e);
     document.getElementById('referralTableBody').innerHTML =
-      `<tr><td colspan="10"><div class="empty-state"><div class="empty-icon">⚠️</div><p>Gagal memuat data. Coba muat ulang halaman.</p></div></td></tr>`;
+      `<tr><td colspan="10"><div class="empty-state"><p>Gagal memuat data. Coba muat ulang halaman.</p></div></td></tr>`;
   }
 }
 
@@ -511,7 +521,7 @@ function renderTable() {
     `Menampilkan ${start+1}–${Math.min(start+rows.length, total)} dari ${total} data`;
 
   if (rows.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="10"><div class="empty-state"><div class="empty-icon">🤝</div><p>Belum ada klien referral.</p></div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="10"><div class="empty-state"><div class="empty-icon" style="font-size:2.5rem;color:#ddd;">—</div><p>Belum ada klien referral.</p></div></td></tr>`;
     renderPagination(0);
     return;
   }
@@ -525,16 +535,16 @@ function renderTable() {
     // Sisa durasi styling
     let sisaHtml;
     if (sisa.expired) {
-      sisaHtml = `<span class="sisa-exp">⛔ Expired</span>`;
+      sisaHtml = `<span class="sisa-exp">Expired</span>`;
     } else if (sisa.days <= 7) {
-      sisaHtml = `<span class="sisa-warn">⚠️ ${sisa.days} hari lagi</span>`;
+      sisaHtml = `<span class="sisa-warn">${sisa.days} hari lagi</span>`;
     } else {
-      sisaHtml = `<span class="sisa-ok">✅ ${sisa.days} hari lagi</span>`;
+      sisaHtml = `<span class="sisa-ok">${sisa.days} hari lagi</span>`;
     }
 
     // Status badge
     const badge = r.status === 'Premium'
-      ? `<span class="badge badge-premium">⭐ Premium</span>`
+      ? `<span class="badge badge-premium">Premium</span>`
       : `<span class="badge badge-free">Free</span>`;
 
     // Commission cell
@@ -557,9 +567,9 @@ function renderTable() {
       <td>${sisaHtml}<br><span style="font-size:.7rem;color:#bbb;">Exp: ${fmtDate(sisa.expiry)}</span></td>
       <td>
         <div class="action-btns">
-          <button class="btn btn-qr btn-sm" onclick="openQR('${safeId}')" title="Generate QR">📲 QR</button>
-          <button class="btn btn-edit btn-sm" onclick="openEditModal('${safeId}')" title="Edit">✏️</button>
-          <button class="btn btn-del btn-sm" onclick="deleteRecord('${safeId}')" title="Hapus">🗑️</button>
+          <button class="btn btn-qr btn-sm" onclick="openQR('${safeId}')" title="Generate QR">QR</button>
+          <button class="btn btn-edit btn-sm" onclick="openEditModal('${safeId}')" title="Edit">Edit</button>
+          <button class="btn btn-del btn-sm" onclick="deleteRecord('${safeId}')" title="Hapus">Hapus</button>
         </div>
       </td>
     </tr>`;
@@ -596,6 +606,7 @@ function openAddModal() {
   document.getElementById('fClientID').value = '';
   document.getElementById('fClientName').value = '';
   document.getElementById('fClientName').disabled = true;
+  hideClientDropdown();
   document.getElementById('fStatus').value = 'Free';
   document.getElementById('fDurasi').value = '6';
   document.getElementById('fTglLangganan').value = new Date().toISOString().slice(0,10);
@@ -656,18 +667,114 @@ function onCustomCommToggle() {
   document.getElementById('customCommFields').style.display = checked ? 'block' : 'none';
 }
 
+let _ddFocusIdx = -1;
+
 function onClientIDInput() {
-  const cid  = document.getElementById('fClientID').value.trim();
-  const cust = _allCustomers.find(c => c.client_id === cid);
+  const q = document.getElementById('fClientID').value.trim().toLowerCase();
   const nameInput = document.getElementById('fClientName');
-  if (cust) {
-    nameInput.value    = cust.client_name || '';
+
+  // Exact match — auto fill name
+  const exact = _allCustomers.find(c => c.client_id.toLowerCase() === q);
+  if (exact) {
+    nameInput.value    = exact.client_name || '';
     nameInput.disabled = true;
   } else {
     nameInput.value    = '';
     nameInput.disabled = false;
   }
+
+  // Filter and show dropdown
+  if (!q) { hideClientDropdown(); return; }
+  const matches = _allCustomers.filter(c =>
+    c.client_id.toLowerCase().includes(q) ||
+    (c.client_name || '').toLowerCase().includes(q)
+  ).slice(0, 30);
+  renderClientDropdown(matches);
 }
+
+function showClientDropdown() {
+  const q = document.getElementById('fClientID').value.trim().toLowerCase();
+  if (!q) return;
+  onClientIDInput();
+}
+
+function renderClientDropdown(items) {
+  const dd = document.getElementById('clientDropdown');
+  _ddFocusIdx = -1;
+  if (!items.length) {
+    dd.innerHTML = '<div class="client-dd-empty">Tidak ada hasil</div>';
+    dd.style.display = 'block';
+    return;
+  }
+  dd.innerHTML = items.map((c, i) =>
+    '<div class="client-dd-item" data-idx="' + i + '" data-id="' + _esc(c.client_id) + '" data-name="' + _esc(c.client_name||'') + '"' +
+    ' onmousedown="selectClientDD(event)" onmouseover="hoverClientDD(' + i + ')">' +
+    '<span class="client-dd-id">' + _esc(c.client_id) + '</span>' +
+    '<span class="client-dd-name">' + _esc(c.client_name||'—') + '</span>' +
+    '</div>'
+  ).join('');
+  dd.style.display = 'block';
+}
+
+function hideClientDropdown() {
+  document.getElementById('clientDropdown').style.display = 'none';
+  _ddFocusIdx = -1;
+}
+
+function hoverClientDD(idx) {
+  _ddFocusIdx = idx;
+  document.querySelectorAll('.client-dd-item').forEach(function(el, i) {
+    el.classList.toggle('focused', i === idx);
+  });
+}
+
+function selectClientDD(e) {
+  e.preventDefault();
+  var el   = e.currentTarget;
+  var cid  = el.dataset.id;
+  var name = el.dataset.name;
+  document.getElementById('fClientID').value    = cid;
+  document.getElementById('fClientName').value  = name;
+  document.getElementById('fClientName').disabled = true;
+  hideClientDropdown();
+}
+
+function onClientIDKey(e) {
+  var dd = document.getElementById('clientDropdown');
+  if (dd.style.display === 'none') return;
+  var items = dd.querySelectorAll('.client-dd-item');
+  if (!items.length) return;
+
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    _ddFocusIdx = Math.min(_ddFocusIdx + 1, items.length - 1);
+    hoverClientDD(_ddFocusIdx);
+    items[_ddFocusIdx] && items[_ddFocusIdx].scrollIntoView({ block: 'nearest' });
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    _ddFocusIdx = Math.max(_ddFocusIdx - 1, 0);
+    hoverClientDD(_ddFocusIdx);
+    items[_ddFocusIdx] && items[_ddFocusIdx].scrollIntoView({ block: 'nearest' });
+  } else if (e.key === 'Enter') {
+    e.preventDefault();
+    if (_ddFocusIdx >= 0 && items[_ddFocusIdx]) {
+      var el = items[_ddFocusIdx];
+      document.getElementById('fClientID').value    = el.dataset.id;
+      document.getElementById('fClientName').value  = el.dataset.name;
+      document.getElementById('fClientName').disabled = true;
+      hideClientDropdown();
+    }
+  } else if (e.key === 'Escape') {
+    hideClientDropdown();
+  }
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('mousedown', function(e) {
+  if (!e.target.closest('#fClientID') && !e.target.closest('#clientDropdown')) {
+    hideClientDropdown();
+  }
+});
 
 async function saveReferral() {
   const id        = document.getElementById('editDocId').value;
@@ -715,7 +822,7 @@ async function saveReferral() {
       ({ error } = await _sb.from('referral_agents').insert([payload]));
     }
     if (error) throw error;
-    showToast(id ? 'Data berhasil diperbarui ✅' : 'Klien referral ditambahkan ✅', 'success');
+    showToast(id ? 'Data berhasil diperbarui' : 'Klien referral ditambahkan', 'success');
     document.getElementById('formModal').classList.remove('open');
     await loadReferralClients();
   } catch(e) {
