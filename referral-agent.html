@@ -456,49 +456,64 @@ function showToast(msg, type='info') {
 // ─── LOAD DATA ─────────────────────────────────────────────────────────────────
 async function loadReferralClients() {
   const sb = window._supabase;
-  try {
-    // Load referral data
-    const { data, error } = await sb.from('referral_agents').select('*').order('created_at', { ascending: false });
-    if (error) throw error;
-    _allData = data || [];
 
-    // Load customers for lookup — fetch all pages like customer.html does
+  // ── Load customers untuk dropdown (selalu jalan, terpisah dari referral) ──
+  await loadCustomersForDropdown(sb);
+
+  // ── Load referral data ──
+  try {
+    const { data, error } = await sb.from('referral_agents').select('*').order('created_at', { ascending: false });
+    if (error) {
+      // Tabel mungkin belum ada — tampilkan kosong, jangan block halaman
+      console.warn('referral_agents:', error.message || error);
+      _allData = [];
+    } else {
+      _allData = data || [];
+    }
+  } catch(e) {
+    console.warn('referral_agents fetch failed:', e);
+    _allData = [];
+  }
+
+  applyFilters();
+  updateStats();
+}
+
+async function loadCustomersForDropdown(sb) {
+  try {
     const cu = window._curUser || {};
     let custs = [];
     const PAGE = 1000;
     let from = 0;
+
     while (true) {
       const { data: chunk, error: eC } = await sb
         .from('customers')
         .select('client_id, client_name, sales_person_name, referral_agents')
         .range(from, from + PAGE - 1)
         .order('client_id', { ascending: true });
-      if (eC) { console.error('customers fetch error:', eC); break; }
+      if (eC) { console.error('customers fetch error:', eC.message || eC); break; }
       if (!chunk || chunk.length === 0) break;
       custs = custs.concat(chunk);
       if (chunk.length < PAGE) break;
       from += PAGE;
     }
 
-    // Sales: filter to own customers only
+    // Sales: filter ke customer miliknya saja
     if (cu.role === 'sales') {
       const salesNameLower = (cu.name || '').trim().toLowerCase();
-      custs = custs.filter(r => {
-        const pic = (r.sales_person_name || '').toLowerCase();
-        const ref = (r.referral_agents || '').toLowerCase();
+      custs = custs.filter(function(r) {
+        var pic = (r.sales_person_name || '').toLowerCase();
+        var ref = (r.referral_agents  || '').toLowerCase();
         return pic === salesNameLower || ref.includes(salesNameLower);
       });
     }
 
     _allCustomers = custs;
-    console.log('Customers loaded:', _allCustomers.length);
-
-    applyFilters();
-    updateStats();
+    console.log('Customers loaded for dropdown:', _allCustomers.length);
   } catch(e) {
-    console.error('Gagal load referral:', e);
-    document.getElementById('referralTableBody').innerHTML =
-      `<tr><td colspan="10"><div class="empty-state"><p>Gagal memuat data: ${_esc(e.message || String(e))}</p></div></td></tr>`;
+    console.error('loadCustomersForDropdown failed:', e);
+    _allCustomers = [];
   }
 }
 
@@ -556,7 +571,7 @@ function renderTable() {
     `Menampilkan ${start+1}–${Math.min(start+rows.length, total)} dari ${total} data`;
 
   if (rows.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="10"><div class="empty-state"><div class="empty-icon" style="font-size:2.5rem;color:#ddd;">—</div><p>Belum ada klien referral.</p></div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="10"><div class="empty-state"><p>Belum ada klien referral. Klik "Tambah Klien Referral" untuk memulai.</p></div></td></tr>`;
     renderPagination(0);
     return;
   }
