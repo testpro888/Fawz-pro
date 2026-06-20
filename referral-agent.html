@@ -36,8 +36,16 @@
     window.addEventListener('DOMContentLoaded', () => {
       const raw = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember');
       if (raw) { try { window._curUser = JSON.parse(raw); } catch(e){} }
-      loadReferralClients();
+      // Wait for navbar.js to finish setting up _supabase before loading
+      waitForSbReady(loadReferralClients);
     });
+
+    function waitForSbReady(cb, tries) {
+      tries = tries || 0;
+      if (window._supabase) { cb(); return; }
+      if (tries > 40) { console.warn('Supabase tidak tersedia'); return; }
+      setTimeout(function() { waitForSbReady(cb, tries + 1); }, 250);
+    }
   </script>
 
   <style>
@@ -448,22 +456,39 @@ function showToast(msg, type='info') {
 
 // ─── LOAD DATA ─────────────────────────────────────────────────────────────────
 async function loadReferralClients() {
+  const sb = window._supabase || _sb;
   try {
     // Load referral data
-    const { data, error } = await _sb.from('referral_agents').select('*').order('created_at', { ascending: false });
+    const { data, error } = await sb.from('referral_agents').select('*').order('created_at', { ascending: false });
     if (error) throw error;
     _allData = data || [];
 
-    // Load customers for lookup
-    const { data: custs } = await _sb.from('customers').select('client_id, client_name');
-    _allCustomers = custs || [];
+    // Load customers for lookup — same logic as customer.html
+    const cu = window._curUser || {};
+    let custs = [];
+    if (cu.role === 'sales') {
+      // Sales: only their own customers
+      const salesNameLower = (cu.name || '').trim().toLowerCase();
+      const { data: allC, error: eC } = await sb.from('customers').select('client_id, client_name, sales_person_name, referral_agents');
+      if (!eC && allC) {
+        custs = allC.filter(r => {
+          const pic = (r.sales_person_name || '').toLowerCase();
+          const ref = (r.referral_agents || '').toLowerCase();
+          return pic === salesNameLower || ref.includes(salesNameLower);
+        });
+      }
+    } else {
+      const { data: allC, error: eC } = await sb.from('customers').select('client_id, client_name').order('client_id', { ascending: true });
+      if (!eC) custs = allC || [];
+    }
+    _allCustomers = custs;
 
     applyFilters();
     updateStats();
   } catch(e) {
     console.error('Gagal load referral:', e);
     document.getElementById('referralTableBody').innerHTML =
-      `<tr><td colspan="10"><div class="empty-state"><p>Gagal memuat data. Coba muat ulang halaman.</p></div></td></tr>`;
+      `<tr><td colspan="10"><div class="empty-state"><p>Gagal memuat data: ${_esc(e.message || String(e))}</p></div></td></tr>`;
   }
 }
 
@@ -814,12 +839,13 @@ async function saveReferral() {
   };
 
   try {
+    const sb = window._supabase || _sb;
     let error;
     if (id) {
-      ({ error } = await _sb.from('referral_agents').update(payload).eq('id', id));
+      ({ error } = await sb.from('referral_agents').update(payload).eq('id', id));
     } else {
       payload.created_at = new Date().toISOString();
-      ({ error } = await _sb.from('referral_agents').insert([payload]));
+      ({ error } = await sb.from('referral_agents').insert([payload]));
     }
     if (error) throw error;
     showToast(id ? 'Data berhasil diperbarui' : 'Klien referral ditambahkan', 'success');
@@ -836,7 +862,8 @@ async function deleteRecord(id) {
   if (!r) return;
   if (!confirm(`Hapus klien referral "${r.client_name || r.client_id}"?`)) return;
   try {
-    const { error } = await _sb.from('referral_agents').delete().eq('id', id);
+    const sb = window._supabase || _sb;
+    const { error } = await sb.from('referral_agents').delete().eq('id', id);
     if (error) throw error;
     showToast('Data dihapus', 'info');
     await loadReferralClients();
