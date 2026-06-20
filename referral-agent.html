@@ -316,7 +316,7 @@
           <option value="Premium">Premium</option>
         </select>
       </div>
-      <div class="form-group">
+      <div class="form-group" id="fDurasiGroup" style="display:none;">
         <label class="form-label">Durasi Langganan <span class="req">*</span></label>
         <select class="form-select" id="fDurasi">
           <option value="1">1 Bulan</option>
@@ -526,8 +526,8 @@ function updateStats() {
   const free    = _allData.filter(r => r.status === 'Free').length;
   const premium = _allData.filter(r => r.status === 'Premium').length;
   const expired = _allData.filter(r => {
-    const s = sisaDurasi(r.tgl_langganan, r.durasi);
-    return s.expired;
+    if (r.status !== 'Premium' || !r.durasi || !r.tgl_langganan) return false;
+    return sisaDurasi(r.tgl_langganan, r.durasi).expired;
   }).length;
   document.getElementById('statTotal').textContent   = total;
   document.getElementById('statFree').textContent    = free;
@@ -549,10 +549,14 @@ function applyFilters() {
     if (q && !name.includes(q) && !cid.includes(q)) return false;
     if (fStatus && r.status !== fStatus) return false;
     if (fSisa) {
-      const s = sisaDurasi(r.tgl_langganan, r.durasi);
-      if (fSisa === 'expired' && !s.expired) return false;
-      if (fSisa === 'warning' && (s.expired || s.days > 7)) return false;
-      if (fSisa === 'ok' && (s.expired || s.days <= 7)) return false;
+      if (r.status !== 'Premium' || !r.durasi || !r.tgl_langganan) {
+        if (fSisa !== 'ok') return false; // Free clients are always "active" (no expiry)
+      } else {
+        const s = sisaDurasi(r.tgl_langganan, r.durasi);
+        if (fSisa === 'expired' && !s.expired) return false;
+        if (fSisa === 'warning' && (s.expired || s.days > 7)) return false;
+        if (fSisa === 'ok' && (s.expired || s.days <= 7)) return false;
+      }
     }
     return true;
   });
@@ -579,17 +583,24 @@ function renderTable() {
   tbody.innerHTML = rows.map((r, i) => {
     const no      = start + i + 1;
     const comm    = getCommRate(r.status, r.comm_bawah_custom, r.comm_atas_custom);
-    const sisa    = sisaDurasi(r.tgl_langganan, r.durasi);
     const target  = Number(r.target_amount || DEFAULT_TARGET);
 
-    // Sisa durasi styling
-    let sisaHtml;
-    if (sisa.expired) {
-      sisaHtml = `<span class="sisa-exp">Expired</span>`;
-    } else if (sisa.days <= 7) {
-      sisaHtml = `<span class="sisa-warn">${sisa.days} hari lagi</span>`;
+    // Sisa durasi — hanya untuk Premium
+    let sisaHtml, durasiHtml;
+    if (r.status === 'Premium' && r.durasi && r.tgl_langganan) {
+      const sisa = sisaDurasi(r.tgl_langganan, r.durasi);
+      durasiHtml = r.durasi + ' Bulan';
+      if (sisa.expired) {
+        sisaHtml = `<span class="sisa-exp">Expired</span>`;
+      } else if (sisa.days <= 7) {
+        sisaHtml = `<span class="sisa-warn">${sisa.days} hari lagi</span>`;
+      } else {
+        sisaHtml = `<span class="sisa-ok">${sisa.days} hari lagi</span>`;
+      }
+      sisaHtml += `<br><span style="font-size:.7rem;color:#bbb;">Exp: ${fmtDate(sisa.expiry)}</span>`;
     } else {
-      sisaHtml = `<span class="sisa-ok">${sisa.days} hari lagi</span>`;
+      durasiHtml = '<span style="color:#bbb;">—</span>';
+      sisaHtml   = '<span style="color:#bbb;">—</span>';
     }
 
     // Status badge
@@ -613,8 +624,8 @@ function renderTable() {
       <td>${commHtml}</td>
       <td>${fmtRp(target)}</td>
       <td>${fmtDate(r.tgl_langganan)}</td>
-      <td>${r.durasi} Bulan</td>
-      <td>${sisaHtml}<br><span style="font-size:.7rem;color:#bbb;">Exp: ${fmtDate(sisa.expiry)}</span></td>
+      <td>${durasiHtml}</td>
+      <td>${sisaHtml}</td>
       <td>
         <div class="action-btns">
           <button class="btn btn-qr btn-sm" onclick="openQR('${safeId}')" title="Generate QR">QR</button>
@@ -679,6 +690,9 @@ function openEditModal(id) {
   document.getElementById('fClientName').disabled = true;
   document.getElementById('fStatus').value = r.status || 'Free';
   document.getElementById('fDurasi').value = String(r.durasi || '6');
+  // Show/hide durasi field based on status
+  const dg = document.getElementById('fDurasiGroup');
+  if (dg) dg.style.display = (r.status === 'Premium') ? 'flex' : 'none';
   document.getElementById('fTglLangganan').value = r.tgl_langganan ? r.tgl_langganan.slice(0,10) : '';
   document.getElementById('fTargetAmount').value = r.target_amount || DEFAULT_TARGET;
 
@@ -699,6 +713,11 @@ function closeFormModal(e) {
 function onStatusChange() {
   const status = document.getElementById('fStatus').value;
   const rate   = COMM_RATES[status] || COMM_RATES['Free'];
+
+  // Durasi hanya untuk Premium
+  const durasiGroup = document.getElementById('fDurasiGroup');
+  if (durasiGroup) durasiGroup.style.display = status === 'Premium' ? 'flex' : 'none';
+
   document.getElementById('commInfoGrid').innerHTML = `
     <div class="comm-info-box">
       <div class="comm-info-label">Bawah Target</div>
@@ -831,7 +850,7 @@ async function saveReferral() {
   const clientID  = document.getElementById('fClientID').value.trim();
   const clientName= document.getElementById('fClientName').value.trim();
   const status    = document.getElementById('fStatus').value;
-  const durasi    = document.getElementById('fDurasi').value;
+  const durasi    = status === 'Premium' ? document.getElementById('fDurasi').value : null;
   const tgl       = document.getElementById('fTglLangganan').value;
   const target    = parseFloat(document.getElementById('fTargetAmount').value) || DEFAULT_TARGET;
   const isCustom  = document.getElementById('fCustomComm').checked;
@@ -840,6 +859,7 @@ async function saveReferral() {
 
   if (!clientID) { showToast('Client ID wajib diisi', 'error'); return; }
   if (!tgl)      { showToast('Tanggal langganan wajib diisi', 'error'); return; }
+  if (status === 'Premium' && !durasi) { showToast('Durasi langganan wajib diisi untuk Premium', 'error'); return; }
   if (isCustom && (isNaN(commBawah) || isNaN(commAtas))) {
     showToast('Isi kedua field custom commission', 'error'); return;
   }
@@ -855,7 +875,7 @@ async function saveReferral() {
     client_id    : clientID,
     client_name  : finalName,
     status       : status,
-    durasi       : Number(durasi),
+    durasi       : durasi !== null ? Number(durasi) : null,
     tgl_langganan: tgl,
     target_amount: target,
     comm_bawah_custom: isCustom ? commBawah : null,
