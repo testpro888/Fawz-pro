@@ -36,8 +36,7 @@
     window.addEventListener('DOMContentLoaded', () => {
       const raw = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember');
       if (raw) { try { window._curUser = JSON.parse(raw); } catch(e){} }
-      // Wait for navbar.js to finish setting up _supabase before loading
-      waitForSbReady(loadReferralClients);
+      loadReferralClients();
     });
 
     function waitForSbReady(cb, tries) {
@@ -456,32 +455,43 @@ function showToast(msg, type='info') {
 
 // ─── LOAD DATA ─────────────────────────────────────────────────────────────────
 async function loadReferralClients() {
-  const sb = window._supabase || _sb;
+  const sb = window._supabase;
   try {
     // Load referral data
     const { data, error } = await sb.from('referral_agents').select('*').order('created_at', { ascending: false });
     if (error) throw error;
     _allData = data || [];
 
-    // Load customers for lookup — same logic as customer.html
+    // Load customers for lookup — fetch all pages like customer.html does
     const cu = window._curUser || {};
     let custs = [];
-    if (cu.role === 'sales') {
-      // Sales: only their own customers
-      const salesNameLower = (cu.name || '').trim().toLowerCase();
-      const { data: allC, error: eC } = await sb.from('customers').select('client_id, client_name, sales_person_name, referral_agents');
-      if (!eC && allC) {
-        custs = allC.filter(r => {
-          const pic = (r.sales_person_name || '').toLowerCase();
-          const ref = (r.referral_agents || '').toLowerCase();
-          return pic === salesNameLower || ref.includes(salesNameLower);
-        });
-      }
-    } else {
-      const { data: allC, error: eC } = await sb.from('customers').select('client_id, client_name').order('client_id', { ascending: true });
-      if (!eC) custs = allC || [];
+    const PAGE = 1000;
+    let from = 0;
+    while (true) {
+      const { data: chunk, error: eC } = await sb
+        .from('customers')
+        .select('client_id, client_name, sales_person_name, referral_agents')
+        .range(from, from + PAGE - 1)
+        .order('client_id', { ascending: true });
+      if (eC) { console.error('customers fetch error:', eC); break; }
+      if (!chunk || chunk.length === 0) break;
+      custs = custs.concat(chunk);
+      if (chunk.length < PAGE) break;
+      from += PAGE;
     }
+
+    // Sales: filter to own customers only
+    if (cu.role === 'sales') {
+      const salesNameLower = (cu.name || '').trim().toLowerCase();
+      custs = custs.filter(r => {
+        const pic = (r.sales_person_name || '').toLowerCase();
+        const ref = (r.referral_agents || '').toLowerCase();
+        return pic === salesNameLower || ref.includes(salesNameLower);
+      });
+    }
+
     _allCustomers = custs;
+    console.log('Customers loaded:', _allCustomers.length);
 
     applyFilters();
     updateStats();
