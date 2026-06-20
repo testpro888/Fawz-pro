@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <script src="config.js"></script>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Fawz Pro | Referral Agent Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+
+  <!-- Supabase SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <!-- QRCode Library -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+
+  <script>
+    const SUPABASE_URL = (window.__FAWZ_CONFIG__ || {}).supabaseUrl || '';
+    const SUPABASE_KEY = (window.__FAWZ_CONFIG__ || {}).supabaseKey || '';
+    const _sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    window._supabase = _sb;
+
+    // Role guard: hanya head_sales, admin, head_account, sales (Petik Profit)
+    (function() {
+      const raw = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember');
+      if (!raw) { window.location.replace('login.html'); return; }
+      const u = JSON.parse(raw);
+      const role = (u.role || '').toLowerCase();
+      const allowed = ['head_sales', 'admin', 'head_account', 'sales'];
+      if (!allowed.includes(role)) {
+        document.addEventListener('DOMContentLoaded', () => {
+          document.body.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;min-height:100vh;font-family:Inter,sans-serif;background:#f4f5fb;flex-direction:column;gap:16px;"><div style="font-size:3rem;">🚫</div><div style="font-size:1.2rem;font-weight:700;color:#0d0d2b;">Akses Ditolak</div><div style="color:#888;font-size:.9rem;">Halaman ini hanya untuk Head Sales, Admin, Head Account, dan Sales (Petik Profit).</div><a href="dashboard.html" style="margin-top:12px;background:#f5a623;color:#fff;padding:10px 24px;border-radius:10px;text-decoration:none;font-weight:600;">Kembali ke Dashboard</a></div>`;
+        });
+      }
+      window._curUser = u;
+    })();
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const raw = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember');
+      if (raw) { try { window._curUser = JSON.parse(raw); } catch(e){} }
+      loadReferralClients();
+    });
+  </script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --navy: #0d0d2b; --purple: #1e1252; --gold: #f5a623; --gold-light: #ffc857;
+      --bg: #f4f5fb; --white: #ffffff; --nav-h: 68px; --border: #e0e0ef;
+      --text: #1a1a3a; --gray: #888; --green: #27ae60; --red: #e74c3c;
+    }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); min-height: 100vh; padding-top: var(--nav-h); color: var(--text); }
+
+    .page-container { max-width: 1400px; margin: 0 auto; padding: 36px 28px; }
+    .page-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 28px; flex-wrap: wrap; gap: 16px; }
+    .page-title { font-size: 2rem; font-weight: 900; color: var(--navy); line-height: 1.1; }
+    .page-subtitle { font-size: 0.88rem; color: var(--gray); margin-top: 4px; }
+    .title-underline { width: 48px; height: 3px; background: linear-gradient(90deg, var(--gold), var(--gold-light)); border-radius: 2px; margin-top: 8px; }
+    .header-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+
+    .btn { display: inline-flex; align-items: center; gap: 7px; padding: 11px 20px; border-radius: 10px; font-family: 'Inter', sans-serif; font-size: 0.875rem; font-weight: 600; cursor: pointer; transition: all 0.2s; border: none; white-space: nowrap; }
+    .btn-primary { background: linear-gradient(135deg, var(--gold), #e8931a); color: #fff; box-shadow: 0 4px 14px rgba(245,166,35,0.35); }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(245,166,35,0.45); }
+    .btn-outline { background: #fff; color: var(--navy); border: 1.5px solid var(--border); }
+    .btn-outline:hover { border-color: var(--gold); color: var(--gold); background: #fffbf3; }
+    .btn-sm { padding: 7px 13px; font-size: 0.78rem; }
+    .btn-danger { background: linear-gradient(135deg, #e74c3c, #c0392b); color: #fff; }
+    .btn-danger:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(231,76,60,0.35); }
+    .btn-qr { background: linear-gradient(135deg, #6c5ce7, #a29bfe); color: #fff; box-shadow: 0 4px 12px rgba(108,92,231,0.3); }
+    .btn-qr:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(108,92,231,0.4); }
+    .btn-edit { background: #fff; color: var(--navy); border: 1.5px solid var(--border); }
+    .btn-edit:hover { border-color: var(--gold); color: var(--gold); background: #fffbf3; }
+    .btn-del { background: #fff; color: #e74c3c; border: 1.5px solid #ffcccc; }
+    .btn-del:hover { background: #fff0f0; border-color: #e74c3c; }
+
+    /* Stats */
+    .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+    .stat-box { background: #fff; border-radius: 14px; padding: 18px 22px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+    .stat-box-label { font-size: 0.72rem; color: var(--gray); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+    .stat-box-val { font-size: 1.8rem; font-weight: 700; color: var(--navy); }
+
+    /* Toolbar */
+    .toolbar { background: #fff; border-radius: 14px; padding: 16px 20px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+    .search-wrap { position: relative; flex: 1; min-width: 220px; }
+    .search-wrap input { width: 100%; padding: 10px 16px 10px 40px; border: 1.5px solid var(--border); border-radius: 10px; font-family: 'Inter', sans-serif; font-size: 0.9rem; color: var(--text); outline: none; transition: border 0.2s; }
+    .search-wrap input:focus { border-color: var(--gold); }
+    .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #aaa; font-size: 1rem; }
+    .filter-select { padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 10px; font-family: 'Inter', sans-serif; font-size: 0.875rem; color: var(--text); outline: none; background: #fff; cursor: pointer; }
+    .filter-select:focus { border-color: var(--gold); }
+
+    /* Table */
+    .table-card { background: #fff; border-radius: 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); overflow: hidden; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+    thead { background: #fafafa; border-bottom: 2px solid #f0f0f5; }
+    thead th { padding: 14px 16px; text-align: left; font-size: 0.72rem; font-weight: 700; color: #aaa; text-transform: uppercase; letter-spacing: 1px; white-space: nowrap; }
+    tbody tr { border-bottom: 1px solid #f5f5fa; transition: background 0.15s; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: #fffbf3; }
+    tbody td { padding: 13px 16px; color: var(--text); vertical-align: middle; }
+
+    .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 600; white-space: nowrap; }
+    .badge-free { background: #e8f0ff; color: #2d4abf; }
+    .badge-premium { background: linear-gradient(135deg, #fff8e0, #fff0c0); color: #b8860b; border: 1px solid #f0d060; }
+
+    .commission-cell { display: flex; flex-direction: column; gap: 2px; }
+    .comm-val { font-weight: 600; color: var(--navy); font-size: 0.85rem; }
+    .comm-note { font-size: 0.68rem; color: var(--gray); }
+
+    .sisa-ok   { color: var(--green); font-weight: 600; }
+    .sisa-warn { color: #e67e22; font-weight: 600; }
+    .sisa-exp  { color: var(--red); font-weight: 600; }
+
+    .action-btns { display: flex; gap: 6px; align-items: center; }
+
+    .empty-state { text-align: center; padding: 60px 20px; color: #bbb; }
+    .empty-icon { font-size: 2.5rem; margin-bottom: 12px; }
+    .table-footer { padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; border-top: 1px solid #f0f0f5; font-size: 0.82rem; color: var(--gray); }
+    .pagination { display: flex; gap: 4px; }
+    .pg-btn { width: 30px; height: 30px; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; cursor: pointer; border: 1.5px solid var(--border); background: #fff; color: var(--text); transition: all 0.15s; }
+    .pg-btn.active { background: var(--gold); border-color: var(--gold); color: #fff; font-weight: 700; }
+    .pg-btn:hover:not(.active) { border-color: var(--gold); }
+
+    /* Modal */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(13,13,43,0.55); backdrop-filter: blur(4px); z-index: 2000; align-items: center; justify-content: center; }
+    .modal-overlay.open { display: flex; }
+    .modal { background: #fff; border-radius: 20px; padding: 32px; width: 600px; max-width: 96vw; max-height: 92vh; overflow-y: auto; box-shadow: 0 24px 80px rgba(0,0,0,0.2); animation: slideUp 0.25s ease; }
+    .modal-sm { width: 440px; }
+    @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+    .modal-title { font-size: 1.4rem; font-weight: 700; color: var(--navy); }
+    .modal-close { width: 32px; height: 32px; border-radius: 8px; border: 1.5px solid var(--border); background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1rem; color: var(--gray); transition: all 0.15s; }
+    .modal-close:hover { border-color: #ffcccc; color: #e74c3c; background: #fff0f0; }
+
+    .form-group { display: flex; flex-direction: column; gap: 5px; margin-bottom: 16px; }
+    .form-label { font-size: 0.72rem; font-weight: 700; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
+    .req { color: #e74c3c; margin-left: 2px; }
+    .form-input, .form-select { padding: 10px 13px; border: 1.5px solid var(--border); border-radius: 10px; font-family: 'Inter', sans-serif; font-size: 0.88rem; color: var(--text); outline: none; transition: border 0.2s, box-shadow 0.2s; background: #fff; width: 100%; }
+    .form-input:focus, .form-select:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(245,166,35,0.1); }
+    .form-input:disabled { background: #f5f5fa; color: #aaa; cursor: not-allowed; }
+    .form-hint { font-size: 0.72rem; color: var(--gray); margin-top: 3px; }
+
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .form-section-title { font-size: 0.68rem; font-weight: 700; color: var(--gold); text-transform: uppercase; letter-spacing: 1.5px; padding-bottom: 8px; margin-bottom: 14px; border-bottom: 1.5px solid #fdf0d8; }
+    .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px; padding-top: 20px; border-top: 1px solid #f0f0f5; }
+
+    /* Commission info boxes */
+    .comm-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px; }
+    .comm-info-box { background: #f8f9fc; border-radius: 10px; padding: 12px 14px; border: 1.5px solid var(--border); }
+    .comm-info-label { font-size: 0.65rem; font-weight: 700; color: var(--gray); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 4px; }
+    .comm-info-val { font-size: 1.2rem; font-weight: 700; color: var(--navy); }
+    .comm-info-sub { font-size: 0.7rem; color: var(--gray); margin-top: 2px; }
+
+    /* QR Modal */
+    .qr-modal { width: 380px; text-align: center; }
+    .qr-canvas-wrap { background: #fff; border-radius: 16px; padding: 20px; border: 2px solid var(--border); display: inline-block; margin: 16px auto; }
+    .qr-client-name { font-size: 1rem; font-weight: 700; color: var(--navy); margin-top: 8px; }
+    .qr-client-id { font-size: 0.78rem; color: var(--gray); margin-top: 4px; font-family: monospace; }
+
+    /* Toast */
+    .toast-container { position: fixed; bottom: 28px; right: 28px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+    .toast { padding: 14px 20px; border-radius: 12px; font-size: 0.875rem; font-weight: 500; box-shadow: 0 6px 24px rgba(0,0,0,0.15); animation: toastIn 0.3s ease; max-width: 320px; }
+    @keyframes toastIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+    .toast-success { background: #f0fff8; border: 1px solid #a8e6c1; color: #1e7e4e; }
+    .toast-error   { background: #fff0f0; border: 1px solid #ffcccc; color: #c0392b; }
+    .toast-info    { background: #f0f4ff; border: 1px solid #c5d3ff; color: #2d4abf; }
+
+    /* Toggle switch for custom commission */
+    .toggle-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .toggle-switch { position: relative; width: 42px; height: 22px; flex-shrink: 0; }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider { position: absolute; inset: 0; background: #ccc; border-radius: 22px; cursor: pointer; transition: 0.2s; }
+    .toggle-slider::before { content: ''; position: absolute; height: 16px; width: 16px; left: 3px; bottom: 3px; background: #fff; border-radius: 50%; transition: 0.2s; }
+    .toggle-switch input:checked + .toggle-slider { background: var(--gold); }
+    .toggle-switch input:checked + .toggle-slider::before { transform: translateX(20px); }
+    .toggle-label { font-size: 0.82rem; color: var(--text); font-weight: 500; }
+
+    @media (max-width: 900px) { .stats-row { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 600px) { .stats-row { grid-template-columns: 1fr; } .form-grid { grid-template-columns: 1fr; } .page-header { flex-direction: column; } }
+  </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<div id="navbar-placeholder"></div>
+<script src="navbar.js"></script>
+
+<!-- PAGE -->
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <div class="page-title">🤝 Referral Agent Dashboard</div>
+      <div class="page-subtitle">Kelola klien referral, langganan Petik Profit, dan komisi agent</div>
+      <div class="title-underline"></div>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-primary" onclick="openAddModal()">+ Tambah Klien Referral</button>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="stat-box"><div class="stat-box-label">Total Klien</div><div class="stat-box-val" id="statTotal">—</div></div>
+    <div class="stat-box"><div class="stat-box-label">Free</div><div class="stat-box-val" id="statFree" style="color:#2d4abf">—</div></div>
+    <div class="stat-box"><div class="stat-box-label">Premium</div><div class="stat-box-val" id="statPremium" style="color:#b8860b">—</div></div>
+    <div class="stat-box"><div class="stat-box-label">Expired / Habis</div><div class="stat-box-val" id="statExpired" style="color:#e74c3c">—</div></div>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="searchInput" placeholder="Cari Client ID atau nama..." oninput="applyFilters()"/>
+    </div>
+    <select class="filter-select" id="filterStatus" onchange="applyFilters()">
+      <option value="">Semua Status</option>
+      <option value="Free">Free</option>
+      <option value="Premium">Premium</option>
+    </select>
+    <select class="filter-select" id="filterSisa" onchange="applyFilters()">
+      <option value="">Semua Sisa Durasi</option>
+      <option value="expired">Expired</option>
+      <option value="warning">≤ 7 Hari</option>
+      <option value="ok">Masih Aktif</option>
+    </select>
+  </div>
+
+  <!-- Table -->
+  <div class="table-card">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Client ID</th>
+            <th>Nama</th>
+            <th>Status Petik Profit</th>
+            <th>Commission Rate</th>
+            <th>Target Amount</th>
+            <th>Tgl. Langganan</th>
+            <th>Durasi</th>
+            <th>Sisa Durasi</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="referralTableBody">
+          <tr><td colspan="10"><div class="empty-state"><div class="empty-icon">⏳</div><p>Memuat data...</p></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="table-footer">
+      <div id="tableInfo">Menampilkan 0 data</div>
+      <div class="pagination" id="pagination"></div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- MODAL: TAMBAH / EDIT -->
+<div class="modal-overlay" id="formModal" onclick="closeFormModal(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="formModalTitle">Tambah Klien Referral</div>
+      <button class="modal-close" onclick="document.getElementById('formModal').classList.remove('open')">✕</button>
+    </div>
+    <input type="hidden" id="editDocId"/>
+
+    <!-- Client -->
+    <div class="form-section-title">👤 Data Klien</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label">Client ID <span class="req">*</span></label>
+        <input class="form-input" id="fClientID" placeholder="Pilih atau ketik Client ID"
+          oninput="onClientIDInput()" list="clientIDList"/>
+        <datalist id="clientIDList"></datalist>
+        <div class="form-hint">Ketik untuk mencari dari Data Customer</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Nama</label>
+        <input class="form-input" id="fClientName" placeholder="Otomatis dari Client ID" disabled/>
+      </div>
+    </div>
+
+    <!-- Langganan -->
+    <div class="form-section-title" style="margin-top:8px;">🏅 Langganan Petik Profit</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label">Status <span class="req">*</span></label>
+        <select class="form-select" id="fStatus" onchange="onStatusChange()">
+          <option value="Free">Free</option>
+          <option value="Premium">Premium</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Durasi Langganan <span class="req">*</span></label>
+        <select class="form-select" id="fDurasi">
+          <option value="1">1 Bulan</option>
+          <option value="6">6 Bulan</option>
+          <option value="12">12 Bulan</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Tanggal Langganan <span class="req">*</span></label>
+        <input class="form-input" id="fTglLangganan" type="date"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Target Amount (Rp)</label>
+        <input class="form-input" id="fTargetAmount" type="number" min="0" placeholder="Default: 10.000.000" value="10000000"/>
+        <div class="form-hint">Default: Rp 10.000.000</div>
+      </div>
+    </div>
+
+    <!-- Commission -->
+    <div class="form-section-title" style="margin-top:8px;">💰 Komisi</div>
+    <div id="commInfoGrid" class="comm-info-grid" style="margin-bottom:14px;"></div>
+
+    <div class="toggle-row">
+      <label class="toggle-switch">
+        <input type="checkbox" id="fCustomComm" onchange="onCustomCommToggle()"/>
+        <span class="toggle-slider"></span>
+      </label>
+      <span class="toggle-label">Custom Commission Rate</span>
+    </div>
+    <div id="customCommFields" style="display:none;">
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Komisi Bawah Target (%)</label>
+          <input class="form-input" id="fCommBawah" type="number" min="0" max="100" step="0.1" placeholder="cth: 5"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Komisi Atas Target (%)</label>
+          <input class="form-input" id="fCommAtas" type="number" min="0" max="100" step="0.1" placeholder="cth: 12"/>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="document.getElementById('formModal').classList.remove('open')">Batal</button>
+      <button class="btn btn-primary" onclick="saveReferral()">💾 Simpan</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: QR CODE -->
+<div class="modal-overlay" id="qrModal" onclick="closeQRModal(event)">
+  <div class="modal modal-sm qr-modal">
+    <div class="modal-header">
+      <div class="modal-title">📲 QR Code Referral</div>
+      <button class="modal-close" onclick="document.getElementById('qrModal').classList.remove('open')">✕</button>
+    </div>
+    <div style="text-align:center;">
+      <div class="qr-canvas-wrap">
+        <canvas id="qrCanvas"></canvas>
+      </div>
+      <div class="qr-client-name" id="qrClientName">—</div>
+      <div class="qr-client-id" id="qrClientId">—</div>
+      <div style="font-size:0.75rem;color:var(--gray);margin-top:8px;" id="qrLinkText">—</div>
+    </div>
+    <div class="modal-footer" style="justify-content:center;">
+      <button class="btn btn-outline btn-sm" onclick="downloadQR()">⬇️ Download QR</button>
+      <button class="btn btn-primary btn-sm" onclick="document.getElementById('qrModal').classList.remove('open')">Tutup</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── CONFIG ───────────────────────────────────────────────────────────────────
+const DEFAULT_TARGET  = 10000000;
+const COMM_RATES = {
+  Free:    { bawah: 5,  atas: 12 },
+  Premium: { bawah: 8,  atas: 16 }
+};
+
+// ─── STATE ─────────────────────────────────────────────────────────────────────
+let _allData      = [];   // semua record dari Supabase
+let _filtered     = [];   // setelah filter
+let _allCustomers = [];   // data dari tabel customers (untuk lookup)
+let _page         = 1;
+const PAGE_SIZE   = 20;
+
+// ─── UTILS ─────────────────────────────────────────────────────────────────────
+function fmtRp(n) {
+  return 'Rp ' + Number(n||0).toLocaleString('id-ID');
+}
+
+function daysDiff(fromDate, toDate) {
+  // Returns toDate - fromDate in days (floored)
+  const ms = new Date(toDate) - new Date(fromDate);
+  return Math.floor(ms / 86400000);
+}
+
+function calcExpiry(tglLangganan, durasi) {
+  // durasi = bulan (1, 6, 12)
+  const d = new Date(tglLangganan);
+  d.setMonth(d.getMonth() + Number(durasi));
+  return d;
+}
+
+function sisaDurasi(tglLangganan, durasi) {
+  // Returns {days, expired}
+  const expiry  = calcExpiry(tglLangganan, durasi);
+  const today   = new Date();
+  today.setHours(0,0,0,0);
+  const days    = daysDiff(today, expiry);
+  return { days, expired: days <= 0, expiry };
+}
+
+function fmtDate(d) {
+  if (!d) return '—';
+  const dt = typeof d === 'string' ? new Date(d) : d;
+  return dt.toLocaleDateString('id-ID', { day:'2-digit', month:'short', year:'numeric' });
+}
+
+function getCommRate(status, customBawah, customAtas) {
+  if (customBawah != null && customAtas != null) {
+    return { bawah: Number(customBawah), atas: Number(customAtas), custom: true };
+  }
+  const base = COMM_RATES[status] || COMM_RATES['Free'];
+  return { ...base, custom: false };
+}
+
+function showToast(msg, type='info') {
+  const c = document.getElementById('toastContainer');
+  const t = document.createElement('div');
+  t.className = `toast toast-${type}`;
+  t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(() => t.remove(), 3500);
+}
+
+// ─── LOAD DATA ─────────────────────────────────────────────────────────────────
+async function loadReferralClients() {
+  try {
+    // Load referral data
+    const { data, error } = await _sb.from('referral_agents').select('*').order('created_at', { ascending: false });
+    if (error) throw error;
+    _allData = data || [];
+
+    // Load customers for lookup
+    const { data: custs } = await _sb.from('customers').select('client_id, client_name');
+    _allCustomers = custs || [];
+
+    // Populate datalist
+    const dl = document.getElementById('clientIDList');
+    if (dl) {
+      dl.innerHTML = _allCustomers.map(c =>
+        `<option value="${_esc(c.client_id)}">${_esc(c.client_id)} — ${_esc(c.client_name||'')}</option>`
+      ).join('');
+    }
+
+    applyFilters();
+    updateStats();
+  } catch(e) {
+    console.error('Gagal load referral:', e);
+    document.getElementById('referralTableBody').innerHTML =
+      `<tr><td colspan="10"><div class="empty-state"><div class="empty-icon">⚠️</div><p>Gagal memuat data. Coba muat ulang halaman.</p></div></td></tr>`;
+  }
+}
+
+function _esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function updateStats() {
+  const total   = _allData.length;
+  const free    = _allData.filter(r => r.status === 'Free').length;
+  const premium = _allData.filter(r => r.status === 'Premium').length;
+  const expired = _allData.filter(r => {
+    const s = sisaDurasi(r.tgl_langganan, r.durasi);
+    return s.expired;
+  }).length;
+  document.getElementById('statTotal').textContent   = total;
+  document.getElementById('statFree').textContent    = free;
+  document.getElementById('statPremium').textContent = premium;
+  document.getElementById('statExpired').textContent = expired;
+}
+</script>
+
+<script>
+// ─── FILTER & RENDER ───────────────────────────────────────────────────────────
+function applyFilters() {
+  const q       = (document.getElementById('searchInput').value || '').toLowerCase();
+  const fStatus = document.getElementById('filterStatus').value;
+  const fSisa   = document.getElementById('filterSisa').value;
+
+  _filtered = _allData.filter(r => {
+    const name  = (r.client_name || '').toLowerCase();
+    const cid   = (r.client_id   || '').toLowerCase();
+    if (q && !name.includes(q) && !cid.includes(q)) return false;
+    if (fStatus && r.status !== fStatus) return false;
+    if (fSisa) {
+      const s = sisaDurasi(r.tgl_langganan, r.durasi);
+      if (fSisa === 'expired' && !s.expired) return false;
+      if (fSisa === 'warning' && (s.expired || s.days > 7)) return false;
+      if (fSisa === 'ok' && (s.expired || s.days <= 7)) return false;
+    }
+    return true;
+  });
+
+  _page = 1;
+  renderTable();
+}
+
+function renderTable() {
+  const tbody  = document.getElementById('referralTableBody');
+  const total  = _filtered.length;
+  const start  = (_page - 1) * PAGE_SIZE;
+  const rows   = _filtered.slice(start, start + PAGE_SIZE);
+
+  document.getElementById('tableInfo').textContent =
+    `Menampilkan ${start+1}–${Math.min(start+rows.length, total)} dari ${total} data`;
+
+  if (rows.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="10"><div class="empty-state"><div class="empty-icon">🤝</div><p>Belum ada klien referral.</p></div></td></tr>`;
+    renderPagination(0);
+    return;
+  }
+
+  tbody.innerHTML = rows.map((r, i) => {
+    const no      = start + i + 1;
+    const comm    = getCommRate(r.status, r.comm_bawah_custom, r.comm_atas_custom);
+    const sisa    = sisaDurasi(r.tgl_langganan, r.durasi);
+    const target  = Number(r.target_amount || DEFAULT_TARGET);
+
+    // Sisa durasi styling
+    let sisaHtml;
+    if (sisa.expired) {
+      sisaHtml = `<span class="sisa-exp">⛔ Expired</span>`;
+    } else if (sisa.days <= 7) {
+      sisaHtml = `<span class="sisa-warn">⚠️ ${sisa.days} hari lagi</span>`;
+    } else {
+      sisaHtml = `<span class="sisa-ok">✅ ${sisa.days} hari lagi</span>`;
+    }
+
+    // Status badge
+    const badge = r.status === 'Premium'
+      ? `<span class="badge badge-premium">⭐ Premium</span>`
+      : `<span class="badge badge-free">Free</span>`;
+
+    // Commission cell
+    const commLabel = comm.custom ? ' <span style="font-size:.65rem;color:#e67e22;">(custom)</span>' : '';
+    const commHtml = `<div class="commission-cell">
+      <div class="comm-val">${comm.bawah}% / ${comm.atas}%${commLabel}</div>
+      <div class="comm-note">Bawah / Atas target</div>
+    </div>`;
+
+    const safeId = _esc(r.id);
+    return `<tr>
+      <td>${no}</td>
+      <td><code style="background:#f0f0fa;padding:2px 7px;border-radius:5px;font-size:.82rem;">${_esc(r.client_id)}</code></td>
+      <td style="font-weight:600;">${_esc(r.client_name)}</td>
+      <td>${badge}</td>
+      <td>${commHtml}</td>
+      <td>${fmtRp(target)}</td>
+      <td>${fmtDate(r.tgl_langganan)}</td>
+      <td>${r.durasi} Bulan</td>
+      <td>${sisaHtml}<br><span style="font-size:.7rem;color:#bbb;">Exp: ${fmtDate(sisa.expiry)}</span></td>
+      <td>
+        <div class="action-btns">
+          <button class="btn btn-qr btn-sm" onclick="openQR('${safeId}')" title="Generate QR">📲 QR</button>
+          <button class="btn btn-edit btn-sm" onclick="openEditModal('${safeId}')" title="Edit">✏️</button>
+          <button class="btn btn-del btn-sm" onclick="deleteRecord('${safeId}')" title="Hapus">🗑️</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+
+  renderPagination(total);
+}
+
+function renderPagination(total) {
+  const pages = Math.ceil(total / PAGE_SIZE);
+  const pg    = document.getElementById('pagination');
+  if (pages <= 1) { pg.innerHTML = ''; return; }
+
+  let html = '';
+  const maxBtn = 7;
+  for (let p = 1; p <= pages; p++) {
+    if (pages > maxBtn && p > 2 && p < pages - 1 && Math.abs(p - _page) > 2) {
+      if (p === 3 || p === pages - 2) html += `<span class="pg-btn" style="cursor:default;border:none;">…</span>`;
+      continue;
+    }
+    html += `<button class="pg-btn ${p === _page ? 'active' : ''}" onclick="goPage(${p})">${p}</button>`;
+  }
+  pg.innerHTML = html;
+}
+
+function goPage(p) { _page = p; renderTable(); }
+</script>
+
+<script>
+// ─── MODAL: ADD / EDIT ─────────────────────────────────────────────────────────
+function openAddModal() {
+  document.getElementById('formModalTitle').textContent = 'Tambah Klien Referral';
+  document.getElementById('editDocId').value = '';
+  document.getElementById('fClientID').value = '';
+  document.getElementById('fClientName').value = '';
+  document.getElementById('fClientName').disabled = true;
+  document.getElementById('fStatus').value = 'Free';
+  document.getElementById('fDurasi').value = '6';
+  document.getElementById('fTglLangganan').value = new Date().toISOString().slice(0,10);
+  document.getElementById('fTargetAmount').value = DEFAULT_TARGET;
+  document.getElementById('fCustomComm').checked = false;
+  document.getElementById('customCommFields').style.display = 'none';
+  document.getElementById('fCommBawah').value = '';
+  document.getElementById('fCommAtas').value = '';
+  onStatusChange();
+  document.getElementById('formModal').classList.add('open');
+}
+
+function openEditModal(id) {
+  const r = _allData.find(x => String(x.id) === String(id));
+  if (!r) return;
+  document.getElementById('formModalTitle').textContent = 'Edit Klien Referral';
+  document.getElementById('editDocId').value = r.id;
+  document.getElementById('fClientID').value = r.client_id;
+  document.getElementById('fClientName').value = r.client_name || '';
+  document.getElementById('fClientName').disabled = true;
+  document.getElementById('fStatus').value = r.status || 'Free';
+  document.getElementById('fDurasi').value = String(r.durasi || '6');
+  document.getElementById('fTglLangganan').value = r.tgl_langganan ? r.tgl_langganan.slice(0,10) : '';
+  document.getElementById('fTargetAmount').value = r.target_amount || DEFAULT_TARGET;
+
+  const hasCustom = r.comm_bawah_custom != null && r.comm_atas_custom != null;
+  document.getElementById('fCustomComm').checked = hasCustom;
+  document.getElementById('customCommFields').style.display = hasCustom ? 'block' : 'none';
+  document.getElementById('fCommBawah').value = hasCustom ? r.comm_bawah_custom : '';
+  document.getElementById('fCommAtas').value  = hasCustom ? r.comm_atas_custom  : '';
+  onStatusChange();
+  document.getElementById('formModal').classList.add('open');
+}
+
+function closeFormModal(e) {
+  if (e.target === document.getElementById('formModal'))
+    document.getElementById('formModal').classList.remove('open');
+}
+
+function onStatusChange() {
+  const status = document.getElementById('fStatus').value;
+  const rate   = COMM_RATES[status] || COMM_RATES['Free'];
+  document.getElementById('commInfoGrid').innerHTML = `
+    <div class="comm-info-box">
+      <div class="comm-info-label">Bawah Target</div>
+      <div class="comm-info-val">${rate.bawah}%</div>
+      <div class="comm-info-sub">Jika transaksi &lt; Target Amount</div>
+    </div>
+    <div class="comm-info-box">
+      <div class="comm-info-label">Atas Target</div>
+      <div class="comm-info-val">${rate.atas}%</div>
+      <div class="comm-info-sub">Jika transaksi ≥ Target Amount</div>
+    </div>`;
+}
+
+function onCustomCommToggle() {
+  const checked = document.getElementById('fCustomComm').checked;
+  document.getElementById('customCommFields').style.display = checked ? 'block' : 'none';
+}
+
+function onClientIDInput() {
+  const cid  = document.getElementById('fClientID').value.trim();
+  const cust = _allCustomers.find(c => c.client_id === cid);
+  const nameInput = document.getElementById('fClientName');
+  if (cust) {
+    nameInput.value    = cust.client_name || '';
+    nameInput.disabled = true;
+  } else {
+    nameInput.value    = '';
+    nameInput.disabled = false;
+  }
+}
+
+async function saveReferral() {
+  const id        = document.getElementById('editDocId').value;
+  const clientID  = document.getElementById('fClientID').value.trim();
+  const clientName= document.getElementById('fClientName').value.trim();
+  const status    = document.getElementById('fStatus').value;
+  const durasi    = document.getElementById('fDurasi').value;
+  const tgl       = document.getElementById('fTglLangganan').value;
+  const target    = parseFloat(document.getElementById('fTargetAmount').value) || DEFAULT_TARGET;
+  const isCustom  = document.getElementById('fCustomComm').checked;
+  const commBawah = isCustom ? parseFloat(document.getElementById('fCommBawah').value) : null;
+  const commAtas  = isCustom ? parseFloat(document.getElementById('fCommAtas').value)  : null;
+
+  if (!clientID) { showToast('Client ID wajib diisi', 'error'); return; }
+  if (!tgl)      { showToast('Tanggal langganan wajib diisi', 'error'); return; }
+  if (isCustom && (isNaN(commBawah) || isNaN(commAtas))) {
+    showToast('Isi kedua field custom commission', 'error'); return;
+  }
+
+  // Auto-fill nama dari customers jika belum ada
+  let finalName = clientName;
+  if (!finalName) {
+    const cust = _allCustomers.find(c => c.client_id === clientID);
+    finalName  = cust ? (cust.client_name || '') : '';
+  }
+
+  const payload = {
+    client_id    : clientID,
+    client_name  : finalName,
+    status       : status,
+    durasi       : Number(durasi),
+    tgl_langganan: tgl,
+    target_amount: target,
+    comm_bawah_custom: isCustom ? commBawah : null,
+    comm_atas_custom : isCustom ? commAtas  : null,
+    updated_at   : new Date().toISOString()
+  };
+
+  try {
+    let error;
+    if (id) {
+      ({ error } = await _sb.from('referral_agents').update(payload).eq('id', id));
+    } else {
+      payload.created_at = new Date().toISOString();
+      ({ error } = await _sb.from('referral_agents').insert([payload]));
+    }
+    if (error) throw error;
+    showToast(id ? 'Data berhasil diperbarui ✅' : 'Klien referral ditambahkan ✅', 'success');
+    document.getElementById('formModal').classList.remove('open');
+    await loadReferralClients();
+  } catch(e) {
+    console.error(e);
+    showToast('Gagal menyimpan: ' + (e.message || e), 'error');
+  }
+}
+
+async function deleteRecord(id) {
+  const r = _allData.find(x => String(x.id) === String(id));
+  if (!r) return;
+  if (!confirm(`Hapus klien referral "${r.client_name || r.client_id}"?`)) return;
+  try {
+    const { error } = await _sb.from('referral_agents').delete().eq('id', id);
+    if (error) throw error;
+    showToast('Data dihapus', 'info');
+    await loadReferralClients();
+  } catch(e) {
+    showToast('Gagal hapus: ' + (e.message || e), 'error');
+  }
+}
+</script>
+
+<script>
+// ─── QR CODE ───────────────────────────────────────────────────────────────────
+let _qrCurrentRecord = null;
+
+function openQR(id) {
+  const r = _allData.find(x => String(x.id) === String(id));
+  if (!r) return;
+  _qrCurrentRecord = r;
+
+  document.getElementById('qrClientName').textContent = r.client_name || r.client_id;
+  document.getElementById('qrClientId').textContent   = 'ID: ' + r.client_id;
+
+  // QR link — link menyusul, gunakan placeholder
+  const qrLink = `https://fawzpro.app/referral?client=${encodeURIComponent(r.client_id)}&ref=petikprofit`;
+  document.getElementById('qrLinkText').textContent = qrLink;
+
+  // Generate QR
+  const canvas = document.getElementById('qrCanvas');
+  QRCode.toCanvas(canvas, qrLink, {
+    width: 200,
+    margin: 2,
+    color: { dark: '#0d0d2b', light: '#ffffff' }
+  }, function(err) {
+    if (err) {
+      console.error('QR error:', err);
+      showToast('Gagal generate QR', 'error');
+    }
+  });
+
+  document.getElementById('qrModal').classList.add('open');
+}
+
+function closeQRModal(e) {
+  if (e.target === document.getElementById('qrModal'))
+    document.getElementById('qrModal').classList.remove('open');
+}
+
+function downloadQR() {
+  const canvas = document.getElementById('qrCanvas');
+  const r      = _qrCurrentRecord;
+  const name   = r ? (r.client_id + '_qr') : 'qr_referral';
+  const link   = document.createElement('a');
+  link.download = name + '.png';
+  link.href     = canvas.toDataURL('image/png');
+  link.click();
+}
+</script>
+
+</body>
+</html>
