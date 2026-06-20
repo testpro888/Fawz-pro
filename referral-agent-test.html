@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Referral Agent — Test</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <!-- QR Code library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --navy: #0d0d2b;
+      --gold: #f5a623;
+      --gold-light: #ffc857;
+      --bg: #f8f9fc;
+      --white: #fff;
+      --border: #e0e0ef;
+      --text: #1a1a3a;
+      --gray: #888;
+      --green: #10b981;
+      --red: #ef4444;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.07);
+      --shadow-md: 0 4px 16px rgba(0,0,0,0.10);
+      --shadow-lg: 0 12px 40px rgba(0,0,0,0.14);
+    }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 40px 16px 60px;
+      color: var(--text);
+    }
+
+    @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes pop    { 0%,100% { transform:scale(1); } 50% { transform:scale(1.04); } }
+
+    .container { width: 100%; max-width: 600px; }
+
+    /* Header */
+    .page-header {
+      text-align: center;
+      margin-bottom: 32px;
+      animation: fadeUp 0.4s ease both;
+    }
+    .page-header .logo-wrap {
+      width: 64px; height: 64px; border-radius: 18px;
+      background: linear-gradient(135deg, var(--gold), var(--gold-light));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2rem; margin: 0 auto 14px;
+      box-shadow: var(--shadow-md);
+    }
+    .page-header h1 { font-size: 1.7rem; font-weight: 800; color: var(--navy); }
+    .page-header p  { font-size: 0.9rem; color: var(--gray); margin-top: 6px; }
+
+    /* Card */
+    .card {
+      background: var(--white);
+      border-radius: 20px;
+      padding: 32px 36px;
+      box-shadow: var(--shadow-md);
+      border: 1px solid var(--border);
+      animation: fadeUp 0.4s 0.06s ease both;
+      margin-bottom: 24px;
+    }
+    .card-title {
+      font-size: 1rem; font-weight: 700; color: var(--navy);
+      margin-bottom: 22px; padding-bottom: 14px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 8px;
+    }
+
+    /* Form */
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+    .form-group { display: flex; flex-direction: column; gap: 7px; }
+    .form-group.full { grid-column: 1 / -1; }
+    .form-label {
+      font-size: 0.72rem; font-weight: 700; color: var(--gray);
+      text-transform: uppercase; letter-spacing: 0.8px;
+    }
+    .form-input, .form-select {
+      height: 46px;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      padding: 0 14px;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.875rem;
+      color: var(--text);
+      outline: none;
+      background: var(--white);
+      transition: border-color 0.2s, box-shadow 0.2s;
+      width: 100%;
+    }
+    .form-input:focus, .form-select:focus {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px rgba(245,166,35,0.12);
+    }
+    .form-input::placeholder { color: #bbb; }
+
+    .btn-submit {
+      width: 100%; height: 50px; margin-top: 24px;
+      background: linear-gradient(135deg, var(--gold), var(--gold-light));
+      color: #fff; font-family: 'Inter', sans-serif;
+      font-size: 0.95rem; font-weight: 700;
+      border: none; border-radius: 12px;
+      cursor: pointer; letter-spacing: 0.3px;
+      box-shadow: 0 4px 16px rgba(245,166,35,0.35);
+      transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
+    }
+    .btn-submit:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(245,166,35,0.45); }
+    .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    /* Error / Info */
+    .field-error { font-size: 0.73rem; color: var(--red); margin-top: 2px; display: none; }
+    .field-error.show { display: block; }
+
+    /* Result Card */
+    .result-card {
+      background: var(--white);
+      border-radius: 20px;
+      padding: 32px 36px;
+      box-shadow: var(--shadow-lg);
+      border: 2px solid var(--gold);
+      display: none;
+      animation: fadeUp 0.45s ease both;
+    }
+    .result-card.show { display: block; }
+
+    .result-header {
+      display: flex; align-items: center; gap: 12px;
+      margin-bottom: 24px;
+    }
+    .result-check {
+      width: 44px; height: 44px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--green), #34d399);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.3rem; flex-shrink: 0;
+      animation: pop 0.4s ease;
+    }
+    .result-title { font-size: 1.1rem; font-weight: 800; color: var(--navy); }
+    .result-sub   { font-size: 0.82rem; color: var(--gray); margin-top: 3px; }
+
+    /* Agent Code Badge */
+    .agent-code-wrap {
+      background: linear-gradient(135deg, var(--navy), #1a1a4a);
+      border-radius: 14px;
+      padding: 20px 24px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .agent-code-label { font-size: 0.72rem; font-weight: 600; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+    .agent-code       { font-size: 2rem; font-weight: 900; color: var(--gold); letter-spacing: 3px; font-family: monospace; }
+
+    /* Link Referral */
+    .referral-link-wrap {
+      background: var(--bg);
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border: 1px solid var(--border);
+    }
+    .referral-link-text {
+      flex: 1;
+      font-size: 0.82rem;
+      color: var(--navy);
+      font-weight: 500;
+      word-break: break-all;
+      line-height: 1.4;
+    }
+    .btn-copy {
+      flex-shrink: 0;
+      padding: 8px 16px;
+      background: var(--gold);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.15s;
+      font-family: 'Inter', sans-serif;
+    }
+    .btn-copy:hover { background: #e8931a; transform: scale(1.03); }
+    .btn-copy.copied { background: var(--green); }
+
+    /* QR */
+    .qr-section { text-align: center; }
+    .qr-label {
+      font-size: 0.75rem; font-weight: 700; color: var(--gray);
+      text-transform: uppercase; letter-spacing: 0.8px;
+      margin-bottom: 16px;
+    }
+    .qr-box {
+      display: inline-block;
+      background: #fff;
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: var(--shadow-md);
+      border: 1px solid var(--border);
+      margin-bottom: 16px;
+    }
+    #qrCanvas { display: block; }
+
+    .btn-download {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 11px 24px;
+      background: var(--navy);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.2s;
+      font-family: 'Inter', sans-serif;
+      text-decoration: none;
+    }
+    .btn-download:hover { background: #1a1a4a; transform: translateY(-1px); }
+
+    .divider { height: 1px; background: var(--border); margin: 24px 0; }
+
+    /* Spinner */
+    .spinner {
+      display: inline-block;
+      width: 18px; height: 18px;
+      border: 2px solid rgba(255,255,255,0.4);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle; margin-right: 6px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Toast */
+    .toast {
+      position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px);
+      background: var(--navy); color: #fff;
+      padding: 12px 24px; border-radius: 50px;
+      font-size: 0.875rem; font-weight: 600;
+      box-shadow: var(--shadow-lg);
+      opacity: 0; transition: all 0.3s ease;
+      pointer-events: none; white-space: nowrap; z-index: 9999;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* Responsive */
+    @media (max-width: 520px) {
+      .card, .result-card { padding: 24px 20px; }
+      .form-grid { grid-template-columns: 1fr; }
+      .form-group.full { grid-column: 1; }
+      .agent-code { font-size: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- Header -->
+  <div class="page-header">
+    <div class="logo-wrap">🤝</div>
+    <h1>Daftar Referral Agent</h1>
+    <p>Lengkapi data diri kamu untuk mendapatkan kode & QR referral eksklusif</p>
+  </div>
+
+  <!-- Form Card -->
+  <div class="card" id="formCard">
+    <div class="card-title">📋 Data Diri</div>
+
+    <form id="agentForm" novalidate>
+      <div class="form-grid">
+
+        <div class="form-group full">
+          <label class="form-label" for="fNama">Nama Lengkap <span style="color:var(--red)">*</span></label>
+          <input class="form-input" type="text" id="fNama" placeholder="Masukkan nama lengkap kamu" autocomplete="name"/>
+          <span class="field-error" id="errNama">Nama wajib diisi</span>
+        </div>
+
+        <div class="form-group full">
+          <label class="form-label" for="fEmail">Email <span style="color:var(--red)">*</span></label>
+          <input class="form-input" type="email" id="fEmail" placeholder="nama@email.com" autocomplete="email"/>
+          <span class="field-error" id="errEmail">Email wajib diisi & format valid</span>
+        </div>
+
+        <div class="form-group full">
+          <label class="form-label" for="fPhone">No. WhatsApp <span style="color:var(--red)">*</span></label>
+          <input class="form-input" type="tel" id="fPhone" placeholder="08xxxxxxxxxx"/>
+          <span class="field-error" id="errPhone">Nomor WhatsApp wajib diisi</span>
+        </div>
+
+        <div class="form-group full">
+          <label class="form-label" for="fDomisili">Domisili (Kota) <span style="color:var(--red)">*</span></label>
+          <input class="form-input" type="text" id="fDomisili" placeholder="Contoh: Jakarta Selatan"/>
+          <span class="field-error" id="errDomisili">Domisili wajib diisi</span>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="fLahir">Tanggal Lahir</label>
+          <input class="form-input" type="date" id="fLahir"/>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="fPekerjaan">Pekerjaan Saat Ini</label>
+          <select class="form-select" id="fPekerjaan">
+            <option value="">— Pilih pekerjaan —</option>
+            <option>Karyawan Swasta</option>
+            <option>PNS / ASN</option>
+            <option>Wiraswasta / Pengusaha</option>
+            <option>Freelancer</option>
+            <option>Mahasiswa / Pelajar</option>
+            <option>Ibu Rumah Tangga</option>
+            <option>Profesional (Dokter, Lawyer, dll)</option>
+            <option>Lainnya</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="fLamaInvestasi">Sudah Berapa Lama Berinvestasi?</label>
+          <select class="form-select" id="fLamaInvestasi">
+            <option value="">— Pilih —</option>
+            <option>Belum pernah</option>
+            <option>Kurang dari 1 tahun</option>
+            <option>1 – 3 tahun</option>
+            <option>3 – 5 tahun</option>
+            <option>Lebih dari 5 tahun</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="fSekuritas">Sekuritas yang Digunakan</label>
+          <select class="form-select" id="fSekuritas">
+            <option value="">— Pilih —</option>
+            <option>Mirae Asset</option>
+            <option>BRI Danareksa</option>
+            <option>Mandiri Sekuritas</option>
+            <option>BCA Sekuritas</option>
+            <option>Phillip Sekuritas</option>
+            <option>Sinarmas Sekuritas</option>
+            <option>Henan Putihrai</option>
+            <option>Trimegah Sekuritas</option>
+            <option>Indo Premier</option>
+            <option>Lainnya</option>
+          </select>
+        </div>
+
+      </div>
+
+      <button type="submit" class="btn-submit" id="btnSubmit">
+        Daftar & Dapatkan Kode Referral
+      </button>
+    </form>
+  </div>
+
+  <!-- Result Card -->
+  <div class="result-card" id="resultCard">
+    <div class="result-header">
+      <div class="result-check">✓</div>
+      <div>
+        <div class="result-title" id="resultName">Selamat, —!</div>
+        <div class="result-sub">Kamu resmi terdaftar sebagai Referral Agent Fawz Pro</div>
+      </div>
+    </div>
+
+    <!-- Kode Agent -->
+    <div class="agent-code-wrap">
+      <div class="agent-code-label">Kode Referral Kamu</div>
+      <div class="agent-code" id="agentCodeDisplay">—</div>
+    </div>
+
+    <!-- Link Referral -->
+    <div style="margin-bottom:8px;">
+      <div class="form-label" style="margin-bottom:10px;">🔗 Link Referral</div>
+      <div class="referral-link-wrap">
+        <div class="referral-link-text" id="referralLinkText">—</div>
+        <button class="btn-copy" id="btnCopy" onclick="copyLink()">Salin</button>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- QR Code -->
+    <div class="qr-section">
+      <div class="qr-label">📱 QR Code Referral</div>
+      <div class="qr-box">
+        <div id="qrCanvas"></div>
+      </div>
+      <br/>
+      <button class="btn-download" id="btnDownload" onclick="downloadQR()">
+        ⬇ Download QR Code
+      </button>
+    </div>
+
+    <div class="divider"></div>
+
+    <div style="background:rgba(245,166,35,0.08);border-radius:12px;padding:16px;border:1px solid rgba(245,166,35,0.25);">
+      <div style="font-size:0.8rem;color:var(--navy);font-weight:600;margin-bottom:6px;">💡 Cara Pakai</div>
+      <div style="font-size:0.8rem;color:var(--gray);line-height:1.7;">
+        Bagikan link atau QR Code ini ke calon investor. Saat mereka membuka link dan mengisi form pendaftaran, kode referral kamu akan otomatis terisi di kolom <strong>"Kode Referral"</strong>.
+      </div>
+    </div>
+
+    <button class="btn-submit" style="margin-top:20px;background:linear-gradient(135deg,#1a1a4a,#0d0d2b);" onclick="resetForm()">
+      Daftarkan Agent Lain
+    </button>
+  </div>
+
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+  const SUPABASE_URL = 'https://yhmrfluehibfapvtxcfi.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlobXJmbHVlaGliZmFwdnR4Y2ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNjEzODUsImV4cCI6MjA5NDczNzM4NX0.se_H4n_eLsf81d_1GH5sqsPCpX89MHewlPuuNkY6qcU';
+  const _sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  const REFERRAL_BASE_URL = 'https://dealer-system.site/fawz-sales/';
+
+  // ── Utility ──────────────────────────────────────────────
+  function showToast(msg, duration = 2500) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), duration);
+  }
+
+  function generateAgentCode(nama) {
+    // Ambil 2-4 huruf pertama nama + 4 digit angka acak
+    const prefix = nama
+      .toUpperCase()
+      .replace(/[^A-Z]/g, '')
+      .substring(0, 4)
+      .padEnd(2, 'X');
+    const suffix = String(Math.floor(1000 + Math.random() * 9000));
+    return prefix + suffix;
+  }
+
+  function validateForm() {
+    let valid = true;
+
+    const fields = [
+      { id: 'fNama',     errId: 'errNama',     check: v => v.trim().length >= 2 },
+      { id: 'fEmail',    errId: 'errEmail',    check: v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim()) },
+      { id: 'fPhone',    errId: 'errPhone',    check: v => v.trim().length >= 8 },
+      { id: 'fDomisili', errId: 'errDomisili', check: v => v.trim().length >= 2 },
+    ];
+
+    fields.forEach(f => {
+      const val = document.getElementById(f.id).value;
+      const errEl = document.getElementById(f.errId);
+      const ok = f.check(val);
+      errEl.classList.toggle('show', !ok);
+      if (!ok) valid = false;
+    });
+
+    return valid;
+  }
+
+  // ── QR Code ──────────────────────────────────────────────
+  let qrInstance = null;
+
+  function generateQR(url) {
+    const wrap = document.getElementById('qrCanvas');
+    wrap.innerHTML = '';
+    qrInstance = new QRCode(wrap, {
+      text: url,
+      width: 220,
+      height: 220,
+      colorDark: '#0d0d2b',
+      colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.H
+    });
+  }
+
+  function downloadQR() {
+    // Cari canvas yang di-generate QRCode.js
+    const canvas = document.querySelector('#qrCanvas canvas');
+    if (!canvas) {
+      // Fallback: coba img tag
+      const img = document.querySelector('#qrCanvas img');
+      if (img) {
+        const a = document.createElement('a');
+        a.href = img.src;
+        a.download = 'referral-qr-' + document.getElementById('agentCodeDisplay').textContent + '.png';
+        a.click();
+        showToast('QR Code berhasil didownload! ✅');
+        return;
+      }
+      showToast('Gagal download QR, coba lagi');
+      return;
+    }
+    const a = document.createElement('a');
+    a.href = canvas.toDataURL('image/png');
+    a.download = 'referral-qr-' + document.getElementById('agentCodeDisplay').textContent + '.png';
+    a.click();
+    showToast('QR Code berhasil didownload! ✅');
+  }
+
+  // ── Copy Link ─────────────────────────────────────────────
+  function copyLink() {
+    const link = document.getElementById('referralLinkText').textContent;
+    navigator.clipboard.writeText(link).then(() => {
+      const btn = document.getElementById('btnCopy');
+      btn.textContent = 'Tersalin ✓';
+      btn.classList.add('copied');
+      showToast('Link referral tersalin! 🔗');
+      setTimeout(() => {
+        btn.textContent = 'Salin';
+        btn.classList.remove('copied');
+      }, 2000);
+    }).catch(() => {
+      // Fallback untuk browser lama
+      const ta = document.createElement('textarea');
+      ta.value = link;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      showToast('Link referral tersalin! 🔗');
+    });
+  }
+
+  // ── Reset ─────────────────────────────────────────────────
+  function resetForm() {
+    document.getElementById('agentForm').reset();
+    document.querySelectorAll('.field-error').forEach(e => e.classList.remove('show'));
+    document.getElementById('formCard').style.display = 'block';
+    document.getElementById('resultCard').classList.remove('show');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // ── Submit ────────────────────────────────────────────────
+  document.getElementById('agentForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    if (!validateForm()) return;
+
+    const btn = document.getElementById('btnSubmit');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Memproses...';
+
+    const nama         = document.getElementById('fNama').value.trim();
+    const email        = document.getElementById('fEmail').value.trim();
+    const phone        = document.getElementById('fPhone').value.trim();
+    const domisili     = document.getElementById('fDomisili').value.trim();
+    const tglLahir     = document.getElementById('fLahir').value || null;
+    const pekerjaan    = document.getElementById('fPekerjaan').value || null;
+    const lamaInvestasi = document.getElementById('fLamaInvestasi').value || null;
+    const sekuritas    = document.getElementById('fSekuritas').value || null;
+
+    // Generate kode unik dulu (bisa di-override oleh ID dari DB)
+    let agentCode = generateAgentCode(nama);
+
+    try {
+      // Simpan ke Supabase — tabel referral_agents
+      // Jika tabel belum ada, kita tetap generate QR dari data lokal (mode offline)
+      const { data, error } = await _sb
+        .from('referral_agents')
+        .insert([{
+          nama,
+          email,
+          phone,
+          domisili,
+          tanggal_lahir: tglLahir,
+          pekerjaan,
+          lama_investasi: lamaInvestasi,
+          sekuritas,
+          agent_code: agentCode,
+          referral_url: REFERRAL_BASE_URL + '?ref=' + agentCode,
+          created_at: new Date().toISOString()
+        }])
+        .select()
+        .single();
+
+      if (!error && data) {
+        // Gunakan ID dari DB untuk kode yang lebih unik jika perlu
+        // agentCode sudah di-set sebelumnya, kita pakai yang sudah di-insert
+        agentCode = data.agent_code || agentCode;
+      } else if (error) {
+        console.warn('Supabase insert warning (tabel mungkin belum ada, tetap lanjut generate):', error.message);
+        // Tetap lanjut — mode demo tanpa DB
+      }
+
+    } catch(err) {
+      console.warn('Supabase error (lanjut mode offline):', err.message);
+    }
+
+    // Construct referral URL
+    const referralUrl = REFERRAL_BASE_URL + '?ref=' + encodeURIComponent(agentCode);
+
+    // Tampilkan result
+    document.getElementById('resultName').textContent = 'Selamat, ' + nama.split(' ')[0] + '!';
+    document.getElementById('agentCodeDisplay').textContent = agentCode;
+    document.getElementById('referralLinkText').textContent = referralUrl;
+
+    // Generate QR
+    generateQR(referralUrl);
+
+    // Show / hide cards
+    document.getElementById('formCard').style.display = 'none';
+    document.getElementById('resultCard').classList.add('show');
+
+    // Reset button state
+    btn.disabled = false;
+    btn.innerHTML = 'Daftar & Dapatkan Kode Referral';
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    showToast('Kode referral berhasil dibuat! 🎉', 3000);
+  });
+</script>
+</body>
+</html>
