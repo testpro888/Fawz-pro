@@ -180,12 +180,12 @@
     .sek-card:hover { border-color: var(--purple); background: #fafafe; }
     .sek-card.selected { border-color: var(--purple); background: #f0edff; }
     .sek-badge {
-      width: 42px; height: 42px; border-radius: 10px;
+      width: 56px; height: 56px; border-radius: 12px;
       display: flex; align-items: center; justify-content: center;
       flex-shrink: 0; overflow: hidden; background: #fff;
       border: 1px solid var(--border);
     }
-    .sek-badge img { width: 38px; height: 38px; object-fit: contain; }
+    .sek-badge img { width: 52px; height: 52px; object-fit: contain; }
     .sek-name { font-size: 0.9rem; font-weight: 700; color: var(--navy); }
     .sek-desc { font-size: 0.75rem; color: var(--gray); margin-top: 2px; }
     .sek-radio {
@@ -275,8 +275,8 @@
       transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
     }
     .oa-card:hover { border-color: var(--gold); transform: translateY(-2px); box-shadow: 0 4px 20px rgba(245,166,35,0.18); }
-    .oa-badge { border-radius: 10px; padding: 6px; margin-bottom: 4px; background: #fff; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; width: 56px; height: 56px; }
-    .oa-badge img { width: 44px; height: 44px; object-fit: contain; }
+    .oa-badge { border-radius: 12px; margin-bottom: 4px; background: #fff; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; width: 72px; height: 72px; }
+    .oa-badge img { width: 64px; height: 64px; object-fit: contain; }
     .oa-name { font-size: 0.85rem; font-weight: 700; color: var(--navy); }
     .oa-hint { font-size: 0.72rem; color: var(--gray); line-height: 1.4; }
     .oa-btn  { margin-top: 6px; font-size: 0.75rem; font-weight: 600; padding: 6px 14px; border-radius: 8px; background: linear-gradient(135deg, var(--gold), var(--gold-l)); color: var(--navy); border: none; cursor: pointer; }
@@ -386,7 +386,7 @@
 
       <div class="sekuritas-cards">
         <div class="sek-card" id="sek-maybank" onclick="pilihSekuritas('maybank')">
-          <div class="sek-badge" style="background:#fff0e0;"><img src="assets/logo/maybank.png" alt="Maybank Sekuritas" onerror="this.style.display='none';this.parentElement.textContent='🏦'"/></div>
+          <div class="sek-badge"><img src="assets/logo/maybank.png" alt="Maybank Sekuritas" onerror="this.style.display='none';this.parentElement.textContent='🏦'"/></div>
           <div>
             <div class="sek-name">Maybank Sekuritas</div>
             <div class="sek-desc">Maybank Trade Indonesia</div>
@@ -394,7 +394,7 @@
           <div class="sek-radio" id="radio-maybank"></div>
         </div>
         <div class="sek-card" id="sek-trimegah" onclick="pilihSekuritas('trimegah')">
-          <div class="sek-badge" style="background:#e8f0ff;"><img src="assets/logo/trimegah.png" alt="Trimegah Sekuritas" onerror="this.style.display='none';this.parentElement.textContent='📊'"/></div>
+          <div class="sek-badge"><img src="assets/logo/trimegah.png" alt="Trimegah Sekuritas" onerror="this.style.display='none';this.parentElement.textContent='📊'"/></div>
           <div>
             <div class="sek-name">Trimegah Sekuritas</div>
             <div class="sek-desc">Trimegah Asset Management</div>
@@ -402,7 +402,7 @@
           <div class="sek-radio" id="radio-trimegah"></div>
         </div>
         <div class="sek-card" id="sek-rhb" onclick="pilihSekuritas('rhb')">
-          <div class="sek-badge" style="background:#e8fff0;"><img src="assets/logo/rhb.png" alt="RHB Sekuritas" onerror="this.style.display='none';this.parentElement.textContent='💼'"/></div>
+          <div class="sek-badge"><img src="assets/logo/rhb.png" alt="RHB Sekuritas" onerror="this.style.display='none';this.parentElement.textContent='💼'"/></div>
           <div>
             <div class="sek-name">RHB Sekuritas</div>
             <div class="sek-desc">RHB Sekuritas Indonesia</div>
