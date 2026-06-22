@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <script src="config.js"></script>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Fawz Pro | Daftar via Agen</title>
+  <link rel="icon" type="image/png" href="assets/logo/fawz.png"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script>
+    const SUPABASE_URL = (window.__FAWZ_CONFIG__ || {}).supabaseUrl || '';
+    const SUPABASE_KEY = (window.__FAWZ_CONFIG__ || {}).supabaseKey || '';
+    const _sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  </script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --navy:    #0d0d2b;
+      --navy2:   #1a0e4a;
+      --gold:    #f5a623;
+      --gold-l:  #ffc857;
+      --purple:  #5645d4;
+      --purple-l:#7b65f0;
+      --green:   #1aae39;
+      --red:     #e74c3c;
+      --bg:      #f4f5fb;
+      --white:   #ffffff;
+      --border:  #e0e0ef;
+      --text:    #1a1a3a;
+      --gray:    #888;
+      --muted:   #bbb;
+    }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 0 0 60px;
+    }
+
+    /* ── HERO HEADER ── */
+    .hero {
+      width: 100%;
+      background: linear-gradient(145deg, #0a0a22 0%, #1a0e4a 50%, #0d0d2b 100%);
+      padding: 40px 24px 36px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      width: 500px; height: 500px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(245,166,35,0.12) 0%, transparent 70%);
+      top: -150px; left: 50%; transform: translateX(-50%);
+      pointer-events: none;
+    }
+    .hero-logo { width: 140px; margin-bottom: 18px; filter: drop-shadow(0 0 20px rgba(245,166,35,0.3)); }
+    .hero-title {
+      font-size: 1.8rem; font-weight: 800; color: #fff;
+      letter-spacing: -0.5px; line-height: 1.25; margin-bottom: 8px;
+    }
+    .hero-title span { color: var(--gold); }
+    .hero-sub { font-size: 0.9rem; color: rgba(255,255,255,0.55); line-height: 1.6; max-width: 480px; margin: 0 auto; }
+
+    /* ── STEPPER ── */
+    .stepper-wrap { display: flex; align-items: center; justify-content: center; gap: 0; margin: 28px auto 0; max-width: 400px; }
+    .step-dot {
+      width: 32px; height: 32px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.75rem; font-weight: 700;
+      background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.4);
+      border: 2px solid rgba(255,255,255,0.15);
+      transition: all 0.3s; position: relative; z-index: 1;
+    }
+    .step-dot.active   { background: var(--gold); color: var(--navy); border-color: var(--gold); }
+    .step-dot.done     { background: var(--green); color: #fff; border-color: var(--green); }
+    .step-line { flex: 1; height: 2px; background: rgba(255,255,255,0.12); }
+    .step-line.done    { background: var(--green); }
+    .step-label { font-size: 0.65rem; color: rgba(255,255,255,0.4); text-align: center; margin-top: 6px; white-space: nowrap; }
+    .step-item { display: flex; flex-direction: column; align-items: center; }
+
+    /* ── MAIN CARD ── */
+    .main-card {
+      background: var(--white);
+      border-radius: 20px;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.10);
+      max-width: 540px;
+      width: calc(100% - 32px);
+      margin: 28px auto 0;
+      overflow: hidden;
+      animation: fadeUp 0.4s ease both;
+    }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
+
+    .card-body { padding: 32px 36px; }
+    @media (max-width: 480px) { .card-body { padding: 24px 20px; } }
+
+    /* ── SECTION PANELS ── */
+    .panel { display: none; }
+    .panel.active { display: block; animation: fadeUp 0.3s ease both; }
+
+    /* ── WELCOME ── */
+    .welcome-icon { font-size: 3.5rem; text-align: center; margin-bottom: 16px; }
+    .welcome-title { font-size: 1.4rem; font-weight: 800; color: var(--navy); text-align: center; margin-bottom: 8px; }
+    .welcome-desc { font-size: 0.88rem; color: var(--gray); text-align: center; line-height: 1.7; margin-bottom: 28px; }
+
+    /* ── BUTTONS ── */
+    .btn {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      width: 100%; padding: 14px 20px; border-radius: 12px;
+      font-family: 'Inter', sans-serif; font-size: 0.95rem; font-weight: 600;
+      cursor: pointer; border: none; transition: transform 0.15s, box-shadow 0.2s;
+      text-decoration: none;
+    }
+    .btn:hover { transform: translateY(-2px); }
+    .btn-gold {
+      background: linear-gradient(135deg, var(--gold), var(--gold-l));
+      color: var(--navy);
+      box-shadow: 0 4px 16px rgba(245,166,35,0.35);
+    }
+    .btn-gold:hover { box-shadow: 0 8px 24px rgba(245,166,35,0.45); }
+    .btn-navy {
+      background: var(--navy);
+      color: #fff;
+      box-shadow: 0 4px 16px rgba(13,13,43,0.25);
+    }
+    .btn-navy:hover { box-shadow: 0 8px 24px rgba(13,13,43,0.35); }
+    .btn-outline {
+      background: transparent;
+      color: var(--navy);
+      border: 2px solid var(--border);
+    }
+    .btn-outline:hover { border-color: var(--purple); color: var(--purple); box-shadow: none; }
+    .btn-green {
+      background: linear-gradient(135deg, #1aae39, #16962f);
+      color: #fff;
+      box-shadow: 0 4px 16px rgba(26,174,57,0.30);
+    }
+    .btn-green:hover { box-shadow: 0 8px 24px rgba(26,174,57,0.40); }
+    .btn-sm { padding: 10px 16px; font-size: 0.85rem; border-radius: 10px; width: auto; }
+    .btn-link {
+      background: none; border: none; color: var(--purple);
+      font-family: 'Inter', sans-serif; font-size: 0.85rem; font-weight: 500;
+      cursor: pointer; text-decoration: underline; padding: 0;
+      width: auto; display: inline;
+    }
+
+    .btn-stack { display: flex; flex-direction: column; gap: 10px; }
+    .btn-row   { display: flex; gap: 10px; }
+
+    /* ── CHOICE CARDS ── */
+    .choice-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 20px 0; }
+    @media (max-width: 420px) { .choice-cards { grid-template-columns: 1fr; } }
+    .choice-card {
+      border: 2px solid var(--border);
+      border-radius: 14px; padding: 20px 16px;
+      text-align: center; cursor: pointer;
+      transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
+      background: #fff;
+    }
+    .choice-card:hover { border-color: var(--purple); transform: translateY(-2px); box-shadow: 0 4px 16px rgba(86,69,212,0.12); }
+    .choice-card.selected { border-color: var(--purple); background: #f0edff; box-shadow: 0 4px 16px rgba(86,69,212,0.15); }
+    .choice-card .cc-icon { font-size: 2rem; margin-bottom: 8px; }
+    .choice-card .cc-title { font-size: 0.9rem; font-weight: 700; color: var(--navy); margin-bottom: 4px; }
+    .choice-card .cc-desc  { font-size: 0.75rem; color: var(--gray); line-height: 1.4; }
+
+    /* ── SEKURITAS CARDS ── */
+    .sekuritas-cards { display: flex; flex-direction: column; gap: 10px; margin: 16px 0; }
+    .sek-card {
+      border: 2px solid var(--border);
+      border-radius: 12px; padding: 14px 18px;
+      cursor: pointer; display: flex; align-items: center; gap: 14px;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .sek-card:hover { border-color: var(--purple); background: #fafafe; }
+    .sek-card.selected { border-color: var(--purple); background: #f0edff; }
+    .sek-badge {
+      width: 42px; height: 42px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.2rem; flex-shrink: 0;
+    }
+    .sek-name { font-size: 0.9rem; font-weight: 700; color: var(--navy); }
+    .sek-desc { font-size: 0.75rem; color: var(--gray); margin-top: 2px; }
+    .sek-radio {
+      margin-left: auto; width: 18px; height: 18px;
+      border: 2px solid var(--border); border-radius: 50%;
+      transition: border-color 0.2s; flex-shrink: 0;
+    }
+    .sek-card.selected .sek-radio { border-color: var(--purple); background: var(--purple); box-shadow: inset 0 0 0 3px #fff; }
+
+    /* ── FORM ── */
+    .form-group { margin-bottom: 16px; }
+    .form-label { display: block; font-size: 0.78rem; font-weight: 600; color: #555; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.4px; }
+    .form-input {
+      width: 100%; padding: 12px 14px;
+      border: 1.5px solid var(--border); border-radius: 10px;
+      font-family: 'Inter', sans-serif; font-size: 0.92rem; color: var(--text);
+      outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+      background: #fff;
+    }
+    .form-input:focus { border-color: var(--purple); box-shadow: 0 0 0 3px rgba(86,69,212,0.10); }
+    .form-input::placeholder { color: var(--muted); }
+    .form-select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 36px; }
+
+    /* ── INFO BOX ── */
+    .info-box {
+      border-radius: 10px; padding: 14px 16px;
+      font-size: 0.82rem; line-height: 1.6; margin: 14px 0;
+      display: flex; gap: 10px; align-items: flex-start;
+    }
+    .info-box.blue  { background: #eef3ff; border: 1px solid #c5d5fd; color: #2756c5; }
+    .info-box.green { background: #edfff3; border: 1px solid #a8e6c1; color: #1a6b33; }
+    .info-box.amber { background: #fffbea; border: 1px solid #f9e79f; color: #7d5a00; }
+    .info-box .ib-icon { font-size: 1.1rem; flex-shrink: 0; margin-top: 1px; }
+
+    /* ── DIVIDER ── */
+    .divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+    .divider-text { text-align: center; font-size: 0.78rem; color: var(--muted); margin: 16px 0; position: relative; }
+    .divider-text::before, .divider-text::after { content: ''; position: absolute; top: 50%; width: calc(50% - 60px); height: 1px; background: var(--border); }
+    .divider-text::before { left: 0; }
+    .divider-text::after  { right: 0; }
+
+    /* ── SECTION HEADING ── */
+    .sec-title { font-size: 1.15rem; font-weight: 800; color: var(--navy); margin-bottom: 4px; }
+    .sec-sub   { font-size: 0.82rem; color: var(--gray); margin-bottom: 16px; line-height: 1.5; }
+
+    /* ── WAITING STATE ── */
+    .waiting-box {
+      text-align: center; padding: 28px 20px;
+    }
+    .waiting-spinner {
+      width: 56px; height: 56px; margin: 0 auto 18px;
+      border: 4px solid var(--border);
+      border-top-color: var(--purple);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .waiting-title { font-size: 1.1rem; font-weight: 700; color: var(--navy); margin-bottom: 8px; }
+    .waiting-desc  { font-size: 0.85rem; color: var(--gray); line-height: 1.7; }
+    .badge-pending {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: #fffbea; border: 1px solid #f9e79f;
+      color: #7d5a00; font-size: 0.78rem; font-weight: 600;
+      padding: 4px 12px; border-radius: 9999px; margin-top: 12px;
+    }
+
+    /* ── SUCCESS STATE ── */
+    .success-icon { font-size: 4rem; text-align: center; margin-bottom: 12px; }
+    .success-title { font-size: 1.2rem; font-weight: 800; color: var(--green); text-align: center; margin-bottom: 8px; }
+    .success-desc  { font-size: 0.85rem; color: var(--gray); text-align: center; line-height: 1.7; }
+    .data-review {
+      background: #f8f9ff; border-radius: 12px; padding: 16px 18px;
+      margin: 16px 0; font-size: 0.84rem;
+    }
+    .dr-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--border); }
+    .dr-row:last-child { border-bottom: none; }
+    .dr-label { color: var(--gray); font-weight: 500; }
+    .dr-val   { color: var(--navy); font-weight: 700; text-align: right; }
+
+    /* ── OPEN ACCOUNT CARDS ── */
+    .open-acct-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 16px 0; }
+    @media (max-width: 420px) { .open-acct-cards { grid-template-columns: 1fr; } }
+    .oa-card {
+      border: 2px solid var(--border); border-radius: 14px; padding: 18px 14px;
+      text-align: center; text-decoration: none; display: flex; flex-direction: column;
+      align-items: center; gap: 8px;
+      transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
+    }
+    .oa-card:hover { border-color: var(--gold); transform: translateY(-2px); box-shadow: 0 4px 20px rgba(245,166,35,0.18); }
+    .oa-badge { border-radius: 10px; padding: 10px; font-size: 1.6rem; margin-bottom: 4px; }
+    .oa-name { font-size: 0.85rem; font-weight: 700; color: var(--navy); }
+    .oa-hint { font-size: 0.72rem; color: var(--gray); line-height: 1.4; }
+    .oa-btn  { margin-top: 6px; font-size: 0.75rem; font-weight: 600; padding: 6px 14px; border-radius: 8px; background: linear-gradient(135deg, var(--gold), var(--gold-l)); color: var(--navy); border: none; cursor: pointer; }
+
+    /* ── BACK LINK ── */
+    .back-link { display: flex; align-items: center; gap: 6px; color: var(--purple); font-size: 0.83rem; font-weight: 600; cursor: pointer; margin-bottom: 18px; width: fit-content; }
+    .back-link:hover { text-decoration: underline; }
+
+    /* ── FOOTER ── */
+    .page-footer { text-align: center; font-size: 0.75rem; color: var(--muted); margin-top: 24px; padding: 0 16px; }
+    .page-footer a { color: var(--purple); text-decoration: none; }
+    .page-footer a:hover { text-decoration: underline; }
+
+    /* ── MSG ── */
+    .msg-box { border-radius: 10px; padding: 11px 14px; font-size: 0.83rem; margin-bottom: 14px; display: none; }
+    .msg-error   { background: #fff0f0; border: 1px solid #ffcccc; color: #c0392b; }
+    .msg-success { background: #edfff3; border: 1px solid #a8e6c1; color: #1a6b33; }
+  </style>
+</head>
+<body>
+
+<!-- ══ HERO HEADER ══ -->
+<div class="hero">
+  <img src="assets/logo/fawzpro.png" alt="Fawz Pro" class="hero-logo"
+    onerror="this.style.display='none'"/>
+  <div class="hero-title">Registrasi via <span>Agen Referral</span></div>
+  <div class="hero-sub">Bergabung dan mulai perjalanan investasi Anda bersama Fawz Finansial Indonesia.</div>
+
+  <!-- Stepper -->
+  <div class="stepper-wrap" id="stepperWrap">
+    <div class="step-item">
+      <div class="step-dot active" id="dot1">1</div>
+      <div class="step-label">Mulai</div>
+    </div>
+    <div class="step-line" id="line1"></div>
+    <div class="step-item">
+      <div class="step-dot" id="dot2">2</div>
+      <div class="step-label">Status</div>
+    </div>
+    <div class="step-line" id="line2"></div>
+    <div class="step-item">
+      <div class="step-dot" id="dot3">3</div>
+      <div class="step-label">Detail</div>
+    </div>
+    <div class="step-line" id="line3"></div>
+    <div class="step-item">
+      <div class="step-dot" id="dot4">4</div>
+      <div class="step-label">Selesai</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MAIN CARD ══ -->
+<div class="main-card">
+  <div class="card-body">
+
+    <!-- ─── PANEL 1: WELCOME ─── -->
+    <div class="panel active" id="panel1">
+      <div class="welcome-icon">👋</div>
+      <div class="welcome-title">Selamat Datang!</div>
+      <div class="welcome-desc">
+        Kami senang Anda di sini. Halaman ini akan membantu Anda mendaftar sebagai nasabah
+        melalui agen referral Fawz Finansial.<br><br>
+        Prosesnya mudah, hanya beberapa langkah saja.
+      </div>
+      <div class="info-box blue">
+        <span class="ib-icon">ℹ️</span>
+        <span>Pastikan Anda memiliki <strong>nama lengkap</strong>, <strong>alamat email</strong>, dan
+        jika sudah terdaftar di sekuritas rekanan, siapkan juga <strong>kode client</strong> Anda.</span>
+      </div>
+      <div style="margin-top: 24px;">
+        <button class="btn btn-gold" onclick="goStep(2)">Mulai Sekarang →</button>
+      </div>
+    </div>
+
+    <!-- ─── PANEL 2: STATUS REGISTRASI ─── -->
+    <div class="panel" id="panel2">
+      <div class="back-link" onclick="goStep(1)">← Kembali</div>
+      <div class="sec-title">Status Akun Sekuritas</div>
+      <div class="sec-sub">Apakah Anda sudah memiliki akun di salah satu sekuritas rekanan kami?</div>
+
+      <div class="choice-cards">
+        <div class="choice-card" id="cc-sudah" onclick="pilihStatus('sudah')">
+          <div class="cc-icon">✅</div>
+          <div class="cc-title">Sudah Terdaftar</div>
+          <div class="cc-desc">Saya sudah punya akun di sekuritas rekanan Fawz</div>
+        </div>
+        <div class="choice-card" id="cc-belum" onclick="pilihStatus('belum')">
+          <div class="cc-icon">🆕</div>
+          <div class="cc-title">Belum Terdaftar</div>
+          <div class="cc-desc">Saya belum punya akun dan ingin membuka rekening baru</div>
+        </div>
+      </div>
+
+      <div style="margin-top: 8px;">
+        <button class="btn btn-navy" id="btnStatus" onclick="lanjutDariStatus()" disabled style="opacity:0.5;">
+          Lanjutkan →
+        </button>
+      </div>
+    </div>
+
+    <!-- ─── PANEL 3A: SUDAH TERDAFTAR ─── -->
+    <div class="panel" id="panel3a">
+      <div class="back-link" onclick="goStep(2)">← Kembali</div>
+      <div class="sec-title">Pilih Sekuritas & Isi Data</div>
+      <div class="sec-sub">Pilih sekuritas yang Anda gunakan, lalu masukkan kode client Anda.</div>
+
+      <div class="sekuritas-cards">
+        <div class="sek-card" id="sek-maybank" onclick="pilihSekuritas('maybank')">
+          <div class="sek-badge" style="background:#fff0e0;">🏦</div>
+          <div>
+            <div class="sek-name">Maybank Sekuritas</div>
+            <div class="sek-desc">Maybank Trade Indonesia</div>
+          </div>
+          <div class="sek-radio" id="radio-maybank"></div>
+        </div>
+        <div class="sek-card" id="sek-trimegah" onclick="pilihSekuritas('trimegah')">
+          <div class="sek-badge" style="background:#e8f0ff;">📊</div>
+          <div>
+            <div class="sek-name">Trimegah Sekuritas</div>
+            <div class="sek-desc">Trimegah Asset Management</div>
+          </div>
+          <div class="sek-radio" id="radio-trimegah"></div>
+        </div>
+        <div class="sek-card" id="sek-rhb" onclick="pilihSekuritas('rhb')">
+          <div class="sek-badge" style="background:#e8fff0;">💼</div>
+          <div>
+            <div class="sek-name">RHB Sekuritas</div>
+            <div class="sek-desc">RHB Sekuritas Indonesia</div>
+          </div>
+          <div class="sek-radio" id="radio-rhb"></div>
+        </div>
+      </div>
+
+      <hr class="divider"/>
+
+      <div class="msg-box msg-error" id="msgErr3a"></div>
+
+      <div class="form-group">
+        <label class="form-label">Nama Lengkap *</label>
+        <input type="text" id="nama3a" class="form-input" placeholder="Sesuai KTP" autocomplete="name"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email *</label>
+        <input type="email" id="email3a" class="form-input" placeholder="email@anda.com" autocomplete="email"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Nomor Telepon (WhatsApp)</label>
+        <input type="tel" id="phone3a" class="form-input" placeholder="08xx-xxxx-xxxx" autocomplete="tel"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Client Code / Kode Nasabah *</label>
+        <input type="text" id="clientCode" class="form-input" placeholder="Contoh: MB12345" autocomplete="off" style="text-transform:uppercase;"/>
+      </div>
+
+      <div class="info-box amber">
+        <span class="ib-icon">⚠️</span>
+        <span>Pastikan kode client sesuai dengan yang terdaftar di sekuritas pilihan Anda. Tim kami akan memverifikasi data ini.</span>
+      </div>
+
+      <div style="margin-top: 20px;">
+        <button class="btn btn-gold" id="btnSubmit3a" onclick="submitSudahDaftar()">
+          Kirim & Tunggu Konfirmasi →
+        </button>
+      </div>
+    </div>
+
+    <!-- ─── PANEL 3B: BELUM TERDAFTAR ─── -->
+    <div class="panel" id="panel3b">
+      <div class="back-link" onclick="goStep(2)">← Kembali</div>
+      <div class="sec-title">Buka Akun Sekuritas</div>
+      <div class="sec-sub">
+        Silakan buka akun di salah satu sekuritas rekanan kami di bawah ini,
+        lalu hubungi agen Fawz Anda untuk langkah selanjutnya.
+      </div>
+
+      <div class="open-acct-cards">
+        <a class="oa-card"
+          href="https://www.maybanktrade.co.id/deeplinks/?urlDeeplink=Y29tLm1iYi50aXRhbjovL3RvcGljcy90b3BpY19yZWdpc3RyYXRpb25fbmFtZQo=&salesCode=696"
+          target="_blank" rel="noopener noreferrer">
+          <div class="oa-badge" style="background:#fff0e0;">🏦</div>
+          <div class="oa-name">Maybank Sekuritas</div>
+          <div class="oa-hint">Daftar via Maybank Trade dengan kode sales Fawz</div>
+          <div class="oa-btn">Buka Akun →</div>
+        </a>
+        <a class="oa-card"
+          href="https://eform.trimegah.id/nmb/?ref=FFI"
+          target="_blank" rel="noopener noreferrer">
+          <div class="oa-badge" style="background:#e8f0ff;">📊</div>
+          <div class="oa-name">Trimegah Sekuritas</div>
+          <div class="oa-hint">Daftar via e-form Trimegah dengan referral Fawz</div>
+          <div class="oa-btn">Buka Akun →</div>
+        </a>
+      </div>
+
+      <div class="info-box green">
+        <span class="ib-icon">✅</span>
+        <span>Kedua link di atas sudah tercantum kode referral agen Fawz secara otomatis. Cukup isi data diri Anda di sana.</span>
+      </div>
+
+      <hr class="divider"/>
+
+      <div class="sec-title" style="font-size:1rem;">Sudah mendaftar di sekuritas?</div>
+      <div class="sec-sub" style="margin-bottom: 12px;">
+        Setelah akun Anda aktif, kembali ke sini dan daftarkan kode client Anda ke agen Fawz.
+      </div>
+
+      <div class="msg-box msg-error" id="msgErr3b"></div>
+
+      <div class="form-group">
+        <label class="form-label">Nama Lengkap *</label>
+        <input type="text" id="nama3b" class="form-input" placeholder="Sesuai KTP" autocomplete="name"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email *</label>
+        <input type="email" id="email3b" class="form-input" placeholder="email@anda.com" autocomplete="email"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Nomor Telepon (WhatsApp)</label>
+        <input type="tel" id="phone3b" class="form-input" placeholder="08xx-xxxx-xxxx" autocomplete="tel"/>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Sekuritas yang Didaftarkan *</label>
+        <select id="sekuritas3b" class="form-input form-select">
+          <option value="">-- Pilih Sekuritas --</option>
+          <option value="maybank">Maybank Sekuritas</option>
+          <option value="trimegah">Trimegah Sekuritas</option>
+        </select>
+      </div>
+
+      <div style="margin-top: 8px;">
+        <button class="btn btn-navy" onclick="submitBelumDaftar()">Kirim Data & Hubungi Agen →</button>
+      </div>
+    </div>
+
+    <!-- ─── PANEL 4A: MENUNGGU KONFIRMASI ─── -->
+    <div class="panel" id="panel4a">
+      <div class="waiting-box">
+        <div class="waiting-spinner"></div>
+        <div class="waiting-title">Menunggu Konfirmasi</div>
+        <div class="waiting-desc">
+          Data Anda telah berhasil dikirim ke tim Fawz Finansial.<br>
+          Kami akan memverifikasi akun sekuritas Anda dan menghubungi Anda melalui WhatsApp atau email yang didaftarkan.
+        </div>
+        <div class="badge-pending">⏳ Sedang diproses oleh tim kami</div>
+      </div>
+
+      <div class="data-review" id="reviewData4a"></div>
+
+      <div class="info-box blue" style="margin-top: 12px;">
+        <span class="ib-icon">📞</span>
+        <span>Butuh bantuan? Hubungi agen Fawz Anda atau
+          <strong><a href="https://wa.me/628116361598" target="_blank" style="color:inherit;">Admin Fawz di +62 811-6361-598</a></strong>.</span>
+      </div>
+
+      <div style="margin-top: 20px;">
+        <a class="btn btn-outline" href="https://wa.me/628116361598" target="_blank" rel="noopener noreferrer">
+          💬 Hubungi Admin via WhatsApp
+        </a>
+      </div>
+    </div>
+
+    <!-- ─── PANEL 4B: SUBMIT BELUM DAFTAR SUKSES ─── -->
+    <div class="panel" id="panel4b">
+      <div style="text-align:center; padding: 16px 0 8px;">
+        <div class="success-icon">🎉</div>
+        <div class="success-title">Data Terkirim!</div>
+        <div class="success-desc">
+          Terima kasih! Tim Fawz akan segera menghubungi Anda untuk memandu proses pembukaan akun dan langkah berikutnya.
+        </div>
+      </div>
+
+      <div class="data-review" id="reviewData4b"></div>
+
+      <div class="info-box green" style="margin-top: 12px;">
+        <span class="ib-icon">📲</span>
+        <span>Sambil menunggu, Anda bisa mulai membuka akun di sekuritas pilihan Anda menggunakan link di bawah.</span>
+      </div>
+
+      <div class="open-acct-cards" style="margin-top: 16px;">
+        <a class="oa-card"
+          href="https://www.maybanktrade.co.id/deeplinks/?urlDeeplink=Y29tLm1iYi50aXRhbjovL3RvcGljcy90b3BpY19yZWdpc3RyYXRpb25fbmFtZQo=&salesCode=696"
+          target="_blank" rel="noopener noreferrer">
+          <div class="oa-badge" style="background:#fff0e0;">🏦</div>
+          <div class="oa-name">Maybank Sekuritas</div>
+          <div class="oa-btn">Buka Akun →</div>
+        </a>
+        <a class="oa-card"
+          href="https://eform.trimegah.id/nmb/?ref=FFI"
+          target="_blank" rel="noopener noreferrer">
+          <div class="oa-badge" style="background:#e8f0ff;">📊</div>
+          <div class="oa-name">Trimegah Sekuritas</div>
+          <div class="oa-btn">Buka Akun →</div>
+        </a>
+      </div>
+
+      <div style="margin-top: 16px;">
+        <a class="btn btn-outline" href="https://wa.me/628116361598" target="_blank" rel="noopener noreferrer">
+          💬 Hubungi Admin via WhatsApp
+        </a>
+      </div>
+    </div>
+
+  </div><!-- /card-body -->
+</div><!-- /main-card -->
+
+<div class="page-footer">
+  © 2026 PT Fawz Finansial Indonesia &nbsp;·&nbsp;
+  <a href="dashboard.html">Login ke Fawz Pro</a>
+</div>
+
+
+<script>
+  // ══════════════════════════════════════════════
+  //  STATE
+  // ══════════════════════════════════════════════
+  let currentStep   = 1;
+  let statusPilihan = null;   // 'sudah' | 'belum'
+  let sekuritasPilihan = null; // 'maybank' | 'trimegah' | 'rhb'
+
+  // ══════════════════════════════════════════════
+  //  STEPPER
+  // ══════════════════════════════════════════════
+  function goStep(step) {
+    // Hide all panels
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+
+    if (step === 1) { document.getElementById('panel1').classList.add('active'); }
+    else if (step === 2) { document.getElementById('panel2').classList.add('active'); }
+    else if (step === 3) {
+      if (statusPilihan === 'sudah') document.getElementById('panel3a').classList.add('active');
+      else                           document.getElementById('panel3b').classList.add('active');
+    } else if (step === 4) {
+      // panel4a / panel4b shown by submit handlers
+    }
+
+    currentStep = step;
+    updateStepper(step);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function updateStepper(step) {
+    for (let i = 1; i <= 4; i++) {
+      const dot  = document.getElementById('dot' + i);
+      const line = document.getElementById('line' + i);
+      dot.classList.remove('active', 'done');
+      if (i < step)       { dot.classList.add('done'); dot.textContent = '✓'; }
+      else if (i === step){ dot.classList.add('active'); dot.textContent = i; }
+      else                 { dot.textContent = i; }
+      if (line && i < step) line.classList.add('done');
+      else if (line)        line.classList.remove('done');
+    }
+  }
+
+  // ══════════════════════════════════════════════
+  //  STEP 2: STATUS
+  // ══════════════════════════════════════════════
+  function pilihStatus(val) {
+    statusPilihan = val;
+    document.getElementById('cc-sudah').classList.toggle('selected', val === 'sudah');
+    document.getElementById('cc-belum').classList.toggle('selected', val === 'belum');
+    const btn = document.getElementById('btnStatus');
+    btn.disabled = false;
+    btn.style.opacity = '1';
+  }
+
+  function lanjutDariStatus() {
+    if (!statusPilihan) return;
+    goStep(3);
+  }
+
+  // ══════════════════════════════════════════════
+  //  STEP 3A: SUDAH TERDAFTAR
+  // ══════════════════════════════════════════════
+  function pilihSekuritas(val) {
+    sekuritasPilihan = val;
+    ['maybank','trimegah','rhb'].forEach(s => {
+      document.getElementById('sek-' + s).classList.toggle('selected', s === val);
+    });
+  }
+
+  async function submitSudahDaftar() {
+    const nama       = document.getElementById('nama3a').value.trim();
+    const email      = document.getElementById('email3a').value.trim();
+    const phone      = document.getElementById('phone3a').value.trim();
+    const clientCode = document.getElementById('clientCode').value.trim().toUpperCase();
+    const msgEl      = document.getElementById('msgErr3a');
+
+    msgEl.style.display = 'none';
+
+    if (!sekuritasPilihan) { showMsg(msgEl, '⚠️ Pilih sekuritas terlebih dahulu.'); return; }
+    if (!nama)   { showMsg(msgEl, '⚠️ Nama lengkap wajib diisi.'); return; }
+    if (!email || !email.includes('@')) { showMsg(msgEl, '⚠️ Email tidak valid.'); return; }
+    if (!clientCode) { showMsg(msgEl, '⚠️ Kode client wajib diisi.'); return; }
+
+    const btn = document.getElementById('btnSubmit3a');
+    btn.disabled = true; btn.textContent = 'Mengirim...';
+
+    try {
+      const sekLabel = { maybank: 'Maybank Sekuritas', trimegah: 'Trimegah Sekuritas', rhb: 'RHB Sekuritas' }[sekuritasPilihan];
+      const { error } = await _sb.from('referral_registrations').insert({
+        nama, email, phone: phone || null,
+        sekuritas: sekLabel,
+        client_code: clientCode,
+        status: 'sudah_terdaftar',
+        created_at: new Date().toISOString()
+      });
+      if (error) throw error;
+
+      // Build review data
+      buildReview('reviewData4a', [
+        { label: 'Nama', val: nama },
+        { label: 'Email', val: email },
+        { label: 'Telepon', val: phone || '—' },
+        { label: 'Sekuritas', val: sekLabel },
+        { label: 'Client Code', val: clientCode },
+        { label: 'Status', val: '⏳ Menunggu Konfirmasi' }
+      ]);
+
+      // Show waiting panel
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      document.getElementById('panel4a').classList.add('active');
+      updateStepper(4);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    } catch(e) {
+      console.error('Submit error:', e);
+      // Even if DB fails, show waiting screen (graceful degradation)
+      buildReview('reviewData4a', [
+        { label: 'Nama', val: nama },
+        { label: 'Email', val: email },
+        { label: 'Sekuritas', val: { maybank:'Maybank Sekuritas', trimegah:'Trimegah Sekuritas', rhb:'RHB Sekuritas' }[sekuritasPilihan] },
+        { label: 'Client Code', val: clientCode },
+        { label: 'Status', val: '⏳ Menunggu Konfirmasi' }
+      ]);
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      document.getElementById('panel4a').classList.add('active');
+      updateStepper(4);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    btn.disabled = false; btn.textContent = 'Kirim & Tunggu Konfirmasi →';
+  }
+
+  // ══════════════════════════════════════════════
+  //  STEP 3B: BELUM TERDAFTAR
+  // ══════════════════════════════════════════════
+  async function submitBelumDaftar() {
+    const nama      = document.getElementById('nama3b').value.trim();
+    const email     = document.getElementById('email3b').value.trim();
+    const phone     = document.getElementById('phone3b').value.trim();
+    const sekuritas = document.getElementById('sekuritas3b').value;
+    const msgEl     = document.getElementById('msgErr3b');
+
+    msgEl.style.display = 'none';
+
+    if (!nama)  { showMsg(msgEl, '⚠️ Nama lengkap wajib diisi.'); return; }
+    if (!email || !email.includes('@')) { showMsg(msgEl, '⚠️ Email tidak valid.'); return; }
+
+    try {
+      const sekLabel = { maybank: 'Maybank Sekuritas', trimegah: 'Trimegah Sekuritas' }[sekuritas] || sekuritas || null;
+      await _sb.from('referral_registrations').insert({
+        nama, email, phone: phone || null,
+        sekuritas: sekLabel,
+        client_code: null,
+        status: 'belum_terdaftar',
+        created_at: new Date().toISOString()
+      });
+    } catch(e) { console.error('Submit error (non-blocking):', e); }
+
+    const sekLabel = { maybank: 'Maybank Sekuritas', trimegah: 'Trimegah Sekuritas' }[document.getElementById('sekuritas3b').value] || '—';
+    buildReview('reviewData4b', [
+      { label: 'Nama', val: nama },
+      { label: 'Email', val: email },
+      { label: 'Telepon', val: phone || '—' },
+      { label: 'Sekuritas Pilihan', val: sekLabel },
+      { label: 'Status', val: '🟡 Akan dihubungi tim Fawz' }
+    ]);
+
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('panel4b').classList.add('active');
+    updateStepper(4);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // ══════════════════════════════════════════════
+  //  HELPERS
+  // ══════════════════════════════════════════════
+  function showMsg(el, txt) {
+    el.textContent = txt;
+    el.style.display = 'block';
+  }
+
+  function buildReview(containerId, rows) {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    el.innerHTML = rows.map(r =>
+      `<div class="dr-row"><span class="dr-label">${r.label}</span><span class="dr-val">${r.val}</span></div>`
+    ).join('');
+  }
+</script>
+</body>
+</html>
