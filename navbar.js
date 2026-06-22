@@ -129,10 +129,10 @@
       'sales-transaction.html' : ['head_account', 'admin', 'treasury', 'sales', 'head_sales'],
       'sales-tracker.html'     : ['head_account', 'admin', 'head_sales'],
       'sales.html'             : ['head_account', 'admin', 'head_sales'],
+      'referral-agent.html'    : ['head_account', 'admin', 'sales', 'head_sales'],
 
       // Customer dropdown
       'customer.html'          : ['head_account', 'admin', 'treasury', 'sales', 'head_sales'],
-      'referral-agent.html'    : ['head_account', 'admin', 'sales', 'head_sales'],
 
       // Product dropdown
       'obligasi-bookbuilding.html'    : ['head_account', 'admin', 'treasury', 'sales', 'head_sales'],

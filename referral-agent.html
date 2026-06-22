@@ -467,6 +467,7 @@
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
             Salin Link
           </button>
+          <button class="btn" style="background:#fee2e2;color:#dc2626;border:1.5px solid #fecaca;flex:0;width:36px;padding:0;" onclick="deleteAgent('${safeId}','${nama}')" title="Hapus Agent">🗑️</button>
         </div>
         <div class="card-date">Daftar: ${dateStr}</div>
       </div>`;
@@ -545,8 +546,46 @@
   }
 
   // ══════════════════════════════════
-  //  TAB SWITCHING
+  //  DELETE REGISTRATION
   // ══════════════════════════════════
+  async function deleteReg(id, nama) {
+    if (!confirm(`Hapus pendaftaran dari "${nama}"?\nTindakan ini tidak dapat dibatalkan.`)) return;
+    try {
+      const { error } = await window._supabase
+        .from('referral_registrations')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+      _allReg = _allReg.filter(r => String(r.id) !== String(id));
+      updateRegStats();
+      applyRegFilter();
+      showToast('🗑️ Pendaftaran dihapus');
+    } catch(e) {
+      console.error(e);
+      showToast('Gagal hapus: ' + (e.message || e));
+    }
+  }
+
+  // ══════════════════════════════════
+  //  DELETE AGENT
+  // ══════════════════════════════════
+  async function deleteAgent(id, nama) {
+    if (!confirm(`Hapus agent "${nama}"?\nTindakan ini tidak dapat dibatalkan.`)) return;
+    try {
+      const { error } = await window._supabase
+        .from('referral_agents')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+      _all = _all.filter(r => String(r.id) !== String(id));
+      updateStats();
+      applyFilter();
+      showToast('🗑️ Agent dihapus');
+    } catch(e) {
+      console.error(e);
+      showToast('Gagal hapus: ' + (e.message || e));
+    }
+  }
   let _activeTab = 'agents';
   function switchTab(tab) {
     _activeTab = tab;
@@ -669,12 +708,15 @@
         <button class="btn-confirm" onclick="openActionModal('${safeId}','confirm')">✅ Konfirmasi</button>
         <button class="btn-reject"  onclick="openActionModal('${safeId}','reject')">❌ Tolak</button>
         ${phoneWA ? `<button class="btn-wa" onclick="window.open('https://wa.me/${phoneWA}','_blank')" title="WhatsApp">💬</button>` : ''}
+        <button class="btn-wa" style="background:#fee2e2;color:#dc2626;" onclick="deleteReg('${safeId}','${nama}')" title="Hapus">🗑️</button>
       ` : status === 'confirmed' ? `
         <button class="btn-reject" style="flex:1;" onclick="openActionModal('${safeId}','reject')">❌ Batalkan Konfirmasi</button>
         ${phoneWA ? `<button class="btn-wa" onclick="window.open('https://wa.me/${phoneWA}','_blank')" title="WhatsApp">💬</button>` : ''}
+        <button class="btn-wa" style="background:#fee2e2;color:#dc2626;" onclick="deleteReg('${safeId}','${nama}')" title="Hapus">🗑️</button>
       ` : `
         <button class="btn-confirm" style="flex:1;" onclick="openActionModal('${safeId}','confirm')">✅ Konfirmasi Ulang</button>
         ${phoneWA ? `<button class="btn-wa" onclick="window.open('https://wa.me/${phoneWA}','_blank')" title="WhatsApp">💬</button>` : ''}
+        <button class="btn-wa" style="background:#fee2e2;color:#dc2626;" onclick="deleteReg('${safeId}','${nama}')" title="Hapus">🗑️</button>
       `;
 
       return `<div class="reg-card" id="regcard-${safeId}">
