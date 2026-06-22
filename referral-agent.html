@@ -1042,15 +1042,12 @@ function switchTab(tab) {
   document.getElementById('tabKlien').classList.toggle('active', tab === 'klien');
   document.getElementById('tabAgent').classList.toggle('active', tab === 'agent');
   if (tab === 'agent') {
-    // Coba pakai _allData dulu (sudah di-load), filter yang punya agent_code/nama
-    _allAgents = _allData.filter(r => r.nama || r.agent_code);
-    if (_allAgents.length > 0) {
-      updateAgentStats();
-      renderAgentCards();
-    } else {
-      // Tidak ada di cache, load ulang dari DB
-      loadAgentPendaftar();
-    }
+    // Tampilkan semua data dari _allData, log keys untuk debug
+    _allAgents = _allData.slice();
+    console.log('[DEBUG] _allAgents count:', _allAgents.length);
+    if (_allAgents.length > 0) console.log('[DEBUG] first record:', JSON.stringify(_allAgents[0]));
+    updateAgentStats();
+    renderAgentCards();
   }
 }
 
@@ -1088,30 +1085,32 @@ function updateAgentStats() {
     return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
   }).length;
 
-  // Domisili terbanyak
   const domMap = {};
   _allAgents.forEach(r => { if (r.domisili) domMap[r.domisili] = (domMap[r.domisili]||0)+1; });
   const topDom = Object.entries(domMap).sort((a,b)=>b[1]-a[1])[0];
 
-  // Sekuritas terbanyak
   const sekMap = {};
   _allAgents.forEach(r => { if (r.sekuritas) sekMap[r.sekuritas] = (sekMap[r.sekuritas]||0)+1; });
   const topSek = Object.entries(sekMap).sort((a,b)=>b[1]-a[1])[0];
 
-  document.getElementById('agentStatTotal').textContent     = total;
-  document.getElementById('agentStatBulanIni').textContent  = bulanIni;
-  document.getElementById('agentStatDomisili').textContent  = topDom ? topDom[0] : '—';
-  document.getElementById('agentStatSekuritas').textContent = topSek ? topSek[0] : '—';
+  const elTotal   = document.getElementById('agentStatTotal');
+  const elBulan   = document.getElementById('agentStatBulanIni');
+  const elDom     = document.getElementById('agentStatDomisili');
+  const elSek     = document.getElementById('agentStatSekuritas');
+  if (elTotal) elTotal.textContent   = total;
+  if (elBulan) elBulan.textContent   = bulanIni;
+  if (elDom)   elDom.textContent     = topDom ? topDom[0] : '—';
+  if (elSek)   elSek.textContent     = topSek ? topSek[0] : '—';
 }
 
 function renderAgentCards() {
   const q      = (document.getElementById('agentSearchInput').value || '').toLowerCase();
   const filtered = _allAgents.filter(r => {
+    if (!q) return true;
     const nama  = (r.nama || r.client_name || '').toLowerCase();
     const email = (r.email || '').toLowerCase();
-    const code  = (r.agent_code || '').toLowerCase();
-    if (q && !nama.includes(q) && !email.includes(q) && !code.includes(q)) return false;
-    return true;
+    const code  = (r.agent_code || r.client_id || '').toLowerCase();
+    return nama.includes(q) || email.includes(q) || code.includes(q);
   });
 
   const grid  = document.getElementById('agentsGrid');
@@ -1131,9 +1130,9 @@ function renderAgentCards() {
     const domisili  = _esc(r.domisili || '—');
     const pekerjaan = _esc(r.pekerjaan || '—');
     const sekuritas = _esc(r.sekuritas || '—');
-    const code      = _esc(r.agent_code || '—');
-    const url       = _esc(r.referral_url || (REFERRAL_BASE + '?ref=' + encodeURIComponent(r.agent_code || '')));
-    const initials  = (r.nama || r.client_name || 'A').replace(/[^A-Za-z ]/g,'').split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+    const code      = _esc(r.agent_code || r.client_id || '—');
+    const url       = _esc(r.referral_url || (REFERRAL_BASE + '?ref=' + encodeURIComponent(r.agent_code || r.client_id || '')));
+    const initials  = (r.nama || r.client_name || 'A').replace(/[^A-Za-z ]/g,'').split(' ').map(w=>w[0]||'').join('').substring(0,2).toUpperCase() || 'AG';
     const dateStr   = r.created_at ? new Date(r.created_at).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}) : '—';
     const safeId    = _esc(String(r.id));
 
