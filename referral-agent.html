@@ -96,7 +96,7 @@
     .state-box p { font-size: 0.9rem; font-weight: 500; }
 
     /* QR Modal */
-    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(13,13,43,0.55); backdrop-filter: blur(4px); z-index: 2000; align-items: center; justify-content: center; }
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(13,13,43,0.55); backdrop-filter: blur(4px); z-index: 99999; align-items: center; justify-content: center; }
     .modal-overlay.open { display: flex; }
     @keyframes slideUp { from { transform:translateY(20px);opacity:0; } to { transform:translateY(0);opacity:1; } }
     .modal { background: var(--white); border-radius: 22px; padding: 32px; width: 380px; max-width: 95vw; box-shadow: var(--shadow-lg); animation: slideUp 0.25s ease; text-align: center; }
@@ -371,17 +371,35 @@
   }
 
   function openQR(id) {
+    console.log('[QR] openQR called, id:', id);
+    console.log('[QR] _all length:', _all.length);
     const r = _all.find(x => String(x.id) === String(id));
-    if (!r) return;
+    console.log('[QR] record found:', r);
+    if (!r) { alert('Record tidak ditemukan: ' + id); return; }
     _qrRecord = r;
     const url = getReferralUrl(r);
+    console.log('[QR] url:', url);
+
     document.getElementById('qrName').textContent = getNama(r);
     document.getElementById('qrCode').textContent = 'Kode: ' + getCode(r);
     document.getElementById('qrLink').textContent = url;
+
+    const modal = document.getElementById('qrModal');
+    console.log('[QR] modal element:', modal);
+    modal.classList.add('open');
+    console.log('[QR] modal classes after add:', modal.className);
+
     const canvas = document.getElementById('qrCanvas');
+    console.log('[QR] canvas:', canvas);
+    if (typeof QRCode === 'undefined') {
+      alert('QRCode library belum load!');
+      return;
+    }
     QRCode.toCanvas(canvas, url, { width: 200, margin: 2, color: { dark: '#0d0d2b', light: '#ffffff' } },
-      err => { if (err) { showToast('Gagal generate QR'); console.error(err); } });
-    document.getElementById('qrModal').classList.add('open');
+      err => {
+        if (err) { showToast('Gagal generate QR'); console.error('[QR] error:', err); }
+        else { console.log('[QR] QR generated successfully'); }
+      });
   }
 
   function closeQRModal(e) {
