@@ -7,7 +7,7 @@
   <title>Fawz Pro | Referral Agent</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script>
     const SUPABASE_URL = (window.__FAWZ_CONFIG__ || {}).supabaseUrl || '';
     const SUPABASE_KEY = (window.__FAWZ_CONFIG__ || {}).supabaseKey || '';
@@ -171,7 +171,7 @@
       <div class="modal-title">QR Code Referral</div>
       <button class="modal-close" onclick="document.getElementById('qrModal').classList.remove('open')">✕</button>
     </div>
-    <div class="qr-box"><canvas id="qrCanvas"></canvas></div>
+    <div class="qr-box"><div id="qrCanvasWrap"></div></div>
     <div class="qr-name" id="qrName">—</div>
     <div class="qr-code" id="qrCode">—</div>
     <div class="qr-link" id="qrLink">—</div>
@@ -389,17 +389,16 @@
     modal.classList.add('open');
     console.log('[QR] modal classes after add:', modal.className);
 
-    const canvas = document.getElementById('qrCanvas');
-    console.log('[QR] canvas:', canvas);
-    if (typeof QRCode === 'undefined') {
-      alert('QRCode library belum load!');
-      return;
-    }
-    QRCode.toCanvas(canvas, url, { width: 200, margin: 2, color: { dark: '#0d0d2b', light: '#ffffff' } },
-      err => {
-        if (err) { showToast('Gagal generate QR'); console.error('[QR] error:', err); }
-        else { console.log('[QR] QR generated successfully'); }
-      });
+    // qrcodejs uses a div container
+    const wrap = document.getElementById('qrCanvasWrap');
+    wrap.innerHTML = '';
+    new QRCode(wrap, {
+      text: url,
+      width: 200, height: 200,
+      colorDark: '#0d0d2b', colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.H
+    });
+    console.log('[QR] QR generated successfully');
   }
 
   function closeQRModal(e) {
@@ -408,10 +407,18 @@
   }
 
   function downloadQR() {
-    const canvas = document.getElementById('qrCanvas');
+    const wrap = document.getElementById('qrCanvasWrap');
+    const canvas = wrap.querySelector('canvas');
+    const img    = wrap.querySelector('img');
     const a = document.createElement('a');
     a.download = 'referral-qr-' + getCode(_qrRecord) + '.png';
-    a.href = canvas.toDataURL('image/png');
+    if (canvas) {
+      a.href = canvas.toDataURL('image/png');
+    } else if (img) {
+      a.href = img.src;
+    } else {
+      showToast('QR belum siap'); return;
+    }
     a.click();
     showToast('QR Code berhasil didownload');
   }
