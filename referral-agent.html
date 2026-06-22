@@ -184,8 +184,8 @@
 
   <!-- TABS -->
   <div class="tabs-wrap">
-    <button class="tab active" id="tab-agents" onclick="switchTab('agents')">👤 Agent Terdaftar</button>
-    <button class="tab" id="tab-regist" onclick="switchTab('regist')">📥 Pendaftaran Masuk <span class="tab-badge" id="tabBadgePending" style="display:none;"></span></button>
+    <button class="tab active" id="tab-agents" onclick="switchTab('agents')">Agent Terdaftar</button>
+    <button class="tab" id="tab-regist" onclick="switchTab('regist')">Pendaftaran Masuk <span class="tab-badge" id="tabBadgePending" style="display:none;"></span></button>
   </div>
 
   <!-- ══ TAB: AGENTS ══ -->
@@ -237,9 +237,9 @@
 
     <div class="reg-filter-tabs">
       <button class="reg-ftab active" onclick="setRegStatusFilter('all',this)">Semua</button>
-      <button class="reg-ftab" onclick="setRegStatusFilter('pending',this)">⏳ Pending</button>
-      <button class="reg-ftab" onclick="setRegStatusFilter('confirmed',this)">✅ Dikonfirmasi</button>
-      <button class="reg-ftab" onclick="setRegStatusFilter('rejected',this)">❌ Ditolak</button>
+      <button class="reg-ftab" onclick="setRegStatusFilter('pending',this)">Pending</button>
+      <button class="reg-ftab" onclick="setRegStatusFilter('confirmed',this)">Dikonfirmasi</button>
+      <button class="reg-ftab" onclick="setRegStatusFilter('rejected',this)">Ditolak</button>
     </div>
 
     <div class="reg-grid" id="regGrid"></div>
@@ -467,7 +467,7 @@
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
             Salin Link
           </button>
-          <button class="btn" style="background:#fee2e2;color:#dc2626;border:1.5px solid #fecaca;flex:0;width:36px;padding:0;" onclick="deleteAgent('${safeId}','${nama}')" title="Hapus Agent">🗑️</button>
+          <button class="btn" style="background:#fee2e2;color:#dc2626;border:1.5px solid #fecaca;flex:0;width:36px;padding:0;" onclick="deleteAgent('${safeId}','${nama}')" title="Hapus Agent">Del</button>
         </div>
         <div class="card-date">Daftar: ${dateStr}</div>
       </div>`;
@@ -559,7 +559,7 @@
       _allReg = _allReg.filter(r => String(r.id) !== String(id));
       updateRegStats();
       applyRegFilter();
-      showToast('🗑️ Pendaftaran dihapus');
+      showToast('Pendaftaran dihapus');
     } catch(e) {
       console.error(e);
       showToast('Gagal hapus: ' + (e.message || e));
@@ -580,7 +580,7 @@
       _all = _all.filter(r => String(r.id) !== String(id));
       updateStats();
       applyFilter();
-      showToast('🗑️ Agent dihapus');
+      showToast('Agent dihapus');
     } catch(e) {
       console.error(e);
       showToast('Gagal hapus: ' + (e.message || e));
@@ -687,36 +687,36 @@
 
     grid.innerHTML = list.map(r => {
       const status = r.confirmed_status || 'pending';
-      const statusLabel = { pending:'⏳ Pending', confirmed:'✅ Dikonfirmasi', rejected:'❌ Ditolak' }[status] || status;
+      const statusLabel = { pending:'Pending', confirmed:'Dikonfirmasi', rejected:'Ditolak' }[status] || status;
       const statusClass = { pending:'status-pending', confirmed:'status-confirmed', rejected:'status-rejected' }[status] || 'status-pending';
       const nama     = _esc(r.nama || '—');
       const email    = _esc(r.email || '—');
       const phone    = _esc(r.phone || '—');
       const sek      = _esc(r.sekuritas || '—');
       const code     = _esc(r.client_code || '—');
-      const regType  = r.status === 'sudah_terdaftar' ? '✅ Sudah punya akun' : '🆕 Belum punya akun';
+      const regType  = r.status === 'sudah_terdaftar' ? 'Sudah punya akun' : 'Belum punya akun';
       const safeId   = _esc(String(r.id));
       const dateStr  = r.created_at ? new Date(r.created_at).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
       const sekKey   = Object.keys(sekLogos).find(k => sek.toLowerCase().includes(k.toLowerCase().split(' ')[0])) || '';
       const logoHtml = sekKey
         ? `<img src="assets/logo/${sekLogos[sekKey]}.png" alt="${_esc(sekKey)}" style="height:20px;object-fit:contain;vertical-align:middle;margin-right:5px;" onerror="this.style.display='none'"/>`
         : '';
-      const note     = r.admin_note ? `<div class="reg-note">📝 ${_esc(r.admin_note)}</div>` : '';
+      const note     = r.admin_note ? `<div class="reg-note">Catatan: ${_esc(r.admin_note)}</div>` : '';
       const phoneWA  = (r.phone || '').replace(/\D/g,'').replace(/^0/,'62');
 
       const actionBtns = status === 'pending' ? `
-        <button class="btn-confirm" onclick="openActionModal('${safeId}','confirm')">✅ Konfirmasi</button>
-        <button class="btn-reject"  onclick="openActionModal('${safeId}','reject')">❌ Tolak</button>
-        ${phoneWA ? `<button class="btn-wa" onclick="window.open('https://wa.me/${phoneWA}','_blank')" title="WhatsApp">💬</button>` : ''}
-        <button class="btn-wa" style="background:#fee2e2;color:#dc2626;" onclick="deleteReg('${safeId}','${nama}')" title="Hapus">🗑️</button>
+        <button class="btn-confirm" onclick="openActionModal('${safeId}','confirm')">Konfirmasi</button>
+        <button class="btn-reject"  onclick="openActionModal('${safeId}','reject')">Tolak</button>
+        ${phoneWA ? `<button class="btn-wa" onclick="window.open('https://wa.me/${phoneWA}','_blank')" title="WhatsApp">WA</button>` : ''}
+        <button class="btn-wa" style="background:#fee2e2;color:#dc2626;" onclick="deleteReg('${safeId}','${nama}')" title="Hapus">Hapus</button>
       ` : status === 'confirmed' ? `
-        <button class="btn-reject" style="flex:1;" onclick="openActionModal('${safeId}','reject')">❌ Batalkan Konfirmasi</button>
-        ${phoneWA ? `<button class="btn-wa" onclick="window.open('https://wa.me/${phoneWA}','_blank')" title="WhatsApp">💬</button>` : ''}
-        <button class="btn-wa" style="background:#fee2e2;color:#dc2626;" onclick="deleteReg('${safeId}','${nama}')" title="Hapus">🗑️</button>
+        <button class="btn-reject" style="flex:1;" onclick="openActionModal('${safeId}','reject')">Batalkan Konfirmasi</button>
+        ${phoneWA ? `<button class="btn-wa" onclick="window.open('https://wa.me/${phoneWA}','_blank')" title="WhatsApp">WA</button>` : ''}
+        <button class="btn-wa" style="background:#fee2e2;color:#dc2626;" onclick="deleteReg('${safeId}','${nama}')" title="Hapus">Hapus</button>
       ` : `
-        <button class="btn-confirm" style="flex:1;" onclick="openActionModal('${safeId}','confirm')">✅ Konfirmasi Ulang</button>
-        ${phoneWA ? `<button class="btn-wa" onclick="window.open('https://wa.me/${phoneWA}','_blank')" title="WhatsApp">💬</button>` : ''}
-        <button class="btn-wa" style="background:#fee2e2;color:#dc2626;" onclick="deleteReg('${safeId}','${nama}')" title="Hapus">🗑️</button>
+        <button class="btn-confirm" style="flex:1;" onclick="openActionModal('${safeId}','confirm')">Konfirmasi Ulang</button>
+        ${phoneWA ? `<button class="btn-wa" onclick="window.open('https://wa.me/${phoneWA}','_blank')" title="WhatsApp">WA</button>` : ''}
+        <button class="btn-wa" style="background:#fee2e2;color:#dc2626;" onclick="deleteReg('${safeId}','${nama}')" title="Hapus">Hapus</button>
       `;
 
       return `<div class="reg-card" id="regcard-${safeId}">
@@ -784,7 +784,7 @@
       document.getElementById('actionModal').classList.remove('open');
       updateRegStats();
       applyRegFilter();
-      showToast(type === 'confirm' ? '✅ Pendaftaran dikonfirmasi' : '❌ Pendaftaran ditolak');
+      showToast(type === 'confirm' ? 'Pendaftaran dikonfirmasi' : 'Pendaftaran ditolak');
     } catch(e) {
       console.error(e);
       showToast('Gagal: ' + (e.message || e));

@@ -335,7 +335,9 @@
 
     <!-- ─── PANEL 1: WELCOME ─── -->
     <div class="panel active" id="panel1">
-      <div class="welcome-icon">👋</div>
+      <div class="welcome-icon" style="font-size:2.5rem; text-align:center; margin-bottom:16px;">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#5645d4" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:0 auto;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      </div>
       <div class="welcome-title">Selamat Datang!</div>
       <div class="welcome-desc">
         Kami senang Anda di sini. Halaman ini akan membantu Anda mendaftar sebagai nasabah
@@ -343,7 +345,9 @@
         Prosesnya mudah, hanya beberapa langkah saja.
       </div>
       <div class="info-box blue">
-        <span class="ib-icon">ℹ️</span>
+        <span class="ib-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </span>
         <span>Pastikan Anda memiliki <strong>nama lengkap</strong>, <strong>alamat email</strong>, dan
         jika sudah terdaftar di sekuritas rekanan, siapkan juga <strong>kode client</strong> Anda.</span>
       </div>
@@ -376,12 +380,16 @@
 
       <div class="choice-cards">
         <div class="choice-card" id="cc-sudah" onclick="pilihStatus('sudah')">
-          <div class="cc-icon">✅</div>
+          <div class="cc-icon">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#1aae39" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
           <div class="cc-title">Sudah Terdaftar</div>
           <div class="cc-desc">Saya sudah punya akun di sekuritas rekanan Fawz</div>
         </div>
         <div class="choice-card" id="cc-belum" onclick="pilihStatus('belum')">
-          <div class="cc-icon">🆕</div>
+          <div class="cc-icon">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#5645d4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+          </div>
           <div class="cc-title">Belum Terdaftar</div>
           <div class="cc-desc">Saya belum punya akun dan ingin membuka rekening baru</div>
         </div>
@@ -449,7 +457,9 @@
       </div>
 
       <div class="info-box amber">
-        <span class="ib-icon">⚠️</span>
+        <span class="ib-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        </span>
         <span>Pastikan kode client sesuai dengan yang terdaftar di sekuritas pilihan Anda. Tim kami akan memverifikasi data ini.</span>
       </div>
 
@@ -531,20 +541,22 @@
           Data Anda telah berhasil dikirim ke tim Fawz Finansial.<br>
           Kami akan memverifikasi akun sekuritas Anda dan menghubungi Anda melalui WhatsApp atau email yang didaftarkan.
         </div>
-        <div class="badge-pending">⏳ Sedang diproses oleh tim kami</div>
+        <div class="badge-pending">Sedang diproses oleh tim kami</div>
       </div>
 
       <div class="data-review" id="reviewData4a"></div>
 
       <div class="info-box blue" style="margin-top: 12px;">
-        <span class="ib-icon">📞</span>
+        <span class="ib-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13.5 19.79 19.79 0 0 1 1.61 4.9 2 2 0 0 1 3.6 2.73h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l.86-.86a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 17z"/></svg>
+        </span>
         <span>Butuh bantuan? Hubungi agen Fawz Anda atau
           <strong><a href="https://wa.me/628116361598" target="_blank" style="color:inherit;">Admin Fawz di +62 811-6361-598</a></strong>.</span>
       </div>
 
       <div style="margin-top: 20px;">
         <a class="btn btn-outline" href="https://wa.me/628116361598" target="_blank" rel="noopener noreferrer">
-          💬 Hubungi Admin via WhatsApp
+          Hubungi Admin via WhatsApp
         </a>
       </div>
     </div>
@@ -552,7 +564,9 @@
     <!-- ─── PANEL 4B: SUBMIT BELUM DAFTAR SUKSES ─── -->
     <div class="panel" id="panel4b">
       <div style="text-align:center; padding: 16px 0 8px;">
-        <div class="success-icon">🎉</div>
+        <div class="success-icon">
+          <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#1aae39" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:0 auto 12px;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        </div>
         <div class="success-title">Data Terkirim!</div>
         <div class="success-desc">
           Terima kasih! Tim Fawz akan segera menghubungi Anda untuk memandu proses pembukaan akun dan langkah berikutnya.
@@ -562,7 +576,9 @@
       <div class="data-review" id="reviewData4b"></div>
 
       <div class="info-box green" style="margin-top: 12px;">
-        <span class="ib-icon">📲</span>
+        <span class="ib-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+        </span>
         <span>Sambil menunggu, Anda bisa mulai membuka akun di sekuritas pilihan Anda menggunakan link di bawah.</span>
       </div>
 
@@ -671,10 +687,10 @@
 
     msgEl.style.display = 'none';
 
-    if (!sekuritasPilihan) { showMsg(msgEl, '⚠️ Pilih sekuritas terlebih dahulu.'); return; }
-    if (!nama)   { showMsg(msgEl, '⚠️ Nama lengkap wajib diisi.'); return; }
-    if (!email || !email.includes('@')) { showMsg(msgEl, '⚠️ Email tidak valid.'); return; }
-    if (!clientCode) { showMsg(msgEl, '⚠️ Kode client wajib diisi.'); return; }
+    if (!sekuritasPilihan) { showMsg(msgEl, 'Pilih sekuritas terlebih dahulu.'); return; }
+    if (!nama)   { showMsg(msgEl, 'Nama lengkap wajib diisi.'); return; }
+    if (!email || !email.includes('@')) { showMsg(msgEl, 'Email tidak valid.'); return; }
+    if (!clientCode) { showMsg(msgEl, 'Kode client wajib diisi.'); return; }
 
     const btn = document.getElementById('btnSubmit3a');
     btn.disabled = true; btn.textContent = 'Mengirim...';
@@ -697,7 +713,7 @@
         { label: 'Telepon', val: phone || '—' },
         { label: 'Sekuritas', val: sekLabel },
         { label: 'Client Code', val: clientCode },
-        { label: 'Status', val: '⏳ Menunggu Konfirmasi' }
+        { label: 'Status', val: 'Menunggu Konfirmasi' }
       ]);
 
       // Show waiting panel
@@ -714,7 +730,7 @@
         { label: 'Email', val: email },
         { label: 'Sekuritas', val: { maybank:'Maybank Sekuritas', trimegah:'Trimegah Sekuritas', rhb:'RHB Sekuritas' }[sekuritasPilihan] },
         { label: 'Client Code', val: clientCode },
-        { label: 'Status', val: '⏳ Menunggu Konfirmasi' }
+        { label: 'Status', val: 'Menunggu Konfirmasi' }
       ]);
       document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
       document.getElementById('panel4a').classList.add('active');
@@ -737,8 +753,8 @@
 
     msgEl.style.display = 'none';
 
-    if (!nama)  { showMsg(msgEl, '⚠️ Nama lengkap wajib diisi.'); return; }
-    if (!email || !email.includes('@')) { showMsg(msgEl, '⚠️ Email tidak valid.'); return; }
+    if (!nama)  { showMsg(msgEl, 'Nama lengkap wajib diisi.'); return; }
+    if (!email || !email.includes('@')) { showMsg(msgEl, 'Email tidak valid.'); return; }
 
     try {
       const sekLabel = { maybank: 'Maybank Sekuritas', trimegah: 'Trimegah Sekuritas' }[sekuritas] || sekuritas || null;
