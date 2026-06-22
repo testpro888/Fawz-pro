@@ -1383,18 +1383,46 @@
         else rowsWithoutId.push({ supaRow, row });
       }
 
-      const BATCH = 100;
+      const BATCH = 50;
 
       // Batch upsert rows dengan client_id
+      // Strategi: coba update dulu, jika tidak ada baru insert
       for (let i = 0; i < rowsWithId.length; i += BATCH) {
         const batch = rowsWithId.slice(i, i + BATCH);
         btn.textContent = `Mengimport... (${Math.min(i + BATCH, rowsWithId.length)}/${rowsWithId.length})`;
-        const { data: upserted, error } = await window._supabase
+
+        // Cek client_id mana yang sudah ada
+        const ids = batch.map(b => b.supaRow.client_id).filter(Boolean);
+        const { data: existing } = await window._supabase
           .from('customers')
-          .upsert(batch.map(b => b.supaRow), { onConflict: 'client_id' })
-          .select();
-        if (error) { errors.push(`Batch upsert error: ${error.message}`); }
-        else { success += (upserted || []).length; }
+          .select('id, client_id')
+          .in('client_id', ids);
+        const existingIds = new Set((existing || []).map(r => r.client_id));
+
+        const toUpdate = batch.filter(b => existingIds.has(b.supaRow.client_id));
+        const toInsert = batch.filter(b => !existingIds.has(b.supaRow.client_id));
+
+        // Update satu per satu (karena update butuh id specific)
+        for (const item of toUpdate) {
+          const existRow = (existing || []).find(r => r.client_id === item.supaRow.client_id);
+          if (!existRow) continue;
+          const { error } = await window._supabase
+            .from('customers')
+            .update(item.supaRow)
+            .eq('id', existRow.id);
+          if (error) { errors.push(`Update ${item.supaRow.client_id}: ${error.message}`); }
+          else { success++; }
+        }
+
+        // Insert yang baru sekaligus
+        if (toInsert.length > 0) {
+          const { data: inserted, error } = await window._supabase
+            .from('customers')
+            .insert(toInsert.map(b => b.supaRow))
+            .select();
+          if (error) { errors.push(`Insert batch error: ${error.message}`); console.error('Insert error detail:', error); }
+          else { success += (inserted || []).length; }
+        }
       }
 
       // Batch insert rows tanpa client_id
@@ -1405,19 +1433,28 @@
           .from('customers')
           .insert(batch.map(b => b.supaRow))
           .select();
-        if (error) { errors.push(`Batch insert error: ${error.message}`); }
+        if (error) { errors.push(`Batch insert error: ${error.message}`); console.error('Insert error detail:', error); }
         else { success += (inserted || []).length; }
       }
 
-      document.getElementById('uploadModal').classList.remove('open');
       // Reload data dari server supaya tampilan up-to-date
       await loadCustomers();
       applyFilters(); updateStats(); populateFilters();
-      if (success > 0) showToast(`${success} customer berhasil diimport`, 'success');
+
       if (errors.length > 0) {
         console.warn('Import errors:', errors);
-        if (success === 0) showToast(`Gagal import: ${errors[0]}`, 'error');
-        else showToast(`${success} berhasil, ${errors.length} batch gagal. Cek console.`, 'warning');
+        // Tampilkan error detail di modal sebelum tutup
+        const errMsg = errors.slice(0, 3).join('\n');
+        if (success === 0) {
+          alert(`❌ Import gagal:\n\n${errMsg}\n\nCek Console (F12) untuk detail lengkap.`);
+        } else {
+          showToast(`⚠️ ${success} berhasil, ${errors.length} gagal — cek Console (F12)`, 'error');
+          document.getElementById('uploadModal').classList.remove('open');
+        }
+      } else {
+        document.getElementById('uploadModal').classList.remove('open');
+        if (success > 0) showToast(`✅ ${success} customer berhasil diimport`, 'success');
+        else showToast('Tidak ada data yang diimport', 'error');
       }
     } catch (e) { console.error(e); showToast('Gagal import: ' + e.message, 'error'); }
     finally { btn.textContent = 'Import Data'; btn.disabled = false; }

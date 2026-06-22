@@ -699,22 +699,39 @@
     let agentCode = generateAgentCode(nama);
 
     try {
+      const payload = {
+        nama, email, phone, domisili,
+        tanggal_lahir: tglLahir, pekerjaan,
+        lama_investasi: lamaInvestasi, sekuritas,
+        agent_code: agentCode,
+        referral_url: REFERRAL_BASE_URL + '?ref=' + agentCode,
+        created_at: new Date().toISOString()
+      };
+      console.log('[INSERT] payload:', JSON.stringify(payload));
+
       const { data, error } = await _sb
         .from('referral_agents')
-        .insert([{
-          nama, email, phone, domisili,
-          tanggal_lahir: tglLahir, pekerjaan,
-          lama_investasi: lamaInvestasi, sekuritas,
-          agent_code: agentCode,
-          referral_url: REFERRAL_BASE_URL + '?ref=' + agentCode,
-          created_at: new Date().toISOString()
-        }])
+        .insert([payload])
         .select().single();
 
-      if (!error && data) agentCode = data.agent_code || agentCode;
-      else if (error) console.warn('Supabase (mode offline):', error.message);
+      console.log('[INSERT] result data:', data, '| error:', error);
+
+      if (error) {
+        // Tampilkan error di halaman — bukan hanya console
+        alert('Supabase error: ' + error.message + '\n\nCode: ' + error.code + '\n\nDetail: ' + (error.details || '-'));
+        btn.disabled = false;
+        btn.innerHTML = 'Daftar &amp; Dapatkan Kode Referral';
+        setStep(1);
+        return;
+      }
+      if (data) agentCode = data.agent_code || agentCode;
     } catch(err) {
-      console.warn('Supabase error:', err.message);
+      console.error('Supabase exception:', err);
+      alert('Exception: ' + err.message);
+      btn.disabled = false;
+      btn.innerHTML = 'Daftar &amp; Dapatkan Kode Referral';
+      setStep(1);
+      return;
     }
 
     const referralUrl = REFERRAL_BASE_URL + '?ref=' + encodeURIComponent(agentCode);
