@@ -183,6 +183,71 @@
     @media (max-width: 900px) { .stats-row { grid-template-columns: 1fr 1fr; } }
     @media (max-width: 600px) { .stats-row { grid-template-columns: 1fr; } .form-grid { grid-template-columns: 1fr; } .page-header { flex-direction: column; } }
 
+    /* ── TABS ── */
+    .tab-bar {
+      display: flex; gap: 4px; margin-bottom: 24px;
+      background: #fff; border-radius: 12px; padding: 5px;
+      border: 1px solid var(--border); width: fit-content;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .tab-btn {
+      padding: 9px 22px; border-radius: 9px; font-family: 'Inter', sans-serif;
+      font-size: 0.85rem; font-weight: 600; cursor: pointer; border: none;
+      background: transparent; color: var(--gray); transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .tab-btn.active { background: var(--navy); color: #fff; box-shadow: 0 2px 8px rgba(13,13,43,0.25); }
+    .tab-btn:hover:not(.active) { background: #f4f5fb; color: var(--navy); }
+
+    /* ── AGENT CARDS GRID ── */
+    .agents-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 18px; margin-bottom: 24px;
+    }
+    .agent-card {
+      background: #fff; border-radius: 16px; padding: 22px 24px;
+      border: 1px solid var(--border); box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .agent-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.10); }
+    .agent-card-header { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
+    .agent-avatar {
+      width: 46px; height: 46px; border-radius: 14px; flex-shrink: 0;
+      background: linear-gradient(135deg, var(--navy), #1e1e56);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem; font-weight: 800; color: var(--gold); letter-spacing: 1px;
+    }
+    .agent-card-name  { font-size: 0.95rem; font-weight: 700; color: var(--navy); line-height: 1.2; }
+    .agent-card-code  {
+      display: inline-block; margin-top: 4px;
+      font-size: 0.72rem; font-weight: 700; font-family: monospace;
+      background: #f0f0fa; color: #5a5aaa; padding: 2px 8px; border-radius: 5px;
+      letter-spacing: 1px;
+    }
+    .agent-card-info  { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+    .agent-info-row   { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: var(--gray); }
+    .agent-info-row svg { flex-shrink: 0; opacity: 0.5; }
+    .agent-link {
+      font-size: 0.75rem; color: #5a5aaa; word-break: break-all;
+      background: #f4f5fb; border-radius: 8px; padding: 8px 10px;
+      border: 1px solid var(--border); line-height: 1.4; margin-bottom: 14px;
+    }
+    .agent-card-footer { display: flex; gap: 8px; }
+    .agent-card-footer .btn { flex: 1; justify-content: center; }
+    .agent-card-date { font-size: 0.7rem; color: #bbb; margin-top: 10px; text-align: right; }
+
+    /* Search agents */
+    .agents-search-bar { margin-bottom: 18px; }
+    .agents-search-bar input {
+      width: 100%; max-width: 380px; padding: 10px 16px 10px 40px;
+      border: 1.5px solid var(--border); border-radius: 10px;
+      font-family: 'Inter', sans-serif; font-size: 0.875rem; outline: none;
+      transition: border 0.2s; background: #fff;
+    }
+    .agents-search-bar input:focus { border-color: var(--gold); }
+    .agents-search-wrap { position: relative; display: inline-block; width: 100%; max-width: 380px; }
+    .agents-search-icon { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: #aaa; font-size: 0.85rem; pointer-events: none; }
+
     /* Custom client search dropdown */
     .client-dropdown {
       position: absolute; top: calc(100% + 2px); left: 0; right: 0;
@@ -221,6 +286,14 @@
     </div>
   </div>
 
+  <!-- TAB BAR -->
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tabKlien"  onclick="switchTab('klien')">Klien Referral</button>
+    <button class="tab-btn"        id="tabAgent"  onclick="switchTab('agent')">Agent Pendaftar</button>
+  </div>
+
+  <!-- ════ TAB: KLIEN REFERRAL ════ -->
+  <div id="sectionKlien">
   <!-- Stats -->
   <div class="stats-row">
     <div class="stat-box"><div class="stat-box-label">Total Klien</div><div class="stat-box-val" id="statTotal">—</div></div>
@@ -276,7 +349,41 @@
       <div class="pagination" id="pagination"></div>
     </div>
   </div>
-</div>
+</div><!-- end sectionKlien -->
+
+<!-- ════ TAB: AGENT PENDAFTAR ════ -->
+<div id="sectionAgent" style="display:none;">
+
+  <!-- Search -->
+  <div class="agents-search-bar">
+    <div class="agents-search-wrap">
+      <span class="agents-search-icon">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </span>
+      <input type="text" id="agentSearchInput" placeholder="Cari nama, email, atau kode..." oninput="renderAgentCards()"/>
+    </div>
+  </div>
+
+  <!-- Summary -->
+  <div class="stats-row" style="margin-bottom:20px;">
+    <div class="stat-box"><div class="stat-box-label">Total Agent</div><div class="stat-box-val" id="agentStatTotal">—</div></div>
+    <div class="stat-box"><div class="stat-box-label">Terdaftar Bulan Ini</div><div class="stat-box-val" id="agentStatBulanIni" style="color:#27ae60;">—</div></div>
+    <div class="stat-box"><div class="stat-box-label">Domisili Terbanyak</div><div class="stat-box-val" id="agentStatDomisili" style="font-size:1rem;">—</div></div>
+    <div class="stat-box"><div class="stat-box-label">Sekuritas Terbanyak</div><div class="stat-box-val" id="agentStatSekuritas" style="font-size:1rem;">—</div></div>
+  </div>
+
+  <!-- Cards -->
+  <div class="agents-grid" id="agentsGrid">
+    <div style="grid-column:1/-1;text-align:center;padding:40px;color:#bbb;">Memuat data agent...</div>
+  </div>
+  <div id="agentsEmpty" style="display:none;text-align:center;padding:60px;color:#bbb;">
+    <div style="font-size:2.5rem;margin-bottom:12px;opacity:0.3;">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    </div>
+    <div>Belum ada agent yang mendaftar</div>
+  </div>
+
+</div><!-- end sectionAgent -->
 
 <!-- TOAST -->
 <div class="toast-container" id="toastContainer"></div>
@@ -544,8 +651,8 @@ function applyFilters() {
   const fSisa   = document.getElementById('filterSisa').value;
 
   _filtered = _allData.filter(r => {
-    const name  = (r.client_name || '').toLowerCase();
-    const cid   = (r.client_id   || '').toLowerCase();
+    const name  = (r.client_name || r.nama || '').toLowerCase();
+    const cid   = (r.client_id   || r.agent_code || '').toLowerCase();
     if (q && !name.includes(q) && !cid.includes(q)) return false;
     if (fStatus && r.status !== fStatus) return false;
     if (fSisa) {
@@ -581,6 +688,9 @@ function renderTable() {
   }
 
   tbody.innerHTML = rows.map((r, i) => {
+    // Support kedua schema: form pendaftaran (nama/agent_code) & manual (client_name/client_id)
+    const displayName = r.client_name || r.nama || '—';
+    const displayId   = r.client_id   || r.agent_code || '—';
     const no      = start + i + 1;
     const comm    = getCommRate(r.status, r.comm_bawah_custom, r.comm_atas_custom);
     const target  = Number(r.target_amount || DEFAULT_TARGET);
@@ -618,8 +728,8 @@ function renderTable() {
     const safeId = _esc(r.id);
     return `<tr>
       <td>${no}</td>
-      <td><code style="background:#f0f0fa;padding:2px 7px;border-radius:5px;font-size:.82rem;">${_esc(r.client_id)}</code></td>
-      <td style="font-weight:600;">${_esc(r.client_name)}</td>
+      <td><code style="background:#f0f0fa;padding:2px 7px;border-radius:5px;font-size:.82rem;">${_esc(displayId)}</code></td>
+      <td style="font-weight:600;">${_esc(displayName)}</td>
       <td>${badge}</td>
       <td>${commHtml}</td>
       <td>${fmtRp(target)}</td>
@@ -919,20 +1029,207 @@ async function deleteRecord(id) {
 </script>
 
 <script>
+// ─── TAB SWITCH ──────────────────────────────────────────────────────────────
+let _activeTab = 'klien';
+let _allAgents = [];
+
+function switchTab(tab) {
+  _activeTab = tab;
+  document.getElementById('sectionKlien').style.display = tab === 'klien' ? 'block' : 'none';
+  document.getElementById('sectionAgent').style.display = tab === 'agent' ? 'block' : 'none';
+  document.getElementById('tabKlien').classList.toggle('active', tab === 'klien');
+  document.getElementById('tabAgent').classList.toggle('active', tab === 'agent');
+  if (tab === 'agent' && _allAgents.length === 0) loadAgentPendaftar();
+}
+
+async function loadAgentPendaftar() {
+  try {
+    const sb = window._supabase;
+    // Fetch hanya record yang punya field 'nama' atau 'agent_code' (skema form pendaftaran)
+    const { data, error } = await sb
+      .from('referral_agents')
+      .select('*')
+      .not('agent_code', 'is', null)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    _allAgents = data || [];
+  } catch(e) {
+    console.warn('loadAgentPendaftar error:', e.message);
+    _allAgents = [];
+  }
+  updateAgentStats();
+  renderAgentCards();
+}
+
+function updateAgentStats() {
+  const total = _allAgents.length;
+  const now   = new Date();
+  const bulanIni = _allAgents.filter(r => {
+    if (!r.created_at) return false;
+    const d = new Date(r.created_at);
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  }).length;
+
+  // Domisili terbanyak
+  const domMap = {};
+  _allAgents.forEach(r => { if (r.domisili) domMap[r.domisili] = (domMap[r.domisili]||0)+1; });
+  const topDom = Object.entries(domMap).sort((a,b)=>b[1]-a[1])[0];
+
+  // Sekuritas terbanyak
+  const sekMap = {};
+  _allAgents.forEach(r => { if (r.sekuritas) sekMap[r.sekuritas] = (sekMap[r.sekuritas]||0)+1; });
+  const topSek = Object.entries(sekMap).sort((a,b)=>b[1]-a[1])[0];
+
+  document.getElementById('agentStatTotal').textContent     = total;
+  document.getElementById('agentStatBulanIni').textContent  = bulanIni;
+  document.getElementById('agentStatDomisili').textContent  = topDom ? topDom[0] : '—';
+  document.getElementById('agentStatSekuritas').textContent = topSek ? topSek[0] : '—';
+}
+
+function renderAgentCards() {
+  const q      = (document.getElementById('agentSearchInput').value || '').toLowerCase();
+  const filtered = _allAgents.filter(r => {
+    const nama  = (r.nama || r.client_name || '').toLowerCase();
+    const email = (r.email || '').toLowerCase();
+    const code  = (r.agent_code || '').toLowerCase();
+    if (q && !nama.includes(q) && !email.includes(q) && !code.includes(q)) return false;
+    return true;
+  });
+
+  const grid  = document.getElementById('agentsGrid');
+  const empty = document.getElementById('agentsEmpty');
+
+  if (filtered.length === 0) {
+    grid.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+
+  grid.innerHTML = filtered.map(r => {
+    const nama      = _esc(r.nama || r.client_name || '—');
+    const email     = _esc(r.email || '—');
+    const phone     = _esc(r.phone || '—');
+    const domisili  = _esc(r.domisili || '—');
+    const pekerjaan = _esc(r.pekerjaan || '—');
+    const sekuritas = _esc(r.sekuritas || '—');
+    const code      = _esc(r.agent_code || '—');
+    const url       = _esc(r.referral_url || (REFERRAL_BASE + '?ref=' + encodeURIComponent(r.agent_code || '')));
+    const initials  = (r.nama || r.client_name || 'A').replace(/[^A-Za-z ]/g,'').split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+    const dateStr   = r.created_at ? new Date(r.created_at).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}) : '—';
+    const safeId    = _esc(String(r.id));
+
+    return `<div class="agent-card">
+      <div class="agent-card-header">
+        <div class="agent-avatar">${initials}</div>
+        <div>
+          <div class="agent-card-name">${nama}</div>
+          <span class="agent-card-code">${code}</span>
+        </div>
+      </div>
+      <div class="agent-card-info">
+        <div class="agent-info-row">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          ${email}
+        </div>
+        <div class="agent-info-row">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13.5 19.79 19.79 0 0 1 1.61 4.9 2 2 0 0 1 3.6 2.73h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l.86-.86a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 17z"/></svg>
+          ${phone}
+        </div>
+        <div class="agent-info-row">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          ${domisili}
+        </div>
+        <div class="agent-info-row">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+          ${pekerjaan} · ${sekuritas}
+        </div>
+      </div>
+      <div class="agent-link">${url}</div>
+      <div class="agent-card-footer">
+        <button class="btn btn-qr btn-sm" onclick="openAgentQR('${safeId}')">Lihat QR</button>
+        <button class="btn btn-outline btn-sm" onclick="copyAgentLink('${safeId}')">Salin Link</button>
+      </div>
+      <div class="agent-card-date">Daftar: ${dateStr}</div>
+    </div>`;
+  }).join('');
+}
+
+function openAgentQR(id) {
+  const r = _allAgents.find(x => String(x.id) === String(id));
+  if (!r) return;
+  _qrCurrentRecord = r;
+
+  const displayName = r.nama || r.client_name || '—';
+  const code        = r.agent_code || r.client_id || '—';
+  const qrLink      = r.referral_url || (REFERRAL_BASE + '?ref=' + encodeURIComponent(code));
+
+  document.getElementById('qrClientName').textContent = displayName;
+  document.getElementById('qrClientId').textContent   = 'Kode: ' + code;
+  document.getElementById('qrLinkText').textContent   = qrLink;
+
+  const canvas = document.getElementById('qrCanvas');
+  QRCode.toCanvas(canvas, qrLink, {
+    width: 200, margin: 2,
+    color: { dark: '#0d0d2b', light: '#ffffff' }
+  }, function(err) {
+    if (err) { showToast('Gagal generate QR', 'error'); }
+  });
+
+  document.getElementById('qrModal').classList.add('open');
+}
+
+function copyAgentLink(id) {
+  const r = _allAgents.find(x => String(x.id) === String(id));
+  if (!r) return;
+  const link = r.referral_url || (REFERRAL_BASE + '?ref=' + encodeURIComponent(r.agent_code || ''));
+  navigator.clipboard ? navigator.clipboard.writeText(link).then(() => showToast('Link tersalin', 'success'))
+    .catch(() => { fallbackCopy(link); })
+    : fallbackCopy(link);
+}
+
+function fallbackCopy(text) {
+  const ta = document.createElement('textarea');
+  ta.value = text; document.body.appendChild(ta); ta.select();
+  document.execCommand('copy'); document.body.removeChild(ta);
+  showToast('Link tersalin', 'success');
+}
+
 // ─── QR CODE ───────────────────────────────────────────────────────────────────
 let _qrCurrentRecord = null;
+
+const REFERRAL_BASE = 'https://dealer-system.site/fawz-sales/';
+
+function buildReferralUrl(r) {
+  // Prioritas: referral_url dari DB → agent_code → client_id
+  if (r.referral_url) return r.referral_url;
+  if (r.agent_code)   return REFERRAL_BASE + '?ref=' + encodeURIComponent(r.agent_code);
+  if (r.client_id)    return REFERRAL_BASE + '?ref=' + encodeURIComponent(r.client_id);
+  return REFERRAL_BASE;
+}
+
+function getDisplayName(r) {
+  // Support kedua schema: {client_name} atau {nama}
+  return r.client_name || r.nama || r.client_id || r.agent_code || '—';
+}
+
+function getDisplayCode(r) {
+  return r.agent_code || r.client_id || '—';
+}
 
 function openQR(id) {
   const r = _allData.find(x => String(x.id) === String(id));
   if (!r) return;
   _qrCurrentRecord = r;
 
-  document.getElementById('qrClientName').textContent = r.client_name || r.client_id;
-  document.getElementById('qrClientId').textContent   = 'ID: ' + r.client_id;
+  const displayName = getDisplayName(r);
+  const displayCode = getDisplayCode(r);
+  const qrLink      = buildReferralUrl(r);
 
-  // QR link — link menyusul, gunakan placeholder
-  const qrLink = `https://fawzpro.app/referral?client=${encodeURIComponent(r.client_id)}&ref=petikprofit`;
-  document.getElementById('qrLinkText').textContent = qrLink;
+  document.getElementById('qrClientName').textContent = displayName;
+  document.getElementById('qrClientId').textContent   = 'Kode: ' + displayCode;
+  document.getElementById('qrLinkText').textContent   = qrLink;
 
   // Generate QR
   const canvas = document.getElementById('qrCanvas');
@@ -958,11 +1255,12 @@ function closeQRModal(e) {
 function downloadQR() {
   const canvas = document.getElementById('qrCanvas');
   const r      = _qrCurrentRecord;
-  const name   = r ? (r.client_id + '_qr') : 'qr_referral';
+  const code   = getDisplayCode(r);
   const link   = document.createElement('a');
-  link.download = name + '.png';
+  link.download = 'referral-qr-' + code + '.png';
   link.href     = canvas.toDataURL('image/png');
   link.click();
+  showToast('QR Code berhasil didownload');
 }
 </script>
 
