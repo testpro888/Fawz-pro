@@ -573,9 +573,9 @@
       if (error) throw error;
       _allReg = data || [];
     } catch(e) {
-      console.error(e);
+      console.error('loadRegistrations error:', e);
       _allReg = [];
-      document.getElementById('rStateMsg').textContent = 'Gagal memuat: ' + (e.message || e);
+      document.getElementById('rStateMsg').textContent = 'Gagal memuat: ' + (e.message || JSON.stringify(e));
       document.getElementById('rStateBox').style.display = 'block';
       document.getElementById('regGrid').innerHTML = '';
       return;
