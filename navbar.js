@@ -132,6 +132,7 @@
 
       // Customer dropdown
       'customer.html'          : ['head_account', 'admin', 'treasury', 'sales', 'head_sales'],
+      'referral-agent.html'    : ['head_account', 'admin', 'sales', 'head_sales'],
 
       // Product dropdown
       'obligasi-bookbuilding.html'    : ['head_account', 'admin', 'treasury', 'sales', 'head_sales'],

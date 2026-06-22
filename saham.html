@@ -416,9 +416,21 @@
 
   async function loadCustomers() {
     try {
-      const { data, error } = await _sb.from('customers').select('*').order('client_name');
-      if (error) { console.error('Load customers error:', error.message, error); return; }
-      customers = data || [];
+      customers = [];
+      let offset = 0;
+      const PAGE = 1000;
+      while (true) {
+        const { data, error } = await _sb
+          .from('customers')
+          .select('client_id, client_name, sales_person_name')
+          .order('client_name')
+          .range(offset, offset + PAGE - 1);
+        if (error) { console.error('Load customers error:', error.message); break; }
+        const rows = data || [];
+        customers = customers.concat(rows);
+        if (rows.length < PAGE) break;
+        offset += PAGE;
+      }
     } catch(e) { console.error('Load customers exception:', e); }
   }
 

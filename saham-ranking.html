@@ -47,7 +47,7 @@
     .table-wrapper { background: #fff; border-radius: 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); overflow: hidden; animation: fadeUp 0.4s 0.12s ease both; }
     table { width: 100%; border-collapse: collapse; font-size: 0.84rem; }
     thead { background: var(--navy); }
-    thead th { padding: 13px 14px; text-align: left; font-weight: 600; color: #fff; font-size: 0.76rem; letter-spacing: 0.3px; white-space: nowrap; }
+    thead th { padding: 13px 14px; text-align: left; font-weight: 600; color: #fff; font-size: 0.76rem; letter-spacing: 0.3px; white-space: nowrap; position: sticky; top: 0; z-index: 2; background: var(--navy); }
     tbody tr { border-bottom: 1px solid #f5f5fc; transition: background 0.15s; }
     tbody tr:hover { background: #fffbf3; }
     tbody td { padding: 11px 14px; color: #333; vertical-align: middle; }
@@ -89,7 +89,7 @@
     </div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;">
       <a href="saham.html" class="btn btn-outline">← Transaksi Saham</a>
-      <a href="fawz-point.html" class="btn btn-outline">⭐ Fawz Point</a>
+      <a href="fawz-point.html" class="btn btn-outline">Fawz Point</a>
     </div>
   </div>
 
@@ -115,8 +115,8 @@
   </div>
 
   <!-- Transaction Table -->
-  <div class="section-title">📋 Daftar Transaksi</div>
-  <div class="table-wrapper">
+  <div class="section-title">Daftar Transaksi</div>
+  <div class="table-wrapper" style="overflow:auto;max-height:720px;">
     <table>
       <thead>
         <tr>
@@ -130,39 +130,55 @@
           <th>Catatan</th>
         </tr>
       </thead>
+      <tbody id="transactionBody">
+        <tr><td colspan="8"><div class="empty-state">Memuat data...</div></td></tr>
+      </tbody>
     </table>
-    <div style="max-height:680px;overflow-y:auto;">
-      <table>
-        <tbody id="transactionBody">
-          <tr><td colspan="8"><div class="empty-state">⏳ Memuat data...</div></td></tr>
-        </tbody>
-      </table>
-    </div>
   </div>
 
   <!-- Ranking Section -->
-  <div class="section-title">🏆 Ranking Volume (Top 20)</div>
-  <div class="table-wrapper">
+  <div class="section-title">Ranking Volume (Top 20)</div>
+  <div class="table-wrapper" style="overflow:auto;max-height:560px;">
     <table>
       <thead><tr><th>Rank</th><th>Client Code</th><th>Customer Name</th><th>Sales</th><th>Total Volume</th><th>Total Fee</th></tr></thead>
+      <tbody id="volumeRankingBody"><tr><td colspan="6" class="empty-state">Memuat...</td></tr></tbody>
     </table>
-    <div style="max-height:520px;overflow-y:auto;">
-      <table>
-        <tbody id="volumeRankingBody"><tr><td colspan="6" class="empty-state">Memuat...</td></tr></tbody>
-      </table>
-    </div>
   </div>
 
-  <div class="section-title">🏆 Ranking Fee (Top 20)</div>
-  <div class="table-wrapper">
+  <div class="section-title">Ranking Fee (Top 20)</div>
+  <div class="table-wrapper" style="overflow:auto;max-height:560px;">
     <table>
       <thead><tr><th>Rank</th><th>Client Code</th><th>Customer Name</th><th>Sales</th><th>Total Volume</th><th>Total Fee</th></tr></thead>
+      <tbody id="feeRankingBody"><tr><td colspan="6" class="empty-state">Memuat...</td></tr></tbody>
     </table>
-    <div style="max-height:520px;overflow-y:auto;">
-      <table>
-        <tbody id="feeRankingBody"><tr><td colspan="6" class="empty-state">Memuat...</td></tr></tbody>
-      </table>
+  </div>
+
+  <!-- High Volume Clients Section -->
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-top:32px;margin-bottom:14px;" class="section-title-row">
+    <div class="section-title" style="margin:0;">Client Volume &gt; 100 Juta</div>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      <label style="font-size:0.78rem;font-weight:600;color:var(--navy);">Bulan:</label>
+      <input type="month" id="hvMonthFilter" style="height:36px;border:1px solid var(--border);border-radius:8px;padding:0 12px;font-family:'Inter',sans-serif;font-size:0.8rem;color:var(--text);outline:none;" onchange="renderHighVolumeTable()"/>
+      <span id="hvCount" style="font-size:0.78rem;color:var(--gray);"></span>
     </div>
+  </div>
+  <div class="table-wrapper" style="overflow:auto;max-height:640px;">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Client ID</th>
+          <th>Nama Nasabah</th>
+          <th>Sales</th>
+          <th>Total Volume</th>
+          <th>Total Fee</th>
+          <th>Jumlah Transaksi</th>
+        </tr>
+      </thead>
+      <tbody id="highVolumeBody">
+        <tr><td colspan="7"><div class="empty-state">Memuat data...</div></td></tr>
+      </tbody>
+    </table>
   </div>
 </div>
 
@@ -170,15 +186,19 @@
   // Set default month
   (function() {
     var now = new Date();
-    document.getElementById('monthFilter').value = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+    var val = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+    document.getElementById('monthFilter').value = val;
+    document.getElementById('hvMonthFilter').value = val;
   })();
+
+  // Cache transaksi per bulan untuk filter independent tabel high-volume
+  var _txCache = {}; // key: 'YYYY-MM' → array of transactions
 
   function formatRp(n) { return 'Rp ' + (n || 0).toLocaleString('id-ID'); }
   function esc(s) { if (!s) return ''; return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-  async function loadTransactions() {
-    var month = document.getElementById('monthFilter').value;
-    if (!month) return;
+  async function fetchTransactionsByMonth(month) {
+    if (_txCache[month]) return _txCache[month];
 
     var parts = month.split('-');
     var year = parseInt(parts[0],10), mon = parseInt(parts[1],10);
@@ -186,30 +206,76 @@
     var lastDay = new Date(year, mon, 0).getDate();
     var endDate = year + '-' + String(mon).padStart(2,'0') + '-' + String(lastDay).padStart(2,'0');
 
-    try {
-      var transactions = [];
-      var pageSize = 1000;
-      var offset = 0;
-      var hasMore = true;
+    var transactions = [];
+    var pageSize = 1000, offset = 0, hasMore = true;
+    while (hasMore) {
+      var { data, error } = await _sb
+        .from('saham_transaksi')
+        .select('*')
+        .gte('tanggal', startDate)
+        .lte('tanggal', endDate)
+        .range(offset, offset + pageSize - 1);
+      if (error) throw error;
+      var rows = data || [];
+      transactions = transactions.concat(rows);
+      if (rows.length < pageSize) hasMore = false;
+      else offset += pageSize;
+    }
+    _txCache[month] = transactions;
+    return transactions;
+  }
 
-      while (hasMore) {
-        var { data, error } = await _sb
-          .from('saham_transaksi')
-          .select('*')
-          .gte('tanggal', startDate)
-          .lte('tanggal', endDate)
-          .range(offset, offset + pageSize - 1);
+  function renderHighVolumeTable() {
+    var month = document.getElementById('hvMonthFilter').value;
+    if (!month) return;
+    var tbody = document.getElementById('highVolumeBody');
+    tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state">Memuat data...</div></td></tr>';
 
-        if (error) throw error;
-        var rows = data || [];
-        transactions = transactions.concat(rows);
+    fetchTransactionsByMonth(month).then(function(transactions) {
+      // Aggregate by client
+      var map = {};
+      transactions.forEach(function(tx) {
+        var id = tx.client_id;
+        if (!map[id]) map[id] = { client_id: id, client_name: tx.client_name||'', sales_name: tx.sales_name||'', vol: 0, fee: 0, count: 0 };
+        map[id].vol   += parseFloat(tx.volume)||0;
+        map[id].fee   += parseFloat(tx.fee)||0;
+        map[id].count += 1;
+      });
 
-        if (rows.length < pageSize) {
-          hasMore = false;
-        } else {
-          offset += pageSize;
-        }
+      var THRESHOLD = 100_000_000; // 100 juta
+      var highVol = Object.values(map)
+        .filter(function(c) { return c.vol >= THRESHOLD; })
+        .sort(function(a, b) { return b.vol - a.vol; });
+
+      document.getElementById('hvCount').textContent = highVol.length + ' client';
+
+      if (!highVol.length) {
+        tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state">Tidak ada client dengan volume &gt; 100 juta bulan ini</div></td></tr>';
+        return;
       }
+      tbody.innerHTML = highVol.map(function(c, i) {
+        return '<tr>' +
+          '<td>' + (i+1) + '</td>' +
+          '<td><span style="font-family:\'Courier New\',monospace;font-size:0.82rem;font-weight:600;">' + esc(c.client_id||'—') + '</span></td>' +
+          '<td style="font-weight:600;">' + esc(c.client_name||'—') + '</td>' +
+          '<td>' + esc(c.sales_name||'—') + '</td>' +
+          '<td style="font-weight:700;color:var(--navy);">' + formatRp(c.vol) + '</td>' +
+          '<td style="color:var(--green);font-weight:600;">' + formatRp(c.fee) + '</td>' +
+          '<td style="text-align:center;">' + c.count + '</td>' +
+          '</tr>';
+      }).join('');
+    }).catch(function(e) {
+      console.error(e);
+      tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state">Gagal memuat data</div></td></tr>';
+    });
+  }
+
+  async function loadTransactions() {
+    var month = document.getElementById('monthFilter').value;
+    if (!month) return;
+
+    try {
+      var transactions = await fetchTransactionsByMonth(month);
 
       // Sort
       var sortBy = document.getElementById('sortBy').value;
@@ -238,7 +304,7 @@
       // Render transaction table
       var tbody = document.getElementById('transactionBody');
       if (!transactions.length) {
-        tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state">📭 Tidak ada transaksi untuk bulan ini</div></td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state">Tidak ada transaksi untuk bulan ini</div></td></tr>';
       } else {
         tbody.innerHTML = transactions.map(function(r, i) {
           return '<tr>' +
@@ -259,7 +325,7 @@
 
     } catch(e) {
       console.error('Load error:', e);
-      document.getElementById('transactionBody').innerHTML = '<tr><td colspan="8"><div class="empty-state">❌ Gagal memuat data</div></td></tr>';
+      document.getElementById('transactionBody').innerHTML = '<tr><td colspan="8"><div class="empty-state">Gagal memuat data</div></td></tr>';
     }
   }
 
@@ -296,7 +362,10 @@
     }).join('');
   }
 
-  window.addEventListener('DOMContentLoaded', loadTransactions);
+  window.addEventListener('DOMContentLoaded', function() {
+    loadTransactions();
+    renderHighVolumeTable();
+  });
 </script>
 </body>
 </html>

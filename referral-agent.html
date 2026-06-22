@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <script src="config.js"></script>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Fawz Pro | Referral Agent</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script>
+    const SUPABASE_URL = (window.__FAWZ_CONFIG__ || {}).supabaseUrl || '';
+    const SUPABASE_KEY = (window.__FAWZ_CONFIG__ || {}).supabaseKey || '';
+    const _sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    window._supabase = _sb;
+    (function() {
+      const raw = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember');
+      if (!raw) { window.location.replace('login.html'); return; }
+      window._curUser = JSON.parse(raw);
+    })();
+  </script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --navy: #0d0d2b; --navy2: #16163a; --gold: #f5a623; --gold2: #ffc857;
+      --bg: #f4f5fb; --white: #fff; --nav-h: 68px; --border: #e0e0ef;
+      --text: #1a1a3a; --gray: #888; --green: #10b981; --red: #ef4444;
+      --shadow-sm: 0 1px 4px rgba(13,13,43,0.07);
+      --shadow-md: 0 6px 20px rgba(13,13,43,0.10);
+      --shadow-lg: 0 16px 48px rgba(13,13,43,0.16);
+    }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); min-height: 100vh; padding-top: var(--nav-h); color: var(--text); }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
+
+    .page-container { max-width: 1400px; margin: 0 auto; padding: 36px 28px; }
+
+    /* Header */
+    .page-header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 28px; flex-wrap: wrap; gap: 16px; animation: fadeUp 0.4s ease both; }
+    .page-title { font-size: 2rem; font-weight: 900; color: var(--navy); line-height: 1.1; }
+    .page-subtitle { font-size: 0.88rem; color: var(--gray); margin-top: 4px; }
+    .title-underline { width: 48px; height: 3px; background: linear-gradient(90deg, var(--gold), var(--gold2)); border-radius: 2px; margin-top: 8px; }
+
+    /* Stats */
+    .stats-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; margin-bottom: 24px; animation: fadeUp 0.4s 0.05s ease both; }
+    .stat-box { background: var(--white); border-radius: 14px; padding: 20px 22px; box-shadow: var(--shadow-sm); border: 1px solid var(--border); }
+    .stat-box-label { font-size: 0.7rem; color: var(--gray); text-transform: uppercase; letter-spacing: 1px; font-weight: 600; margin-bottom: 6px; }
+    .stat-box-val { font-size: 1.9rem; font-weight: 800; color: var(--navy); }
+
+    /* Toolbar */
+    .toolbar { background: var(--white); border-radius: 14px; padding: 14px 18px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 20px; box-shadow: var(--shadow-sm); border: 1px solid var(--border); animation: fadeUp 0.4s 0.08s ease both; }
+    .search-wrap { position: relative; flex: 1; min-width: 220px; }
+    .search-wrap input { width: 100%; padding: 10px 16px 10px 40px; border: 1.5px solid var(--border); border-radius: 10px; font-family: 'Inter',sans-serif; font-size: 0.875rem; color: var(--text); outline: none; transition: border 0.2s; background: #fafbff; }
+    .search-wrap input:focus { border-color: var(--gold); }
+    .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #bbb; pointer-events: none; }
+    .filter-select { padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 10px; font-family: 'Inter',sans-serif; font-size: 0.875rem; color: var(--text); outline: none; background: #fafbff; cursor: pointer; }
+    .filter-select:focus { border-color: var(--gold); }
+    .total-badge { font-size: 0.8rem; font-weight: 600; color: var(--gray); white-space: nowrap; }
+
+    /* Cards Grid */
+    .agents-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px,1fr)); gap: 18px; animation: fadeUp 0.4s 0.1s ease both; }
+
+    /* Agent Card */
+    .agent-card { background: var(--white); border-radius: 18px; padding: 24px; border: 1px solid var(--border); box-shadow: var(--shadow-sm); transition: transform 0.2s, box-shadow 0.2s; }
+    .agent-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+
+    .card-top { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
+    .avatar { width: 48px; height: 48px; border-radius: 14px; flex-shrink: 0; background: linear-gradient(135deg, var(--navy), #2a2a6a); display: flex; align-items: center; justify-content: center; font-size: 1rem; font-weight: 800; color: var(--gold); letter-spacing: 1px; }
+    .card-name { font-size: 1rem; font-weight: 700; color: var(--navy); line-height: 1.2; }
+    .card-code { display: inline-block; margin-top: 5px; font-size: 0.7rem; font-weight: 700; font-family: monospace; background: linear-gradient(135deg, #f0f0fa, #e8e8f8); color: #5a5aaa; padding: 3px 9px; border-radius: 6px; letter-spacing: 1.5px; border: 1px solid #dcdcf0; }
+
+    .card-info { display: flex; flex-direction: column; gap: 7px; margin-bottom: 16px; }
+    .info-row { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: var(--gray); }
+    .info-row svg { flex-shrink: 0; opacity: 0.45; width: 13px; height: 13px; }
+    .info-row span { line-height: 1.4; }
+
+    .card-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+    .tag { font-size: 0.7rem; font-weight: 600; padding: 3px 10px; border-radius: 20px; background: #f0f0fa; color: #5a5aaa; border: 1px solid #e0e0f5; white-space: nowrap; }
+
+    .referral-link-box { background: #f8f9ff; border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; margin-bottom: 14px; }
+    .referral-link-label { font-size: 0.65rem; font-weight: 700; color: var(--gray); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 4px; }
+    .referral-link-text { font-size: 0.75rem; color: var(--navy); word-break: break-all; line-height: 1.5; font-weight: 500; }
+
+    .card-actions { display: flex; gap: 8px; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 16px; border-radius: 9px; font-family: 'Inter',sans-serif; font-size: 0.78rem; font-weight: 700; cursor: pointer; border: none; transition: all 0.2s; white-space: nowrap; }
+    .btn-qr { flex: 1; background: linear-gradient(135deg, var(--navy), #2a2a6a); color: #fff; box-shadow: 0 3px 10px rgba(13,13,43,0.2); }
+    .btn-qr:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(13,13,43,0.28); }
+    .btn-copy { flex: 1; background: var(--white); color: var(--navy); border: 1.5px solid var(--border); }
+    .btn-copy:hover { border-color: var(--gold); color: var(--gold); background: #fffbf3; }
+    .btn-copy.copied { border-color: var(--green); color: var(--green); background: #f0fff8; }
+
+    .card-date { font-size: 0.68rem; color: #c0c0d8; margin-top: 12px; text-align: right; }
+
+    /* Empty / Loading */
+    .state-box { text-align: center; padding: 80px 20px; color: #c0c0d8; animation: fadeUp 0.4s ease both; }
+    .state-box svg { width: 52px; height: 52px; opacity: 0.25; margin-bottom: 14px; }
+    .state-box p { font-size: 0.9rem; font-weight: 500; }
+
+    /* QR Modal */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(13,13,43,0.55); backdrop-filter: blur(4px); z-index: 99999; align-items: center; justify-content: center; }
+    .modal-overlay.open { display: flex; }
+    @keyframes slideUp { from { transform:translateY(20px);opacity:0; } to { transform:translateY(0);opacity:1; } }
+    .modal { background: var(--white); border-radius: 22px; padding: 32px; width: 380px; max-width: 95vw; box-shadow: var(--shadow-lg); animation: slideUp 0.25s ease; text-align: center; }
+    .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+    .modal-title { font-size: 1.1rem; font-weight: 800; color: var(--navy); }
+    .modal-close { width: 32px; height: 32px; border-radius: 8px; border: 1.5px solid var(--border); background: var(--white); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; color: var(--gray); transition: all 0.15s; }
+    .modal-close:hover { border-color: var(--red); color: var(--red); background: #fff0f0; }
+    .qr-box { background: var(--white); border-radius: 16px; padding: 16px; border: 2px solid var(--border); display: inline-block; margin: 4px auto 16px; box-shadow: var(--shadow-sm); }
+    .qr-name { font-size: 1rem; font-weight: 700; color: var(--navy); margin-bottom: 4px; }
+    .qr-code { font-size: 0.75rem; color: var(--gray); font-family: monospace; margin-bottom: 8px; }
+    .qr-link { font-size: 0.72rem; color: #5a5aaa; word-break: break-all; background: #f4f5fb; border-radius: 8px; padding: 8px 10px; margin-bottom: 18px; line-height: 1.5; border: 1px solid var(--border); }
+    .modal-footer { display: flex; gap: 10px; justify-content: center; }
+    .btn-download { background: var(--navy); color: #fff; padding: 11px 24px; border-radius: 10px; font-size: 0.85rem; font-weight: 700; border: none; cursor: pointer; font-family: 'Inter',sans-serif; transition: all 0.2s; }
+    .btn-download:hover { background: var(--navy2); transform: translateY(-1px); }
+    .btn-close { background: var(--white); color: var(--gray); padding: 11px 20px; border-radius: 10px; font-size: 0.85rem; font-weight: 600; border: 1.5px solid var(--border); cursor: pointer; font-family: 'Inter',sans-serif; transition: all 0.2s; }
+    .btn-close:hover { border-color: var(--navy); color: var(--navy); }
+
+    /* Toast */
+    .toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(16px); background: var(--navy); color: #fff; padding: 12px 24px; border-radius: 50px; font-size: 0.84rem; font-weight: 600; box-shadow: var(--shadow-lg); opacity: 0; transition: all 0.3s; pointer-events: none; white-space: nowrap; z-index: 9999; border: 1px solid rgba(255,255,255,0.1); }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    @media (max-width: 900px) { .stats-row { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 600px) { .stats-row { grid-template-columns: 1fr; } .page-container { padding: 20px 16px; } }
+  </style>
+</head>
+<body>
+<div id="navbar-placeholder"></div>
+<script src="navbar.js"></script>
+
+<div class="page-container">
+
+  <div class="page-header">
+    <div>
+      <div class="page-title">Referral Agent</div>
+      <div class="page-subtitle">Daftar agent yang mendaftar via form pendaftaran Petik Profit</div>
+      <div class="title-underline"></div>
+    </div>
+    <div id="lastUpdated" style="font-size:0.78rem;color:var(--gray);"></div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-box"><div class="stat-box-label">Total Agent</div><div class="stat-box-val" id="statTotal">—</div></div>
+    <div class="stat-box"><div class="stat-box-label">Bulan Ini</div><div class="stat-box-val" id="statBulan" style="color:var(--green);">—</div></div>
+    <div class="stat-box"><div class="stat-box-label">Domisili Terbanyak</div><div class="stat-box-val" id="statDomisili" style="font-size:1rem;padding-top:6px;">—</div></div>
+    <div class="stat-box"><div class="stat-box-label">Sekuritas Terbanyak</div><div class="stat-box-val" id="statSekuritas" style="font-size:1rem;padding-top:6px;">—</div></div>
+  </div>
+
+  <div class="toolbar">
+    <div class="search-wrap">
+      <span class="search-icon">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </span>
+      <input type="text" id="searchInput" placeholder="Cari nama, email, atau kode referral..." oninput="applyFilter()"/>
+    </div>
+    <select class="filter-select" id="filterDom" onchange="applyFilter()"><option value="">Semua Domisili</option></select>
+    <select class="filter-select" id="filterSek" onchange="applyFilter()"><option value="">Semua Sekuritas</option></select>
+    <div class="total-badge" id="totalBadge">0 agent</div>
+  </div>
+
+  <div class="agents-grid" id="agentsGrid"></div>
+  <div id="stateBox" class="state-box" style="display:none;">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    <p id="stateMsg">Belum ada agent yang mendaftar</p>
+  </div>
+
+</div>
+
+<!-- QR Modal -->
+<div class="modal-overlay" id="qrModal" onclick="closeQRModal(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">QR Code Referral</div>
+      <button class="modal-close" onclick="document.getElementById('qrModal').classList.remove('open')">✕</button>
+    </div>
+    <div class="qr-box"><div id="qrCanvasWrap"></div></div>
+    <div class="qr-name" id="qrName">—</div>
+    <div class="qr-code" id="qrCode">—</div>
+    <div class="qr-link" id="qrLink">—</div>
+    <div class="modal-footer">
+      <button class="btn-download" onclick="downloadQR()">Download QR</button>
+      <button class="btn-close" onclick="document.getElementById('qrModal').classList.remove('open')">Tutup</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const REFERRAL_BASE = 'https://dealer-system.site/fawz-sales/';
+  let _all = [], _qrRecord = null;
+
+  function _esc(s) {
+    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function showToast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 2600);
+  }
+
+  function getReferralUrl(r) {
+    if (r.referral_url) return r.referral_url;
+    const code = r.agent_code || r.client_id || '';
+    return REFERRAL_BASE + (code ? '?ref=' + encodeURIComponent(code) : '');
+  }
+
+  function getCode(r)  { return r.agent_code || r.client_id || '—'; }
+  function getNama(r)  { return r.nama || r.client_name || '—'; }
+  function getInitials(r) {
+    const n = (r.nama || r.client_name || 'AG').replace(/[^A-Za-z ]/g,'').trim();
+    return n.split(' ').map(w => w[0]||'').join('').substring(0,2).toUpperCase() || 'AG';
+  }
+
+  async function loadData() {
+    document.getElementById('stateBox').style.display = 'none';
+    document.getElementById('stateMsg').textContent = 'Memuat data...';
+    document.getElementById('agentsGrid').innerHTML = '';
+
+    try {
+      const { data, error } = await window._supabase
+        .from('referral_agents')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      _all = data || [];
+    } catch(e) {
+      console.error('Load error:', e);
+      _all = [];
+      document.getElementById('stateMsg').textContent = 'Gagal memuat data: ' + (e.message || e);
+      document.getElementById('stateBox').style.display = 'block';
+      return;
+    }
+
+    // Update last refresh
+    document.getElementById('lastUpdated').textContent = 'Diperbarui: ' + new Date().toLocaleTimeString('id-ID');
+
+    // Populate filter dropdowns
+    populateFilters();
+    updateStats();
+    applyFilter();
+  }
+
+  function populateFilters() {
+    const domSet = new Set(), sekSet = new Set();
+    _all.forEach(r => {
+      if (r.domisili)  domSet.add(r.domisili);
+      if (r.sekuritas) sekSet.add(r.sekuritas);
+    });
+    const domSel = document.getElementById('filterDom');
+    const sekSel = document.getElementById('filterSek');
+    domSel.innerHTML = '<option value="">Semua Domisili</option>' +
+      [...domSet].sort().map(d => `<option value="${_esc(d)}">${_esc(d)}</option>`).join('');
+    sekSel.innerHTML = '<option value="">Semua Sekuritas</option>' +
+      [...sekSet].sort().map(s => `<option value="${_esc(s)}">${_esc(s)}</option>`).join('');
+  }
+
+  function updateStats() {
+    const now = new Date();
+    const bulan = _all.filter(r => {
+      if (!r.created_at) return false;
+      const d = new Date(r.created_at);
+      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    }).length;
+
+    const domMap = {}, sekMap = {};
+    _all.forEach(r => {
+      if (r.domisili)  domMap[r.domisili]  = (domMap[r.domisili] ||0)+1;
+      if (r.sekuritas) sekMap[r.sekuritas] = (sekMap[r.sekuritas]||0)+1;
+    });
+    const topDom = Object.entries(domMap).sort((a,b)=>b[1]-a[1])[0];
+    const topSek = Object.entries(sekMap).sort((a,b)=>b[1]-a[1])[0];
+
+    document.getElementById('statTotal').textContent   = _all.length;
+    document.getElementById('statBulan').textContent   = bulan;
+    document.getElementById('statDomisili').textContent = topDom ? topDom[0] : '—';
+    document.getElementById('statSekuritas').textContent = topSek ? topSek[0] : '—';
+  }
+
+  function applyFilter() {
+    const q   = (document.getElementById('searchInput').value || '').toLowerCase();
+    const dom = document.getElementById('filterDom').value;
+    const sek = document.getElementById('filterSek').value;
+
+    const filtered = _all.filter(r => {
+      if (q) {
+        const nama  = (r.nama || r.client_name || '').toLowerCase();
+        const email = (r.email  || '').toLowerCase();
+        const code  = (r.agent_code || r.client_id || '').toLowerCase();
+        if (!nama.includes(q) && !email.includes(q) && !code.includes(q)) return false;
+      }
+      if (dom && r.domisili  !== dom) return false;
+      if (sek && r.sekuritas !== sek) return false;
+      return true;
+    });
+
+    document.getElementById('totalBadge').textContent = filtered.length + ' agent';
+    renderCards(filtered);
+  }
+
+  function renderCards(list) {
+    const grid = document.getElementById('agentsGrid');
+    const box  = document.getElementById('stateBox');
+
+    if (list.length === 0) {
+      grid.innerHTML = '';
+      document.getElementById('stateMsg').textContent = _all.length === 0
+        ? 'Belum ada agent yang mendaftar'
+        : 'Tidak ada hasil yang cocok';
+      box.style.display = 'block';
+      return;
+    }
+    box.style.display = 'none';
+
+    grid.innerHTML = list.map(r => {
+      const nama      = _esc(getNama(r));
+      const code      = _esc(getCode(r));
+      const email     = _esc(r.email     || '—');
+      const phone     = _esc(r.phone     || '—');
+      const domisili  = _esc(r.domisili  || '—');
+      const pekerjaan = _esc(r.pekerjaan || '—');
+      const sekuritas = _esc(r.sekuritas || '—');
+      const lama      = _esc(r.lama_investasi || '—');
+      const url       = _esc(getReferralUrl(r));
+      const initials  = getInitials(r);
+      const dateStr   = r.created_at
+        ? new Date(r.created_at).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})
+        : '—';
+      const safeId = _esc(String(r.id));
+
+      const svgEmail = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>`;
+      const svgPhone = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13.5 19.79 19.79 0 0 1 1.61 4.9 2 2 0 0 1 3.6 2.73h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l.86-.86a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 17z"/></svg>`;
+      const svgLoc   = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>`;
+
+      return `<div class="agent-card">
+        <div class="card-top">
+          <div class="avatar">${initials}</div>
+          <div>
+            <div class="card-name">${nama}</div>
+            <span class="card-code">${code}</span>
+          </div>
+        </div>
+        <div class="card-info">
+          <div class="info-row">${svgEmail}<span>${email}</span></div>
+          <div class="info-row">${svgPhone}<span>${phone}</span></div>
+          <div class="info-row">${svgLoc}<span>${domisili}</span></div>
+        </div>
+        <div class="card-tags">
+          ${pekerjaan !== '—' ? `<span class="tag">${pekerjaan}</span>` : ''}
+          ${sekuritas !== '—' ? `<span class="tag">${sekuritas}</span>` : ''}
+          ${lama      !== '—' ? `<span class="tag">${lama}</span>`      : ''}
+        </div>
+        <div class="referral-link-box">
+          <div class="referral-link-label">Link Referral</div>
+          <div class="referral-link-text">${url}</div>
+        </div>
+        <div class="card-actions">
+          <button class="btn btn-qr"  onclick="openQR('${safeId}')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="3" height="3"/></svg>
+            Lihat QR
+          </button>
+          <button class="btn btn-copy" id="copy-${safeId}" onclick="copyLink('${safeId}', this)">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Salin Link
+          </button>
+        </div>
+        <div class="card-date">Daftar: ${dateStr}</div>
+      </div>`;
+    }).join('');
+  }
+
+  function openQR(id) {
+    console.log('[QR] openQR called, id:', id);
+    console.log('[QR] _all length:', _all.length);
+    const r = _all.find(x => String(x.id) === String(id));
+    console.log('[QR] record found:', r);
+    if (!r) { alert('Record tidak ditemukan: ' + id); return; }
+    _qrRecord = r;
+    const url = getReferralUrl(r);
+    console.log('[QR] url:', url);
+
+    document.getElementById('qrName').textContent = getNama(r);
+    document.getElementById('qrCode').textContent = 'Kode: ' + getCode(r);
+    document.getElementById('qrLink').textContent = url;
+
+    const modal = document.getElementById('qrModal');
+    console.log('[QR] modal element:', modal);
+    modal.classList.add('open');
+    console.log('[QR] modal classes after add:', modal.className);
+
+    // qrcodejs uses a div container
+    const wrap = document.getElementById('qrCanvasWrap');
+    wrap.innerHTML = '';
+    new QRCode(wrap, {
+      text: url,
+      width: 200, height: 200,
+      colorDark: '#0d0d2b', colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.H
+    });
+    console.log('[QR] QR generated successfully');
+  }
+
+  function closeQRModal(e) {
+    if (e.target === document.getElementById('qrModal'))
+      document.getElementById('qrModal').classList.remove('open');
+  }
+
+  function downloadQR() {
+    const wrap = document.getElementById('qrCanvasWrap');
+    const canvas = wrap.querySelector('canvas');
+    const img    = wrap.querySelector('img');
+    const a = document.createElement('a');
+    a.download = 'referral-qr-' + getCode(_qrRecord) + '.png';
+    if (canvas) {
+      a.href = canvas.toDataURL('image/png');
+    } else if (img) {
+      a.href = img.src;
+    } else {
+      showToast('QR belum siap'); return;
+    }
+    a.click();
+    showToast('QR Code berhasil didownload');
+  }
+
+  function copyLink(id, btn) {
+    const r = _all.find(x => String(x.id) === String(id));
+    if (!r) return;
+    const url = getReferralUrl(r);
+    const doCopy = () => {
+      btn.textContent = 'Tersalin';
+      btn.classList.add('copied');
+      showToast('Link referral tersalin');
+      setTimeout(() => { btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Salin Link`; btn.classList.remove('copied'); }, 2000);
+    };
+    navigator.clipboard ? navigator.clipboard.writeText(url).then(doCopy).catch(() => { fallbackCopy(url); doCopy(); }) : (fallbackCopy(url), doCopy());
+  }
+
+  function fallbackCopy(text) {
+    const ta = document.createElement('textarea'); ta.value = text;
+    document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+  }
+
+  window.addEventListener('DOMContentLoaded', loadData);
+</script>
+</body>
+</html>
