@@ -576,6 +576,8 @@ async function loadReferralClients() {
       _allData = [];
     } else {
       _allData = data || [];
+      console.log('[DEBUG] referral_agents total:', _allData.length);
+      if (_allData.length > 0) console.log('[DEBUG] sample keys:', Object.keys(_allData[0]));
     }
   } catch(e) {
     console.warn('referral_agents fetch failed:', e);
@@ -1039,24 +1041,39 @@ function switchTab(tab) {
   document.getElementById('sectionAgent').style.display = tab === 'agent' ? 'block' : 'none';
   document.getElementById('tabKlien').classList.toggle('active', tab === 'klien');
   document.getElementById('tabAgent').classList.toggle('active', tab === 'agent');
-  if (tab === 'agent' && _allAgents.length === 0) loadAgentPendaftar();
+  if (tab === 'agent') {
+    // Coba pakai _allData dulu (sudah di-load), filter yang punya agent_code/nama
+    _allAgents = _allData.filter(r => r.nama || r.agent_code);
+    if (_allAgents.length > 0) {
+      updateAgentStats();
+      renderAgentCards();
+    } else {
+      // Tidak ada di cache, load ulang dari DB
+      loadAgentPendaftar();
+    }
+  }
 }
 
 async function loadAgentPendaftar() {
   try {
     const sb = window._supabase;
-    // Fetch hanya record yang punya field 'nama' atau 'agent_code' (skema form pendaftaran)
+    // Fetch semua data, filter client-side berdasarkan ada field 'nama' atau 'agent_code'
+    // (skema dari form pendaftaran referral-agent-test.html)
     const { data, error } = await sb
       .from('referral_agents')
       .select('*')
-      .not('agent_code', 'is', null)
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    _allAgents = data || [];
+
+    // Filter: record yang punya 'nama' atau 'agent_code' = dari form pendaftaran
+    _allAgents = (data || []).filter(r => r.nama || r.agent_code);
+
+    console.log('Total referral_agents:', (data||[]).length, '| Agent pendaftar:', _allAgents.length);
   } catch(e) {
     console.warn('loadAgentPendaftar error:', e.message);
-    _allAgents = [];
+    // Fallback: gunakan data yang sudah di-load untuk tab Klien
+    _allAgents = _allData.filter(r => r.nama || r.agent_code);
   }
   updateAgentStats();
   renderAgentCards();
