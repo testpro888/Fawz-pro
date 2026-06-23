@@ -561,18 +561,25 @@
   async function deleteReg(id, nama) {
     if (!confirm(`Hapus pendaftaran dari "${nama}"?\nTindakan ini tidak dapat dibatalkan.`)) return;
     try {
-      const { error } = await window._supabase
+      console.log('[deleteReg] Menghapus id:', id);
+      const { data, error } = await window._supabase
         .from('referral_registrations')
         .delete()
-        .eq('id', id);
+        .eq('id', id)
+        .select();
+      console.log('[deleteReg] result data:', data, 'error:', error);
       if (error) throw error;
+      // Cek apakah benar-benar terhapus (RLS bisa diam-diam block tanpa error)
+      if (!data || data.length === 0) {
+        throw new Error('Data tidak terhapus dari database. Kemungkinan tidak ada izin (RLS). Hubungi admin.');
+      }
       _allReg = _allReg.filter(r => String(r.id) !== String(id));
       updateRegStats();
       applyRegFilter();
       showToast('Pendaftaran dihapus');
     } catch(e) {
-      console.error(e);
-      showToast('Gagal hapus: ' + (e.message || e));
+      console.error('[deleteReg] error:', e);
+      alert('Gagal hapus dari database:\n' + (e.message || JSON.stringify(e)) + '\n\nPastikan RLS policy Supabase mengizinkan DELETE.');
     }
   }
 
