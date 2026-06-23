@@ -741,7 +741,7 @@
 
     // Jika kode TIDAK ditemukan (kuning) → buka draft email otomatis
     if (codeNotFound) {
-      setTimeout(() => bukaEmailDraft(nama, email, phone, clientCode, sekLabel), 800);
+      setTimeout(() => bukaEmailDraft(nama, email, phone, clientCode, sekLabel, sekuritasPilihan), 800);
     }
 
     btn.disabled = false; btn.textContent = 'Kirim & Tunggu Konfirmasi →';
@@ -750,62 +750,57 @@
   // ══════════════════════════════════════════════
   //  DRAFT EMAIL — dipanggil jika kode tidak ditemukan
   // ══════════════════════════════════════════════
-  function bukaEmailDraft(nama, email, phone, clientCode, sekLabel) {
-    const adminEmail = 'admin@fawzfinansial.com';
-    const ccEmail    = 'cs@fawzfinansial.com';
+  function bukaEmailDraft(nama, email, phone, clientCode, sekLabel, sekuritasKey) {
 
-    const subject = encodeURIComponent(
-      '[Verifikasi Kode Client] ' + nama + ' — ' + clientCode + ' (' + sekLabel + ')'
-    );
+    // ── MAYBANK: kirim ke CS Maybank untuk minta pindah Sales Rep ke Zuraina ──
+    if (sekuritasKey === 'maybank') {
+      const toEmail = 'CS.Indonesia@maybank.com';
+      const ccEmail = 'Helpdesk.Indonesia@maybank.com';
 
-    const body = encodeURIComponent(
-`Halo Tim Fawz,
+      const subject = encodeURIComponent('Permohonan Pemindahan Sales Representative');
 
-Ada pendaftaran nasabah baru via agen referral yang kode client-nya TIDAK ditemukan di database. Mohon bantu verifikasi.
+      const body = encodeURIComponent(
+`Dear CS,
 
-────────────────────────
-DATA NASABAH
-────────────────────────
-Nama       : ${nama}
-Email      : ${email}
-Telepon    : ${phone || '—'}
-Sekuritas  : ${sekLabel}
-Kode Client: ${clientCode}
-Tanggal    : ${new Date().toLocaleString('id-ID', { dateStyle: 'long', timeStyle: 'short' })}
-────────────────────────
+Saya, ${nama} ${clientCode ? '(' + clientCode + ')' : '(otomatis)'}, mengajukan permohonan untuk memindahkan pengelolaan akun investasi saya dari Sales Representative saat ini kepada Zuraina (696).
 
-Kemungkinan:
-• Kode client salah ketik oleh nasabah
-• Akun belum aktif di sekuritas tersebut
-• Nasabah terdaftar dengan kode berbeda
+Permohonan ini saya ajukan demi kemudahan komunikasi dan pelayanan yang lebih sesuai dengan kebutuhan saya ke depannya.
 
-Mohon tim menghubungi nasabah via WhatsApp (${phone || email}) untuk mengklarifikasi kode yang benar, lalu update data di sistem.
+Saya berharap permohonan ini dapat diproses sesuai dengan ketentuan yang berlaku. Apabila diperlukan dokumen atau informasi tambahan, saya bersedia untuk melengkapinya.
 
-Terima kasih.
+Atas perhatian dan bantuannya, saya ucapkan terima kasih.
 
-— Sistem Fawz Pro (Auto Email)
-`
-    );
+Hormat saya,
+${nama}`
+      );
 
-    // Coba buka app email default dulu, fallback ke Gmail web
-    const mailtoUrl = `mailto:${adminEmail}?cc=${encodeURIComponent(ccEmail)}&subject=${subject}&body=${body}`;
-    const gmailUrl  = `https://mail.google.com/mail/?view=cm&to=${encodeURIComponent(adminEmail)}&cc=${encodeURIComponent(ccEmail)}&su=${subject}&body=${body}`;
+      const mailtoUrl = `mailto:${toEmail}?cc=${encodeURIComponent(ccEmail)}&subject=${subject}&body=${body}`;
+      const gmailUrl  = `https://mail.google.com/mail/?view=cm&to=${encodeURIComponent(toEmail)}&cc=${encodeURIComponent(ccEmail)}&su=${subject}&body=${body}`;
 
-    // Deteksi apakah mailto berhasil dibuka (ada email client)
-    // Jika dalam 1.5 detik halaman tidak blur (tidak pindah ke app), buka Gmail web
-    let appOpened = false;
-    window.addEventListener('blur', () => { appOpened = true; }, { once: true });
+      let appOpened = false;
+      window.addEventListener('blur', () => { appOpened = true; }, { once: true });
 
-    const iframe = document.createElement('iframe');
-    iframe.style.display = 'none';
-    iframe.src = mailtoUrl;
-    document.body.appendChild(iframe);
-    setTimeout(() => {
-      document.body.removeChild(iframe);
-      if (!appOpened) {
-        window.open(gmailUrl, '_blank');
-      }
-    }, 1500);
+      const iframe = document.createElement('iframe');
+      iframe.style.display = 'none';
+      iframe.src = mailtoUrl;
+      document.body.appendChild(iframe);
+      setTimeout(() => {
+        document.body.removeChild(iframe);
+        if (!appOpened) window.open(gmailUrl, '_blank');
+      }, 1500);
+      return;
+    }
+
+    // ── TRIMEGAH / RHB / sekuritas lain: belum disiapkan templatenya ──
+    // TODO: lengkapi template email khusus untuk sekuritas selain Maybank.
+    if (sekuritasKey === 'trimegah') {
+      // (kosong — belum ada template)
+      return;
+    }
+    if (sekuritasKey === 'rhb') {
+      // (kosong — belum ada template)
+      return;
+    }
   }
 
   // ══════════════════════════════════════════════
