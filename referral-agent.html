@@ -144,13 +144,20 @@
     .reg-meta-label { font-size: 0.62rem; font-weight: 700; color: #aaa; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
     .reg-meta-val { font-size: 0.8rem; font-weight: 600; color: var(--navy); word-break: break-all; }
 
-    .reg-actions { display: flex; gap: 8px; margin-top: 12px; }
-    .btn-confirm { flex:1; background: linear-gradient(135deg,#10b981,#059669); color:#fff; border:none; padding:9px; border-radius:9px; font-family:'Inter',sans-serif; font-size:0.78rem; font-weight:700; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:5px; }
+    .reg-actions { display: flex; gap: 8px; margin-top: 12px; align-items: center; }
+    .btn-confirm { flex:1; background: linear-gradient(135deg,#10b981,#059669); color:#fff; border:none; padding:8px 12px; border-radius:8px; font-family:'Inter',sans-serif; font-size:0.78rem; font-weight:600; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:5px; }
     .btn-confirm:hover { transform:translateY(-1px); box-shadow:0 4px 12px rgba(16,185,129,0.3); }
-    .btn-reject  { flex:1; background: var(--white); color:var(--red); border:1.5px solid #ffcccc; padding:9px; border-radius:9px; font-family:'Inter',sans-serif; font-size:0.78rem; font-weight:700; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:5px; }
-    .btn-reject:hover  { background:#fff0f0; border-color:var(--red); }
-    .btn-wa { background: #25d366; color:#fff; border:none; width:38px; border-radius:9px; cursor:pointer; font-size:1rem; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:all 0.2s; }
-    .btn-wa:hover { background:#1db954; transform:translateY(-1px); }
+    .btn-reject  { flex:1; background: var(--white); color:#b91c1c; border:1.5px solid #fecaca; padding:8px 12px; border-radius:8px; font-family:'Inter',sans-serif; font-size:0.78rem; font-weight:600; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:5px; }
+    .btn-reject:hover  { background:#fef2f2; border-color:#f87171; }
+    .btn-icon-sm {
+      width: 32px; height: 32px; border-radius: 8px; border: 1.5px solid var(--border);
+      background: var(--white); cursor: pointer; display: flex; align-items: center;
+      justify-content: center; flex-shrink: 0; transition: all 0.15s; padding: 0;
+    }
+    .btn-icon-sm.wa  { border-color: #bbf7d0; color: #16a34a; }
+    .btn-icon-sm.wa:hover  { background: #f0fdf4; border-color: #4ade80; }
+    .btn-icon-sm.del { border-color: #fecaca; color: #dc2626; }
+    .btn-icon-sm.del:hover { background: #fef2f2; border-color: #f87171; }
     .reg-note { font-size:0.72rem; color:var(--gray); margin-top:8px; font-style:italic; }
     .reg-date { font-size:0.65rem; color:#c0c0d8; margin-top:8px; text-align:right; }
 
@@ -467,7 +474,7 @@
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
             Salin Link
           </button>
-          <button class="btn" style="background:#fee2e2;color:#dc2626;border:1.5px solid #fecaca;flex:0;width:36px;padding:0;" onclick="deleteAgent('${safeId}','${nama}')" title="Hapus Agent">Del</button>
+          <button class="btn-icon-sm del" onclick="deleteAgent('${safeId}','${nama}')" title="Hapus Agent"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>
         </div>
         <div class="card-date">Daftar: ${dateStr}</div>
       </div>`;
@@ -704,19 +711,22 @@
       const note     = r.admin_note ? `<div class="reg-note">Catatan: ${_esc(r.admin_note)}</div>` : '';
       const phoneWA  = (r.phone || '').replace(/\D/g,'').replace(/^0/,'62');
 
+      const svgWA  = `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M11.999 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2 22l4.974-1.418A9.955 9.955 0 0 0 12 22c5.523 0 10-4.477 10-10S17.523 2 12 2z" fill-rule="evenodd" clip-rule="evenodd" opacity=".3"/><path d="M11.999 3.5C7.305 3.5 3.5 7.305 3.5 12c0 1.71.484 3.306 1.323 4.664l.24.392-.887 3.234 3.31-.867.38.22A8.464 8.464 0 0 0 12 20.5c4.694 0 8.5-3.806 8.5-8.5S16.693 3.5 12 3.5z"/></svg>`;
+      const svgDel = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`;
+
       const actionBtns = status === 'pending' ? `
         <button class="btn-confirm" onclick="openActionModal('${safeId}','confirm')">Konfirmasi</button>
         <button class="btn-reject"  onclick="openActionModal('${safeId}','reject')">Tolak</button>
-        ${phoneWA ? `<button class="btn-wa" onclick="window.open('https://wa.me/${phoneWA}','_blank')" title="WhatsApp">WA</button>` : ''}
-        <button class="btn-wa" style="background:#fee2e2;color:#dc2626;" onclick="deleteReg('${safeId}','${nama}')" title="Hapus">Hapus</button>
+        ${phoneWA ? `<button class="btn-icon-sm wa" onclick="window.open('https://wa.me/${phoneWA}','_blank')" title="WhatsApp">${svgWA}</button>` : ''}
+        <button class="btn-icon-sm del" onclick="deleteReg('${safeId}','${nama}')" title="Hapus">${svgDel}</button>
       ` : status === 'confirmed' ? `
         <button class="btn-reject" style="flex:1;" onclick="openActionModal('${safeId}','reject')">Batalkan Konfirmasi</button>
-        ${phoneWA ? `<button class="btn-wa" onclick="window.open('https://wa.me/${phoneWA}','_blank')" title="WhatsApp">WA</button>` : ''}
-        <button class="btn-wa" style="background:#fee2e2;color:#dc2626;" onclick="deleteReg('${safeId}','${nama}')" title="Hapus">Hapus</button>
+        ${phoneWA ? `<button class="btn-icon-sm wa" onclick="window.open('https://wa.me/${phoneWA}','_blank')" title="WhatsApp">${svgWA}</button>` : ''}
+        <button class="btn-icon-sm del" onclick="deleteReg('${safeId}','${nama}')" title="Hapus">${svgDel}</button>
       ` : `
         <button class="btn-confirm" style="flex:1;" onclick="openActionModal('${safeId}','confirm')">Konfirmasi Ulang</button>
-        ${phoneWA ? `<button class="btn-wa" onclick="window.open('https://wa.me/${phoneWA}','_blank')" title="WhatsApp">WA</button>` : ''}
-        <button class="btn-wa" style="background:#fee2e2;color:#dc2626;" onclick="deleteReg('${safeId}','${nama}')" title="Hapus">Hapus</button>
+        ${phoneWA ? `<button class="btn-icon-sm wa" onclick="window.open('https://wa.me/${phoneWA}','_blank')" title="WhatsApp">${svgWA}</button>` : ''}
+        <button class="btn-icon-sm del" onclick="deleteReg('${safeId}','${nama}')" title="Hapus">${svgDel}</button>
       `;
 
       return `<div class="reg-card" id="regcard-${safeId}">
