@@ -270,12 +270,11 @@
     @media (max-width: 420px) { .open-acct-cards { grid-template-columns: 1fr; } }
     .oa-card {
       border: 2px solid var(--border); border-radius: 14px; padding: 18px 14px;
-      text-align: center; cursor: pointer; display: flex; flex-direction: column;
+      text-align: center; text-decoration: none; display: flex; flex-direction: column;
       align-items: center; gap: 8px;
       transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
     }
     .oa-card:hover { border-color: var(--gold); transform: translateY(-2px); box-shadow: 0 4px 20px rgba(245,166,35,0.18); }
-    .oa-card.selected { border-color: var(--purple); background: #f0edff; box-shadow: 0 4px 20px rgba(86,69,212,0.15); }
     .oa-badge { border-radius: 12px; margin-bottom: 4px; background: #fff; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; width: 72px; height: 72px; }
     .oa-badge img { width: 64px; height: 64px; object-fit: contain; }
     .oa-name { font-size: 0.85rem; font-weight: 700; color: var(--navy); }
@@ -295,6 +294,39 @@
     .msg-box { border-radius: 10px; padding: 11px 14px; font-size: 0.83rem; margin-bottom: 14px; display: none; }
     .msg-error   { background: #fff0f0; border: 1px solid #ffcccc; color: #c0392b; }
     .msg-success { background: #edfff3; border: 1px solid #a8e6c1; color: #1a6b33; }
+
+    /* ── CLIENT CODE VALIDATION ── */
+    .form-input.cc-found {
+      border-color: #1aae39 !important;
+      background: #f5fff8 !important;
+      box-shadow: 0 0 0 3px rgba(26,174,57,0.10) !important;
+    }
+    .form-input.cc-notfound {
+      border-color: #e6b800 !important;
+      background: #fffdf0 !important;
+      box-shadow: 0 0 0 3px rgba(230,184,0,0.10) !important;
+    }
+    .cc-status-hint {
+      display: none;
+      font-size: 0.76rem;
+      font-weight: 600;
+      margin-top: 6px;
+      padding: 6px 10px;
+      border-radius: 8px;
+      align-items: center;
+      gap: 6px;
+    }
+    .cc-status-hint.show { display: flex; }
+    .cc-status-hint.hint-found {
+      background: #edfff3;
+      border: 1px solid #a8e6c1;
+      color: #1a6b33;
+    }
+    .cc-status-hint.hint-notfound {
+      background: #fffbea;
+      border: 1px solid #f0d000;
+      color: #7d5a00;
+    }
   </style>
 </head>
 <body>
@@ -454,7 +486,8 @@
       </div>
       <div class="form-group">
         <label class="form-label">Client Code / Kode Nasabah *</label>
-        <input type="text" id="clientCode" class="form-input" placeholder="Contoh: MB12345" autocomplete="off" style="text-transform:uppercase;"/>
+        <input type="text" id="clientCode" class="form-input" placeholder="Contoh: MB12345" autocomplete="off" style="text-transform:uppercase;" oninput="validateClientCode(this)"/>
+        <div class="cc-status-hint" id="ccHint"></div>
       </div>
 
       <div class="info-box amber">
@@ -481,14 +514,27 @@
       </div>
 
       <div class="open-acct-cards">
-        <div class="oa-card" id="oa-maybank" onclick="pilihSekuritasBelum('maybank')">
-          <div class="oa-badge"><img src="assets/logo/maybank.png" alt="Maybank" onerror="this.style.display='none';this.parentElement.textContent='Maybank'"/></div>
+        <a class="oa-card"
+          href="https://www.maybanktrade.co.id/deeplinks/?urlDeeplink=Y29tLm1iYi50aXRhbjovL3RvcGljcy90b3BpY19yZWdpc3RyYXRpb25fbmFtZQo=&salesCode=696"
+          target="_blank" rel="noopener noreferrer">
+          <div class="oa-badge"><img src="assets/logo/maybank.png" alt="Maybank" onerror="this.style.display='none';this.parentElement.textContent='🏦'"/></div>
           <div class="oa-name">Maybank Sekuritas</div>
-        </div>
-        <div class="oa-card" id="oa-trimegah" onclick="pilihSekuritasBelum('trimegah')">
-          <div class="oa-badge"><img src="assets/logo/trimegah.png" alt="Trimegah" onerror="this.style.display='none';this.parentElement.textContent='Trimegah'"/></div>
+          <div class="oa-btn">Buka Akun →</div>
+        </a>
+        <a class="oa-card"
+          href="https://eform.trimegah.id/nmb/?ref=FFI"
+          target="_blank" rel="noopener noreferrer">
+          <div class="oa-badge"><img src="assets/logo/trimegah.png" alt="Trimegah" onerror="this.style.display='none';this.parentElement.textContent='📊'"/></div>
           <div class="oa-name">Trimegah Sekuritas</div>
-        </div>
+          <div class="oa-btn">Buka Akun →</div>
+        </a>
+      </div>
+
+      <hr class="divider"/>
+
+      <div class="sec-title" style="font-size:1rem;">Sudah mendaftar di sekuritas?</div>
+      <div class="sec-sub" style="margin-bottom: 12px;">
+        Setelah akun Anda aktif, kembali ke sini dan daftarkan kode client Anda ke agen Fawz.
       </div>
 
       <div class="msg-box msg-error" id="msgErr3b"></div>
@@ -508,7 +554,7 @@
 
       <div class="form-group">
         <label class="form-label">Sekuritas yang Didaftarkan *</label>
-        <select id="sekuritas3b" class="form-input form-select" onchange="syncOaCard(this.value)">
+        <select id="sekuritas3b" class="form-input form-select">
           <option value="">-- Pilih Sekuritas --</option>
           <option value="maybank">Maybank Sekuritas</option>
           <option value="trimegah">Trimegah Sekuritas</option>
@@ -516,7 +562,7 @@
       </div>
 
       <div style="margin-top: 8px;">
-        <button class="btn btn-navy" onclick="submitBelumDaftar()">Kirim Data</button>
+        <button class="btn btn-navy" onclick="submitBelumDaftar()">Kirim Data & Hubungi Agen →</button>
       </div>
     </div>
 
@@ -732,30 +778,6 @@
   // ══════════════════════════════════════════════
   //  STEP 3B: BELUM TERDAFTAR
   // ══════════════════════════════════════════════
-  const SEK_LINKS = {
-    maybank:  'https://www.maybanktrade.co.id/deeplinks/?urlDeeplink=Y29tLm1iYi50aXRhbjovL3RvcGljcy90b3BpY19yZWdpc3RyYXRpb25fbmFtZQo=&salesCode=696',
-    trimegah: 'https://eform.trimegah.id/nmb/?ref=FFI'
-  };
-
-  function pilihSekuritasBelum(val) {
-    // Update kartu visual
-    ['maybank','trimegah'].forEach(s => {
-      const card = document.getElementById('oa-' + s);
-      if (card) card.classList.toggle('selected', s === val);
-    });
-    // Sync dropdown
-    const sel = document.getElementById('sekuritas3b');
-    if (sel) sel.value = val;
-  }
-
-  function syncOaCard(val) {
-    // Saat dropdown berubah, sync visual kartu
-    ['maybank','trimegah'].forEach(s => {
-      const card = document.getElementById('oa-' + s);
-      if (card) card.classList.toggle('selected', s === val);
-    });
-  }
-
   async function submitBelumDaftar() {
     const nama      = document.getElementById('nama3b').value.trim();
     const email     = document.getElementById('email3b').value.trim();
@@ -767,10 +789,9 @@
 
     if (!nama)  { showMsg(msgEl, 'Nama lengkap wajib diisi.'); return; }
     if (!email || !email.includes('@')) { showMsg(msgEl, 'Email tidak valid.'); return; }
-    if (!sekuritas) { showMsg(msgEl, 'Pilih sekuritas terlebih dahulu.'); return; }
 
     try {
-      const sekLabel = { maybank: 'Maybank Sekuritas', trimegah: 'Trimegah Sekuritas' }[sekuritas] || sekuritas;
+      const sekLabel = { maybank: 'Maybank Sekuritas', trimegah: 'Trimegah Sekuritas' }[sekuritas] || sekuritas || null;
       await _sb.from('referral_registrations').insert({
         nama, email, phone: phone || null,
         sekuritas: sekLabel,
@@ -780,14 +801,73 @@
       });
     } catch(e) { console.error('Submit error (non-blocking):', e); }
 
-    // Redirect langsung ke link pendaftaran sekuritas
-    const link = SEK_LINKS[sekuritas];
-    if (link) window.open(link, '_blank');
+    const sekLabel = { maybank: 'Maybank Sekuritas', trimegah: 'Trimegah Sekuritas' }[document.getElementById('sekuritas3b').value] || '—';
+    buildReview('reviewData4b', [
+      { label: 'Nama', val: nama },
+      { label: 'Email', val: email },
+      { label: 'Telepon', val: phone || '—' },
+      { label: 'Sekuritas Pilihan', val: sekLabel },
+      { label: 'Status', val: '🟡 Akan dihubungi tim Fawz' }
+    ]);
+
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('panel4b').classList.add('active');
+    updateStepper(4);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   // ══════════════════════════════════════════════
   //  HELPERS
   // ══════════════════════════════════════════════
+
+  // ══════════════════════════════════════════════
+  //  CLIENT CODE VALIDATION — cek ke tabel customers
+  // ══════════════════════════════════════════════
+  let _ccDebounce = null;
+
+  function validateClientCode(input) {
+    const val = input.value.trim().toUpperCase();
+    const hint = document.getElementById('ccHint');
+
+    // Reset state
+    input.classList.remove('cc-found', 'cc-notfound');
+    hint.className = 'cc-status-hint';
+    hint.textContent = '';
+
+    clearTimeout(_ccDebounce);
+    if (val.length < 2) return;
+
+    // Show loading
+    hint.className = 'cc-status-hint show hint-notfound';
+    hint.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="animation:spin 1s linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Memeriksa kode...';
+
+    _ccDebounce = setTimeout(async () => {
+      try {
+        const { data, error } = await _sb
+          .from('customers')
+          .select('client_id, client_name')
+          .ilike('client_id', val)
+          .limit(1);
+
+        if (error) throw error;
+
+        if (data && data.length > 0) {
+          const nama = data[0].client_name || data[0].client_id;
+          input.classList.add('cc-found');
+          hint.className = 'cc-status-hint show hint-found';
+          hint.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Ditemukan: <strong>' + nama + '</strong>';
+        } else {
+          input.classList.add('cc-notfound');
+          hint.className = 'cc-status-hint show hint-notfound';
+          hint.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Kode tidak ditemukan di database — pastikan kode sudah benar';
+        }
+      } catch(e) {
+        console.error('CC lookup error:', e);
+        hint.className = 'cc-status-hint';
+      }
+    }, 600);
+  }
+
   function showMsg(el, txt) {
     el.textContent = txt;
     el.style.display = 'block';
