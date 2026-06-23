@@ -129,30 +129,40 @@
 
     /* ── REGISTRATION CARDS ── */
     .reg-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px,1fr)); gap: 16px; }
-    .reg-card { background: var(--white); border-radius: 16px; padding: 20px; border: 1px solid var(--border); box-shadow: var(--shadow-sm); transition: transform 0.2s, box-shadow 0.2s; }
+    .reg-card { background: var(--white); border-radius: 18px; padding: 22px; border: 1px solid var(--border); box-shadow: var(--shadow-sm); transition: transform 0.2s, box-shadow 0.2s; display: flex; flex-direction: column; }
     .reg-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
-    .reg-card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; gap: 10px; }
-    .reg-card-name { font-size: 0.95rem; font-weight: 700; color: var(--navy); }
-    .reg-card-email { font-size: 0.78rem; color: var(--gray); margin-top: 2px; }
-    .reg-status-badge { font-size: 0.68rem; font-weight: 700; padding: 4px 10px; border-radius: 999px; white-space: nowrap; flex-shrink: 0; }
+
+    .reg-card-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px; gap: 10px; }
+    .reg-card-identity { display: flex; align-items: center; gap: 12px; }
+    .reg-avatar { width: 42px; height: 42px; border-radius: 12px; flex-shrink: 0; background: linear-gradient(135deg, var(--navy), #2a2a6a); display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 800; color: var(--gold); letter-spacing: 1px; }
+    .reg-card-name { font-size: 0.97rem; font-weight: 700; color: var(--navy); line-height: 1.2; }
+    .reg-card-email { font-size: 0.75rem; color: var(--gray); margin-top: 3px; }
+
+    .reg-status-badge { font-size: 0.68rem; font-weight: 700; padding: 5px 12px; border-radius: 999px; white-space: nowrap; flex-shrink: 0; }
     .status-pending    { background: #fffbea; color: #92610a; border: 1px solid #f9e79f; }
     .status-confirmed  { background: #edfff3; color: #136b30; border: 1px solid #a8e6c1; }
     .status-rejected   { background: #fff0f0; color: #9b1c1c; border: 1px solid #ffcccc; }
 
     .reg-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
-    .reg-meta-item { background: #f8f9ff; border-radius: 8px; padding: 8px 10px; }
-    .reg-meta-label { font-size: 0.62rem; font-weight: 700; color: #aaa; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
-    .reg-meta-val { font-size: 0.8rem; font-weight: 600; color: var(--navy); word-break: break-all; }
+    .reg-meta-item { background: #f8f9ff; border-radius: 10px; padding: 9px 11px; border: 1px solid #ededf8; }
+    .reg-meta-label { font-size: 0.6rem; font-weight: 700; color: #aaa; text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 3px; }
+    .reg-meta-val { font-size: 0.82rem; font-weight: 600; color: var(--navy); word-break: break-word; display: flex; align-items: center; gap: 5px; }
 
-    .reg-actions { display: flex; gap: 8px; margin-top: 12px; }
-    .btn-confirm { flex:1; background: linear-gradient(135deg,#10b981,#059669); color:#fff; border:none; padding:9px; border-radius:9px; font-family:'Inter',sans-serif; font-size:0.78rem; font-weight:700; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:5px; }
-    .btn-confirm:hover { transform:translateY(-1px); box-shadow:0 4px 12px rgba(16,185,129,0.3); }
-    .btn-reject  { flex:1; background: var(--white); color:var(--red); border:1.5px solid #ffcccc; padding:9px; border-radius:9px; font-family:'Inter',sans-serif; font-size:0.78rem; font-weight:700; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:5px; }
-    .btn-reject:hover  { background:#fff0f0; border-color:var(--red); }
-    .btn-wa { background: #25d366; color:#fff; border:none; width:38px; border-radius:9px; cursor:pointer; font-size:1rem; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:all 0.2s; }
-    .btn-wa:hover { background:#1db954; transform:translateY(-1px); }
-    .reg-note { font-size:0.72rem; color:var(--gray); margin-top:8px; font-style:italic; }
-    .reg-date { font-size:0.65rem; color:#c0c0d8; margin-top:8px; text-align:right; }
+    /* Action buttons - redesigned */
+    .reg-actions { display: flex; gap: 8px; margin-top: auto; padding-top: 14px; border-top: 1px solid #f0f0fa; }
+    .btn-confirm { flex: 1; background: linear-gradient(135deg, #10b981, #059669); color: #fff; border: none; padding: 10px 14px; border-radius: 10px; font-family: 'Inter', sans-serif; font-size: 0.8rem; font-weight: 700; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 5px; }
+    .btn-confirm:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(16,185,129,0.35); }
+    .btn-reject { flex: 1; background: var(--white); color: var(--red); border: 1.5px solid #fecaca; padding: 10px 14px; border-radius: 10px; font-family: 'Inter', sans-serif; font-size: 0.8rem; font-weight: 700; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 5px; }
+    .btn-reject:hover { background: #fff5f5; border-color: var(--red); }
+
+    /* WA & Hapus as icon buttons */
+    .btn-wa { background: #25d366; color: #fff; border: none; width: 40px; height: 40px; border-radius: 10px; cursor: pointer; font-size: 0.75rem; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.2s; }
+    .btn-wa:hover { background: #1db954; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(37,211,102,0.35); }
+    .btn-del { background: #fff5f5; color: #dc2626; border: 1.5px solid #fecaca; width: 40px; height: 40px; border-radius: 10px; cursor: pointer; font-size: 0.75rem; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.2s; }
+    .btn-del:hover { background: #fee2e2; border-color: #dc2626; transform: translateY(-1px); }
+
+    .reg-note { font-size: 0.72rem; color: var(--gray); margin-top: 10px; font-style: italic; background: #fafbff; border-radius: 8px; padding: 7px 10px; border-left: 3px solid var(--gold); }
+    .reg-date { font-size: 0.65rem; color: #c0c0d8; margin-top: 10px; text-align: right; }
 
     /* filter tabs for reg */
     .reg-filter-tabs { display:flex; gap:6px; margin-bottom:14px; flex-wrap:wrap; }
@@ -704,26 +714,46 @@
       const note     = r.admin_note ? `<div class="reg-note">Catatan: ${_esc(r.admin_note)}</div>` : '';
       const phoneWA  = (r.phone || '').replace(/\D/g,'').replace(/^0/,'62');
 
+      const waBtn = phoneWA ? `<button class="btn-wa" onclick="window.open('https://wa.me/${phoneWA}','_blank')" title="Chat WhatsApp">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.553 4.116 1.523 5.844L.057 23.43a.75.75 0 0 0 .914.914l5.587-1.466A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.896 0-3.67-.52-5.186-1.428l-.37-.218-3.839 1.007 1.007-3.84-.217-.37A9.965 9.965 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+      </button>` : '';
+      const delBtn = `<button class="btn-del" onclick="deleteReg('${safeId}','${nama}')" title="Hapus Pendaftaran">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+      </button>`;
+
       const actionBtns = status === 'pending' ? `
-        <button class="btn-confirm" onclick="openActionModal('${safeId}','confirm')">Konfirmasi</button>
-        <button class="btn-reject"  onclick="openActionModal('${safeId}','reject')">Tolak</button>
-        ${phoneWA ? `<button class="btn-wa" onclick="window.open('https://wa.me/${phoneWA}','_blank')" title="WhatsApp">WA</button>` : ''}
-        <button class="btn-wa" style="background:#fee2e2;color:#dc2626;" onclick="deleteReg('${safeId}','${nama}')" title="Hapus">Hapus</button>
+        <button class="btn-confirm" onclick="openActionModal('${safeId}','confirm')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          Konfirmasi
+        </button>
+        <button class="btn-reject" onclick="openActionModal('${safeId}','reject')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          Tolak
+        </button>
+        ${waBtn}${delBtn}
       ` : status === 'confirmed' ? `
-        <button class="btn-reject" style="flex:1;" onclick="openActionModal('${safeId}','reject')">Batalkan Konfirmasi</button>
-        ${phoneWA ? `<button class="btn-wa" onclick="window.open('https://wa.me/${phoneWA}','_blank')" title="WhatsApp">WA</button>` : ''}
-        <button class="btn-wa" style="background:#fee2e2;color:#dc2626;" onclick="deleteReg('${safeId}','${nama}')" title="Hapus">Hapus</button>
+        <button class="btn-reject" style="flex:1;" onclick="openActionModal('${safeId}','reject')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          Batalkan Konfirmasi
+        </button>
+        ${waBtn}${delBtn}
       ` : `
-        <button class="btn-confirm" style="flex:1;" onclick="openActionModal('${safeId}','confirm')">Konfirmasi Ulang</button>
-        ${phoneWA ? `<button class="btn-wa" onclick="window.open('https://wa.me/${phoneWA}','_blank')" title="WhatsApp">WA</button>` : ''}
-        <button class="btn-wa" style="background:#fee2e2;color:#dc2626;" onclick="deleteReg('${safeId}','${nama}')" title="Hapus">Hapus</button>
+        <button class="btn-confirm" style="flex:1;" onclick="openActionModal('${safeId}','confirm')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          Konfirmasi Ulang
+        </button>
+        ${waBtn}${delBtn}
       `;
 
+      const initials2 = (r.nama||'?').replace(/[^A-Za-z ]/g,'').trim().split(' ').map(w=>w[0]||'').join('').substring(0,2).toUpperCase()||'?';
       return `<div class="reg-card" id="regcard-${safeId}">
         <div class="reg-card-top">
-          <div>
-            <div class="reg-card-name">${nama}</div>
-            <div class="reg-card-email">${email}</div>
+          <div class="reg-card-identity">
+            <div class="reg-avatar">${initials2}</div>
+            <div>
+              <div class="reg-card-name">${nama}</div>
+              <div class="reg-card-email">${email}</div>
+            </div>
           </div>
           <span class="reg-status-badge ${statusClass}">${statusLabel}</span>
         </div>
