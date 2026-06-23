@@ -787,9 +787,25 @@ Terima kasih.
 `
     );
 
-    // Buka app email default (Gmail/Mail/Outlook dll)
+    // Coba buka app email default dulu, fallback ke Gmail web
     const mailtoUrl = `mailto:${adminEmail}?cc=${encodeURIComponent(ccEmail)}&subject=${subject}&body=${body}`;
-    window.location.href = mailtoUrl;
+    const gmailUrl  = `https://mail.google.com/mail/?view=cm&to=${encodeURIComponent(adminEmail)}&cc=${encodeURIComponent(ccEmail)}&su=${subject}&body=${body}`;
+
+    // Deteksi apakah mailto berhasil dibuka (ada email client)
+    // Jika dalam 1.5 detik halaman tidak blur (tidak pindah ke app), buka Gmail web
+    let appOpened = false;
+    window.addEventListener('blur', () => { appOpened = true; }, { once: true });
+
+    const iframe = document.createElement('iframe');
+    iframe.style.display = 'none';
+    iframe.src = mailtoUrl;
+    document.body.appendChild(iframe);
+    setTimeout(() => {
+      document.body.removeChild(iframe);
+      if (!appOpened) {
+        window.open(gmailUrl, '_blank');
+      }
+    }, 1500);
   }
 
   // ══════════════════════════════════════════════
