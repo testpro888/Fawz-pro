@@ -787,7 +787,7 @@ Terima kasih.
 `
     );
 
-    const mailtoUrl = \`mailto:\${adminEmail}?cc=\${encodeURIComponent(ccEmail)}&subject=\${subject}&body=\${body}\`;
+    const mailtoUrl = `mailto:${adminEmail}?cc=${encodeURIComponent(ccEmail)}&subject=${subject}&body=${body}`;
 
     // Buka di tab baru agar tidak mengganggu halaman
     const a = document.createElement('a');
