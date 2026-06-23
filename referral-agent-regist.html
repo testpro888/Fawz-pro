@@ -306,9 +306,42 @@
       background: #fffdf0 !important;
       box-shadow: 0 0 0 3px rgba(230,184,0,0.10) !important;
     }
+
+    /* ── EMAIL CONFIRM MODAL ── */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(13,13,43,0.55);
+      display: none; align-items: center; justify-content: center;
+      z-index: 999; padding: 20px; backdrop-filter: blur(2px);
+    }
+    .modal-overlay.active { display: flex; animation: fadeIn 0.2s ease both; }
+    @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+    .modal-box {
+      background: #fff; border-radius: 18px; max-width: 380px; width: 100%;
+      padding: 28px 26px; text-align: center;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+      animation: fadeUp 0.25s ease both;
+    }
+    .modal-icon { font-size: 2.4rem; margin-bottom: 12px; }
+    .modal-title { font-size: 1.05rem; font-weight: 800; color: var(--navy); margin-bottom: 10px; }
+    .modal-desc { font-size: 0.86rem; color: var(--gray); line-height: 1.6; margin-bottom: 22px; }
+    .modal-btn-row { display: flex; flex-direction: column; gap: 10px; }
   </style>
 </head>
 <body>
+
+  <!-- ─── MODAL: KONFIRMASI REDIRECT EMAIL ─── -->
+  <div class="modal-overlay" id="emailConfirmModal">
+    <div class="modal-box">
+      <div class="modal-icon">📧</div>
+      <div class="modal-title">Konfirmasi Pengiriman Email</div>
+      <div class="modal-desc">
+        Kamu akan diteruskan ke email untuk melakukan perpindahan Sales Representative.
+      </div>
+      <div class="modal-btn-row">
+        <button class="btn btn-gold" onclick="confirmEmailRedirect()">Setuju</button>
+      </div>
+    </div>
+  </div>
 
 <!-- ══ HERO HEADER ══ -->
 <div class="hero">
@@ -628,6 +661,15 @@
   let currentStep   = 1;
   let statusPilihan = null;   // 'sudah' | 'belum'
   let sekuritasPilihan = null; // 'maybank' | 'trimegah' | 'rhb'
+  let _pendingEmailData = null; // data ditahan sampai user klik "Setuju" di modal
+
+  function confirmEmailRedirect() {
+    document.getElementById('emailConfirmModal').classList.remove('active');
+    if (!_pendingEmailData) return;
+    const { nama, email, phone, clientCode, sekLabel, sekuritasPilihan: sekKey } = _pendingEmailData;
+    bukaEmailDraft(nama, email, phone, clientCode, sekLabel, sekKey);
+    _pendingEmailData = null;
+  }
   let _ccStatus = null; // 'found' | 'notfound' | null
 
   // ══════════════════════════════════════════════
@@ -739,9 +781,10 @@
     updateStepper(4);
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
-    // Jika kode TIDAK ditemukan (kuning) → buka draft email otomatis
-    if (codeNotFound) {
-      setTimeout(() => bukaEmailDraft(nama, email, phone, clientCode, sekLabel, sekuritasPilihan), 800);
+    // Jika kode TIDAK ditemukan (kuning) DAN sekuritas Maybank → tampilkan pop-up konfirmasi
+    if (codeNotFound && sekuritasPilihan === 'maybank') {
+      _pendingEmailData = { nama, email, phone, clientCode, sekLabel, sekuritasPilihan };
+      document.getElementById('emailConfirmModal').classList.add('active');
     }
 
     btn.disabled = false; btn.textContent = 'Kirim & Tunggu Konfirmasi →';
