@@ -628,6 +628,7 @@
   let currentStep   = 1;
   let statusPilihan = null;   // 'sudah' | 'belum'
   let sekuritasPilihan = null; // 'maybank' | 'trimegah' | 'rhb'
+  let _ccStatus = null; // 'found' | 'notfound' | null
 
   // ══════════════════════════════════════════════
   //  STEPPER
@@ -707,50 +708,94 @@
     const btn = document.getElementById('btnSubmit3a');
     btn.disabled = true; btn.textContent = 'Mengirim...';
 
+    const sekLabel = { maybank: 'Maybank Sekuritas', trimegah: 'Trimegah Sekuritas', rhb: 'RHB Sekuritas' }[sekuritasPilihan];
+    const codeNotFound = (_ccStatus === 'notfound'); // kuning = kode tidak ditemukan di customers
+
     try {
-      const sekLabel = { maybank: 'Maybank Sekuritas', trimegah: 'Trimegah Sekuritas', rhb: 'RHB Sekuritas' }[sekuritasPilihan];
-      const { error } = await _sb.from('referral_registrations').insert({
+      await _sb.from('referral_registrations').insert({
         nama, email, phone: phone || null,
         sekuritas: sekLabel,
         client_code: clientCode,
         status: 'sudah_terdaftar',
         created_at: new Date().toISOString()
       });
-      if (error) throw error;
-
-      // Build review data
-      buildReview('reviewData4a', [
-        { label: 'Nama', val: nama },
-        { label: 'Email', val: email },
-        { label: 'Telepon', val: phone || '—' },
-        { label: 'Sekuritas', val: sekLabel },
-        { label: 'Client Code', val: clientCode },
-        { label: 'Status', val: 'Menunggu Konfirmasi' }
-      ]);
-
-      // Show waiting panel
-      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-      document.getElementById('panel4a').classList.add('active');
-      updateStepper(4);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-
     } catch(e) {
-      console.error('Submit error:', e);
-      // Even if DB fails, show waiting screen (graceful degradation)
-      buildReview('reviewData4a', [
-        { label: 'Nama', val: nama },
-        { label: 'Email', val: email },
-        { label: 'Sekuritas', val: { maybank:'Maybank Sekuritas', trimegah:'Trimegah Sekuritas', rhb:'RHB Sekuritas' }[sekuritasPilihan] },
-        { label: 'Client Code', val: clientCode },
-        { label: 'Status', val: 'Menunggu Konfirmasi' }
-      ]);
-      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-      document.getElementById('panel4a').classList.add('active');
-      updateStepper(4);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      console.error('Insert error (non-blocking):', e);
+    }
+
+    // Build review data
+    buildReview('reviewData4a', [
+      { label: 'Nama', val: nama },
+      { label: 'Email', val: email },
+      { label: 'Telepon', val: phone || '—' },
+      { label: 'Sekuritas', val: sekLabel },
+      { label: 'Client Code', val: clientCode },
+      { label: 'Status', val: codeNotFound ? 'Kode belum terverifikasi — tim akan menghubungi' : 'Menunggu Konfirmasi' }
+    ]);
+
+    // Show waiting panel
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('panel4a').classList.add('active');
+    updateStepper(4);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    // Jika kode TIDAK ditemukan (kuning) → buka draft email otomatis
+    if (codeNotFound) {
+      setTimeout(() => bukaEmailDraft(nama, email, phone, clientCode, sekLabel), 800);
     }
 
     btn.disabled = false; btn.textContent = 'Kirim & Tunggu Konfirmasi →';
+  }
+
+  // ══════════════════════════════════════════════
+  //  DRAFT EMAIL — dipanggil jika kode tidak ditemukan
+  // ══════════════════════════════════════════════
+  function bukaEmailDraft(nama, email, phone, clientCode, sekLabel) {
+    const adminEmail = 'admin@fawzfinansial.com';
+    const ccEmail    = 'cs@fawzfinansial.com';
+
+    const subject = encodeURIComponent(
+      '[Verifikasi Kode Client] ' + nama + ' — ' + clientCode + ' (' + sekLabel + ')'
+    );
+
+    const body = encodeURIComponent(
+`Halo Tim Fawz,
+
+Ada pendaftaran nasabah baru via agen referral yang kode client-nya TIDAK ditemukan di database. Mohon bantu verifikasi.
+
+────────────────────────
+DATA NASABAH
+────────────────────────
+Nama       : ${nama}
+Email      : ${email}
+Telepon    : ${phone || '—'}
+Sekuritas  : ${sekLabel}
+Kode Client: ${clientCode}
+Tanggal    : ${new Date().toLocaleString('id-ID', { dateStyle: 'long', timeStyle: 'short' })}
+────────────────────────
+
+Kemungkinan:
+• Kode client salah ketik oleh nasabah
+• Akun belum aktif di sekuritas tersebut
+• Nasabah terdaftar dengan kode berbeda
+
+Mohon tim menghubungi nasabah via WhatsApp (${phone || email}) untuk mengklarifikasi kode yang benar, lalu update data di sistem.
+
+Terima kasih.
+
+— Sistem Fawz Pro (Auto Email)
+`
+    );
+
+    const mailtoUrl = \`mailto:\${adminEmail}?cc=\${encodeURIComponent(ccEmail)}&subject=\${subject}&body=\${body}\`;
+
+    // Buka di tab baru agar tidak mengganggu halaman
+    const a = document.createElement('a');
+    a.href = mailtoUrl;
+    a.target = '_blank';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   }
 
   // ══════════════════════════════════════════════
@@ -807,6 +852,7 @@
     const val = input.value.trim().toUpperCase();
 
     // Reset state
+    _ccStatus = null;
     input.classList.remove('cc-found', 'cc-notfound');
 
     clearTimeout(_ccDebounce);
@@ -825,8 +871,10 @@
 
         if (data && data.length > 0) {
           const nama = data[0].client_name || data[0].client_id;
+          _ccStatus = 'found';
           input.classList.add('cc-found');
         } else {
+          _ccStatus = 'notfound';
           input.classList.add('cc-notfound');
         }
       } catch(e) {
