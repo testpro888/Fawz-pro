@@ -180,10 +180,12 @@
     .sek-card:hover { border-color: var(--purple); background: #fafafe; }
     .sek-card.selected { border-color: var(--purple); background: #f0edff; }
     .sek-badge {
-      width: 42px; height: 42px; border-radius: 10px;
+      width: 56px; height: 56px; border-radius: 12px;
       display: flex; align-items: center; justify-content: center;
-      font-size: 1.2rem; flex-shrink: 0;
+      flex-shrink: 0; overflow: hidden; background: #fff;
+      border: 1px solid var(--border);
     }
+    .sek-badge img { width: 52px; height: 52px; object-fit: contain; }
     .sek-name { font-size: 0.9rem; font-weight: 700; color: var(--navy); }
     .sek-desc { font-size: 0.75rem; color: var(--gray); margin-top: 2px; }
     .sek-radio {
@@ -273,7 +275,8 @@
       transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
     }
     .oa-card:hover { border-color: var(--gold); transform: translateY(-2px); box-shadow: 0 4px 20px rgba(245,166,35,0.18); }
-    .oa-badge { border-radius: 10px; padding: 10px; font-size: 1.6rem; margin-bottom: 4px; }
+    .oa-badge { border-radius: 12px; margin-bottom: 4px; background: #fff; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; width: 72px; height: 72px; }
+    .oa-badge img { width: 64px; height: 64px; object-fit: contain; }
     .oa-name { font-size: 0.85rem; font-weight: 700; color: var(--navy); }
     .oa-hint { font-size: 0.72rem; color: var(--gray); line-height: 1.4; }
     .oa-btn  { margin-top: 6px; font-size: 0.75rem; font-weight: 600; padding: 6px 14px; border-radius: 8px; background: linear-gradient(135deg, var(--gold), var(--gold-l)); color: var(--navy); border: none; cursor: pointer; }
@@ -291,6 +294,18 @@
     .msg-box { border-radius: 10px; padding: 11px 14px; font-size: 0.83rem; margin-bottom: 14px; display: none; }
     .msg-error   { background: #fff0f0; border: 1px solid #ffcccc; color: #c0392b; }
     .msg-success { background: #edfff3; border: 1px solid #a8e6c1; color: #1a6b33; }
+
+    /* ── CLIENT CODE VALIDATION ── */
+    .form-input.cc-found {
+      border-color: #1aae39 !important;
+      background: #f5fff8 !important;
+      box-shadow: 0 0 0 3px rgba(26,174,57,0.10) !important;
+    }
+    .form-input.cc-notfound {
+      border-color: #e6b800 !important;
+      background: #fffdf0 !important;
+      box-shadow: 0 0 0 3px rgba(230,184,0,0.10) !important;
+    }
   </style>
 </head>
 <body>
@@ -332,7 +347,9 @@
 
     <!-- ─── PANEL 1: WELCOME ─── -->
     <div class="panel active" id="panel1">
-      <div class="welcome-icon">👋</div>
+      <div class="welcome-icon" style="font-size:2.5rem; text-align:center; margin-bottom:16px;">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#5645d4" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:0 auto;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      </div>
       <div class="welcome-title">Selamat Datang!</div>
       <div class="welcome-desc">
         Kami senang Anda di sini. Halaman ini akan membantu Anda mendaftar sebagai nasabah
@@ -340,7 +357,9 @@
         Prosesnya mudah, hanya beberapa langkah saja.
       </div>
       <div class="info-box blue">
-        <span class="ib-icon">ℹ️</span>
+        <span class="ib-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </span>
         <span>Pastikan Anda memiliki <strong>nama lengkap</strong>, <strong>alamat email</strong>, dan
         jika sudah terdaftar di sekuritas rekanan, siapkan juga <strong>kode client</strong> Anda.</span>
       </div>
@@ -355,14 +374,34 @@
       <div class="sec-title">Status Akun Sekuritas</div>
       <div class="sec-sub">Apakah Anda sudah memiliki akun di salah satu sekuritas rekanan kami?</div>
 
+      <!-- Sekuritas rekanan -->
+      <div style="display:flex; align-items:center; gap:12px; margin-bottom:18px; flex-wrap:wrap;">
+        <span style="font-size:0.72rem; font-weight:600; color:var(--gray); text-transform:uppercase; letter-spacing:0.5px; white-space:nowrap;">Sekuritas Rekanan:</span>
+        <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+          <div style="background:#fff; border:1px solid var(--border); border-radius:8px; padding:5px 10px; display:flex; align-items:center; justify-content:center; height:36px;">
+            <img src="assets/logo/maybank.png" alt="Maybank" style="height:26px; object-fit:contain;" onerror="this.parentElement.innerHTML='Maybank'"/>
+          </div>
+          <div style="background:#fff; border:1px solid var(--border); border-radius:8px; padding:5px 10px; display:flex; align-items:center; justify-content:center; height:36px;">
+            <img src="assets/logo/trimegah.png" alt="Trimegah" style="height:26px; object-fit:contain;" onerror="this.parentElement.innerHTML='Trimegah'"/>
+          </div>
+          <div style="background:#fff; border:1px solid var(--border); border-radius:8px; padding:5px 10px; display:flex; align-items:center; justify-content:center; height:36px;">
+            <img src="assets/logo/rhb.png" alt="RHB" style="height:26px; object-fit:contain;" onerror="this.parentElement.innerHTML='RHB'"/>
+          </div>
+        </div>
+      </div>
+
       <div class="choice-cards">
         <div class="choice-card" id="cc-sudah" onclick="pilihStatus('sudah')">
-          <div class="cc-icon">✅</div>
+          <div class="cc-icon">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#1aae39" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
           <div class="cc-title">Sudah Terdaftar</div>
           <div class="cc-desc">Saya sudah punya akun di sekuritas rekanan Fawz</div>
         </div>
         <div class="choice-card" id="cc-belum" onclick="pilihStatus('belum')">
-          <div class="cc-icon">🆕</div>
+          <div class="cc-icon">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#5645d4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+          </div>
           <div class="cc-title">Belum Terdaftar</div>
           <div class="cc-desc">Saya belum punya akun dan ingin membuka rekening baru</div>
         </div>
@@ -383,7 +422,7 @@
 
       <div class="sekuritas-cards">
         <div class="sek-card" id="sek-maybank" onclick="pilihSekuritas('maybank')">
-          <div class="sek-badge" style="background:#fff0e0;">🏦</div>
+          <div class="sek-badge"><img src="assets/logo/maybank.png" alt="Maybank Sekuritas" onerror="this.style.display='none';this.parentElement.textContent='🏦'"/></div>
           <div>
             <div class="sek-name">Maybank Sekuritas</div>
             <div class="sek-desc">Maybank Trade Indonesia</div>
@@ -391,7 +430,7 @@
           <div class="sek-radio" id="radio-maybank"></div>
         </div>
         <div class="sek-card" id="sek-trimegah" onclick="pilihSekuritas('trimegah')">
-          <div class="sek-badge" style="background:#e8f0ff;">📊</div>
+          <div class="sek-badge"><img src="assets/logo/trimegah.png" alt="Trimegah Sekuritas" onerror="this.style.display='none';this.parentElement.textContent='📊'"/></div>
           <div>
             <div class="sek-name">Trimegah Sekuritas</div>
             <div class="sek-desc">Trimegah Asset Management</div>
@@ -399,7 +438,7 @@
           <div class="sek-radio" id="radio-trimegah"></div>
         </div>
         <div class="sek-card" id="sek-rhb" onclick="pilihSekuritas('rhb')">
-          <div class="sek-badge" style="background:#e8fff0;">💼</div>
+          <div class="sek-badge"><img src="assets/logo/rhb.png" alt="RHB Sekuritas" onerror="this.style.display='none';this.parentElement.textContent='💼'"/></div>
           <div>
             <div class="sek-name">RHB Sekuritas</div>
             <div class="sek-desc">RHB Sekuritas Indonesia</div>
@@ -426,11 +465,13 @@
       </div>
       <div class="form-group">
         <label class="form-label">Client Code / Kode Nasabah *</label>
-        <input type="text" id="clientCode" class="form-input" placeholder="Contoh: MB12345" autocomplete="off" style="text-transform:uppercase;"/>
+        <input type="text" id="clientCode" class="form-input" placeholder="Contoh: MB12345" autocomplete="off" style="text-transform:uppercase;" oninput="validateClientCode(this)"/>
       </div>
 
       <div class="info-box amber">
-        <span class="ib-icon">⚠️</span>
+        <span class="ib-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        </span>
         <span>Pastikan kode client sesuai dengan yang terdaftar di sekuritas pilihan Anda. Tim kami akan memverifikasi data ini.</span>
       </div>
 
@@ -454,24 +495,17 @@
         <a class="oa-card"
           href="https://www.maybanktrade.co.id/deeplinks/?urlDeeplink=Y29tLm1iYi50aXRhbjovL3RvcGljcy90b3BpY19yZWdpc3RyYXRpb25fbmFtZQo=&salesCode=696"
           target="_blank" rel="noopener noreferrer">
-          <div class="oa-badge" style="background:#fff0e0;">🏦</div>
+          <div class="oa-badge"><img src="assets/logo/maybank.png" alt="Maybank" onerror="this.style.display='none';this.parentElement.textContent='🏦'"/></div>
           <div class="oa-name">Maybank Sekuritas</div>
-          <div class="oa-hint">Daftar via Maybank Trade dengan kode sales Fawz</div>
           <div class="oa-btn">Buka Akun →</div>
         </a>
         <a class="oa-card"
           href="https://eform.trimegah.id/nmb/?ref=FFI"
           target="_blank" rel="noopener noreferrer">
-          <div class="oa-badge" style="background:#e8f0ff;">📊</div>
+          <div class="oa-badge"><img src="assets/logo/trimegah.png" alt="Trimegah" onerror="this.style.display='none';this.parentElement.textContent='📊'"/></div>
           <div class="oa-name">Trimegah Sekuritas</div>
-          <div class="oa-hint">Daftar via e-form Trimegah dengan referral Fawz</div>
           <div class="oa-btn">Buka Akun →</div>
         </a>
-      </div>
-
-      <div class="info-box green">
-        <span class="ib-icon">✅</span>
-        <span>Kedua link di atas sudah tercantum kode referral agen Fawz secara otomatis. Cukup isi data diri Anda di sana.</span>
       </div>
 
       <hr class="divider"/>
@@ -519,20 +553,22 @@
           Data Anda telah berhasil dikirim ke tim Fawz Finansial.<br>
           Kami akan memverifikasi akun sekuritas Anda dan menghubungi Anda melalui WhatsApp atau email yang didaftarkan.
         </div>
-        <div class="badge-pending">⏳ Sedang diproses oleh tim kami</div>
+        <div class="badge-pending">Sedang diproses oleh tim kami</div>
       </div>
 
       <div class="data-review" id="reviewData4a"></div>
 
       <div class="info-box blue" style="margin-top: 12px;">
-        <span class="ib-icon">📞</span>
+        <span class="ib-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13.5 19.79 19.79 0 0 1 1.61 4.9 2 2 0 0 1 3.6 2.73h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l.86-.86a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 17z"/></svg>
+        </span>
         <span>Butuh bantuan? Hubungi agen Fawz Anda atau
           <strong><a href="https://wa.me/628116361598" target="_blank" style="color:inherit;">Admin Fawz di +62 811-6361-598</a></strong>.</span>
       </div>
 
       <div style="margin-top: 20px;">
         <a class="btn btn-outline" href="https://wa.me/628116361598" target="_blank" rel="noopener noreferrer">
-          💬 Hubungi Admin via WhatsApp
+          Hubungi Admin via WhatsApp
         </a>
       </div>
     </div>
@@ -540,7 +576,9 @@
     <!-- ─── PANEL 4B: SUBMIT BELUM DAFTAR SUKSES ─── -->
     <div class="panel" id="panel4b">
       <div style="text-align:center; padding: 16px 0 8px;">
-        <div class="success-icon">🎉</div>
+        <div class="success-icon">
+          <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#1aae39" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:0 auto 12px;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        </div>
         <div class="success-title">Data Terkirim!</div>
         <div class="success-desc">
           Terima kasih! Tim Fawz akan segera menghubungi Anda untuk memandu proses pembukaan akun dan langkah berikutnya.
@@ -550,7 +588,9 @@
       <div class="data-review" id="reviewData4b"></div>
 
       <div class="info-box green" style="margin-top: 12px;">
-        <span class="ib-icon">📲</span>
+        <span class="ib-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+        </span>
         <span>Sambil menunggu, Anda bisa mulai membuka akun di sekuritas pilihan Anda menggunakan link di bawah.</span>
       </div>
 
@@ -558,22 +598,16 @@
         <a class="oa-card"
           href="https://www.maybanktrade.co.id/deeplinks/?urlDeeplink=Y29tLm1iYi50aXRhbjovL3RvcGljcy90b3BpY19yZWdpc3RyYXRpb25fbmFtZQo=&salesCode=696"
           target="_blank" rel="noopener noreferrer">
-          <div class="oa-badge" style="background:#fff0e0;">🏦</div>
+          <div class="oa-badge"><img src="assets/logo/maybank.png" alt="Maybank" onerror="this.style.display='none';this.parentElement.textContent='🏦'"/></div>
           <div class="oa-name">Maybank Sekuritas</div>
           <div class="oa-btn">Buka Akun →</div>
         </a>
         <a class="oa-card"
           href="https://eform.trimegah.id/nmb/?ref=FFI"
           target="_blank" rel="noopener noreferrer">
-          <div class="oa-badge" style="background:#e8f0ff;">📊</div>
+          <div class="oa-badge"><img src="assets/logo/trimegah.png" alt="Trimegah" onerror="this.style.display='none';this.parentElement.textContent='📊'"/></div>
           <div class="oa-name">Trimegah Sekuritas</div>
           <div class="oa-btn">Buka Akun →</div>
-        </a>
-      </div>
-
-      <div style="margin-top: 16px;">
-        <a class="btn btn-outline" href="https://wa.me/628116361598" target="_blank" rel="noopener noreferrer">
-          💬 Hubungi Admin via WhatsApp
         </a>
       </div>
     </div>
@@ -594,6 +628,7 @@
   let currentStep   = 1;
   let statusPilihan = null;   // 'sudah' | 'belum'
   let sekuritasPilihan = null; // 'maybank' | 'trimegah' | 'rhb'
+  let _ccStatus = null; // 'found' | 'notfound' | null
 
   // ══════════════════════════════════════════════
   //  STEPPER
@@ -665,58 +700,112 @@
 
     msgEl.style.display = 'none';
 
-    if (!sekuritasPilihan) { showMsg(msgEl, '⚠️ Pilih sekuritas terlebih dahulu.'); return; }
-    if (!nama)   { showMsg(msgEl, '⚠️ Nama lengkap wajib diisi.'); return; }
-    if (!email || !email.includes('@')) { showMsg(msgEl, '⚠️ Email tidak valid.'); return; }
-    if (!clientCode) { showMsg(msgEl, '⚠️ Kode client wajib diisi.'); return; }
+    if (!sekuritasPilihan) { showMsg(msgEl, 'Pilih sekuritas terlebih dahulu.'); return; }
+    if (!nama)   { showMsg(msgEl, 'Nama lengkap wajib diisi.'); return; }
+    if (!email || !email.includes('@')) { showMsg(msgEl, 'Email tidak valid.'); return; }
+    if (!clientCode) { showMsg(msgEl, 'Kode client wajib diisi.'); return; }
 
     const btn = document.getElementById('btnSubmit3a');
     btn.disabled = true; btn.textContent = 'Mengirim...';
 
+    const sekLabel = { maybank: 'Maybank Sekuritas', trimegah: 'Trimegah Sekuritas', rhb: 'RHB Sekuritas' }[sekuritasPilihan];
+    const codeNotFound = (_ccStatus === 'notfound'); // kuning = kode tidak ditemukan di customers
+
     try {
-      const sekLabel = { maybank: 'Maybank Sekuritas', trimegah: 'Trimegah Sekuritas', rhb: 'RHB Sekuritas' }[sekuritasPilihan];
-      const { error } = await _sb.from('referral_registrations').insert({
+      await _sb.from('referral_registrations').insert({
         nama, email, phone: phone || null,
         sekuritas: sekLabel,
         client_code: clientCode,
         status: 'sudah_terdaftar',
         created_at: new Date().toISOString()
       });
-      if (error) throw error;
-
-      // Build review data
-      buildReview('reviewData4a', [
-        { label: 'Nama', val: nama },
-        { label: 'Email', val: email },
-        { label: 'Telepon', val: phone || '—' },
-        { label: 'Sekuritas', val: sekLabel },
-        { label: 'Client Code', val: clientCode },
-        { label: 'Status', val: '⏳ Menunggu Konfirmasi' }
-      ]);
-
-      // Show waiting panel
-      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-      document.getElementById('panel4a').classList.add('active');
-      updateStepper(4);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-
     } catch(e) {
-      console.error('Submit error:', e);
-      // Even if DB fails, show waiting screen (graceful degradation)
-      buildReview('reviewData4a', [
-        { label: 'Nama', val: nama },
-        { label: 'Email', val: email },
-        { label: 'Sekuritas', val: { maybank:'Maybank Sekuritas', trimegah:'Trimegah Sekuritas', rhb:'RHB Sekuritas' }[sekuritasPilihan] },
-        { label: 'Client Code', val: clientCode },
-        { label: 'Status', val: '⏳ Menunggu Konfirmasi' }
-      ]);
-      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-      document.getElementById('panel4a').classList.add('active');
-      updateStepper(4);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      console.error('Insert error (non-blocking):', e);
+    }
+
+    // Build review data
+    buildReview('reviewData4a', [
+      { label: 'Nama', val: nama },
+      { label: 'Email', val: email },
+      { label: 'Telepon', val: phone || '—' },
+      { label: 'Sekuritas', val: sekLabel },
+      { label: 'Client Code', val: clientCode },
+      { label: 'Status', val: codeNotFound ? 'Kode belum terverifikasi — tim akan menghubungi' : 'Menunggu Konfirmasi' }
+    ]);
+
+    // Show waiting panel
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('panel4a').classList.add('active');
+    updateStepper(4);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    // Jika kode TIDAK ditemukan (kuning) → buka draft email otomatis
+    if (codeNotFound) {
+      setTimeout(() => bukaEmailDraft(nama, email, phone, clientCode, sekLabel), 800);
     }
 
     btn.disabled = false; btn.textContent = 'Kirim & Tunggu Konfirmasi →';
+  }
+
+  // ══════════════════════════════════════════════
+  //  DRAFT EMAIL — dipanggil jika kode tidak ditemukan
+  // ══════════════════════════════════════════════
+  function bukaEmailDraft(nama, email, phone, clientCode, sekLabel) {
+    const adminEmail = 'admin@fawzfinansial.com';
+    const ccEmail    = 'cs@fawzfinansial.com';
+
+    const subject = encodeURIComponent(
+      '[Verifikasi Kode Client] ' + nama + ' — ' + clientCode + ' (' + sekLabel + ')'
+    );
+
+    const body = encodeURIComponent(
+`Halo Tim Fawz,
+
+Ada pendaftaran nasabah baru via agen referral yang kode client-nya TIDAK ditemukan di database. Mohon bantu verifikasi.
+
+────────────────────────
+DATA NASABAH
+────────────────────────
+Nama       : ${nama}
+Email      : ${email}
+Telepon    : ${phone || '—'}
+Sekuritas  : ${sekLabel}
+Kode Client: ${clientCode}
+Tanggal    : ${new Date().toLocaleString('id-ID', { dateStyle: 'long', timeStyle: 'short' })}
+────────────────────────
+
+Kemungkinan:
+• Kode client salah ketik oleh nasabah
+• Akun belum aktif di sekuritas tersebut
+• Nasabah terdaftar dengan kode berbeda
+
+Mohon tim menghubungi nasabah via WhatsApp (${phone || email}) untuk mengklarifikasi kode yang benar, lalu update data di sistem.
+
+Terima kasih.
+
+— Sistem Fawz Pro (Auto Email)
+`
+    );
+
+    // Coba buka app email default dulu, fallback ke Gmail web
+    const mailtoUrl = `mailto:${adminEmail}?cc=${encodeURIComponent(ccEmail)}&subject=${subject}&body=${body}`;
+    const gmailUrl  = `https://mail.google.com/mail/?view=cm&to=${encodeURIComponent(adminEmail)}&cc=${encodeURIComponent(ccEmail)}&su=${subject}&body=${body}`;
+
+    // Deteksi apakah mailto berhasil dibuka (ada email client)
+    // Jika dalam 1.5 detik halaman tidak blur (tidak pindah ke app), buka Gmail web
+    let appOpened = false;
+    window.addEventListener('blur', () => { appOpened = true; }, { once: true });
+
+    const iframe = document.createElement('iframe');
+    iframe.style.display = 'none';
+    iframe.src = mailtoUrl;
+    document.body.appendChild(iframe);
+    setTimeout(() => {
+      document.body.removeChild(iframe);
+      if (!appOpened) {
+        window.open(gmailUrl, '_blank');
+      }
+    }, 1500);
   }
 
   // ══════════════════════════════════════════════
@@ -731,8 +820,8 @@
 
     msgEl.style.display = 'none';
 
-    if (!nama)  { showMsg(msgEl, '⚠️ Nama lengkap wajib diisi.'); return; }
-    if (!email || !email.includes('@')) { showMsg(msgEl, '⚠️ Email tidak valid.'); return; }
+    if (!nama)  { showMsg(msgEl, 'Nama lengkap wajib diisi.'); return; }
+    if (!email || !email.includes('@')) { showMsg(msgEl, 'Email tidak valid.'); return; }
 
     try {
       const sekLabel = { maybank: 'Maybank Sekuritas', trimegah: 'Trimegah Sekuritas' }[sekuritas] || sekuritas || null;
@@ -763,6 +852,47 @@
   // ══════════════════════════════════════════════
   //  HELPERS
   // ══════════════════════════════════════════════
+
+  // ══════════════════════════════════════════════
+  //  CLIENT CODE VALIDATION — cek ke tabel customers
+  // ══════════════════════════════════════════════
+  let _ccDebounce = null;
+
+  function validateClientCode(input) {
+    const val = input.value.trim().toUpperCase();
+
+    // Reset state
+    _ccStatus = null;
+    input.classList.remove('cc-found', 'cc-notfound');
+
+    clearTimeout(_ccDebounce);
+    if (val.length < 2) return;
+
+
+    _ccDebounce = setTimeout(async () => {
+      try {
+        const { data, error } = await _sb
+          .from('customers')
+          .select('client_id, client_name')
+          .ilike('client_id', val)
+          .limit(1);
+
+        if (error) throw error;
+
+        if (data && data.length > 0) {
+          const nama = data[0].client_name || data[0].client_id;
+          _ccStatus = 'found';
+          input.classList.add('cc-found');
+        } else {
+          _ccStatus = 'notfound';
+          input.classList.add('cc-notfound');
+        }
+      } catch(e) {
+        console.error('CC lookup error:', e);
+      }
+    }, 600);
+  }
+
   function showMsg(el, txt) {
     el.textContent = txt;
     el.style.display = 'block';

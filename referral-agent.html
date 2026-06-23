@@ -120,6 +120,61 @@
 
     @media (max-width: 900px) { .stats-row { grid-template-columns: 1fr 1fr; } }
     @media (max-width: 600px) { .stats-row { grid-template-columns: 1fr; } .page-container { padding: 20px 16px; } }
+
+    /* ── TABS ── */
+    .tabs-wrap { display: flex; gap: 6px; margin-bottom: 22px; background: var(--white); border-radius: 14px; padding: 6px; border: 1px solid var(--border); width: fit-content; box-shadow: var(--shadow-sm); }
+    .tab { padding: 9px 20px; border-radius: 10px; border: none; font-family: 'Inter',sans-serif; font-size: 0.85rem; font-weight: 600; cursor: pointer; background: transparent; color: var(--gray); transition: all 0.2s; display: flex; align-items: center; gap: 7px; }
+    .tab.active { background: var(--navy); color: #fff; box-shadow: 0 2px 10px rgba(13,13,43,0.20); }
+    .tab-badge { background: var(--red); color: #fff; font-size: 0.65rem; font-weight: 800; border-radius: 999px; padding: 1px 7px; min-width: 18px; text-align: center; }
+
+    /* ── REGISTRATION CARDS ── */
+    .reg-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px,1fr)); gap: 16px; }
+    .reg-card { background: var(--white); border-radius: 18px; padding: 22px; border: 1px solid var(--border); box-shadow: var(--shadow-sm); transition: transform 0.2s, box-shadow 0.2s; display: flex; flex-direction: column; }
+    .reg-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+
+    .reg-card-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px; gap: 10px; }
+    .reg-card-identity { display: flex; align-items: center; gap: 12px; }
+    .reg-avatar { width: 42px; height: 42px; border-radius: 12px; flex-shrink: 0; background: linear-gradient(135deg, var(--navy), #2a2a6a); display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 800; color: var(--gold); letter-spacing: 1px; }
+    .reg-card-name { font-size: 0.97rem; font-weight: 700; color: var(--navy); line-height: 1.2; }
+    .reg-card-email { font-size: 0.75rem; color: var(--gray); margin-top: 3px; }
+
+    .reg-status-badge { font-size: 0.68rem; font-weight: 700; padding: 5px 12px; border-radius: 999px; white-space: nowrap; flex-shrink: 0; }
+    .status-pending    { background: #fffbea; color: #92610a; border: 1px solid #f9e79f; }
+    .status-confirmed  { background: #edfff3; color: #136b30; border: 1px solid #a8e6c1; }
+    .status-rejected   { background: #fff0f0; color: #9b1c1c; border: 1px solid #ffcccc; }
+
+    .reg-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+    .reg-meta-item { background: #f8f9ff; border-radius: 10px; padding: 9px 11px; border: 1px solid #ededf8; }
+    .reg-meta-label { font-size: 0.6rem; font-weight: 700; color: #aaa; text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 3px; }
+    .reg-meta-val { font-size: 0.82rem; font-weight: 600; color: var(--navy); word-break: break-word; display: flex; align-items: center; gap: 5px; }
+
+    /* Action buttons - redesigned */
+    .reg-actions { display: flex; gap: 8px; margin-top: auto; padding-top: 14px; border-top: 1px solid #f0f0fa; }
+    .btn-confirm { flex: 1; background: linear-gradient(135deg, #10b981, #059669); color: #fff; border: none; padding: 10px 14px; border-radius: 10px; font-family: 'Inter', sans-serif; font-size: 0.8rem; font-weight: 700; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 5px; }
+    .btn-confirm:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(16,185,129,0.35); }
+    .btn-reject { flex: 1; background: var(--white); color: var(--red); border: 1.5px solid #fecaca; padding: 10px 14px; border-radius: 10px; font-family: 'Inter', sans-serif; font-size: 0.8rem; font-weight: 700; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 5px; }
+    .btn-reject:hover { background: #fff5f5; border-color: var(--red); }
+
+    /* WA & Hapus as icon buttons */
+    .btn-wa { background: #25d366; color: #fff; border: none; width: 40px; height: 40px; border-radius: 10px; cursor: pointer; font-size: 0.75rem; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.2s; }
+    .btn-wa:hover { background: #1db954; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(37,211,102,0.35); }
+    .btn-del { background: #fff5f5; color: #dc2626; border: 1.5px solid #fecaca; width: 40px; height: 40px; border-radius: 10px; cursor: pointer; font-size: 0.75rem; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.2s; }
+    .btn-del:hover { background: #fee2e2; border-color: #dc2626; transform: translateY(-1px); }
+
+    .reg-note { font-size: 0.72rem; color: var(--gray); margin-top: 10px; font-style: italic; background: #fafbff; border-radius: 8px; padding: 7px 10px; border-left: 3px solid var(--gold); }
+    .reg-date { font-size: 0.65rem; color: #c0c0d8; margin-top: 10px; text-align: right; }
+
+    /* filter tabs for reg */
+    .reg-filter-tabs { display:flex; gap:6px; margin-bottom:14px; flex-wrap:wrap; }
+    .reg-ftab { padding:6px 14px; border-radius:999px; border:1.5px solid var(--border); font-size:0.78rem; font-weight:600; cursor:pointer; background:var(--white); color:var(--gray); transition:all 0.15s; }
+    .reg-ftab.active { background:var(--navy); color:#fff; border-color:var(--navy); }
+
+    /* confirm modal */
+    .confirm-modal { width:420px; text-align:left; }
+    .confirm-modal .modal-body { margin-bottom:20px; font-size:0.9rem; color:var(--text); line-height:1.6; }
+    .confirm-modal .modal-footer { display:flex; gap:10px; justify-content:flex-end; }
+    .confirm-modal textarea { width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:10px; font-family:'Inter',sans-serif; font-size:0.85rem; resize:vertical; min-height:70px; margin-top:10px; outline:none; }
+    .confirm-modal textarea:focus { border-color:var(--gold); }
   </style>
 </head>
 <body>
@@ -131,35 +186,77 @@
   <div class="page-header">
     <div>
       <div class="page-title">Referral Agent</div>
-      <div class="page-subtitle">Daftar agent yang mendaftar via form pendaftaran Petik Profit</div>
+      <div class="page-subtitle" id="pageSubtitle">Daftar agent yang mendaftar via form pendaftaran</div>
       <div class="title-underline"></div>
     </div>
     <div id="lastUpdated" style="font-size:0.78rem;color:var(--gray);"></div>
   </div>
 
-  <div class="stats-row">
-    <div class="stat-box"><div class="stat-box-label">Total Agent</div><div class="stat-box-val" id="statTotal">—</div></div>
-    <div class="stat-box"><div class="stat-box-label">Bulan Ini</div><div class="stat-box-val" id="statBulan" style="color:var(--green);">—</div></div>
-    <div class="stat-box"><div class="stat-box-label">Domisili Terbanyak</div><div class="stat-box-val" id="statDomisili" style="font-size:1rem;padding-top:6px;">—</div></div>
-    <div class="stat-box"><div class="stat-box-label">Sekuritas Terbanyak</div><div class="stat-box-val" id="statSekuritas" style="font-size:1rem;padding-top:6px;">—</div></div>
+  <!-- TABS -->
+  <div class="tabs-wrap">
+    <button class="tab active" id="tab-agents" onclick="switchTab('agents')">Agent Terdaftar</button>
+    <button class="tab" id="tab-regist" onclick="switchTab('regist')">Pendaftaran Masuk <span class="tab-badge" id="tabBadgePending" style="display:none;"></span></button>
   </div>
 
-  <div class="toolbar">
-    <div class="search-wrap">
-      <span class="search-icon">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      </span>
-      <input type="text" id="searchInput" placeholder="Cari nama, email, atau kode referral..." oninput="applyFilter()"/>
+  <!-- ══ TAB: AGENTS ══ -->
+  <div id="section-agents">
+    <div class="stats-row">
+      <div class="stat-box"><div class="stat-box-label">Total Agent</div><div class="stat-box-val" id="statTotal">—</div></div>
+      <div class="stat-box"><div class="stat-box-label">Bulan Ini</div><div class="stat-box-val" id="statBulan" style="color:var(--green);">—</div></div>
+      <div class="stat-box"><div class="stat-box-label">Domisili Terbanyak</div><div class="stat-box-val" id="statDomisili" style="font-size:1rem;padding-top:6px;">—</div></div>
+      <div class="stat-box"><div class="stat-box-label">Sekuritas Terbanyak</div><div class="stat-box-val" id="statSekuritas" style="font-size:1rem;padding-top:6px;">—</div></div>
     </div>
-    <select class="filter-select" id="filterDom" onchange="applyFilter()"><option value="">Semua Domisili</option></select>
-    <select class="filter-select" id="filterSek" onchange="applyFilter()"><option value="">Semua Sekuritas</option></select>
-    <div class="total-badge" id="totalBadge">0 agent</div>
+
+    <div class="toolbar">
+      <div class="search-wrap">
+        <span class="search-icon">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </span>
+        <input type="text" id="searchInput" placeholder="Cari nama, email, atau kode referral..." oninput="applyFilter()"/>
+      </div>
+      <select class="filter-select" id="filterDom" onchange="applyFilter()"><option value="">Semua Domisili</option></select>
+      <select class="filter-select" id="filterSek" onchange="applyFilter()"><option value="">Semua Sekuritas</option></select>
+      <div class="total-badge" id="totalBadge">0 agent</div>
+    </div>
+
+    <div class="agents-grid" id="agentsGrid"></div>
+    <div id="stateBox" class="state-box" style="display:none;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <p id="stateMsg">Belum ada agent yang mendaftar</p>
+    </div>
   </div>
 
-  <div class="agents-grid" id="agentsGrid"></div>
-  <div id="stateBox" class="state-box" style="display:none;">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-    <p id="stateMsg">Belum ada agent yang mendaftar</p>
+  <!-- ══ TAB: PENDAFTARAN MASUK ══ -->
+  <div id="section-regist" style="display:none;">
+    <div class="stats-row">
+      <div class="stat-box"><div class="stat-box-label">Total Masuk</div><div class="stat-box-val" id="rStatTotal">—</div></div>
+      <div class="stat-box"><div class="stat-box-label">Pending</div><div class="stat-box-val" id="rStatPending" style="color:#92610a;">—</div></div>
+      <div class="stat-box"><div class="stat-box-label">Dikonfirmasi</div><div class="stat-box-val" id="rStatConfirmed" style="color:var(--green);">—</div></div>
+      <div class="stat-box"><div class="stat-box-label">Ditolak</div><div class="stat-box-val" id="rStatRejected" style="color:var(--red);">—</div></div>
+    </div>
+
+    <div class="toolbar">
+      <div class="search-wrap">
+        <span class="search-icon">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </span>
+        <input type="text" id="rSearchInput" placeholder="Cari nama, email, kode client..." oninput="applyRegFilter()"/>
+      </div>
+      <select class="filter-select" id="rFilterSek" onchange="applyRegFilter()"><option value="">Semua Sekuritas</option></select>
+    </div>
+
+    <div class="reg-filter-tabs">
+      <button class="reg-ftab active" onclick="setRegStatusFilter('all',this)">Semua</button>
+      <button class="reg-ftab" onclick="setRegStatusFilter('pending',this)">Pending</button>
+      <button class="reg-ftab" onclick="setRegStatusFilter('confirmed',this)">Dikonfirmasi</button>
+      <button class="reg-ftab" onclick="setRegStatusFilter('rejected',this)">Ditolak</button>
+    </div>
+
+    <div class="reg-grid" id="regGrid"></div>
+    <div id="rStateBox" class="state-box" style="display:none;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      <p id="rStateMsg">Belum ada pendaftaran masuk</p>
+    </div>
   </div>
 
 </div>
@@ -178,6 +275,22 @@
     <div class="modal-footer">
       <button class="btn-download" onclick="downloadQR()">Download QR</button>
       <button class="btn-close" onclick="document.getElementById('qrModal').classList.remove('open')">Tutup</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm/Reject Modal -->
+<div class="modal-overlay" id="actionModal" onclick="closeActionModal(event)">
+  <div class="modal confirm-modal">
+    <div class="modal-header">
+      <div class="modal-title" id="actionModalTitle">Konfirmasi Pendaftaran</div>
+      <button class="modal-close" onclick="document.getElementById('actionModal').classList.remove('open')">✕</button>
+    </div>
+    <div class="modal-body" id="actionModalBody"></div>
+    <textarea id="actionNote" placeholder="Catatan / alasan (opsional)..."></textarea>
+    <div class="modal-footer" style="margin-top:14px;">
+      <button class="btn-close" onclick="document.getElementById('actionModal').classList.remove('open')">Batal</button>
+      <button id="actionModalBtn" class="btn-download" onclick="doAction()">Konfirmasi</button>
     </div>
   </div>
 </div>
@@ -364,6 +477,7 @@
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
             Salin Link
           </button>
+          <button class="btn" style="background:#fee2e2;color:#dc2626;border:1.5px solid #fecaca;flex:0;width:36px;padding:0;" onclick="deleteAgent('${safeId}','${nama}')" title="Hapus Agent">Del</button>
         </div>
         <div class="card-date">Daftar: ${dateStr}</div>
       </div>`;
@@ -441,7 +555,300 @@
     document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
   }
 
-  window.addEventListener('DOMContentLoaded', loadData);
+  // ══════════════════════════════════
+  //  DELETE REGISTRATION
+  // ══════════════════════════════════
+  async function deleteReg(id, nama) {
+    if (!confirm(`Hapus pendaftaran dari "${nama}"?\nTindakan ini tidak dapat dibatalkan.`)) return;
+    try {
+      console.log('[deleteReg] Menghapus id:', id);
+      const { data, error } = await window._supabase
+        .from('referral_registrations')
+        .delete()
+        .eq('id', id)
+        .select();
+      console.log('[deleteReg] result data:', data, 'error:', error);
+      if (error) throw error;
+      // Cek apakah benar-benar terhapus (RLS bisa diam-diam block tanpa error)
+      if (!data || data.length === 0) {
+        throw new Error('Data tidak terhapus dari database. Kemungkinan tidak ada izin (RLS). Hubungi admin.');
+      }
+      _allReg = _allReg.filter(r => String(r.id) !== String(id));
+      updateRegStats();
+      applyRegFilter();
+      showToast('Pendaftaran dihapus');
+    } catch(e) {
+      console.error('[deleteReg] error:', e);
+      alert('Gagal hapus dari database:\n' + (e.message || JSON.stringify(e)) + '\n\nPastikan RLS policy Supabase mengizinkan DELETE.');
+    }
+  }
+
+  // ══════════════════════════════════
+  //  DELETE AGENT
+  // ══════════════════════════════════
+  async function deleteAgent(id, nama) {
+    if (!confirm(`Hapus agent "${nama}"?\nTindakan ini tidak dapat dibatalkan.`)) return;
+    try {
+      const { error } = await window._supabase
+        .from('referral_agents')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+      _all = _all.filter(r => String(r.id) !== String(id));
+      updateStats();
+      applyFilter();
+      showToast('Agent dihapus');
+    } catch(e) {
+      console.error(e);
+      showToast('Gagal hapus: ' + (e.message || e));
+    }
+  }
+  let _activeTab = 'agents';
+  function switchTab(tab) {
+    _activeTab = tab;
+    document.getElementById('section-agents').style.display = tab === 'agents' ? '' : 'none';
+    document.getElementById('section-regist').style.display = tab === 'regist'  ? '' : 'none';
+    document.getElementById('tab-agents').classList.toggle('active', tab === 'agents');
+    document.getElementById('tab-regist').classList.toggle('active',  tab === 'regist');
+    if (tab === 'regist' && _allReg.length === 0) loadRegistrations();
+  }
+
+  // ══════════════════════════════════
+  //  REGISTRATIONS DATA
+  // ══════════════════════════════════
+  let _allReg = [], _regStatusFilter = 'all', _pendingAction = null;
+
+  async function loadRegistrations() {
+    document.getElementById('rStateBox').style.display = 'none';
+    document.getElementById('regGrid').innerHTML = '<div style="padding:40px;text-align:center;color:#bbb;">Memuat...</div>';
+    try {
+      const { data, error } = await window._supabase
+        .from('referral_registrations')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      _allReg = data || [];
+    } catch(e) {
+      console.error('loadRegistrations error:', e);
+      _allReg = [];
+      document.getElementById('rStateMsg').textContent = 'Gagal memuat: ' + (e.message || JSON.stringify(e));
+      document.getElementById('rStateBox').style.display = 'block';
+      document.getElementById('regGrid').innerHTML = '';
+      return;
+    }
+    updateRegStats();
+    populateRegFilters();
+    applyRegFilter();
+  }
+
+  function updateRegStats() {
+    const total     = _allReg.length;
+    const pending   = _allReg.filter(r => !r.confirmed_status || r.confirmed_status === 'pending').length;
+    const confirmed = _allReg.filter(r => r.confirmed_status === 'confirmed').length;
+    const rejected  = _allReg.filter(r => r.confirmed_status === 'rejected').length;
+    document.getElementById('rStatTotal').textContent     = total;
+    document.getElementById('rStatPending').textContent   = pending;
+    document.getElementById('rStatConfirmed').textContent = confirmed;
+    document.getElementById('rStatRejected').textContent  = rejected;
+    // Update tab badge
+    const badge = document.getElementById('tabBadgePending');
+    if (pending > 0) { badge.textContent = pending; badge.style.display = ''; }
+    else { badge.style.display = 'none'; }
+  }
+
+  function populateRegFilters() {
+    const sekSet = new Set(_allReg.map(r => r.sekuritas).filter(Boolean));
+    const sel = document.getElementById('rFilterSek');
+    sel.innerHTML = '<option value="">Semua Sekuritas</option>' +
+      [...sekSet].sort().map(s => `<option value="${_esc(s)}">${_esc(s)}</option>`).join('');
+  }
+
+  function setRegStatusFilter(val, btn) {
+    _regStatusFilter = val;
+    document.querySelectorAll('.reg-ftab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    applyRegFilter();
+  }
+
+  function applyRegFilter() {
+    const q   = (document.getElementById('rSearchInput').value || '').toLowerCase();
+    const sek = document.getElementById('rFilterSek').value;
+
+    let filtered = _allReg.filter(r => {
+      const status = r.confirmed_status || 'pending';
+      if (_regStatusFilter !== 'all' && status !== _regStatusFilter) return false;
+      if (sek && r.sekuritas !== sek) return false;
+      if (q) {
+        const nama  = (r.nama || '').toLowerCase();
+        const email = (r.email || '').toLowerCase();
+        const code  = (r.client_code || '').toLowerCase();
+        if (!nama.includes(q) && !email.includes(q) && !code.includes(q)) return false;
+      }
+      return true;
+    });
+    renderRegCards(filtered);
+  }
+
+  function renderRegCards(list) {
+    const grid = document.getElementById('regGrid');
+    const box  = document.getElementById('rStateBox');
+    if (!list.length) {
+      grid.innerHTML = '';
+      document.getElementById('rStateMsg').textContent = _allReg.length === 0 ? 'Belum ada pendaftaran masuk' : 'Tidak ada hasil yang cocok';
+      box.style.display = 'block';
+      return;
+    }
+    box.style.display = 'none';
+
+    const sekLogos = { 'Maybank Sekuritas': 'maybank', 'Trimegah Sekuritas': 'trimegah', 'RHB Sekuritas': 'rhb' };
+
+    grid.innerHTML = list.map(r => {
+      const status = r.confirmed_status || 'pending';
+      const statusLabel = { pending:'Pending', confirmed:'Dikonfirmasi', rejected:'Ditolak' }[status] || status;
+      const statusClass = { pending:'status-pending', confirmed:'status-confirmed', rejected:'status-rejected' }[status] || 'status-pending';
+      const nama     = _esc(r.nama || '—');
+      const email    = _esc(r.email || '—');
+      const phone    = _esc(r.phone || '—');
+      const sek      = _esc(r.sekuritas || '—');
+      const code     = _esc(r.client_code || '—');
+      const regType  = r.status === 'sudah_terdaftar' ? 'Sudah punya akun' : 'Belum punya akun';
+      const safeId   = _esc(String(r.id));
+      const dateStr  = r.created_at ? new Date(r.created_at).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
+      const sekKey   = Object.keys(sekLogos).find(k => sek.toLowerCase().includes(k.toLowerCase().split(' ')[0])) || '';
+      const logoHtml = sekKey
+        ? `<img src="assets/logo/${sekLogos[sekKey]}.png" alt="${_esc(sekKey)}" style="height:20px;object-fit:contain;vertical-align:middle;margin-right:5px;" onerror="this.style.display='none'"/>`
+        : '';
+      const note     = r.admin_note ? `<div class="reg-note">Catatan: ${_esc(r.admin_note)}</div>` : '';
+      const phoneWA  = (r.phone || '').replace(/\D/g,'').replace(/^0/,'62');
+
+      const waBtn = phoneWA ? `<button class="btn-wa" onclick="window.open('https://wa.me/${phoneWA}','_blank')" title="Chat WhatsApp">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.553 4.116 1.523 5.844L.057 23.43a.75.75 0 0 0 .914.914l5.587-1.466A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.896 0-3.67-.52-5.186-1.428l-.37-.218-3.839 1.007 1.007-3.84-.217-.37A9.965 9.965 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+      </button>` : '';
+      const delBtn = `<button class="btn-del" onclick="deleteReg('${safeId}','${nama}')" title="Hapus Pendaftaran">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+      </button>`;
+
+      const actionBtns = status === 'pending' ? `
+        <button class="btn-confirm" onclick="openActionModal('${safeId}','confirm')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          Konfirmasi
+        </button>
+        <button class="btn-reject" onclick="openActionModal('${safeId}','reject')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          Tolak
+        </button>
+        ${waBtn}${delBtn}
+      ` : status === 'confirmed' ? `
+        <button class="btn-reject" style="flex:1;" onclick="openActionModal('${safeId}','reject')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          Batalkan Konfirmasi
+        </button>
+        ${waBtn}${delBtn}
+      ` : `
+        <button class="btn-confirm" style="flex:1;" onclick="openActionModal('${safeId}','confirm')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          Konfirmasi Ulang
+        </button>
+        ${waBtn}${delBtn}
+      `;
+
+      const initials2 = (r.nama||'?').replace(/[^A-Za-z ]/g,'').trim().split(' ').map(w=>w[0]||'').join('').substring(0,2).toUpperCase()||'?';
+      return `<div class="reg-card" id="regcard-${safeId}">
+        <div class="reg-card-top">
+          <div class="reg-card-identity">
+            <div class="reg-avatar">${initials2}</div>
+            <div>
+              <div class="reg-card-name">${nama}</div>
+              <div class="reg-card-email">${email}</div>
+            </div>
+          </div>
+          <span class="reg-status-badge ${statusClass}">${statusLabel}</span>
+        </div>
+        <div class="reg-meta">
+          <div class="reg-meta-item"><div class="reg-meta-label">Telepon</div><div class="reg-meta-val">${phone}</div></div>
+          <div class="reg-meta-item"><div class="reg-meta-label">Sekuritas</div><div class="reg-meta-val">${logoHtml}${sek}</div></div>
+          <div class="reg-meta-item"><div class="reg-meta-label">Kode Client</div><div class="reg-meta-val" style="font-family:monospace;">${code}</div></div>
+          <div class="reg-meta-item"><div class="reg-meta-label">Tipe</div><div class="reg-meta-val" style="font-size:0.72rem;">${regType}</div></div>
+        </div>
+        ${note}
+        <div class="reg-actions">${actionBtns}</div>
+        <div class="reg-date">Daftar: ${dateStr}</div>
+      </div>`;
+    }).join('');
+  }
+
+  // ══════════════════════════════════
+  //  ACTION MODAL (Confirm / Reject)
+  // ══════════════════════════════════
+  function openActionModal(id, type) {
+    const r = _allReg.find(x => String(x.id) === String(id));
+    if (!r) return;
+    _pendingAction = { id, type };
+    const modal = document.getElementById('actionModal');
+    const isConfirm = type === 'confirm';
+    document.getElementById('actionModalTitle').textContent = isConfirm ? 'Konfirmasi Pendaftaran' : 'Tolak Pendaftaran';
+    document.getElementById('actionModalBody').innerHTML = isConfirm
+      ? `Konfirmasi pendaftaran dari <strong>${_esc(r.nama || '—')}</strong>?<br><small style="color:var(--gray);">Email: ${_esc(r.email||'—')} · Sekuritas: ${_esc(r.sekuritas||'—')} · Kode: ${_esc(r.client_code||'—')}</small>`
+      : `Tolak pendaftaran dari <strong>${_esc(r.nama || '—')}</strong>?`;
+    const btn = document.getElementById('actionModalBtn');
+    btn.textContent = isConfirm ? 'Ya, Konfirmasi' : 'Ya, Tolak';
+    btn.style.background = isConfirm ? 'linear-gradient(135deg,#10b981,#059669)' : 'linear-gradient(135deg,#ef4444,#dc2626)';
+    document.getElementById('actionNote').value = r.admin_note || '';
+    modal.classList.add('open');
+  }
+
+  function closeActionModal(e) {
+    if (e.target === document.getElementById('actionModal'))
+      document.getElementById('actionModal').classList.remove('open');
+  }
+
+  async function doAction() {
+    if (!_pendingAction) return;
+    const { id, type } = _pendingAction;
+    const note = document.getElementById('actionNote').value.trim();
+    const newStatus = type === 'confirm' ? 'confirmed' : 'rejected';
+    const btn = document.getElementById('actionModalBtn');
+    btn.disabled = true; btn.textContent = 'Menyimpan...';
+    try {
+      const { error } = await window._supabase
+        .from('referral_registrations')
+        .update({ confirmed_status: newStatus, admin_note: note || null, updated_at: new Date().toISOString() })
+        .eq('id', id);
+      if (error) throw error;
+      // Update local state
+      const idx = _allReg.findIndex(r => String(r.id) === String(id));
+      if (idx !== -1) { _allReg[idx].confirmed_status = newStatus; _allReg[idx].admin_note = note || null; }
+      document.getElementById('actionModal').classList.remove('open');
+      updateRegStats();
+      applyRegFilter();
+      showToast(type === 'confirm' ? 'Pendaftaran dikonfirmasi' : 'Pendaftaran ditolak');
+    } catch(e) {
+      console.error(e);
+      showToast('Gagal: ' + (e.message || e));
+    }
+    btn.disabled = false;
+    _pendingAction = null;
+  }
+
+  window.addEventListener('DOMContentLoaded', () => {
+    loadData();
+    // Also load pending count for badge
+    loadRegistrationsBadge();
+  });
+
+  async function loadRegistrationsBadge() {
+    try {
+      const { count } = await window._supabase
+        .from('referral_registrations')
+        .select('*', { count: 'exact', head: true })
+        .or('confirmed_status.is.null,confirmed_status.eq.pending');
+      if (count > 0) {
+        const badge = document.getElementById('tabBadgePending');
+        badge.textContent = count;
+        badge.style.display = '';
+      }
+    } catch(e) { /* silent */ }
+  }
 </script>
 </body>
 </html>

@@ -448,7 +448,7 @@
     <img src="assets/logo/fawzpro.png" alt="FAWZ Pro"
       onerror="this.style.display='none'; document.getElementById('brandFallback').style.display='flex'"/>
     <div id="brandFallback" style="display:none; align-items:center; gap:6px;">
-      <span class="brand-fallback">🦁 FAWZ</span>
+      <span class="brand-fallback">FAWZ</span>
       <span class="brand-badge">PRO</span>
     </div>
   </a>
@@ -467,6 +467,7 @@
           <a class="dropdown-item" href="sales-transaction.html"><span class="d-icon"></span> Transaction Report</a>
           <a class="dropdown-item" href="sales-tracker.html"><span class="d-icon"></span> Sales Tracker</a>
           <a class="dropdown-item" href="sales.html"><span class="d-icon"></span> Sales</a>
+          <a class="dropdown-item" href="referral-agent.html"><span class="d-icon"></span> Referral Agent</a>
         </div>
       </div>
     </li>
@@ -476,7 +477,6 @@
       <div class="dropdown">
         <div class="dropdown-section">
           <a class="dropdown-item" href="customer.html"><span class="d-icon"></span> Data Customer</a>
-          <a class="dropdown-item" href="referral-agent.html"><span class="d-icon"></span> Referral Agent</a>
         </div>
       </div>
     </li>
@@ -494,12 +494,12 @@
         </div>
         <div class="dropdown-section">
           <div class="dropdown-label">Reksadana</div>
-          <span class="dropdown-item dropdown-soon"><span class="d-icon">🔒</span> Data Reksadana <span class="soon-badge">Soon</span></span>
-          <span class="dropdown-item dropdown-soon"><span class="d-icon">🔒</span> Order Reksadana <span class="soon-badge">Soon</span></span>
+          <span class="dropdown-item dropdown-soon"><span class="d-icon"></span> Data Reksadana <span class="soon-badge">Soon</span></span>
+          <span class="dropdown-item dropdown-soon"><span class="d-icon"></span> Order Reksadana <span class="soon-badge">Soon</span></span>
         </div>
         <div class="dropdown-section">
           <div class="dropdown-label">Waran Terstruktur</div>
-          <span class="dropdown-item dropdown-soon"><span class="d-icon">🔒</span> Waran Terstruktur <span class="soon-badge">Soon</span></span>
+          <span class="dropdown-item dropdown-soon"><span class="d-icon"></span> Waran Terstruktur <span class="soon-badge">Soon</span></span>
         </div>
         <div class="dropdown-section">
           <div class="dropdown-label">Saham</div>
@@ -535,7 +535,9 @@
 
     <!-- Notification Bell — hanya untuk role treasury (Bonds) -->
     <div class="notif-bell" id="notifBell" style="display:none;" onclick="toggleNotifPanel()">
-      <span class="bell-icon">🔔</span>
+      <span class="bell-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      </span>
       <span class="notif-badge" id="notifBadge" style="display:none;">0</span>
 
       <div class="notif-panel" id="notifPanel">
@@ -577,7 +579,7 @@
             animation: pulse-badge 1.8s infinite;
           ">0</span>
         </a>
-        <a class="user-dd-item" id="manageAccountsLink" href="profile.html#kelola" style="display:none">👥 Kelola Akun</a>
+        <a class="user-dd-item" id="manageAccountsLink" href="profile.html#kelola" style="display:none">Kelola Akun</a>
         <div class="user-dd-item logout" onclick="doLogout()">Keluar</div>
       </div>
     </div>
@@ -644,6 +646,7 @@
         <a class="mob-link" href="sales-activity.html">Activity Report</a>
         <a class="mob-link" href="sales-transaction.html">Transaction Report</a>
         <a class="mob-link" href="sales-tracker.html">Sales Tracker</a>
+        <a class="mob-link" href="referral-agent.html">Referral Agent</a>
       </div>
     </div>
 
@@ -655,7 +658,6 @@
       </div>
       <div class="drawer-group-items">
         <a class="mob-link" href="customer.html">Data Customer</a>
-        <a class="mob-link" href="referral-agent.html">Referral Agent</a>
       </div>
     </div>
 
@@ -671,9 +673,9 @@
         <a class="mob-link" href="obligasi-ipo.html">Pasar Perdana (IPO)</a>
         <a class="mob-link" href="bond-transaction.html">Bond Transactions</a>
         <a class="mob-link" href="obligasi-coupon-calendar.html">Kalender Kupon</a>
-        <span class="mob-link mob-link-soon">🔒 Data Reksadana <span class="soon-badge">Soon</span></span>
-        <span class="mob-link mob-link-soon">🔒 Order Reksadana <span class="soon-badge">Soon</span></span>
-        <span class="mob-link mob-link-soon">🔒 Waran Terstruktur <span class="soon-badge">Soon</span></span>
+        <span class="mob-link mob-link-soon">Data Reksadana <span class="soon-badge">Soon</span></span>
+        <span class="mob-link mob-link-soon">Order Reksadana <span class="soon-badge">Soon</span></span>
+        <span class="mob-link mob-link-soon">Waran Terstruktur <span class="soon-badge">Soon</span></span>
         <a class="mob-link" href="saham.html">Transaksi Saham</a>
         <a class="mob-link" href="saham-ranking.html">Rekap Transaksi</a>
         <a class="mob-link" href="fawz-point.html">Fawz Point</a>
