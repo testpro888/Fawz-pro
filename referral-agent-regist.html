@@ -787,15 +787,9 @@ Terima kasih.
 `
     );
 
-    const mailtoUrl = `mailto:${adminEmail}?cc=${encodeURIComponent(ccEmail)}&subject=${subject}&body=${body}`;
-
-    // Buka di tab baru agar tidak mengganggu halaman
-    const a = document.createElement('a');
-    a.href = mailtoUrl;
-    a.target = '_blank';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    // Buka Gmail compose di tab baru
+    const gmailUrl = `https://mail.google.com/mail/?view=cm&to=${encodeURIComponent(adminEmail)}&cc=${encodeURIComponent(ccEmail)}&su=${subject}&body=${body}`;
+    window.open(gmailUrl, '_blank');
   }
 
   // ══════════════════════════════════════════════
