@@ -787,9 +787,9 @@ Terima kasih.
 `
     );
 
-    // Buka Gmail compose di tab baru
-    const gmailUrl = `https://mail.google.com/mail/?view=cm&to=${encodeURIComponent(adminEmail)}&cc=${encodeURIComponent(ccEmail)}&su=${subject}&body=${body}`;
-    window.open(gmailUrl, '_blank');
+    // Buka app email default (Gmail/Mail/Outlook dll)
+    const mailtoUrl = `mailto:${adminEmail}?cc=${encodeURIComponent(ccEmail)}&subject=${subject}&body=${body}`;
+    window.location.href = mailtoUrl;
   }
 
   // ══════════════════════════════════════════════
