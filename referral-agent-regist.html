@@ -270,11 +270,12 @@
     @media (max-width: 420px) { .open-acct-cards { grid-template-columns: 1fr; } }
     .oa-card {
       border: 2px solid var(--border); border-radius: 14px; padding: 18px 14px;
-      text-align: center; text-decoration: none; display: flex; flex-direction: column;
+      text-align: center; cursor: pointer; display: flex; flex-direction: column;
       align-items: center; gap: 8px;
       transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
     }
     .oa-card:hover { border-color: var(--gold); transform: translateY(-2px); box-shadow: 0 4px 20px rgba(245,166,35,0.18); }
+    .oa-card.selected { border-color: var(--purple); background: #f0edff; box-shadow: 0 4px 20px rgba(86,69,212,0.15); }
     .oa-badge { border-radius: 12px; margin-bottom: 4px; background: #fff; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; width: 72px; height: 72px; }
     .oa-badge img { width: 64px; height: 64px; object-fit: contain; }
     .oa-name { font-size: 0.85rem; font-weight: 700; color: var(--navy); }
@@ -480,27 +481,14 @@
       </div>
 
       <div class="open-acct-cards">
-        <a class="oa-card"
-          href="https://www.maybanktrade.co.id/deeplinks/?urlDeeplink=Y29tLm1iYi50aXRhbjovL3RvcGljcy90b3BpY19yZWdpc3RyYXRpb25fbmFtZQo=&salesCode=696"
-          target="_blank" rel="noopener noreferrer">
-          <div class="oa-badge"><img src="assets/logo/maybank.png" alt="Maybank" onerror="this.style.display='none';this.parentElement.textContent='🏦'"/></div>
+        <div class="oa-card" id="oa-maybank" onclick="pilihSekuritasBelum('maybank')">
+          <div class="oa-badge"><img src="assets/logo/maybank.png" alt="Maybank" onerror="this.style.display='none';this.parentElement.textContent='Maybank'"/></div>
           <div class="oa-name">Maybank Sekuritas</div>
-          <div class="oa-btn">Buka Akun →</div>
-        </a>
-        <a class="oa-card"
-          href="https://eform.trimegah.id/nmb/?ref=FFI"
-          target="_blank" rel="noopener noreferrer">
-          <div class="oa-badge"><img src="assets/logo/trimegah.png" alt="Trimegah" onerror="this.style.display='none';this.parentElement.textContent='📊'"/></div>
+        </div>
+        <div class="oa-card" id="oa-trimegah" onclick="pilihSekuritasBelum('trimegah')">
+          <div class="oa-badge"><img src="assets/logo/trimegah.png" alt="Trimegah" onerror="this.style.display='none';this.parentElement.textContent='Trimegah'"/></div>
           <div class="oa-name">Trimegah Sekuritas</div>
-          <div class="oa-btn">Buka Akun →</div>
-        </a>
-      </div>
-
-      <hr class="divider"/>
-
-      <div class="sec-title" style="font-size:1rem;">Sudah mendaftar di sekuritas?</div>
-      <div class="sec-sub" style="margin-bottom: 12px;">
-        Setelah akun Anda aktif, kembali ke sini dan daftarkan kode client Anda ke agen Fawz.
+        </div>
       </div>
 
       <div class="msg-box msg-error" id="msgErr3b"></div>
@@ -520,7 +508,7 @@
 
       <div class="form-group">
         <label class="form-label">Sekuritas yang Didaftarkan *</label>
-        <select id="sekuritas3b" class="form-input form-select">
+        <select id="sekuritas3b" class="form-input form-select" onchange="syncOaCard(this.value)">
           <option value="">-- Pilih Sekuritas --</option>
           <option value="maybank">Maybank Sekuritas</option>
           <option value="trimegah">Trimegah Sekuritas</option>
@@ -528,7 +516,7 @@
       </div>
 
       <div style="margin-top: 8px;">
-        <button class="btn btn-navy" onclick="submitBelumDaftar()">Kirim Data & Hubungi Agen →</button>
+        <button class="btn btn-navy" onclick="submitBelumDaftar()">Kirim Data</button>
       </div>
     </div>
 
@@ -744,6 +732,30 @@
   // ══════════════════════════════════════════════
   //  STEP 3B: BELUM TERDAFTAR
   // ══════════════════════════════════════════════
+  const SEK_LINKS = {
+    maybank:  'https://www.maybanktrade.co.id/deeplinks/?urlDeeplink=Y29tLm1iYi50aXRhbjovL3RvcGljcy90b3BpY19yZWdpc3RyYXRpb25fbmFtZQo=&salesCode=696',
+    trimegah: 'https://eform.trimegah.id/nmb/?ref=FFI'
+  };
+
+  function pilihSekuritasBelum(val) {
+    // Update kartu visual
+    ['maybank','trimegah'].forEach(s => {
+      const card = document.getElementById('oa-' + s);
+      if (card) card.classList.toggle('selected', s === val);
+    });
+    // Sync dropdown
+    const sel = document.getElementById('sekuritas3b');
+    if (sel) sel.value = val;
+  }
+
+  function syncOaCard(val) {
+    // Saat dropdown berubah, sync visual kartu
+    ['maybank','trimegah'].forEach(s => {
+      const card = document.getElementById('oa-' + s);
+      if (card) card.classList.toggle('selected', s === val);
+    });
+  }
+
   async function submitBelumDaftar() {
     const nama      = document.getElementById('nama3b').value.trim();
     const email     = document.getElementById('email3b').value.trim();
@@ -755,9 +767,10 @@
 
     if (!nama)  { showMsg(msgEl, 'Nama lengkap wajib diisi.'); return; }
     if (!email || !email.includes('@')) { showMsg(msgEl, 'Email tidak valid.'); return; }
+    if (!sekuritas) { showMsg(msgEl, 'Pilih sekuritas terlebih dahulu.'); return; }
 
     try {
-      const sekLabel = { maybank: 'Maybank Sekuritas', trimegah: 'Trimegah Sekuritas' }[sekuritas] || sekuritas || null;
+      const sekLabel = { maybank: 'Maybank Sekuritas', trimegah: 'Trimegah Sekuritas' }[sekuritas] || sekuritas;
       await _sb.from('referral_registrations').insert({
         nama, email, phone: phone || null,
         sekuritas: sekLabel,
@@ -767,19 +780,9 @@
       });
     } catch(e) { console.error('Submit error (non-blocking):', e); }
 
-    const sekLabel = { maybank: 'Maybank Sekuritas', trimegah: 'Trimegah Sekuritas' }[document.getElementById('sekuritas3b').value] || '—';
-    buildReview('reviewData4b', [
-      { label: 'Nama', val: nama },
-      { label: 'Email', val: email },
-      { label: 'Telepon', val: phone || '—' },
-      { label: 'Sekuritas Pilihan', val: sekLabel },
-      { label: 'Status', val: '🟡 Akan dihubungi tim Fawz' }
-    ]);
-
-    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-    document.getElementById('panel4b').classList.add('active');
-    updateStepper(4);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Redirect langsung ke link pendaftaran sekuritas
+    const link = SEK_LINKS[sekuritas];
+    if (link) window.open(link, '_blank');
   }
 
   // ══════════════════════════════════════════════
