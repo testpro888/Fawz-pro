@@ -15,198 +15,188 @@
   </script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    :root {
-      --gold:   #f5a623;
-      --gold2:  #ffc107;
-      --navy:   #0d0d2b;
-      --bg:     #f0f0f0;
-      --white:  #ffffff;
-      --border: #e0e0e0;
-      --text:   #1a1a2e;
-      --gray:   #888;
-      --green:  #10b981;
-      --red:    #ef4444;
-    }
 
     body {
       font-family: 'Inter', sans-serif;
-      background: var(--bg);
+      background: #f5f0e8;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 32px 16px;
+      padding: 40px 16px;
     }
 
     /* ── LOGO ── */
     .logo-wrap {
-      margin-bottom: 28px;
+      margin-bottom: 24px;
       text-align: center;
     }
-    .logo-wrap img {
-      height: 52px;
+    .logo-box {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 80px;
+      height: 80px;
+      background: #fff;
+      border-radius: 20px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.10);
+      overflow: hidden;
+    }
+    .logo-box img {
+      width: 60px;
+      height: 60px;
       object-fit: contain;
     }
 
     /* ── CARD ── */
     .card {
-      background: var(--white);
-      border-radius: 20px;
-      padding: 36px 32px;
+      background: #fff;
+      border-radius: 24px;
+      padding: 40px 36px;
       width: 100%;
-      max-width: 480px;
-      box-shadow: 0 8px 40px rgba(0,0,0,0.10);
-      border-left: 5px solid var(--gold);
-      position: relative;
+      max-width: 500px;
+      box-shadow: 0 4px 32px rgba(0,0,0,0.08);
+      border-left: 6px solid #f5a623;
     }
 
     .card-title {
-      font-size: 1.6rem;
+      font-size: 1.65rem;
       font-weight: 800;
-      color: var(--text);
+      color: #1a1a2e;
       margin-bottom: 6px;
     }
     .card-subtitle {
-      font-size: 0.88rem;
-      color: var(--gray);
-      margin-bottom: 28px;
+      font-size: 0.9rem;
+      color: #999;
+      margin-bottom: 32px;
     }
 
-    /* ── AGENT BANNER (tampil jika ref valid) ── */
-    .agent-banner {
-      display: none;
-      align-items: center;
-      gap: 12px;
-      background: #fffbea;
-      border: 1.5px solid #f9e79f;
-      border-radius: 12px;
-      padding: 12px 16px;
-      margin-bottom: 24px;
-    }
-    .agent-banner.show { display: flex; }
-    .agent-avatar {
-      width: 40px; height: 40px;
-      border-radius: 10px;
-      background: linear-gradient(135deg, var(--navy), #2a2a6a);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 0.85rem; font-weight: 800; color: var(--gold);
-      flex-shrink: 0;
-    }
-    .agent-info-name { font-size: 0.9rem; font-weight: 700; color: var(--text); }
-    .agent-info-sub  { font-size: 0.75rem; color: var(--gray); margin-top: 2px; }
+    /* ── FIELD ── */
+    .field { margin-bottom: 22px; }
 
-    /* ── FORM ── */
-    .field { margin-bottom: 20px; }
     .field label {
       display: block;
       font-size: 0.7rem;
       font-weight: 700;
-      letter-spacing: 1px;
+      letter-spacing: 1.2px;
       text-transform: uppercase;
-      color: var(--text);
+      color: #1a1a2e;
       margin-bottom: 8px;
     }
+
     .field input {
       width: 100%;
-      padding: 14px 16px;
-      border: 1.5px solid var(--border);
-      border-radius: 12px;
+      padding: 15px 18px;
+      border: 1.5px solid #e8e8e8;
+      border-radius: 14px;
       font-family: 'Inter', sans-serif;
       font-size: 0.95rem;
-      color: var(--text);
+      color: #1a1a2e;
       background: #fafafa;
       outline: none;
-      transition: border 0.2s, background 0.2s;
+      transition: border-color 0.2s, box-shadow 0.2s;
     }
+    .field input::placeholder { color: #c0c0c0; }
     .field input:focus {
-      border-color: var(--gold);
+      border-color: #f5a623;
       background: #fff;
+      box-shadow: 0 0 0 3px rgba(245,166,35,0.12);
     }
-    .field input.readonly-field {
-      background: #f0f0f0;
-      color: var(--gray);
-      cursor: default;
-      font-weight: 600;
-      letter-spacing: 1px;
-    }
-    .field input.readonly-field:focus { border-color: var(--border); }
 
-    .field-hint {
-      font-size: 0.72rem;
-      color: var(--gray);
-      margin-top: 6px;
+    /* Kode referral — readonly, abu-abu */
+    .field input.ref-readonly {
+      background: #f0f0f0;
+      color: #888;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      cursor: default;
     }
+    .field input.ref-readonly:focus {
+      border-color: #e8e8e8;
+      box-shadow: none;
+    }
+
     .field-error {
-      font-size: 0.72rem;
-      color: var(--red);
+      font-size: 0.75rem;
+      color: #ef4444;
       margin-top: 6px;
       display: none;
     }
-    .field.has-error input  { border-color: var(--red); }
+    .field.has-error input   { border-color: #ef4444; }
     .field.has-error .field-error { display: block; }
 
     /* ── BUTTON ── */
     .btn-submit {
       width: 100%;
-      padding: 16px;
-      background: linear-gradient(90deg, var(--gold), var(--gold2));
+      padding: 17px;
+      background: linear-gradient(90deg, #f5a623 0%, #ffc107 100%);
       color: #fff;
       font-family: 'Inter', sans-serif;
       font-size: 1rem;
       font-weight: 700;
       border: none;
-      border-radius: 12px;
+      border-radius: 14px;
       cursor: pointer;
-      margin-top: 4px;
+      margin-top: 6px;
       transition: opacity 0.2s, transform 0.15s;
-      box-shadow: 0 4px 16px rgba(245,166,35,0.35);
+      box-shadow: 0 6px 20px rgba(245,166,35,0.40);
+      letter-spacing: 0.3px;
     }
     .btn-submit:hover  { opacity: 0.92; transform: translateY(-1px); }
     .btn-submit:active { transform: translateY(0); }
     .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
 
-    /* ── SUCCESS STATE ── */
-    .success-card {
-      display: none;
-      text-align: center;
+    /* ── SPINNER ── */
+    .spinner {
+      display: inline-block;
+      width: 16px; height: 16px;
+      border: 2.5px solid rgba(255,255,255,0.4);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 8px;
     }
-    .success-card.show { display: block; }
-    .card.success-mode { border-left-color: var(--green); }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── SUCCESS STATE ── */
+    .success-wrap { display: none; text-align: center; padding: 12px 0; }
+    .success-wrap.show { display: block; }
     .success-icon {
-      width: 64px; height: 64px;
+      width: 72px; height: 72px;
       border-radius: 50%;
       background: #edfff3;
       display: flex; align-items: center; justify-content: center;
       margin: 0 auto 20px;
     }
-    .success-icon svg { color: var(--green); }
-    .success-title { font-size: 1.4rem; font-weight: 800; color: var(--text); margin-bottom: 8px; }
-    .success-msg   { font-size: 0.88rem; color: var(--gray); line-height: 1.6; }
-    .success-code  { display: inline-block; margin-top: 16px; font-size: 0.95rem; font-weight: 700; font-family: monospace; background: #f4f5fb; color: #5a5aaa; padding: 8px 18px; border-radius: 8px; letter-spacing: 2px; border: 1.5px solid #e0e0f5; }
-
-    /* ── SPINNER ── */
-    .spinner {
-      display: inline-block; width: 16px; height: 16px;
-      border: 2px solid rgba(255,255,255,0.4);
-      border-top-color: #fff;
-      border-radius: 50%;
-      animation: spin 0.7s linear infinite;
-      vertical-align: middle; margin-right: 6px;
+    .success-title { font-size: 1.5rem; font-weight: 800; color: #1a1a2e; margin-bottom: 10px; }
+    .success-sub   { font-size: 0.88rem; color: #999; line-height: 1.7; }
+    .success-badge {
+      display: inline-block;
+      margin-top: 18px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      font-family: monospace;
+      background: #f4f5fb;
+      color: #5a5aaa;
+      padding: 9px 20px;
+      border-radius: 10px;
+      letter-spacing: 2px;
+      border: 1.5px solid #e0e0f5;
     }
-    @keyframes spin { to { transform: rotate(360deg); } }
 
     /* ── FOOTER ── */
     .page-footer {
-      margin-top: 24px;
-      font-size: 0.75rem;
-      color: #aaa;
+      margin-top: 28px;
+      font-size: 0.72rem;
+      color: #bbb;
       text-align: center;
     }
 
-    @media (max-width: 520px) {
-      .card { padding: 28px 20px; border-left-width: 4px; }
-      .card-title { font-size: 1.35rem; }
+    @media (max-width: 540px) {
+      .card { padding: 30px 22px; border-left-width: 5px; border-radius: 20px; }
+      .card-title { font-size: 1.4rem; }
     }
   </style>
 </head>
@@ -214,67 +204,56 @@
 
   <!-- LOGO -->
   <div class="logo-wrap">
-    <img src="assets/logo/fawzpro.png" alt="FAWZ Pro"
-      onerror="this.outerHTML='<div style=\'font-size:1.6rem;font-weight:900;color:#0d0d2b;\'>FAWZ<span style=\'color:#f5a623;\'>PRO</span></div>'"/>
+    <div class="logo-box">
+      <img src="assets/logo/fawzpro.png" alt="FAWZ Pro"
+        onerror="this.style.display='none'"/>
+    </div>
   </div>
 
   <!-- CARD -->
   <div class="card" id="mainCard">
 
-    <!-- FORM STATE -->
-    <div id="formState">
+    <!-- FORM -->
+    <div id="formWrap">
       <div class="card-title">Isi Data Kamu</div>
       <div class="card-subtitle">Sebelum melanjutkan, lengkapi form berikut</div>
 
-      <!-- Agent banner (tampil jika ref valid) -->
-      <div class="agent-banner" id="agentBanner">
-        <div class="agent-avatar" id="agentAvatar">—</div>
-        <div>
-          <div class="agent-info-name" id="agentName">—</div>
-          <div class="agent-info-sub">Agent Referral Fawz Pro</div>
-        </div>
-      </div>
-
       <form id="regForm" onsubmit="handleSubmit(event)" novalidate>
 
-        <div class="field" id="fieldNama">
-          <label for="fNama">Nama Lengkap</label>
-          <input type="text" id="fNama" placeholder="Masukkan nama lengkap" autocomplete="name"/>
-          <div class="field-error" id="errNama">Nama lengkap wajib diisi</div>
+        <div class="field" id="fldNama">
+          <label for="iNama">Nama Lengkap</label>
+          <input type="text" id="iNama" placeholder="Masukkan nama lengkap" autocomplete="name"/>
+          <div class="field-error">Nama lengkap wajib diisi</div>
         </div>
 
-        <div class="field" id="fieldRef">
-          <label for="fRef">Kode Referral</label>
-          <input type="text" id="fRef" placeholder="Contoh: RW028N" autocomplete="off"
-            oninput="this.value=this.value.toUpperCase(); lookupAgent(this.value)"/>
-          <div class="field-hint" id="refHint"></div>
-          <div class="field-error" id="errRef">Kode referral tidak valid</div>
+        <div class="field" id="fldRef">
+          <label for="iRef">Kode Referral</label>
+          <input type="text" id="iRef" placeholder="Masukkan kode referral" autocomplete="off"
+            oninput="this.value=this.value.toUpperCase()"/>
+          <div class="field-error" id="errRef">Kode referral tidak ditemukan</div>
         </div>
 
-        <div class="field" id="fieldEmail">
-          <label for="fEmail">Email</label>
-          <input type="email" id="fEmail" placeholder="Masukkan email kamu" autocomplete="email"/>
-          <div class="field-error" id="errEmail">Email tidak valid</div>
-        </div>
-
-        <div class="field" id="fieldPhone">
-          <label for="fPhone">No. WhatsApp</label>
-          <input type="tel" id="fPhone" placeholder="Contoh: 08123456789" autocomplete="tel"/>
-          <div class="field-error" id="errPhone">Nomor WhatsApp minimal 8 digit</div>
+        <div class="field" id="fldEmail">
+          <label for="iEmail">Email</label>
+          <input type="email" id="iEmail" placeholder="Masukkan email kamu" autocomplete="email"/>
+          <div class="field-error">Email tidak valid</div>
         </div>
 
         <button type="submit" class="btn-submit" id="btnSubmit">Lanjutkan</button>
+
       </form>
     </div>
 
-    <!-- SUCCESS STATE -->
-    <div class="success-card" id="successState">
+    <!-- SUCCESS -->
+    <div class="success-wrap" id="successWrap">
       <div class="success-icon">
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
       </div>
-      <div class="success-title" id="successTitle">Terima kasih!</div>
-      <div class="success-msg" id="successMsg">Data kamu sudah kami terima. Tim Fawz Pro akan segera menghubungi kamu.</div>
-      <div class="success-code" id="successCode"></div>
+      <div class="success-title" id="sTitle">Terima kasih!</div>
+      <div class="success-sub" id="sSub">Data kamu sudah kami terima.<br/>Tim Fawz Pro akan segera menghubungi kamu.</div>
+      <div class="success-badge" id="sBadge"></div>
     </div>
 
   </div>
@@ -282,115 +261,85 @@
   <div class="page-footer">© 2025 Fawz Pro · Your Leading Source to Every Investment</div>
 
 <script>
-  // ── INIT: baca ?ref= dari URL ──────────────────────────────
-  let _refCode   = '';
+  // ─── Init: baca ?ref= dari URL, auto-fill + readonly ─────────────────────
   let _agentData = null;
-  let _lookupTimer = null;
 
-  (function initRef() {
-    const params = new URLSearchParams(window.location.search);
-    const ref = (params.get('ref') || '').toUpperCase().trim();
-    if (ref) {
-      _refCode = ref;
-      const input = document.getElementById('fRef');
-      input.value = ref;
-      input.classList.add('readonly-field');
-      input.readOnly = true;
-      lookupAgent(ref);
-    }
+  (function () {
+    const ref = new URLSearchParams(window.location.search).get('ref') || '';
+    if (!ref) return;
+    const input = document.getElementById('iRef');
+    input.value = ref.toUpperCase();
+    input.classList.add('ref-readonly');
+    input.readOnly = true;
+    verifyRef(ref.toUpperCase());
   })();
 
-  // ── LOOKUP AGENT dari Supabase ─────────────────────────────
-  async function lookupAgent(code) {
-    const hint = document.getElementById('refHint');
-    const banner = document.getElementById('agentBanner');
-    _agentData = null;
-
-    if (!code || code.length < 3) {
-      hint.textContent = '';
-      banner.classList.remove('show');
-      return;
+  // ─── Verifikasi kode referral ke Supabase ────────────────────────────────
+  async function verifyRef(code) {
+    if (!code) return;
+    try {
+      const { data } = await _sb
+        .from('referral_agents')
+        .select('id, nama, client_name, agent_code')
+        .eq('agent_code', code)
+        .maybeSingle();
+      _agentData = data || null;
+    } catch (e) {
+      _agentData = null;
     }
-
-    clearTimeout(_lookupTimer);
-    _lookupTimer = setTimeout(async () => {
-      try {
-        const { data, error } = await _sb
-          .from('referral_agents')
-          .select('id, nama, client_name, agent_code')
-          .eq('agent_code', code)
-          .maybeSingle();
-
-        if (error || !data) {
-          hint.textContent = '❌ Kode referral tidak ditemukan';
-          hint.style.color = 'var(--red)';
-          banner.classList.remove('show');
-          _agentData = null;
-          return;
-        }
-
-        _agentData = data;
-        const agentName = data.nama || data.client_name || '—';
-        const initials  = agentName.replace(/[^A-Za-z ]/g,'').trim().split(' ')
-                            .map(w => w[0]||'').join('').substring(0,2).toUpperCase() || 'AG';
-
-        hint.textContent = '✅ Kode valid — Agent: ' + agentName;
-        hint.style.color = 'var(--green)';
-
-        document.getElementById('agentAvatar').textContent = initials;
-        document.getElementById('agentName').textContent   = agentName;
-        banner.classList.add('show');
-
-        // Hapus error jika ada
-        document.getElementById('fieldRef').classList.remove('has-error');
-      } catch(e) {
-        hint.textContent = 'Tidak dapat memverifikasi kode';
-        hint.style.color = 'var(--gray)';
-      }
-    }, 400);
   }
 
-  // ── VALIDASI ───────────────────────────────────────────────
-  function validate() {
+  // ─── Validasi form ────────────────────────────────────────────────────────
+  function setErr(id, show) {
+    document.getElementById(id).classList.toggle('has-error', show);
+  }
+
+  async function validate() {
     let ok = true;
 
-    const nama = document.getElementById('fNama').value.trim();
-    setError('fieldNama', 'errNama', !nama);
+    const nama = document.getElementById('iNama').value.trim();
+    setErr('fldNama', !nama);
     if (!nama) ok = false;
 
-    const ref = document.getElementById('fRef').value.trim();
-    setError('fieldRef', 'errRef', !_agentData);
-    if (!_agentData) ok = false;
+    const ref = document.getElementById('iRef').value.trim().toUpperCase();
+    if (!_agentData && ref) {
+      // belum diverifikasi (user ketik manual), coba lookup sekarang
+      await verifyRef(ref);
+    }
+    const refOk = !!_agentData;
+    setErr('fldRef', !refOk);
+    if (!refOk) {
+      document.getElementById('errRef').textContent =
+        ref ? 'Kode referral tidak ditemukan' : 'Kode referral wajib diisi';
+      ok = false;
+    }
 
-    const email = document.getElementById('fEmail').value.trim();
+    const email = document.getElementById('iEmail').value.trim();
     const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-    setError('fieldEmail', 'errEmail', !emailOk);
+    setErr('fldEmail', !emailOk);
     if (!emailOk) ok = false;
-
-    const phone = document.getElementById('fPhone').value.trim();
-    setError('fieldPhone', 'errPhone', phone.length < 8);
-    if (phone.length < 8) ok = false;
 
     return ok;
   }
 
-  function setError(fieldId, errId, hasError) {
-    document.getElementById(fieldId).classList.toggle('has-error', hasError);
-  }
-
-  // ── SUBMIT ─────────────────────────────────────────────────
+  // ─── Submit ───────────────────────────────────────────────────────────────
   async function handleSubmit(e) {
     e.preventDefault();
-    if (!validate()) return;
 
     const btn = document.getElementById('btnSubmit');
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner"></span>Memproses...';
 
-    const nama  = document.getElementById('fNama').value.trim();
-    const email = document.getElementById('fEmail').value.trim();
-    const phone = document.getElementById('fPhone').value.trim();
-    const ref   = document.getElementById('fRef').value.trim().toUpperCase();
+    const ok = await validate();
+    if (!ok) {
+      btn.disabled = false;
+      btn.textContent = 'Lanjutkan';
+      return;
+    }
+
+    const nama  = document.getElementById('iNama').value.trim();
+    const ref   = document.getElementById('iRef').value.trim().toUpperCase();
+    const email = document.getElementById('iEmail').value.trim();
 
     try {
       const { error } = await _sb
@@ -398,53 +347,33 @@
         .insert({
           nama,
           email,
-          phone,
-          referral_code: ref,
-          agent_id:      _agentData ? _agentData.id   : null,
-          agent_name:    _agentData ? (_agentData.nama || _agentData.client_name) : null,
-          status:        'belum_terdaftar',
+          referral_code:    ref,
+          agent_id:         _agentData?.id   ?? null,
+          agent_name:       _agentData ? (_agentData.nama || _agentData.client_name) : null,
+          status:           'belum_terdaftar',
           confirmed_status: 'pending',
-          created_at:    new Date().toISOString()
+          created_at:       new Date().toISOString()
         });
 
       if (error) throw error;
-
-      // Tampilkan sukses
       showSuccess(nama, ref);
-    } catch(err) {
+
+    } catch (err) {
       console.error(err);
       btn.disabled = false;
-      btn.innerHTML = 'Lanjutkan';
-      showToast('Gagal mengirim data: ' + (err.message || err));
+      btn.textContent = 'Lanjutkan';
+      alert('Gagal mengirim data: ' + (err.message || err));
     }
   }
 
+  // ─── Tampilkan sukses ─────────────────────────────────────────────────────
   function showSuccess(nama, ref) {
-    const card = document.getElementById('mainCard');
-    card.classList.add('success-mode');
-    document.getElementById('formState').style.display = 'none';
-    const sc = document.getElementById('successState');
-    sc.classList.add('show');
-    const firstName = nama.split(' ')[0];
-    document.getElementById('successTitle').textContent = 'Terima kasih, ' + firstName + '!';
-    document.getElementById('successMsg').textContent =
-      'Pendaftaran kamu sudah kami terima. Tim Fawz Pro akan segera menghubungi kamu dalam 1×24 jam.';
-    document.getElementById('successCode').textContent = 'Kode Referral: ' + ref;
-  }
-
-  // ── TOAST (fallback error) ─────────────────────────────────
-  function showToast(msg) {
-    let t = document.getElementById('_toast');
-    if (!t) {
-      t = document.createElement('div');
-      t.id = '_toast';
-      t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(12px);background:#0d0d2b;color:#fff;padding:11px 22px;border-radius:40px;font-size:.84rem;font-weight:600;box-shadow:0 6px 24px rgba(0,0,0,.2);opacity:0;transition:all .3s;pointer-events:none;z-index:9999;white-space:nowrap;';
-      document.body.appendChild(t);
-    }
-    t.textContent = msg;
-    t.style.opacity = '1';
-    t.style.transform = 'translateX(-50%) translateY(0)';
-    setTimeout(() => { t.style.opacity='0'; t.style.transform='translateX(-50%) translateY(12px)'; }, 3000);
+    document.getElementById('formWrap').style.display = 'none';
+    const sw = document.getElementById('successWrap');
+    sw.classList.add('show');
+    document.getElementById('sTitle').textContent =
+      'Terima kasih, ' + nama.split(' ')[0] + '!';
+    document.getElementById('sBadge').textContent = 'Kode Referral: ' + ref;
   }
 </script>
 </body>
