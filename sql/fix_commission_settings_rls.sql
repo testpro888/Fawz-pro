@@ -13,6 +13,10 @@
 DROP POLICY IF EXISTS "commission_settings_insert_authorized" ON public.sales_commission_settings;
 DROP POLICY IF EXISTS "commission_settings_update_authorized" ON public.sales_commission_settings;
 
+-- Drop jika sudah ada (idempoten)
+DROP POLICY IF EXISTS "commission_settings_insert_anon" ON public.sales_commission_settings;
+DROP POLICY IF EXISTS "commission_settings_update_anon" ON public.sales_commission_settings;
+
 -- Recreate with open write access (authorization handled by app layer)
 CREATE POLICY "commission_settings_insert_anon"
   ON public.sales_commission_settings
