@@ -377,6 +377,11 @@
         </div>
       </div>
 
+      <div class="aa-field" style="margin-top:4px;">
+        <label class="aa-form-label">Influencer <span style="font-size:0.7rem;font-weight:400;color:#aaa;">(opsional)</span></label>
+        <input type="text" id="aaInfluencer" placeholder="Nama akun / platform influencer..." style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:10px;font-family:'Inter',sans-serif;font-size:0.875rem;color:var(--text);outline:none;background:#fafbff;" onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor='var(--border)'"/>
+      </div>
+
       <div class="modal-footer" style="margin-top:6px;">
         <button class="btn-close" onclick="document.getElementById('addAgentModal').classList.remove('open')">Batal</button>
         <button class="btn-download" id="aaSaveBtn" onclick="saveNewAgent()">Simpan Agent</button>
@@ -756,6 +761,7 @@
     document.getElementById('aaResults').innerHTML = '<div class="aa-empty-msg">Ketik untuk mencari customer...</div>';
     document.getElementById('aaTargetFee').value = '10.000.000';
     aaSetStatus('free');
+    document.getElementById('aaInfluencer').value = '';
     document.getElementById('aaStep1').style.display = '';
     document.getElementById('aaStep2').style.display = 'none';
     document.getElementById('addAgentModal').classList.add('open');
@@ -846,7 +852,8 @@
         target_fee: targetFee,
         fee_status: status,
         fee_below_pct: pctBelow,
-        fee_target_pct: pctTarget
+        fee_target_pct: pctTarget,
+        influencer: document.getElementById('aaInfluencer').value.trim() || null
       };
       const { data, error } = await window._supabase
         .from('referral_agents')
