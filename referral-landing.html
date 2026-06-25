@@ -325,11 +325,12 @@
   async function verifyRef(code, silent) {
     if (!code) return;
     try {
-      const { data, error } = await _sb
+      const { data: rows, error } = await _sb
         .from('referral_agents')
         .select('id, nama, client_name, agent_code')
         .eq('agent_code', code)
-        .maybeSingle();
+        .limit(1);
+      const data = rows && rows.length > 0 ? rows[0] : null;
 
       if (error) throw error;
 
