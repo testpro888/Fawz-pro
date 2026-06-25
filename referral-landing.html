@@ -24,56 +24,43 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 40px 16px;
-    }
-
-    /* ── LOGO ── */
-    .logo-wrap {
-      margin-bottom: 24px;
-      text-align: center;
-    }
-    .logo-box {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 80px;
-      height: 80px;
-      background: #fff;
-      border-radius: 20px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.10);
-      overflow: hidden;
-    }
-    .logo-box img {
-      width: 60px;
-      height: 60px;
-      object-fit: contain;
+      padding: 24px 16px;
     }
 
     /* ── CARD ── */
     .card {
       background: #fff;
       border-radius: 24px;
-      padding: 40px 36px;
+      padding: 32px 36px 36px;
       width: 100%;
-      max-width: 500px;
+      max-width: 480px;
       box-shadow: 0 4px 32px rgba(0,0,0,0.08);
       border-left: 6px solid #f5a623;
     }
 
+    /* ── LOGO dalam card ── */
+    .logo-wrap {
+      margin-bottom: 20px;
+    }
+    .logo-wrap img {
+      height: 40px;
+      object-fit: contain;
+    }
+
     .card-title {
-      font-size: 1.65rem;
+      font-size: 1.5rem;
       font-weight: 800;
       color: #1a1a2e;
-      margin-bottom: 6px;
+      margin-bottom: 4px;
     }
     .card-subtitle {
-      font-size: 0.9rem;
+      font-size: 0.875rem;
       color: #999;
-      margin-bottom: 32px;
+      margin-bottom: 24px;
     }
 
     /* ── FIELD ── */
-    .field { margin-bottom: 22px; }
+    .field { margin-bottom: 18px; }
 
     .field label {
       display: block;
@@ -133,16 +120,16 @@
     /* ── BUTTON ── */
     .btn-submit {
       width: 100%;
-      padding: 17px;
+      padding: 15px;
       background: linear-gradient(90deg, #f5a623 0%, #ffc107 100%);
       color: #fff;
       font-family: 'Inter', sans-serif;
-      font-size: 1rem;
+      font-size: 0.95rem;
       font-weight: 700;
       border: none;
       border-radius: 14px;
       cursor: pointer;
-      margin-top: 6px;
+      margin-top: 4px;
       transition: opacity 0.2s, transform 0.15s;
       box-shadow: 0 6px 20px rgba(245,166,35,0.40);
       letter-spacing: 0.3px;
@@ -192,33 +179,31 @@
 
     /* ── FOOTER ── */
     .page-footer {
-      margin-top: 28px;
+      margin-top: 16px;
       font-size: 0.72rem;
       color: #bbb;
       text-align: center;
     }
 
     @media (max-width: 540px) {
-      .card { padding: 30px 22px; border-left-width: 5px; border-radius: 20px; }
-      .card-title { font-size: 1.4rem; }
+      .card { padding: 24px 20px 28px; border-left-width: 5px; border-radius: 20px; }
+      .card-title { font-size: 1.3rem; }
     }
   </style>
 </head>
 <body>
-
-  <!-- LOGO -->
-  <div class="logo-wrap">
-    <div class="logo-box">
-      <img src="assets/logo/fawzpro.png" alt="FAWZ Pro"
-        onerror="this.style.display='none'"/>
-    </div>
-  </div>
 
   <!-- CARD -->
   <div class="card" id="mainCard">
 
     <!-- FORM -->
     <div id="formWrap">
+      <!-- Logo di dalam card -->
+      <div class="logo-wrap">
+        <img src="assets/logo/fawzpro.png" alt="FAWZ Pro"
+          onerror="this.style.display='none'"/>
+      </div>
+
       <div class="card-title">Isi Data Kamu</div>
       <div class="card-subtitle">Sebelum melanjutkan, lengkapi form berikut</div>
 
