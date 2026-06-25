@@ -117,32 +117,9 @@
       box-shadow: none;
     }
 
-    /* Ref input wrapper dengan status icon di dalam */
-    .ref-input-wrap { position: relative; }
-    .ref-input-wrap input { padding-right: 46px; }
-    .ref-status {
-      position: absolute;
-      right: 15px; top: 50%;
-      transform: translateY(-50%);
-      font-size: 1rem;
-      line-height: 1;
-      pointer-events: none;
-    }
-
-    /* Hint di bawah input ref */
-    .ref-hint {
-      font-size: 0.75rem;
-      margin-top: 6px;
-      font-weight: 500;
-      min-height: 18px;
-    }
-    .ref-hint.valid   { color: #10b981; }
-    .ref-hint.invalid { color: #ef4444; }
-    .ref-hint.loading { color: #aaa; }
-
-    /* State valid → border hijau */
+    /* State valid → border hijau, invalid → border merah */
     .field.ref-valid   input { border-color: #10b981; box-shadow: 0 0 0 3px rgba(16,185,129,0.10); }
-    .field.ref-invalid input { border-color: #ef4444; }
+    .field.ref-invalid input { border-color: #ef4444; box-shadow: 0 0 0 3px rgba(239,68,68,0.10); }
 
     .field-error {
       font-size: 0.75rem;
@@ -255,12 +232,8 @@
 
         <div class="field" id="fldRef">
           <label for="iRef">Kode Referral</label>
-          <div class="ref-input-wrap">
-            <input type="text" id="iRef" placeholder="Masukkan kode referral" autocomplete="off"
-              oninput="this.value=this.value.toUpperCase(); onRefInput(this.value)"/>
-            <span class="ref-status" id="refStatus"></span>
-          </div>
-          <div class="ref-hint" id="refHint"></div>
+          <input type="text" id="iRef" placeholder="Masukkan kode referral" autocomplete="off"
+            oninput="this.value=this.value.toUpperCase(); onRefInput(this.value)"/>
           <div class="field-error" id="errRef">Kode referral tidak ditemukan</div>
         </div>
 
@@ -312,12 +285,11 @@
     clearTimeout(_refTimer);
     _agentData   = null;
     _refVerified = false;
-    setRefUI('idle', '', '');
+    setRefUI('idle');
     document.getElementById('fldRef').classList.remove('has-error');
 
     if (val.length < 3) return;
 
-    setRefUI('loading', '', '⏳ Memverifikasi...');
     _refTimer = setTimeout(() => verifyRef(val, false), 500);
   }
 
@@ -338,49 +310,28 @@
         _agentData   = data;
         _refVerified = true;
         const agentName = data.nama || data.client_name || '';
-        setRefUI('valid', '✓', agentName ? `✅ Kode valid — Agent: ${agentName}` : '✅ Kode referral valid');
+        setRefUI('valid');
         document.getElementById('fldRef').classList.remove('has-error');
       } else {
         _agentData   = null;
         _refVerified = false;
         if (!silent) {
-          setRefUI('invalid', '✕', '❌ Kode referral tidak terdaftar');
-          document.getElementById('fldRef').classList.add('ref-invalid');
+          setRefUI('invalid');
         }
       }
     } catch (e) {
       _agentData   = null;
       _refVerified = false;
-      if (!silent) setRefUI('idle', '', 'Gagal memverifikasi kode');
+      if (!silent) setRefUI('idle');
     }
   }
 
   // ─── Update UI status field referral ─────────────────────────────────────
-  function setRefUI(state, icon, hint) {
-    const fld    = document.getElementById('fldRef');
-    const status = document.getElementById('refStatus');
-    const hintEl = document.getElementById('refHint');
-
+  function setRefUI(state) {
+    const fld = document.getElementById('fldRef');
     fld.classList.remove('ref-valid', 'ref-invalid');
-    hintEl.className = 'ref-hint';
-
-    if (state === 'valid') {
-      fld.classList.add('ref-valid');
-      status.textContent  = '✓';
-      status.style.color  = '#10b981';
-      hintEl.classList.add('valid');
-    } else if (state === 'invalid') {
-      fld.classList.add('ref-invalid');
-      status.textContent  = '✕';
-      status.style.color  = '#ef4444';
-      hintEl.classList.add('invalid');
-    } else if (state === 'loading') {
-      status.textContent  = '';
-      hintEl.classList.add('loading');
-    } else {
-      status.textContent  = '';
-    }
-    hintEl.textContent = hint;
+    if (state === 'valid')   fld.classList.add('ref-valid');
+    if (state === 'invalid') fld.classList.add('ref-invalid');
   }
 
   // ─── Validasi form ────────────────────────────────────────────────────────
@@ -398,7 +349,6 @@
     const ref = document.getElementById('iRef').value.trim().toUpperCase();
     // Jika belum diverifikasi, coba sekali lagi saat submit
     if (!_refVerified && ref) {
-      setRefUI('loading', '', '⏳ Memverifikasi...');
       await verifyRef(ref, false);
     }
     const refOk = _refVerified && !!_agentData;
