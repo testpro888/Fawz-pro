@@ -18,7 +18,7 @@
 
     body {
       font-family: 'Inter', sans-serif;
-      background: #f5f0e8;
+      background: linear-gradient(135deg, #0d0d2b 0%, #1a1040 40%, #0f1e3d 100%);
       min-height: 100vh;
       display: flex;
       flex-direction: column;
@@ -42,8 +42,19 @@
     .logo-wrap {
       margin-bottom: 20px;
     }
-    .logo-wrap img {
-      height: 40px;
+    .logo-box {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 52px;
+      height: 52px;
+      background: linear-gradient(135deg, #0d0d2b, #2a2a6a);
+      border-radius: 14px;
+      box-shadow: 0 4px 14px rgba(13,13,43,0.25);
+    }
+    .logo-box img {
+      width: 34px;
+      height: 34px;
       object-fit: contain;
     }
 
@@ -181,7 +192,7 @@
     .page-footer {
       margin-top: 16px;
       font-size: 0.72rem;
-      color: #bbb;
+      color: rgba(255,255,255,0.35);
       text-align: center;
     }
 
@@ -200,8 +211,10 @@
     <div id="formWrap">
       <!-- Logo di dalam card -->
       <div class="logo-wrap">
-        <img src="assets/logo/fawzpro.png" alt="FAWZ Pro"
-          onerror="this.style.display='none'"/>
+        <div class="logo-box">
+          <img src="assets/logo/fawz.png" alt="FAWZ Pro"
+            onerror="this.style.display='none'"/>
+        </div>
       </div>
 
       <div class="card-title">Isi Data Kamu</div>
