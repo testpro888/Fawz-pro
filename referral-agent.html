@@ -175,6 +175,48 @@
     .confirm-modal .modal-footer { display:flex; gap:10px; justify-content:flex-end; }
     .confirm-modal textarea { width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:10px; font-family:'Inter',sans-serif; font-size:0.85rem; resize:vertical; min-height:70px; margin-top:10px; outline:none; }
     .confirm-modal textarea:focus { border-color:var(--gold); }
+
+    /* ── ADD AGENT MODAL ── */
+    .add-agent-modal { width: 460px; text-align: left; max-height: 86vh; overflow-y: auto; }
+    .aa-search-box { position: relative; margin-bottom: 10px; }
+    .aa-search-box input { width:100%; padding:11px 14px 11px 38px; border:1.5px solid var(--border); border-radius:10px; font-family:'Inter',sans-serif; font-size:0.86rem; outline:none; background:#fafbff; }
+    .aa-search-box input:focus { border-color: var(--gold); }
+    .aa-search-box .search-icon { left: 12px; }
+    .aa-results { max-height: 230px; overflow-y: auto; border: 1px solid var(--border); border-radius: 10px; margin-bottom: 4px; }
+    .aa-result-item { padding: 10px 14px; cursor: pointer; border-bottom: 1px solid #f0f0fa; transition: background 0.15s; }
+    .aa-result-item:last-child { border-bottom: none; }
+    .aa-result-item:hover { background: #f8f9ff; }
+    .aa-result-name { font-size: 0.85rem; font-weight: 700; color: var(--navy); }
+    .aa-result-meta { font-size: 0.72rem; color: var(--gray); margin-top: 2px; }
+    .aa-empty-msg { padding: 16px; text-align: center; font-size: 0.8rem; color: #bbb; }
+
+    .aa-selected-box { background: #f8f9ff; border: 1.5px solid var(--gold); border-radius: 12px; padding: 14px 16px; margin-bottom: 16px; }
+    .aa-selected-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .aa-selected-name { font-size: 0.92rem; font-weight: 800; color: var(--navy); }
+    .aa-change-btn { font-size: 0.72rem; font-weight: 700; color: #5a5aaa; cursor: pointer; background: none; border: none; text-decoration: underline; }
+    .aa-detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 14px; font-size: 0.78rem; }
+    .aa-detail-grid div span { color: var(--gray); }
+    .aa-detail-grid div b { color: var(--navy); font-weight: 600; }
+
+    .aa-form-label { font-size: 0.75rem; font-weight: 700; color: var(--navy); margin-bottom: 6px; display:block; }
+    .aa-field { margin-bottom: 16px; }
+    .aa-field input[type="text"], .aa-field input[type="number"] { width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:10px; font-family:'Inter',sans-serif; font-size:0.85rem; outline:none; }
+    .aa-field input:focus { border-color: var(--gold); }
+
+    .aa-status-toggle { display: flex; gap: 8px; }
+    .aa-status-btn { flex:1; padding: 10px; border-radius: 10px; border: 1.5px solid var(--border); background: var(--white); font-family:'Inter',sans-serif; font-size:0.82rem; font-weight:700; cursor:pointer; color: var(--gray); transition: all 0.15s; text-align:center; }
+    .aa-status-btn.active[data-status="free"] { background: #edfff3; border-color: #a8e6c1; color: #136b30; }
+    .aa-status-btn.active[data-status="premium"] { background: #fffbea; border-color: #f9e79f; color: #92610a; }
+
+    .aa-pct-row { display: flex; gap: 12px; }
+    .aa-pct-row .aa-field { flex: 1; }
+    .aa-pct-hint { font-size: 0.68rem; color: #bbb; margin-top: 4px; }
+    .aa-pct-suffix-wrap { position: relative; }
+    .aa-pct-suffix-wrap input { padding-right: 30px !important; }
+    .aa-pct-suffix { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-size: 0.8rem; color: var(--gray); font-weight: 600; }
+    .aa-rp-prefix-wrap { position: relative; }
+    .aa-rp-prefix-wrap input { padding-left: 38px !important; }
+    .aa-rp-prefix { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 0.82rem; color: var(--gray); font-weight: 600; }
   </style>
 </head>
 <body>
@@ -217,6 +259,10 @@
       <select class="filter-select" id="filterDom" onchange="applyFilter()"><option value="">Semua Domisili</option></select>
       <select class="filter-select" id="filterSek" onchange="applyFilter()"><option value="">Semua Sekuritas</option></select>
       <div class="total-badge" id="totalBadge">0 agent</div>
+      <button class="btn btn-qr" style="flex:0;white-space:nowrap;" onclick="openAddAgentModal()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Tambah Agent
+      </button>
     </div>
 
     <div class="agents-grid" id="agentsGrid"></div>
@@ -261,6 +307,89 @@
 
 </div>
 
+<!-- Add Agent Modal -->
+<div class="modal-overlay" id="addAgentModal" onclick="closeAddAgentModal(event)">
+  <div class="modal add-agent-modal">
+    <div class="modal-header">
+      <div class="modal-title">Tambah Agent (dari Customer)</div>
+      <button class="modal-close" onclick="document.getElementById('addAgentModal').classList.remove('open')">✕</button>
+    </div>
+
+    <!-- STEP 1: SEARCH -->
+    <div id="aaStep1">
+      <div class="aa-search-box">
+        <span class="search-icon">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </span>
+        <input type="text" id="aaSearchInput" placeholder="Cari nama, Client ID, atau email customer..." oninput="searchCustomerForAgent()" autocomplete="off"/>
+      </div>
+      <div class="aa-results" id="aaResults">
+        <div class="aa-empty-msg">Ketik untuk mencari customer...</div>
+      </div>
+    </div>
+
+    <!-- STEP 2: SELECTED + FEE FORM -->
+    <div id="aaStep2" style="display:none;">
+      <div class="aa-selected-box">
+        <div class="aa-selected-top">
+          <div class="aa-selected-name" id="aaSelName">—</div>
+          <button class="aa-change-btn" onclick="aaBackToSearch()">Ganti Customer</button>
+        </div>
+        <div class="aa-detail-grid">
+          <div><span>Client ID: </span><b id="aaSelClientId">—</b></div>
+          <div><span>No. HP: </span><b id="aaSelPhone">—</b></div>
+          <div style="grid-column:1/-1;"><span>Email: </span><b id="aaSelEmail">—</b></div>
+        </div>
+      </div>
+
+      <div class="aa-field">
+        <label class="aa-form-label">Target Fee</label>
+        <div class="aa-rp-prefix-wrap">
+          <span class="aa-rp-prefix">Rp</span>
+          <input type="text" id="aaTargetFee" value="10.000.000" oninput="aaFormatTargetFee(this)"/>
+        </div>
+      </div>
+
+      <div class="aa-field">
+        <label class="aa-form-label">Status</label>
+        <div class="aa-status-toggle">
+          <button type="button" class="aa-status-btn active" data-status="free" onclick="aaSetStatus('free')">Free</button>
+          <button type="button" class="aa-status-btn" data-status="premium" onclick="aaSetStatus('premium')">Premium</button>
+        </div>
+      </div>
+
+      <div class="aa-pct-row">
+        <div class="aa-field">
+          <label class="aa-form-label">Fee Below Target</label>
+          <div class="aa-pct-suffix-wrap">
+            <input type="number" id="aaPctBelow" value="5" min="0" max="100" step="0.5"/>
+            <span class="aa-pct-suffix">%</span>
+          </div>
+          <div class="aa-pct-hint">Default Free: 5% · Premium: 8%</div>
+        </div>
+        <div class="aa-field">
+          <label class="aa-form-label">Fee On Target</label>
+          <div class="aa-pct-suffix-wrap">
+            <input type="number" id="aaPctTarget" value="12" min="0" max="100" step="0.5"/>
+            <span class="aa-pct-suffix">%</span>
+          </div>
+          <div class="aa-pct-hint">Default Free: 12% · Premium: 16%</div>
+        </div>
+      </div>
+
+      <div class="aa-field" style="margin-top:4px;">
+        <label class="aa-form-label">Influencer <span style="font-size:0.7rem;font-weight:400;color:#aaa;">(opsional)</span></label>
+        <input type="text" id="aaInfluencer" placeholder="Nama akun / platform influencer..." style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:10px;font-family:'Inter',sans-serif;font-size:0.875rem;color:var(--text);outline:none;background:#fafbff;" onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor='var(--border)'"/>
+      </div>
+
+      <div class="modal-footer" style="margin-top:6px;">
+        <button class="btn-close" onclick="document.getElementById('addAgentModal').classList.remove('open')">Batal</button>
+        <button class="btn-download" id="aaSaveBtn" onclick="saveNewAgent()">Simpan Agent</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- QR Modal -->
 <div class="modal-overlay" id="qrModal" onclick="closeQRModal(event)">
   <div class="modal">
@@ -298,7 +427,7 @@
 <div class="toast" id="toast"></div>
 
 <script>
-  const REFERRAL_BASE = 'https://dealer-system.site/fawz-sales/';
+  const REFERRAL_BASE = 'https://fawzpro.goldenfawz.com/referral-landing.html';
   let _all = [], _qrRecord = null;
 
   function _esc(s) {
@@ -442,6 +571,18 @@
         : '—';
       const safeId = _esc(String(r.id));
 
+      const feeStatus  = r.fee_status || 'free';
+      const targetFee  = r.target_fee != null ? Number(r.target_fee).toLocaleString('id-ID') : null;
+      const pctBelow   = r.fee_below_pct != null ? r.fee_below_pct : null;
+      const pctTarget  = r.fee_target_pct != null ? r.fee_target_pct : null;
+      const statusTagHtml = `<span class="tag" style="${feeStatus==='premium' ? 'background:#fffbea;color:#92610a;border-color:#f9e79f;' : 'background:#edfff3;color:#136b30;border-color:#a8e6c1;'}">${feeStatus==='premium' ? 'Premium' : 'Free'}</span>`;
+      const feeInfoHtml = targetFee != null ? `
+        <div class="referral-link-box" style="margin-bottom:14px;">
+          <div class="referral-link-label">Target Fee &amp; Komisi</div>
+          <div class="referral-link-text">Rp ${targetFee} &nbsp;·&nbsp; Below: ${pctBelow!=null?pctBelow:'—'}% &nbsp;·&nbsp; On Target: ${pctTarget!=null?pctTarget:'—'}%</div>
+        </div>` : '';
+
+
       const svgEmail = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>`;
       const svgPhone = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13.5 19.79 19.79 0 0 1 1.61 4.9 2 2 0 0 1 3.6 2.73h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l.86-.86a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 17z"/></svg>`;
       const svgLoc   = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>`;
@@ -460,10 +601,12 @@
           <div class="info-row">${svgLoc}<span>${domisili}</span></div>
         </div>
         <div class="card-tags">
+          ${statusTagHtml}
           ${pekerjaan !== '—' ? `<span class="tag">${pekerjaan}</span>` : ''}
           ${sekuritas !== '—' ? `<span class="tag">${sekuritas}</span>` : ''}
           ${lama      !== '—' ? `<span class="tag">${lama}</span>`      : ''}
         </div>
+        ${feeInfoHtml}
         <div class="referral-link-box">
           <div class="referral-link-label">Link Referral</div>
           <div class="referral-link-text">${url}</div>
@@ -477,7 +620,9 @@
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
             Salin Link
           </button>
-          <button class="btn" style="background:#fee2e2;color:#dc2626;border:1.5px solid #fecaca;flex:0;width:36px;padding:0;" onclick="deleteAgent('${safeId}','${nama}')" title="Hapus Agent">Del</button>
+          <button class="btn" style="background:#fee2e2;color:#dc2626;border:1.5px solid #fecaca;flex:0;width:36px;padding:0;" onclick="deleteAgent('${safeId}','${nama}')" title="Hapus Agent">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+          </button>
         </div>
         <div class="card-date">Daftar: ${dateStr}</div>
       </div>`;
@@ -603,7 +748,133 @@
       showToast('Gagal hapus: ' + (e.message || e));
     }
   }
-  let _activeTab = 'agents';
+  // ══════════════════════════════════
+  //  ADD AGENT FROM CUSTOMER
+  // ══════════════════════════════════
+  let _aaSelectedCustomer = null;
+  let _aaSearchTimer = null;
+  const AA_FEE_DEFAULTS = { free: { below: 5, target: 12 }, premium: { below: 8, target: 16 } };
+
+  function openAddAgentModal() {
+    _aaSelectedCustomer = null;
+    document.getElementById('aaSearchInput').value = '';
+    document.getElementById('aaResults').innerHTML = '<div class="aa-empty-msg">Ketik untuk mencari customer...</div>';
+    document.getElementById('aaTargetFee').value = '10.000.000';
+    aaSetStatus('free');
+    document.getElementById('aaInfluencer').value = '';
+    document.getElementById('aaStep1').style.display = '';
+    document.getElementById('aaStep2').style.display = 'none';
+    document.getElementById('addAgentModal').classList.add('open');
+    setTimeout(() => document.getElementById('aaSearchInput').focus(), 50);
+  }
+
+  function closeAddAgentModal(e) {
+    if (e.target === document.getElementById('addAgentModal'))
+      document.getElementById('addAgentModal').classList.remove('open');
+  }
+
+  function searchCustomerForAgent() {
+    const q = document.getElementById('aaSearchInput').value.trim();
+    clearTimeout(_aaSearchTimer);
+    const resultsBox = document.getElementById('aaResults');
+    if (!q) { resultsBox.innerHTML = '<div class="aa-empty-msg">Ketik untuk mencari customer...</div>'; return; }
+    resultsBox.innerHTML = '<div class="aa-empty-msg">Mencari...</div>';
+    _aaSearchTimer = setTimeout(async () => {
+      try {
+        const { data, error } = await window._supabase
+          .from('customers')
+          .select('id, client_id, client_name, email, phone')
+          .or(`client_name.ilike.%${q}%,client_id.ilike.%${q}%,email.ilike.%${q}%`)
+          .limit(15);
+        if (error) throw error;
+        renderAaResults(data || []);
+      } catch(e) {
+        console.error(e);
+        resultsBox.innerHTML = `<div class="aa-empty-msg">Gagal mencari: ${_esc(e.message || e)}</div>`;
+      }
+    }, 320);
+  }
+
+  function renderAaResults(list) {
+    const box = document.getElementById('aaResults');
+    if (!list.length) { box.innerHTML = '<div class="aa-empty-msg">Tidak ada customer yang cocok</div>'; return; }
+    box.innerHTML = list.map(c => `
+      <div class="aa-result-item" onclick='aaSelectCustomer(${JSON.stringify(c).replace(/'/g,"&#39;")})'>
+        <div class="aa-result-name">${_esc(c.client_name || '—')}</div>
+        <div class="aa-result-meta">${_esc(c.client_id || '—')} · ${_esc(c.email || '—')} · ${_esc(c.phone || '—')}</div>
+      </div>
+    `).join('');
+  }
+
+  function aaSelectCustomer(c) {
+    _aaSelectedCustomer = c;
+    document.getElementById('aaSelName').textContent = c.client_name || '—';
+    document.getElementById('aaSelClientId').textContent = c.client_id || '—';
+    document.getElementById('aaSelPhone').textContent = c.phone || '—';
+    document.getElementById('aaSelEmail').textContent = c.email || '—';
+    document.getElementById('aaStep1').style.display = 'none';
+    document.getElementById('aaStep2').style.display = '';
+  }
+
+  function aaBackToSearch() {
+    document.getElementById('aaStep1').style.display = '';
+    document.getElementById('aaStep2').style.display = 'none';
+  }
+
+  function aaSetStatus(status) {
+    document.querySelectorAll('.aa-status-btn').forEach(b => b.classList.toggle('active', b.dataset.status === status));
+    document.getElementById('aaPctBelow').value = AA_FEE_DEFAULTS[status].below;
+    document.getElementById('aaPctTarget').value = AA_FEE_DEFAULTS[status].target;
+  }
+
+  function aaFormatTargetFee(input) {
+    let digits = input.value.replace(/\D/g, '');
+    input.value = digits ? Number(digits).toLocaleString('id-ID') : '';
+  }
+
+  async function saveNewAgent() {
+    if (!_aaSelectedCustomer) { showToast('Pilih customer terlebih dahulu'); return; }
+    const c = _aaSelectedCustomer;
+    const targetFee = Number((document.getElementById('aaTargetFee').value || '0').replace(/\D/g, '')) || 0;
+    const status = document.querySelector('.aa-status-btn.active').dataset.status;
+    const pctBelow = parseFloat(document.getElementById('aaPctBelow').value) || 0;
+    const pctTarget = parseFloat(document.getElementById('aaPctTarget').value) || 0;
+
+    const btn = document.getElementById('aaSaveBtn');
+    btn.disabled = true; btn.textContent = 'Menyimpan...';
+    try {
+      const row = {
+        client_id: c.client_id || null,
+        nama: c.client_name || null,
+        email: c.email || null,
+        phone: c.phone || null,
+        agent_code: c.client_id || null,
+        target_fee: targetFee,
+        fee_status: status,
+        fee_below_pct: pctBelow,
+        fee_target_pct: pctTarget,
+        influencer: document.getElementById('aaInfluencer').value.trim() || null
+      };
+      const { data, error } = await window._supabase
+        .from('referral_agents')
+        .insert(row)
+        .select()
+        .single();
+      if (error) throw error;
+      _all.unshift(data);
+      document.getElementById('addAgentModal').classList.remove('open');
+      populateFilters();
+      updateStats();
+      applyFilter();
+      showToast('Agent berhasil ditambahkan');
+    } catch(e) {
+      console.error(e);
+      showToast('Gagal menyimpan: ' + (e.message || e));
+    }
+    btn.disabled = false; btn.textContent = 'Simpan Agent';
+  }
+
+
   function switchTab(tab) {
     _activeTab = tab;
     document.getElementById('section-agents').style.display = tab === 'agents' ? '' : 'none';

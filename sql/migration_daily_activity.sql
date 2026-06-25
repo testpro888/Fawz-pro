@@ -33,8 +33,7 @@ CREATE INDEX IF NOT EXISTS idx_dae_job_id       ON daily_activity_entries(job_id
 CREATE INDEX IF NOT EXISTS idx_dae_entry_date   ON daily_activity_entries(entry_date);
 
 -- Disable RLS (sesuaikan dengan kebijakan tim)
-ALTER TABLE daily_activity_jobs    DISABLE ROW LEVEL SECURITY;
-ALTER TABLE daily_activity_entries DISABLE ROW LEVEL SECURITY;
+
 
 -- Atau aktifkan RLS + policy jika diperlukan:
 -- ALTER TABLE daily_activity_jobs    ENABLE ROW LEVEL SECURITY;

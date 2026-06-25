@@ -341,13 +341,6 @@
                   <span>%</span>
                 </div>
               </div>
-              <div class="form-group">
-                <label class="form-label">Safe Keeping Fee <small>p.a.</small></label>
-                <div class="input-suffix">
-                  <input class="form-input" id="inp-skf" type="number" step="0.001" value="0.025" oninput="onInputChange()"/>
-                  <span>%</span>
-                </div>
-              </div>
             </div>
           </div>
 
@@ -622,7 +615,12 @@ function fmtDateShort(d) {
   return dt.toLocaleDateString('id-ID', { day:'numeric', month:'short', year:'numeric' });
 }
 function addDays(d, n) { const r = new Date(d); r.setDate(r.getDate() + n); return r; }
-function toISO(d) { return d.toISOString().split('T')[0]; }
+function toISO(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
 
 function formatNominal(el) {
   const v = el.value.replace(/\D/g,'');
@@ -769,7 +767,7 @@ function yieldFromPrice(settle, maturity, coupon, price, freqPerYear, basis) {
 // =============================================
 // CASHFLOW SCHEDULE
 // =============================================
-function generateCashflows(settle, maturity, coupon, freqPerYear, nominal, taxPct, skfPct, basis) {
+function generateCashflows(settle, maturity, coupon, freqPerYear, nominal, taxPct, basis) {
   const mpp = Math.round(12 / freqPerYear);
   const mat = new Date(maturity + 'T00:00:00');
   const s   = new Date(settle   + 'T00:00:00');
@@ -792,10 +790,9 @@ function generateCashflows(settle, maturity, coupon, freqPerYear, nominal, taxPc
     const grossCoupon = couponPerPeriod;
     const tax         = grossCoupon * (taxPct / 100);
     const netCoupon   = grossCoupon - tax;
-    const skf         = (skfPct / 100 / 365) * periodDays * nominal;
     const principal   = isMature ? nominal : 0;
-    const nett        = netCoupon - skf + principal;
-    return { period: i+1, date: cfDate, days: Math.round(periodDays), grossCoupon, tax, skf, netCoupon, principal, nett, isMature };
+    const nett        = netCoupon + principal;
+    return { period: i+1, date: cfDate, days: Math.round(periodDays), grossCoupon, tax, netCoupon, principal, nett, isMature };
   });
 }
 
@@ -853,7 +850,6 @@ function calculate() {
   const price    = parseFloat(document.getElementById('inp-price').value)   || 100;
   const ytm      = parseFloat(document.getElementById('inp-yield').value)   || coupon;
   const taxPct   = parseFloat(document.getElementById('inp-tax').value)     || 10;
-  const skfPct   = parseFloat(document.getElementById('inp-skf').value)     || 0.025;
 
   if (!maturity || !settle) { alert('Harap isi Maturity Date dan Settlement Date.'); return; }
   if (coupon <= 0) { alert('Harap isi Coupon Rate.'); return; }
@@ -870,9 +866,9 @@ function calculate() {
   const couponNet    = couponAmt * (1 - taxPct / 100);
   const daysToNext   = Math.round((nextCoupon - new Date(settle + 'T00:00:00')) / 86400000);
   const daysToMat    = Math.round((new Date(maturity + 'T00:00:00') - new Date(settle + 'T00:00:00')) / 86400000);
-  const flows        = generateCashflows(settle, maturity, coupon, freq, nominal, taxPct, skfPct, basis);
+  const flows        = generateCashflows(settle, maturity, coupon, freq, nominal, taxPct, basis);
 
-  renderOutput({ seriesLabel, coupon, freq, maturity, settle, trade, nominal, price, ytm, taxPct, skfPct,
+  renderOutput({ seriesLabel, coupon, freq, maturity, settle, trade, nominal, price, ytm, taxPct,
     lastCoupon: toISO(lastCoupon), nextCoupon: toISO(nextCoupon),
     accruedAmt, accruedPct, dirtyPrice, totalProceed, cleanProceed,
     couponAmt, couponNet, daysToNext, daysToMat, basis, flows,
@@ -891,11 +887,11 @@ function calculate() {
 function renderOutput(r) {
   const panel = document.getElementById('output-panel');
   const totalCoupons = r.flows.length;
-  let totalGross = 0, totalTax = 0, totalSKF = 0, totalNett = 0;
+  let totalGross = 0, totalTax = 0, totalNett = 0;
 
   const cfRows = r.flows.map(f => {
     totalGross += f.grossCoupon; totalTax += f.tax;
-    totalSKF += f.skf; totalNett += f.nett;
+    totalNett += f.nett;
     return `
     <tr>
       <td class="center"><span class="${f.isMature ? 'period-badge mature' : 'period-badge'}">${f.isMature ? 'JT' : f.period}</span></td>
@@ -903,7 +899,6 @@ function renderOutput(r) {
       <td class="center"><span class="day-pill">${f.days}</span></td>
       <td class="right amount-pos">${fmtIDR(f.grossCoupon)}</td>
       <td class="right amount-neg">(${fmtIDR(f.tax)})</td>
-      <td class="right amount-neg">(${fmtIDR(f.skf)})</td>
       <td class="right">${fmtIDR(f.netCoupon)}</td>
       <td class="right" style="color:#2d4abf;font-weight:600;">${f.isMature ? fmtIDR(f.principal) : '—'}</td>
       <td class="right nett-value">${fmtIDR(f.nett)}</td>
@@ -915,7 +910,6 @@ function renderOutput(r) {
     <td colspan="3" style="color:var(--navy);">TOTAL CASHFLOW</td>
     <td class="right amount-pos">${fmtIDR(totalGross)}</td>
     <td class="right amount-neg">(${fmtIDR(totalTax)})</td>
-    <td class="right amount-neg">(${fmtIDR(totalSKF)})</td>
     <td class="right">${fmtIDR(totalGross - totalTax)}</td>
     <td class="right" style="color:#2d4abf;font-weight:600;">${fmtIDR(r.nominal)}</td>
     <td class="right" style="color:var(--gold);font-size:0.95rem;">${fmtIDR(totalNett)}</td>
@@ -1009,7 +1003,7 @@ function renderOutput(r) {
           Jadwal Pembagian Kupon
           <span style="display:inline-block;padding:3px 10px;border-radius:20px;font-size:0.68rem;font-weight:700;background:#e8f0ff;color:#2d4abf;margin-left:6px;">${totalCoupons} Periode</span>
         </div>
-        <div class="card-subtitle">Settlement &rarr; Jatuh Tempo &nbsp;|&nbsp; Basis: ${r.basis} &nbsp;|&nbsp; PPh: ${r.taxPct}% &nbsp;|&nbsp; SKF: ${r.skfPct}%</div>
+        <div class="card-subtitle">Settlement &rarr; Jatuh Tempo &nbsp;|&nbsp; Basis: ${r.basis} &nbsp;|&nbsp; PPh: ${r.taxPct}%</div>
       </div>
     </div>
     <div class="cf-table-wrap">
@@ -1020,7 +1014,6 @@ function renderOutput(r) {
           <th class="center">Hari</th>
           <th class="right">Kupon Kotor</th>
           <th class="right">PPh ${r.taxPct}%</th>
-          <th class="right">SKF</th>
           <th class="right">Kupon Nett</th>
           <th class="right">Pokok</th>
           <th class="right">Total Nett</th>
