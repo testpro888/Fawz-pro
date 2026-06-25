@@ -39,6 +39,17 @@ BEGIN
     ALTER TABLE public.referral_agents
       ADD COLUMN fee_target_pct NUMERIC;
   END IF;
+
+  -- influencer: kolom untuk data influencer (reserved, belum dipakai)
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name   = 'referral_agents'
+      AND column_name  = 'influencer'
+  ) THEN
+    ALTER TABLE public.referral_agents
+      ADD COLUMN influencer TEXT;
+  END IF;
 END $$;
 
 -- Refresh schema cache Supabase (jalankan ini terakhir)
