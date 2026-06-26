@@ -208,10 +208,10 @@
   <!-- TABS -->
   <div class="tabs">
     <button class="tab-btn active" id="tab-leads" onclick="switchTab('leads')">
-      📋 Data Leads <span class="tab-badge" id="badge-leads">0</span>
+      Data Leads <span class="tab-badge" id="badge-leads">0</span>
     </button>
     <button class="tab-btn" id="tab-clicks" onclick="switchTab('clicks')">
-      🖱️ Akun Sekuritas <span class="tab-badge" id="badge-clicks">0</span>
+      Akun Sekuritas <span class="tab-badge" id="badge-clicks">0</span>
     </button>
   </div>
 
@@ -297,12 +297,12 @@
         <div class="sum-card-value" id="statTotalKlik">—</div>
       </div>
       <div class="sum-card sum-card-maybank">
-        <div class="sum-card-label">🏦 Maybank Sekuritas</div>
+        <div class="sum-card-label">Maybank Sekuritas</div>
         <div class="sum-card-line"><div class="sum-card-line-fill" style="width:100%"></div></div>
         <div class="sum-card-value" id="statMaybank">—</div>
       </div>
       <div class="sum-card sum-card-trimegah">
-        <div class="sum-card-label">🏦 Trimegah Sekuritas</div>
+        <div class="sum-card-label">Trimegah Sekuritas</div>
         <div class="sum-card-line"><div class="sum-card-line-fill" style="width:100%"></div></div>
         <div class="sum-card-value" id="statTrimegah">—</div>
       </div>
@@ -416,15 +416,15 @@
     const slice = filteredRows.slice(start, start + ROWS_PER_PAGE);
     const tbody = document.getElementById('tableBody');
     if (!slice.length) {
-      tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><div class="empty-icon">📋</div><div style="font-size:.9rem;color:#999;font-weight:600;">Belum ada data</div></div></td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><div class="empty-icon"></div><div style="font-size:.9rem;color:#999;font-weight:600;">Belum ada data</div></div></td></tr>`;
       return;
     }
     tbody.innerHTML = slice.map((r, i) => {
       const no = (currentPage - 1) * ROWS_PER_PAGE + i + 1;
       const sekBadge = r.sekuritas
-        ? `<span class="badge ${r.sekuritas.includes('Maybank') ? 'badge-maybank' : 'badge-trimegah'}">${r.sekuritas.includes('Maybank') ? '🏦' : '📈'} ${r.sekuritas}</span>`
+        ? `<span class="badge ${r.sekuritas.includes('Maybank') ? 'badge-maybank' : 'badge-trimegah'}">${r.sekuritas}</span>`
         : `<span style="color:#ccc;font-size:.75rem;">—</span>`;
-      const statusMap = { pending: '⏳ Pending', confirmed: '✅ Confirmed', rejected: '❌ Rejected' };
+      const statusMap = { pending: 'Pending', confirmed: 'Confirmed', rejected: 'Rejected' };
       const statusBadge = statusMap[r.confirmed_status] || r.confirmed_status || 'Pending';
       return `<tr>
         <td style="color:#bbb;font-size:.75rem;">${no}</td>
@@ -537,20 +537,19 @@
     const slice = filteredClicks.slice(start, start + ROWS_PER_PAGE);
     const tbody = document.getElementById('clickTableBody');
     if (!slice.length) {
-      tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="empty-icon">🖱️</div><div style="font-size:.9rem;color:#999;font-weight:600;">Belum ada klik tercatat</div></div></td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="empty-icon"></div><div style="font-size:.9rem;color:#999;font-weight:600;">Belum ada klik tercatat</div></div></td></tr>`;
       return;
     }
     tbody.innerHTML = slice.map((r, i) => {
       const no = (currentClickPage - 1) * ROWS_PER_PAGE + i + 1;
       const isMaybank = (r.link||'').includes('Maybank');
       const badgeClass = isMaybank ? 'badge-maybank' : 'badge-trimegah';
-      const icon = isMaybank ? '🏦' : '📈';
       return `<tr>
         <td style="color:#bbb;font-size:.75rem;">${no}</td>
         <td><strong>${r.nama||'—'}</strong></td>
         <td style="color:#555;">${r.email||'—'}</td>
         <td><span class="referral-tag">${(r.referral||'—').toUpperCase()}</span></td>
-        <td><span class="badge ${badgeClass}">${icon} ${r.link||'—'}</span></td>
+        <td><span class="badge ${badgeClass}">${r.link||'—'}</span></td>
         <td>${formatDate(r.clickedAt)}</td>
         <td style="color:#888;">${formatTime(r.clickedAt)}</td>
         <td><button class="btn-delete" onclick="deleteClick('${r.id}')">Hapus</button></td>
