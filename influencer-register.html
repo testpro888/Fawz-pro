@@ -118,14 +118,13 @@
     .sekuritas-option input[type="radio"] { position: absolute; opacity: 0; width: 0; height: 0; }
     .sekuritas-card {
       display: flex; align-items: center; justify-content: center;
-      gap: 10px; padding: 12px 14px;
+      padding: 14px 10px;
       border: 2px solid #e0e0ef; border-radius: 12px;
       background: #fff; cursor: pointer;
       transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
-      min-height: 60px;
+      min-height: 56px;
     }
-    .sekuritas-card img { height: 26px; max-width: 80px; object-fit: contain; flex-shrink: 0; }
-    .sekuritas-card span { font-size: 0.78rem; font-weight: 600; color: #444; line-height: 1.3; }
+    .sekuritas-card img { height: 30px; max-width: 110px; object-fit: contain; }
     .sekuritas-option input[type="radio"]:checked + .sekuritas-card {
       border-color: var(--gold);
       box-shadow: 0 0 0 3px rgba(245,166,35,0.15);
@@ -202,12 +201,6 @@
   <div class="geo geo-2"></div>
   <div class="geo geo-3"></div>
   <div class="left-content">
-    <img src="assets/logo/fawzpro.png" alt="FAWZ Pro" class="brand-logo"
-      onerror="this.style.display='none'; document.getElementById('logoFallback').style.display='block'"/>
-    <div id="logoFallback" style="display:none; text-align:center; margin-bottom:24px;">
-      <div style="font-size:4rem;">🦁</div>
-      <div style="font-size:2rem; font-weight:700; color:#f5a623; letter-spacing:4px; margin-top:6px;">FAWZ</div>
-    </div>
     <img src="assets/logo/ikutin pp.png" alt="Ikutin PP" class="pp-logo"/>
     <p class="left-tagline">
       Platform referral saham resmi untuk para influencer pasar modal Indonesia.
@@ -255,14 +248,12 @@
             <input type="radio" name="sekuritas" id="sekMaybank" value="Maybank Sekuritas"/>
             <label class="sekuritas-card" for="sekMaybank">
               <img src="assets/logo/maybank.png" alt="Maybank Sekuritas"/>
-              <span>Maybank<br>Sekuritas</span>
             </label>
           </div>
           <div class="sekuritas-option">
             <input type="radio" name="sekuritas" id="sekTrimegah" value="Trimegah Sekuritas"/>
             <label class="sekuritas-card" for="sekTrimegah">
               <img src="assets/logo/trimegah.png" alt="Trimegah Sekuritas"/>
-              <span>Trimegah<br>Sekuritas</span>
             </label>
           </div>
         </div>
