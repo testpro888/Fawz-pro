@@ -576,12 +576,20 @@
 
   // ─── Catat pilihan sekuritas ke kolom sekuritas ───────────────────────────
   async function trackSekuritas(namaSekuritas) {
-    if (!_registrationId) return;
+    if (!_registrationId) {
+      console.warn('trackSekuritas: _registrationId kosong, skip update');
+      return;
+    }
     try {
-      await _sb
+      const { error } = await _sb
         .from('referral_registrations')
         .update({ sekuritas: namaSekuritas, updated_at: new Date().toISOString() })
         .eq('id', _registrationId);
+      if (error) {
+        console.error('trackSekuritas DB error:', error.message, error.code);
+      } else {
+        console.log('trackSekuritas OK:', namaSekuritas, 'id:', _registrationId);
+      }
     } catch(e) {
       console.warn('trackSekuritas error:', e);
     }
