@@ -50,20 +50,16 @@
       width: 280px; max-width: 75%;
       filter: drop-shadow(0 0 30px rgba(245,166,35,0.45));
       animation: floatLogo 4s ease-in-out infinite;
-      margin-bottom: 32px;
+      margin-bottom: 28px;
+    }
+    .pp-logo {
+      width: 220px; max-width: 70%;
+      filter: drop-shadow(0 0 20px rgba(245,166,35,0.35));
+      animation: floatLogo 4s ease-in-out infinite;
     }
     @keyframes floatLogo { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-10px); } }
 
-    .left-tagline { color: rgba(255,255,255,0.75); font-size: 0.95rem; line-height: 1.7; max-width: 320px; }
-    .left-tagline strong { color: var(--gold); }
-
-    .benefit-list { margin-top: 28px; list-style: none; text-align: left; max-width: 300px; width: 100%; }
-    .benefit-list li {
-      display: flex; align-items: flex-start; gap: 10px;
-      color: rgba(255,255,255,0.7); font-size: 0.88rem;
-      margin-bottom: 12px; line-height: 1.5;
-    }
-    .benefit-list li .icon { font-size: 1rem; margin-top: 1px; flex-shrink: 0; }
+    .left-tagline { color: rgba(255,255,255,0.7); font-size: 0.92rem; line-height: 1.8; max-width: 300px; margin-top: 20px; }
 
     .geo { position: absolute; border: 1px solid rgba(245,166,35,0.15); border-radius: 4px; animation: rotate 20s linear infinite; }
     .geo-1 { width:80px; height:80px; top:15%; right:10%; animation-duration:25s; }
@@ -117,18 +113,19 @@
     }
 
     /* Sekuritas options with logos */
-    .sekuritas-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .sekuritas-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     .sekuritas-option { position: relative; }
     .sekuritas-option input[type="radio"] { position: absolute; opacity: 0; width: 0; height: 0; }
     .sekuritas-card {
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      gap: 8px; padding: 14px 10px;
+      display: flex; align-items: center; justify-content: center;
+      gap: 10px; padding: 12px 14px;
       border: 2px solid #e0e0ef; border-radius: 12px;
       background: #fff; cursor: pointer;
       transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+      min-height: 60px;
     }
-    .sekuritas-card img { height: 28px; max-width: 100px; object-fit: contain; }
-    .sekuritas-card span { font-size: 0.75rem; font-weight: 600; color: #555; text-align: center; }
+    .sekuritas-card img { height: 26px; max-width: 80px; object-fit: contain; flex-shrink: 0; }
+    .sekuritas-card span { font-size: 0.78rem; font-weight: 600; color: #444; line-height: 1.3; }
     .sekuritas-option input[type="radio"]:checked + .sekuritas-card {
       border-color: var(--gold);
       box-shadow: 0 0 0 3px rgba(245,166,35,0.15);
@@ -211,15 +208,10 @@
       <div style="font-size:4rem;">🦁</div>
       <div style="font-size:2rem; font-weight:700; color:#f5a623; letter-spacing:4px; margin-top:6px;">FAWZ</div>
     </div>
+    <img src="assets/logo/ikutin pp.png" alt="Ikutin PP" class="pp-logo"/>
     <p class="left-tagline">
-      Bergabunglah sebagai <strong>Influencer Fawz Pro</strong> dan dapatkan keuntungan eksklusif dari setiap referral yang berhasil.
+      Platform referral saham resmi untuk para influencer pasar modal Indonesia.
     </p>
-    <ul class="benefit-list">
-      <li><span class="icon">💰</span> Komisi kompetitif dari setiap transaksi nasabah referral</li>
-      <li><span class="icon">📊</span> Dashboard eksklusif untuk tracking performa</li>
-      <li><span class="icon">🎓</span> Akses materi edukasi pasar modal premium</li>
-      <li><span class="icon">🤝</span> Dukungan penuh dari tim Fawz Pro</li>
-    </ul>
   </div>
 </div>
 
@@ -262,17 +254,15 @@
           <div class="sekuritas-option">
             <input type="radio" name="sekuritas" id="sekMaybank" value="Maybank Sekuritas"/>
             <label class="sekuritas-card" for="sekMaybank">
-              <img src="assets/logo/maybank.png" alt="Maybank Sekuritas"
-                onerror="this.style.display='none'; this.nextElementSibling.style.fontWeight='700'"/>
-              <span>Maybank Sekuritas</span>
+              <img src="assets/logo/maybank.png" alt="Maybank Sekuritas"/>
+              <span>Maybank<br>Sekuritas</span>
             </label>
           </div>
           <div class="sekuritas-option">
             <input type="radio" name="sekuritas" id="sekTrimegah" value="Trimegah Sekuritas"/>
             <label class="sekuritas-card" for="sekTrimegah">
-              <img src="assets/logo/trimegah.png" alt="Trimegah Sekuritas"
-                onerror="this.style.display='none'; this.nextElementSibling.style.fontWeight='700'"/>
-              <span>Trimegah Sekuritas</span>
+              <img src="assets/logo/trimegah.png" alt="Trimegah Sekuritas"/>
+              <span>Trimegah<br>Sekuritas</span>
             </label>
           </div>
         </div>
