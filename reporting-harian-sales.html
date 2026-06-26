@@ -310,7 +310,7 @@
 
       // ── Compute Trade Recap values ────────────────────────────────────
       const MTD_TARGET = 333333334;
-      const YTD_TARGET = 3600000000;
+      const YTD_TARGET = 4000000000;
 
       // Daily totals
       const tradeFee    = dayRows.reduce(function(s, r) { return s + (Number(r.fee) || 0); }, 0);
@@ -333,7 +333,7 @@
         'Trade Amount : ' + formatRpPlain(tradeVolume),
         'Total Cust Trading : ' + totalCust + ' nasabah',
         'Total Fee MTD  : ' + formatRpPlain(mtdFee) + ' / 333.333.334 (' + mtdPct + '%)',
-        'Total YTD Target : ' + formatRpPlain(ytdFee) + ' / 3.600.000.000 (' + ytdPct + '%)',
+        'Total YTD Target : ' + formatRpPlain(ytdFee) + ' / 4.000.000.000 (' + ytdPct + '%)',
       ];
       const recapText = recapLines.join('\n');
 
@@ -361,7 +361,7 @@
             '<div class="recap-stat">' +
               '<div class="recap-stat-label">YTD Target</div>' +
               '<div class="recap-stat-value green">' + ytdPct + '%</div>' +
-              '<div class="recap-stat-sub">' + formatRp(ytdFee) + ' / 3.600.000.000</div>' +
+              '<div class="recap-stat-sub">' + formatRp(ytdFee) + ' / 4.000.000.000</div>' +
             '</div>' +
           '</div>' +
           '<textarea class="recap-output" id="recapText" readonly>' + escapeHtml(recapText) + '</textarea>' +
