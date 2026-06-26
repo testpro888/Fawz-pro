@@ -263,6 +263,13 @@
       <select id="filterReferral" onchange="applyFilter()">
         <option value="">Semua</option>
       </select>
+      <span class="filter-label">Status:</span>
+      <select id="filterStatus" onchange="applyFilter()">
+        <option value="">Semua</option>
+        <option value="pending">Pending</option>
+        <option value="registered">Registered</option>
+        <option value="cancel">Cancel</option>
+      </select>
       <span class="filter-label">Dari:</span>
       <input type="date" id="filterFrom" onchange="applyFilter()"/>
       <span class="filter-label">s/d</span>
@@ -503,15 +510,17 @@
     if (!window._allRows) return;
     const search   = document.getElementById('filterSearch').value.toLowerCase();
     const referral = document.getElementById('filterReferral').value.toUpperCase();
+    const status   = document.getElementById('filterStatus').value;
     const from     = document.getElementById('filterFrom').value;
     const to       = document.getElementById('filterTo').value;
     const result   = window._allRows.filter(r => {
       const matchSearch  = !search   || (r.nama||'').toLowerCase().includes(search) || (r.email||'').toLowerCase().includes(search) || (r.referral||'').toLowerCase().includes(search) || (r.phone||'').includes(search);
       const matchRef     = !referral || (r.referral||'').toUpperCase()===referral;
+      const matchStatus  = !status   || (r.confirmed_status||'pending')===status;
       const d = toDate(r.createdAt);
       const matchFrom    = !from || (d && d >= new Date(from));
       const matchTo      = !to   || (d && d <= new Date(to+'T23:59:59'));
-      return matchSearch && matchRef && matchFrom && matchTo;
+      return matchSearch && matchRef && matchStatus && matchFrom && matchTo;
     });
     renderTable(result);
     renderSummary(result);
@@ -520,6 +529,7 @@
   function resetFilter() {
     ['filterSearch','filterFrom','filterTo'].forEach(id => document.getElementById(id).value='');
     document.getElementById('filterReferral').value='';
+    document.getElementById('filterStatus').value='';
     if (window._allRows) { renderTable(window._allRows); renderSummary(window._allRows); }
   }
 
