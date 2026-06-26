@@ -267,6 +267,7 @@
               <th>Nama</th>
               <th>Email</th>
               <th>Kode Referral</th>
+              <th>Sekuritas Dipilih</th>
               <th>Tanggal</th>
               <th>Waktu</th>
               <th>Status</th>
@@ -274,7 +275,7 @@
             </tr>
           </thead>
           <tbody id="tableBody">
-            <tr><td colspan="8" style="padding:0;">
+            <tr><td colspan="9" style="padding:0;">
               <div style="padding:14px 16px;display:flex;flex-direction:column;gap:10px;">
                 <div class="skeleton"></div><div class="skeleton" style="width:90%"></div>
                 <div class="skeleton" style="width:95%"></div><div class="skeleton" style="width:80%"></div>
@@ -415,19 +416,25 @@
     const slice = filteredRows.slice(start, start + ROWS_PER_PAGE);
     const tbody = document.getElementById('tableBody');
     if (!slice.length) {
-      tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="empty-icon">📋</div><div style="font-size:.9rem;color:#999;font-weight:600;">Belum ada data</div></div></td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><div class="empty-icon">📋</div><div style="font-size:.9rem;color:#999;font-weight:600;">Belum ada data</div></div></td></tr>`;
       return;
     }
     tbody.innerHTML = slice.map((r, i) => {
       const no = (currentPage - 1) * ROWS_PER_PAGE + i + 1;
+      const sekBadge = r.sekuritas
+        ? `<span class="badge ${r.sekuritas.includes('Maybank') ? 'badge-maybank' : 'badge-trimegah'}">${r.sekuritas.includes('Maybank') ? '🏦' : '📈'} ${r.sekuritas}</span>`
+        : `<span style="color:#ccc;font-size:.75rem;">—</span>`;
+      const statusMap = { pending: '⏳ Pending', confirmed: '✅ Confirmed', rejected: '❌ Rejected' };
+      const statusBadge = statusMap[r.confirmed_status] || r.confirmed_status || 'Pending';
       return `<tr>
         <td style="color:#bbb;font-size:.75rem;">${no}</td>
         <td><strong>${r.nama||r.name||'—'}</strong></td>
         <td style="color:#555;">${r.email||'—'}</td>
         <td><span class="referral-tag">${(r.referral||'—').toUpperCase()}</span></td>
+        <td>${sekBadge}</td>
         <td>${formatDate(r.createdAt)}</td>
         <td style="color:#888;">${formatTime(r.createdAt)}</td>
-        <td><span class="badge badge-visited">Visited</span></td>
+        <td style="font-size:.78rem;color:#555;">${statusBadge}</td>
         <td><button class="btn-delete" onclick="deleteRow('${r.id}')">Hapus</button></td>
       </tr>`;
     }).join('');
@@ -495,10 +502,11 @@
   function exportLeadsCSV() {
     const rows = filteredRows.length ? filteredRows : (window._allRows||[]);
     if (!rows.length) { alert('Tidak ada data.'); return; }
-    const header = ['No','Nama','Email','Kode Referral','Tanggal','Waktu','Status'];
+    const header = ['No','Nama','Email','Kode Referral','Sekuritas Dipilih','Tanggal','Waktu','Status'];
     const csv = [header.join(','), ...rows.map((r,i) => [
       i+1, `"${(r.nama||'').replace(/"/g,'""')}"`, r.email||'', r.referral||'',
-      formatDate(r.createdAt), formatTime(r.createdAt), 'Visited'
+      r.sekuritas||'', formatDate(r.createdAt), formatTime(r.createdAt),
+      r.confirmed_status||'pending'
     ].join(','))].join('\n');
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
@@ -612,24 +620,35 @@
     if (!['head_account', 'admin', 'head_sales'].includes(_gu.role)) { window.location.replace('dashboard.html'); return; }
 
     try {
-      // Load leads
+      // ── Load semua registrasi referral ──
       const { data: rows, error: leadsErr } = await window._supabase
-        .from('leads')
-        .select('*')
+        .from('referral_registrations')
+        .select('id, nama, email, referral_code, agent_name, sekuritas, status, confirmed_status, created_at')
         .order('created_at', { ascending: false });
       if (leadsErr) throw leadsErr;
-      window._allRows = rows || [];
+
+      // Normalise field names untuk kompatibilitas render functions
+      const allRows = (rows || []).map(r => ({
+        ...r,
+        referral:  r.referral_code || '',
+        createdAt: r.created_at,
+      }));
+
+      window._allRows = allRows;
       populateReferralFilter(window._allRows);
       renderTable(window._allRows);
       renderSummary(window._allRows);
 
-      // Load link_clicks
-      const { data: clicks, error: clicksErr } = await window._supabase
-        .from('link_clicks')
-        .select('*')
-        .order('clicked_at', { ascending: false });
-      if (clicksErr) throw clicksErr;
-      window._allClicks = clicks || [];
+      // ── Tab "Akun Sekuritas": filter baris yang sudah ada pilihan sekuritas ──
+      const allClicks = allRows
+        .filter(r => r.sekuritas)
+        .map(r => ({
+          ...r,
+          link:      r.sekuritas,
+          clickedAt: r.created_at,
+        }));
+
+      window._allClicks = allClicks;
       renderClickTable(window._allClicks);
       renderClickSummary(window._allClicks);
 
@@ -643,20 +662,30 @@
   async function deleteRow(id) {
     if (!confirm('Hapus data ini?')) return;
     try {
-      await window._supabase.from('leads').delete().eq('id', id);
+      await window._supabase.from('referral_registrations').delete().eq('id', id);
       window._allRows = window._allRows.filter(r => r.id !== id);
       filteredRows    = filteredRows.filter(r => r.id !== id);
+      // sync tab sekuritas juga
+      window._allClicks = window._allClicks.filter(r => r.id !== id);
+      filteredClicks    = filteredClicks.filter(r => r.id !== id);
       renderPage(); renderPagination(); renderSummary(window._allRows);
       document.getElementById('rowCount').textContent = filteredRows.length.toLocaleString('id-ID');
     } catch(e) { alert('Gagal menghapus: ' + e.message); }
   }
 
   async function deleteClick(id) {
-    if (!confirm('Hapus data klik ini?')) return;
+    if (!confirm('Hapus pilihan sekuritas ini?')) return;
     try {
-      await window._supabase.from('link_clicks').delete().eq('id', id);
+      // Hanya clear kolom sekuritas, lead-nya tetap ada
+      await window._supabase
+        .from('referral_registrations')
+        .update({ sekuritas: null, updated_at: new Date().toISOString() })
+        .eq('id', id);
       window._allClicks = window._allClicks.filter(r => r.id !== id);
       filteredClicks    = filteredClicks.filter(r => r.id !== id);
+      // Update _allRows juga supaya sinkron
+      const rowIdx = window._allRows.findIndex(r => r.id === id);
+      if (rowIdx > -1) window._allRows[rowIdx].sekuritas = null;
       renderClickPage(); renderClickPagination(); renderClickSummary(window._allClicks);
       document.getElementById('clickRowCount').textContent = filteredClicks.length.toLocaleString('id-ID');
       document.getElementById('badge-clicks').textContent  = window._allClicks.length;

@@ -370,9 +370,10 @@
 
       <div class="sekuritas-list">
 
-        <a class="sekuritas-item"
+        <a class="sekuritas-item" id="btnMaybank"
           href="https://www.maybanktrade.co.id/deeplinks/?urlDeeplink=Y29tLm1iYi50aXRhbjovL3RvcGljcy90b3BpY19yZWdpc3RyYXRpb25fbmFtZQo=&salesCode=696"
-          target="_blank" rel="noopener">
+          target="_blank" rel="noopener"
+          onclick="trackSekuritas('Maybank Sekuritas')">
           <div class="sekuritas-item-left">
             <img class="sekuritas-logo" src="assets/logo/maybank.png" alt="Maybank"
               onerror="this.outerHTML='<div class=&quot;sekuritas-logo-fallback&quot;>MBK</div>'"/>
@@ -384,9 +385,10 @@
           <svg class="sekuritas-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
         </a>
 
-        <a class="sekuritas-item"
+        <a class="sekuritas-item" id="btnTrimegah"
           href="https://eform.trimegah.id/nmb/?ref=FFI"
-          target="_blank" rel="noopener">
+          target="_blank" rel="noopener"
+          onclick="trackSekuritas('Trimegah Sekuritas')">
           <div class="sekuritas-item-left">
             <img class="sekuritas-logo" src="assets/logo/trimegah.png" alt="Trimegah"
               onerror="this.outerHTML='<div class=&quot;sekuritas-logo-fallback&quot;>TRM</div>'"/>
@@ -524,7 +526,7 @@
     const email = document.getElementById('iEmail').value.trim();
 
     try {
-      const { error } = await _sb
+      const { data: inserted, error } = await _sb
         .from('referral_registrations')
         .insert({
           nama,
@@ -535,10 +537,12 @@
           status:           'belum_terdaftar',
           confirmed_status: 'pending',
           created_at:       new Date().toISOString()
-        });
+        })
+        .select('id')
+        .single();
 
       if (error) throw error;
-      showSuccess(nama);
+      showSuccess(nama, inserted?.id ?? null);
 
     } catch (err) {
       console.error(err);
@@ -549,12 +553,30 @@
   }
 
   // ─── Tampilkan modal pilihan sekuritas ───────────────────────────────────
-  function showSuccess(nama) {
+  let _registrationId = null; // simpan id row yang baru di-insert
+
+  function showSuccess(nama, regId) {
+    _registrationId = regId || null;
     const firstName = nama.split(' ')[0];
     document.getElementById('sGreeting').textContent =
       'Halo, ' + firstName + '! Pendaftaran Berhasil 🎉';
     document.getElementById('modalOverlay').classList.add('show');
   }
+
+  // ─── Catat pilihan sekuritas ke kolom sekuritas ───────────────────────────
+  async function trackSekuritas(namaSekuritas) {
+    if (!_registrationId) return;
+    try {
+      await _sb
+        .from('referral_registrations')
+        .update({ sekuritas: namaSekuritas, updated_at: new Date().toISOString() })
+        .eq('id', _registrationId);
+    } catch(e) {
+      // silent — jangan block user dari membuka link
+      console.warn('trackSekuritas error:', e);
+    }
+  }
+  window.trackSekuritas = trackSekuritas;
 </script>
 </body>
 </html>
