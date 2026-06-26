@@ -159,6 +159,22 @@
     .badge-maybank { background: #e8f0ff; color: #b49300; }
     .badge-trimegah { background: #fff0f0; color: #b30000; }
 
+    /* Status dropdown inline */
+    .status-select {
+      appearance: none; -webkit-appearance: none;
+      border: 1.5px solid #e0e0ee; border-radius: 20px;
+      padding: 3px 26px 3px 10px;
+      font-family: 'Inter', sans-serif; font-size: 0.72rem; font-weight: 600;
+      cursor: pointer; outline: none; background: #f9f9ff;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23999' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 8px center;
+      transition: border-color 0.2s;
+    }
+    .status-select:focus { border-color: var(--gold); }
+    .status-select.s-pending    { background-color: #fefce8; color: #92400e; border-color: #fde68a; }
+    .status-select.s-registered { background-color: #ecfdf5; color: #065f46; border-color: #6ee7b7; }
+    .status-select.s-cancel     { background-color: #fef2f2; color: #991b1b; border-color: #fca5a5; }
+
     .referral-tag {
       display: inline-block; padding: 2px 10px; border-radius: 6px;
       font-size: 0.72rem; font-weight: 600; background: #eef0ff; color: #3d1f8a; letter-spacing: 0.5px;
@@ -425,8 +441,8 @@
       const sekBadge = r.sekuritas
         ? `<span class="badge ${r.sekuritas.includes('Maybank') ? 'badge-maybank' : 'badge-trimegah'}">${r.sekuritas}</span>`
         : `<span style="color:#ccc;font-size:.75rem;">—</span>`;
-      const statusMap = { pending: 'Pending', confirmed: 'Confirmed', rejected: 'Rejected' };
-      const statusBadge = statusMap[r.confirmed_status] || r.confirmed_status || 'Pending';
+      const statusVal = r.confirmed_status || 'pending';
+      const statusClass = statusVal === 'registered' ? 's-registered' : statusVal === 'cancel' ? 's-cancel' : 's-pending';
       return `<tr>
         <td style="color:#bbb;font-size:.75rem;">${no}</td>
         <td><strong>${r.nama||r.name||'—'}</strong></td>
@@ -436,7 +452,13 @@
         <td>${sekBadge}</td>
         <td>${formatDate(r.createdAt)}</td>
         <td style="color:#888;">${formatTime(r.createdAt)}</td>
-        <td style="font-size:.78rem;color:#555;">${statusBadge}</td>
+        <td>
+          <select class="status-select ${statusClass}" onchange="updateStatus('${r.id}', this)">
+            <option value="pending"    ${statusVal==='pending'    ? 'selected' : ''}>Pending</option>
+            <option value="registered" ${statusVal==='registered' ? 'selected' : ''}>Registered</option>
+            <option value="cancel"     ${statusVal==='cancel'     ? 'selected' : ''}>Cancel</option>
+          </select>
+        </td>
         <td><button class="btn-delete" onclick="deleteRow('${r.id}')">Hapus</button></td>
       </tr>`;
     }).join('');
@@ -674,6 +696,30 @@
     } catch(e) { alert('Gagal menghapus: ' + e.message); }
   }
 
+  async function updateStatus(id, selectEl) {
+    const newStatus = selectEl.value;
+    // Update warna dropdown langsung
+    selectEl.className = 'status-select ' + (
+      newStatus === 'registered' ? 's-registered' :
+      newStatus === 'cancel'     ? 's-cancel'     : 's-pending'
+    );
+    try {
+      const { error } = await window._supabase
+        .from('referral_registrations')
+        .update({ confirmed_status: newStatus, updated_at: new Date().toISOString() })
+        .eq('id', id);
+      if (error) throw error;
+      // Sync ke _allRows
+      const row = window._allRows.find(r => r.id === id);
+      if (row) row.confirmed_status = newStatus;
+    } catch(e) {
+      alert('Gagal update status: ' + e.message);
+      // Revert ke nilai sebelumnya
+      const row = window._allRows.find(r => r.id === id);
+      if (row) { selectEl.value = row.confirmed_status || 'pending'; }
+    }
+  }
+
   async function deleteClick(id) {
     if (!confirm('Hapus pilihan sekuritas ini?')) return;
     try {
@@ -703,6 +749,7 @@
   window.exportClicksCSV   = exportClicksCSV;
   window.deleteRow         = deleteRow;
   window.deleteClick       = deleteClick;
+  window.updateStatus      = updateStatus;
   window.boot           = boot;
 </script>
 </body>
