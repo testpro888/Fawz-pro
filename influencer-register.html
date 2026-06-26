@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <script src="config.js"></script>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Fawz Pro | Registrasi Influencer</title>
+  <link rel="icon" type="image/png" href="assets/logo/fawz.png"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --navy: #0d0d2b; --purple: #2d1b69;
+      --gold: #f5a623; --gold-light: #ffc857;
+      --white: #ffffff; --gray: #8888aa;
+      --border: rgba(255,255,255,0.12);
+    }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--navy);
+      min-height: 100vh;
+      display: flex;
+      overflow: hidden;
+    }
+
+    /* LEFT PANEL */
+    .left-panel {
+      width: 55%; position: relative;
+      background: linear-gradient(145deg, #0a0a22 0%, #1a0e4a 40%, #0d0d2b 100%);
+      display: flex; align-items: center; justify-content: center; overflow: hidden;
+    }
+    .left-panel::before {
+      content: ''; position: absolute; width: 600px; height: 600px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(245,166,35,0.15) 0%, transparent 70%);
+      top: -100px; left: -100px; animation: pulse 6s ease-in-out infinite;
+    }
+    .left-panel::after {
+      content: ''; position: absolute; width: 400px; height: 400px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(93,63,211,0.2) 0%, transparent 70%);
+      bottom: -80px; right: -80px; animation: pulse 8s ease-in-out infinite reverse;
+    }
+    @keyframes pulse { 0%,100% { transform:scale(1); opacity:.8; } 50% { transform:scale(1.1); opacity:1; } }
+
+    .left-content {
+      position: relative; z-index: 2; text-align: center;
+      padding: 40px; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; width: 100%; height: 100%;
+    }
+    .brand-logo {
+      width: 280px; max-width: 75%;
+      filter: drop-shadow(0 0 30px rgba(245,166,35,0.45));
+      animation: floatLogo 4s ease-in-out infinite;
+      margin-bottom: 32px;
+    }
+    @keyframes floatLogo { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-10px); } }
+
+    .left-tagline { color: rgba(255,255,255,0.75); font-size: 0.95rem; line-height: 1.7; max-width: 320px; }
+    .left-tagline strong { color: var(--gold); }
+
+    .benefit-list { margin-top: 28px; list-style: none; text-align: left; max-width: 300px; width: 100%; }
+    .benefit-list li {
+      display: flex; align-items: flex-start; gap: 10px;
+      color: rgba(255,255,255,0.7); font-size: 0.88rem;
+      margin-bottom: 12px; line-height: 1.5;
+    }
+    .benefit-list li .icon { font-size: 1rem; margin-top: 1px; flex-shrink: 0; }
+
+    .geo { position: absolute; border: 1px solid rgba(245,166,35,0.15); border-radius: 4px; animation: rotate 20s linear infinite; }
+    .geo-1 { width:80px; height:80px; top:15%; right:10%; animation-duration:25s; }
+    .geo-2 { width:40px; height:40px; bottom:20%; left:8%; animation-duration:18s; }
+    .geo-3 { width:120px; height:120px; top:60%; right:5%; border-color:rgba(93,63,211,0.2); animation-duration:30s; animation-direction:reverse; }
+    @keyframes rotate { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
+
+    /* RIGHT PANEL */
+    .right-panel {
+      width: 45%; display: flex; align-items: center; justify-content: center;
+      background: #f7f8fc; padding: 50px 45px; overflow-y: auto;
+    }
+    .form-card { width: 100%; max-width: 400px; }
+
+    .form-header { margin-bottom: 28px; }
+    .form-header h2 {
+      font-size: 1.75rem; font-weight: 700; color: var(--navy);
+      margin-bottom: 6px; letter-spacing: -0.5px;
+    }
+    .form-header p { font-size: 0.88rem; color: #999; }
+    .header-line { width: 36px; height: 3px; background: linear-gradient(90deg, #f5a623, #ffc857); border-radius: 2px; margin-top: 10px; }
+
+    .form-group { margin-bottom: 18px; }
+    .form-group label {
+      display: block; font-size: 0.78rem; font-weight: 600;
+      color: #444; margin-bottom: 7px; letter-spacing: 0.5px; text-transform: uppercase;
+    }
+    .input-wrap { position: relative; }
+    .input-wrap input,
+    .input-wrap select {
+      width: 100%; padding: 13px 16px 13px 46px;
+      border: 1.5px solid #e0e0ef; border-radius: 12px;
+      font-family: 'Inter', sans-serif; font-size: 0.95rem; color: var(--navy);
+      background: #fff; transition: border 0.2s, box-shadow 0.2s; outline: none;
+      appearance: none; -webkit-appearance: none;
+    }
+    .input-wrap select { cursor: pointer; }
+    .input-wrap input:focus,
+    .input-wrap select:focus {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px rgba(245,166,35,0.12);
+    }
+    .input-icon {
+      position: absolute; left: 14px; top: 50%;
+      transform: translateY(-50%); font-size: 1.05rem; pointer-events: none;
+    }
+    .select-arrow {
+      position: absolute; right: 14px; top: 50%;
+      transform: translateY(-50%); pointer-events: none;
+      color: #aaa; font-size: 0.7rem;
+    }
+
+    /* Sekuritas options with logos */
+    .sekuritas-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .sekuritas-option { position: relative; }
+    .sekuritas-option input[type="radio"] { position: absolute; opacity: 0; width: 0; height: 0; }
+    .sekuritas-card {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 8px; padding: 14px 10px;
+      border: 2px solid #e0e0ef; border-radius: 12px;
+      background: #fff; cursor: pointer;
+      transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+    }
+    .sekuritas-card img { height: 28px; max-width: 100px; object-fit: contain; }
+    .sekuritas-card span { font-size: 0.75rem; font-weight: 600; color: #555; text-align: center; }
+    .sekuritas-option input[type="radio"]:checked + .sekuritas-card {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px rgba(245,166,35,0.15);
+      background: #fffbf2;
+    }
+    .sekuritas-card:hover { border-color: #f5a623; }
+
+    .client-code-note {
+      font-size: 0.78rem; color: #999; margin-top: 6px; line-height: 1.5;
+    }
+
+    .btn-submit {
+      width: 100%; padding: 15px;
+      background: linear-gradient(135deg, #f5a623, #e8931a);
+      border: none; border-radius: 12px;
+      font-family: 'Inter', sans-serif; font-size: 1rem; font-weight: 600; color: #fff;
+      cursor: pointer; transition: transform 0.15s, box-shadow 0.2s;
+      box-shadow: 0 6px 20px rgba(245,166,35,0.35);
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      margin-top: 8px;
+    }
+    .btn-submit:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(245,166,35,0.45); }
+    .btn-submit:disabled { opacity: 0.7; cursor: not-allowed; transform: none; }
+
+    .msg-box { border-radius: 10px; padding: 11px 15px; font-size: 0.85rem; margin-bottom: 16px; display: none; }
+    .msg-error  { background: #fff0f0; border: 1px solid #ffcccc; color: #c0392b; }
+    .msg-success { background: #f0fff4; border: 1px solid #a8e6c1; color: #27ae60; }
+
+    .spinner { width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.4); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Success Screen */
+    .success-screen {
+      display: none; text-align: center; padding: 20px 0;
+    }
+    .success-icon {
+      width: 80px; height: 80px; border-radius: 50%;
+      background: linear-gradient(135deg, #27ae60, #2ecc71);
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 20px; font-size: 2.2rem;
+      box-shadow: 0 8px 24px rgba(46,204,113,0.3);
+      animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    @keyframes popIn { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    .success-screen h3 { font-size: 1.4rem; font-weight: 700; color: var(--navy); margin-bottom: 10px; }
+    .success-screen p { font-size: 0.9rem; color: #666; line-height: 1.7; margin-bottom: 16px; }
+    .review-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: #fff8ec; border: 1px solid #f5a623;
+      color: #c47a00; padding: 8px 16px; border-radius: 20px;
+      font-size: 0.82rem; font-weight: 600; margin-bottom: 24px;
+    }
+    .contact-info {
+      background: #f7f8fc; border-radius: 12px; padding: 16px;
+      font-size: 0.85rem; color: #555; line-height: 1.7;
+      border: 1px solid #e8e8f0;
+    }
+    .contact-info strong { color: var(--navy); }
+
+    .form-footer { margin-top: 24px; text-align: center; font-size: 0.78rem; color: #999; }
+
+    @media (max-width: 768px) {
+      body { flex-direction: column; overflow: auto; }
+      .left-panel { display: none; }
+      .right-panel { width: 100%; padding: 36px 20px; min-height: 100vh; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- LEFT PANEL -->
+<div class="left-panel">
+  <div class="geo geo-1"></div>
+  <div class="geo geo-2"></div>
+  <div class="geo geo-3"></div>
+  <div class="left-content">
+    <img src="assets/logo/fawzpro.png" alt="FAWZ Pro" class="brand-logo"
+      onerror="this.style.display='none'; document.getElementById('logoFallback').style.display='block'"/>
+    <div id="logoFallback" style="display:none; text-align:center; margin-bottom:24px;">
+      <div style="font-size:4rem;">🦁</div>
+      <div style="font-size:2rem; font-weight:700; color:#f5a623; letter-spacing:4px; margin-top:6px;">FAWZ</div>
+    </div>
+    <p class="left-tagline">
+      Bergabunglah sebagai <strong>Influencer Fawz Pro</strong> dan dapatkan keuntungan eksklusif dari setiap referral yang berhasil.
+    </p>
+    <ul class="benefit-list">
+      <li><span class="icon">💰</span> Komisi kompetitif dari setiap transaksi nasabah referral</li>
+      <li><span class="icon">📊</span> Dashboard eksklusif untuk tracking performa</li>
+      <li><span class="icon">🎓</span> Akses materi edukasi pasar modal premium</li>
+      <li><span class="icon">🤝</span> Dukungan penuh dari tim Fawz Pro</li>
+    </ul>
+  </div>
+</div>
+
+<!-- RIGHT PANEL -->
+<div class="right-panel">
+  <div class="form-card">
+
+    <!-- FORM STATE -->
+    <div id="formState">
+      <div class="form-header">
+        <h2>Daftar Influencer</h2>
+        <p>Isi data diri Anda untuk memulai proses pendaftaran</p>
+        <div class="header-line"></div>
+      </div>
+
+      <div class="msg-box msg-error" id="msgError"></div>
+
+      <!-- Nama -->
+      <div class="form-group">
+        <label>Nama Lengkap</label>
+        <div class="input-wrap">
+          <span class="input-icon">👤</span>
+          <input type="text" id="fieldNama" placeholder="Masukkan nama lengkap Anda" autocomplete="name"/>
+        </div>
+      </div>
+
+      <!-- Email -->
+      <div class="form-group">
+        <label>Email</label>
+        <div class="input-wrap">
+          <span class="input-icon">✉️</span>
+          <input type="email" id="fieldEmail" placeholder="contoh@email.com" autocomplete="email"/>
+        </div>
+      </div>
+
+      <!-- Sekuritas -->
+      <div class="form-group">
+        <label>Sekuritas yang Digunakan</label>
+        <div class="sekuritas-grid">
+          <div class="sekuritas-option">
+            <input type="radio" name="sekuritas" id="sekMaybank" value="Maybank Sekuritas"/>
+            <label class="sekuritas-card" for="sekMaybank">
+              <img src="assets/logo/maybank.png" alt="Maybank Sekuritas"
+                onerror="this.style.display='none'; this.nextElementSibling.style.fontWeight='700'"/>
+              <span>Maybank Sekuritas</span>
+            </label>
+          </div>
+          <div class="sekuritas-option">
+            <input type="radio" name="sekuritas" id="sekTrimegah" value="Trimegah Sekuritas"/>
+            <label class="sekuritas-card" for="sekTrimegah">
+              <img src="assets/logo/trimegah.png" alt="Trimegah Sekuritas"
+                onerror="this.style.display='none'; this.nextElementSibling.style.fontWeight='700'"/>
+              <span>Trimegah Sekuritas</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Client Code -->
+      <div class="form-group">
+        <label>Client Code</label>
+        <div class="input-wrap">
+          <span class="input-icon">🪪</span>
+          <input type="text" id="fieldClientCode" placeholder="Contoh: MYB-123456" autocomplete="off"
+            style="text-transform:uppercase"/>
+        </div>
+        <p class="client-code-note">Kode nasabah Anda di sekuritas yang dipilih. Dapat ditemukan di aplikasi trading atau menghubungi sekuritas Anda.</p>
+      </div>
+
+      <button class="btn-submit" id="btnSubmit" onclick="doSubmit()">
+        <span id="btnText">Kirim Pendaftaran</span>
+      </button>
+
+      <div class="form-footer">© 2026 PT Fawz Finansial Indonesia</div>
+    </div>
+
+    <!-- SUCCESS STATE -->
+    <div class="success-screen" id="successState">
+      <div class="success-icon">✅</div>
+      <h3>Pendaftaran Terkirim!</h3>
+      <p>
+        Data Anda telah kami terima dan sedang dalam proses <strong>review</strong> oleh tim Fawz Pro.
+      </p>
+      <div class="review-badge">⏳ Menunggu Review Admin</div>
+      <div class="contact-info">
+        <p>Tim kami akan menghubungi Anda melalui:</p>
+        <p>📱 <strong>WhatsApp</strong> atau ✉️ <strong>Email</strong></p>
+        <p style="margin-top:8px; font-size:0.8rem; color:#888;">
+          Pastikan nomor WhatsApp dan email yang Anda gunakan aktif dan dapat dihubungi.
+        </p>
+      </div>
+      <p style="margin-top:20px; font-size:0.82rem; color:#aaa;">
+        Proses review biasanya membutuhkan <strong style="color:#555;">1–3 hari kerja</strong>.
+      </p>
+    </div>
+
+  </div>
+</div>
+
+<!-- Supabase SDK -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+  const SUPABASE_URL = (window.__FAWZ_CONFIG__ || {}).supabaseUrl || '';
+  const SUPABASE_KEY = (window.__FAWZ_CONFIG__ || {}).supabaseKey || '';
+  const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  function showError(msg) {
+    const el = document.getElementById('msgError');
+    el.textContent = msg;
+    el.style.display = 'block';
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+  function hideError() {
+    document.getElementById('msgError').style.display = 'none';
+  }
+
+  function setLoading(on) {
+    const btn = document.getElementById('btnSubmit');
+    const txt = document.getElementById('btnText');
+    btn.disabled = on;
+    if (on) {
+      txt.textContent = '';
+      const sp = document.createElement('div');
+      sp.className = 'spinner';
+      sp.id = 'spinner';
+      btn.appendChild(sp);
+      btn.insertAdjacentText('beforeend', ' Mengirim...');
+    } else {
+      const sp = document.getElementById('spinner');
+      if (sp) sp.remove();
+      while (btn.childNodes.length > 1) btn.removeChild(btn.lastChild);
+      txt.textContent = 'Kirim Pendaftaran';
+    }
+  }
+
+  function validateEmail(email) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  }
+
+  async function doSubmit() {
+    hideError();
+
+    const nama       = document.getElementById('fieldNama').value.trim();
+    const email      = document.getElementById('fieldEmail').value.trim().toLowerCase();
+    const clientCode = document.getElementById('fieldClientCode').value.trim().toUpperCase();
+    const sekRadio   = document.querySelector('input[name="sekuritas"]:checked');
+
+    // Validasi
+    if (!nama)        { showError('⚠️ Nama lengkap wajib diisi.'); return; }
+    if (!email)       { showError('⚠️ Email wajib diisi.'); return; }
+    if (!validateEmail(email)) { showError('⚠️ Format email tidak valid.'); return; }
+    if (!sekRadio)    { showError('⚠️ Pilih sekuritas yang Anda gunakan.'); return; }
+    if (!clientCode)  { showError('⚠️ Client code wajib diisi.'); return; }
+
+    setLoading(true);
+
+    try {
+      const { error } = await _supabase
+        .from('influencer_registrations')
+        .insert({
+          nama,
+          email,
+          sekuritas: sekRadio.value,
+          client_code: clientCode,
+          status: 'pending',
+          created_at: new Date().toISOString()
+        });
+
+      if (error) throw error;
+
+      // Tampilkan success screen
+      document.getElementById('formState').style.display = 'none';
+      document.getElementById('successState').style.display = 'block';
+
+    } catch (err) {
+      console.error('Submit error:', err);
+      showError('⚠️ Gagal mengirim pendaftaran. Silakan coba lagi atau hubungi admin.');
+      setLoading(false);
+    }
+  }
+
+  // Enter key support
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && document.getElementById('formState').style.display !== 'none') {
+      doSubmit();
+    }
+  });
+
+  // Auto-uppercase client code
+  document.getElementById('fieldClientCode').addEventListener('input', function() {
+    const pos = this.selectionStart;
+    this.value = this.value.toUpperCase();
+    this.setSelectionRange(pos, pos);
+  });
+</script>
+</body>
+</html>
