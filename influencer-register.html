@@ -118,13 +118,22 @@
     .sekuritas-option input[type="radio"] { position: absolute; opacity: 0; width: 0; height: 0; }
     .sekuritas-card {
       display: flex; align-items: center; justify-content: center;
-      padding: 14px 10px;
+      padding: 16px 12px;
       border: 2px solid #e0e0ef; border-radius: 12px;
       background: #fff; cursor: pointer;
       transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
-      min-height: 56px;
+      height: 64px;
     }
-    .sekuritas-card img { height: 30px; max-width: 110px; object-fit: contain; }
+    .sekuritas-card img {
+      max-height: 28px; max-width: 100%; width: auto;
+      object-fit: contain; display: block;
+    }
+    .sekuritas-option input[type="radio"]:checked + .sekuritas-card {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px rgba(245,166,35,0.15);
+      background: #fffbf2;
+    }
+    .sekuritas-card:hover { border-color: #f5a623; }
     .sekuritas-option input[type="radio"]:checked + .sekuritas-card {
       border-color: var(--gold);
       box-shadow: 0 0 0 3px rgba(245,166,35,0.15);
