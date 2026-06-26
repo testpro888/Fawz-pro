@@ -1,12 +1,12 @@
 -- ============================================================
--- Fix: Tambah kolom untuk referral_registrations
--- Digunakan oleh halaman referral-landing.html
+-- Migration: referral_registrations
+-- Tambah kolom yang dibutuhkan oleh referral-landing.html
 -- Jalankan di Supabase SQL Editor
 -- ============================================================
 
 DO $$
 BEGIN
-  -- Kode referral agent yang digunakan saat pendaftaran
+  -- Kolom kode referral (dari input user)
   IF NOT EXISTS (
     SELECT 1 FROM information_schema.columns
     WHERE table_schema = 'public'
@@ -16,7 +16,7 @@ BEGIN
     ALTER TABLE public.referral_registrations ADD COLUMN referral_code TEXT;
   END IF;
 
-  -- UUID agent dari tabel referral_agents
+  -- Kolom agent_id (FK ke referral_agents.id)
   IF NOT EXISTS (
     SELECT 1 FROM information_schema.columns
     WHERE table_schema = 'public'
@@ -26,7 +26,7 @@ BEGIN
     ALTER TABLE public.referral_registrations ADD COLUMN agent_id UUID;
   END IF;
 
-  -- Nama agent (denormalized untuk kemudahan query)
+  -- Kolom agent_name (snapshot nama agent saat registrasi)
   IF NOT EXISTS (
     SELECT 1 FROM information_schema.columns
     WHERE table_schema = 'public'
@@ -37,12 +37,9 @@ BEGIN
   END IF;
 END $$;
 
--- Index untuk filter berdasarkan referral code
-CREATE INDEX IF NOT EXISTS idx_referral_reg_code
-  ON public.referral_registrations (referral_code);
-
+-- Index untuk filter by agent
 CREATE INDEX IF NOT EXISTS idx_referral_reg_agent_id
   ON public.referral_registrations (agent_id);
 
--- Refresh schema cache
-NOTIFY pgrst, 'reload schema';
+CREATE INDEX IF NOT EXISTS idx_referral_reg_referral_code
+  ON public.referral_registrations (referral_code);
