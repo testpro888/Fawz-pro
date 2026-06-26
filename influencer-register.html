@@ -114,7 +114,7 @@
 
     /* Sekuritas options with logos */
     .sekuritas-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .sekuritas-option { position: relative; }
+    .sekuritas-option { position: relative; display: flex; }
     .sekuritas-option input[type="radio"] { position: absolute; opacity: 0; width: 0; height: 0; }
     .sekuritas-card {
       display: flex; align-items: center; justify-content: center;
@@ -122,11 +122,11 @@
       border: 2px solid #e0e0ef; border-radius: 12px;
       background: #fff; cursor: pointer;
       transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
-      height: 64px;
+      height: 64px; width: 100%; text-align: center;
     }
     .sekuritas-card img {
-      max-height: 28px; max-width: 100%; width: auto;
-      object-fit: contain; margin: 0 auto;
+      max-height: 28px; max-width: 80%; width: auto; height: auto;
+      object-fit: contain; display: inline-block; vertical-align: middle;
     }
     .sekuritas-option input[type="radio"]:checked + .sekuritas-card {
       border-color: var(--gold);
