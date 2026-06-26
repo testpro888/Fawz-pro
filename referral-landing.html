@@ -373,7 +373,7 @@
         <a class="sekuritas-item" id="btnMaybank"
           href="https://www.maybanktrade.co.id/deeplinks/?urlDeeplink=Y29tLm1iYi50aXRhbjovL3RvcGljcy90b3BpY19yZWdpc3RyYXRpb25fbmFtZQo=&salesCode=696"
           target="_blank" rel="noopener"
-          onclick="trackSekuritas('Maybank Sekuritas')">
+          onclick="handleSekuritasClick(event, this, 'Maybank Sekuritas')">
           <div class="sekuritas-item-left">
             <img class="sekuritas-logo" src="assets/logo/maybank.png" alt="Maybank"
               onerror="this.outerHTML='<div class=&quot;sekuritas-logo-fallback&quot;>MBK</div>'"/>
@@ -388,7 +388,7 @@
         <a class="sekuritas-item" id="btnTrimegah"
           href="https://eform.trimegah.id/nmb/?ref=FFI"
           target="_blank" rel="noopener"
-          onclick="trackSekuritas('Trimegah Sekuritas')">
+          onclick="handleSekuritasClick(event, this, 'Trimegah Sekuritas')">
           <div class="sekuritas-item-left">
             <img class="sekuritas-logo" src="assets/logo/trimegah.png" alt="Trimegah"
               onerror="this.outerHTML='<div class=&quot;sekuritas-logo-fallback&quot;>TRM</div>'"/>
@@ -563,6 +563,17 @@
     document.getElementById('modalOverlay').classList.add('show');
   }
 
+  // ─── Cegat klik, simpan sekuritas ke DB dulu, baru buka URL ─────────────
+  async function handleSekuritasClick(event, anchor, namaSekuritas) {
+    event.preventDefault(); // tahan navigasi dulu
+    const url = anchor.href;
+
+    await trackSekuritas(namaSekuritas);
+
+    // Buka di tab baru setelah DB selesai
+    window.open(url, '_blank', 'noopener,noreferrer');
+  }
+
   // ─── Catat pilihan sekuritas ke kolom sekuritas ───────────────────────────
   async function trackSekuritas(namaSekuritas) {
     if (!_registrationId) return;
@@ -572,10 +583,10 @@
         .update({ sekuritas: namaSekuritas, updated_at: new Date().toISOString() })
         .eq('id', _registrationId);
     } catch(e) {
-      // silent — jangan block user dari membuka link
       console.warn('trackSekuritas error:', e);
     }
   }
+  window.handleSekuritasClick = handleSekuritasClick;
   window.trackSekuritas = trackSekuritas;
 </script>
 </body>
