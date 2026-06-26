@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <script src="config.js"></script>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Petik Profit | Dashboard Influencer</title>
+  <link rel="icon" type="image/png" href="assets/logo/fawz.png"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --navy: #0d0d2b; --purple: #2d1b69;
+      --gold: #f5a623; --gold-light: #ffc857;
+      --ink: #1a1a1a; --slate: #5d5b54; --stone: #a4a097;
+      --canvas: #ffffff; --surface: #f6f5f4; --hairline: #e5e3df;
+      --tint-lavender: #e6e0f5; --tint-mint: #d9f3e1;
+      --tint-peach: #ffe8d4; --tint-sky: #dcecfa;
+      --tint-yellow: #fef7d6; --tint-rose: #fde0ec;
+      --green: #1aae39; --orange: #dd5b00; --red: #e74c3c;
+    }
+    body { font-family: 'Inter', sans-serif; background: var(--surface); min-height: 100vh; color: var(--ink); }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
+    .page { max-width: 1160px; margin: 0 auto; padding: 32px 24px 60px; }
+
+    /* ── TOPBAR ── */
+    .topbar {
+      background: linear-gradient(135deg, var(--navy) 0%, #1a0e4a 60%, #0d1a3a 100%);
+      padding: 0 28px; height: 64px;
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 100;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.3);
+    }
+    .topbar-brand { display: flex; align-items: center; gap: 12px; }
+    .topbar-brand img { height: 40px; object-fit: contain; }
+    .topbar-right { display: flex; align-items: center; gap: 14px; }
+    .topbar-user { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+    .topbar-avatar {
+      width: 34px; height: 34px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--gold), var(--gold-light));
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; color: #fff; font-size: 0.88rem;
+    }
+    .topbar-name { font-size: 0.85rem; font-weight: 600; color: #fff; }
+    .topbar-role { font-size: 0.72rem; color: rgba(255,255,255,0.5); }
+    .logout-btn {
+      background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15);
+      color: rgba(255,255,255,0.75); padding: 6px 14px; border-radius: 8px;
+      font-size: 0.8rem; cursor: pointer; transition: all 0.2s;
+    }
+    .logout-btn:hover { background: rgba(255,255,255,0.18); color: #fff; }
+
+    /* ── HEADER CARD ── */
+    .hero-card {
+      background: linear-gradient(135deg, var(--navy) 0%, #1a0e4a 100%);
+      border-radius: 16px; padding: 28px 32px;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 20px; flex-wrap: wrap;
+      margin-bottom: 24px; position: relative; overflow: hidden;
+      animation: fadeUp 0.4s ease both;
+    }
+    .hero-card::before {
+      content:''; position:absolute; width:320px; height:320px; border-radius:50%;
+      background: radial-gradient(circle, rgba(245,166,35,0.12) 0%, transparent 70%);
+      right: -80px; top: -80px; pointer-events: none;
+    }
+    .hero-left { position: relative; z-index:1; }
+    .hero-greeting { font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+    .hero-name { font-size: 26px; font-weight: 700; color: #fff; letter-spacing: -0.5px; }
+    .hero-name span { color: var(--gold); }
+    .hero-sub { font-size: 13px; color: rgba(255,255,255,0.55); margin-top: 6px; }
+    .hero-badges { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+    .badge-pill {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15);
+      color: rgba(255,255,255,0.8); padding: 5px 12px;
+      border-radius: 20px; font-size: 0.78rem; font-weight: 500;
+    }
+    .badge-pill.gold { background: rgba(245,166,35,0.2); border-color: rgba(245,166,35,0.4); color: var(--gold-light); }
+    .hero-right { position: relative; z-index:1; text-align: right; }
+    .hero-date { font-size: 12px; color: rgba(255,255,255,0.4); font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
+    .hero-clock { font-size: 28px; font-weight: 700; color: #fff; letter-spacing: 2px; margin-top: 4px; }
+    .hero-datestr { font-size: 13px; color: rgba(255,255,255,0.55); margin-top: 3px; }
+
+    /* ── TAB SWITCHER ── */
+    .tab-bar {
+      display: flex; gap: 4px; background: var(--canvas);
+      border-radius: 12px; padding: 6px;
+      border: 1px solid var(--hairline);
+      margin-bottom: 24px; width: fit-content;
+      animation: fadeUp 0.4s 0.1s ease both;
+    }
+    .tab-btn {
+      padding: 9px 22px; border-radius: 9px; border: none;
+      font-family: 'Inter', sans-serif; font-size: 0.88rem; font-weight: 600;
+      cursor: pointer; transition: all 0.2s; color: var(--slate); background: transparent;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .tab-btn.active { background: var(--navy); color: #fff; box-shadow: 0 2px 8px rgba(13,13,43,0.25); }
+    .tab-btn:not(.active):hover { background: var(--surface); }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* ── KPI GRID ── */
+    .kpi-grid { display: grid; gap: 16px; margin-bottom: 24px; }
+    .kpi-grid-4 { grid-template-columns: repeat(4, 1fr); }
+    .kpi-grid-5 { grid-template-columns: repeat(5, 1fr); }
+    .kpi-card {
+      background: var(--canvas); border-radius: 14px; padding: 22px 20px;
+      border: 1px solid var(--hairline); position: relative; overflow: hidden;
+      animation: fadeUp 0.4s ease both; cursor: default;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .kpi-card:hover { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(0,0,0,0.08); }
+    .kpi-card.lavender { background: var(--tint-lavender); border-color: #d0c8f0; }
+    .kpi-card.mint    { background: var(--tint-mint);     border-color: #b5e8c3; }
+    .kpi-card.peach   { background: var(--tint-peach);    border-color: #f5ccaa; }
+    .kpi-card.sky     { background: var(--tint-sky);      border-color: #a8d8f5; }
+    .kpi-card.yellow  { background: var(--tint-yellow);   border-color: #f0d870; }
+    .kpi-card.rose    { background: var(--tint-rose);     border-color: #f2b8d8; }
+    .kpi-label { font-size: 11px; font-weight: 700; color: var(--slate); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 10px; }
+    .kpi-accent { width: 20px; height: 2px; border-radius: 2px; margin-bottom: 8px; }
+    .kpi-accent.purple { background: #7b3ff2; }
+    .kpi-accent.green  { background: var(--green); }
+    .kpi-accent.orange { background: var(--orange); }
+    .kpi-accent.blue   { background: #2980b9; }
+    .kpi-accent.gold   { background: var(--gold); }
+    .kpi-accent.pink   { background: #e879b8; }
+    .kpi-value { font-size: 32px; font-weight: 700; color: #0a0a22; letter-spacing: -1px; line-height: 1; }
+    .kpi-value.sm { font-size: 22px; letter-spacing: -0.5px; }
+    .kpi-sub { font-size: 12px; color: var(--stone); margin-top: 6px; font-weight: 500; }
+    .kpi-icon { position: absolute; right: 16px; top: 16px; font-size: 1.6rem; opacity: 0.35; }
+
+    /* ── SOCIAL MEDIA SECTION ── */
+    .section-title { font-size: 16px; font-weight: 700; color: #0a0a22; margin-bottom: 14px; letter-spacing: -0.3px; }
+    .section-sub { font-size: 12px; color: var(--stone); font-weight: 500; margin-left: 8px; }
+    .socmed-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 24px; animation: fadeUp 0.4s 0.15s ease both; }
+    .socmed-card {
+      background: var(--canvas); border: 1px solid var(--hairline);
+      border-radius: 14px; padding: 18px 14px; text-align: center;
+      transition: transform 0.2s, box-shadow 0.2s; cursor: pointer;
+    }
+    .socmed-card:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(0,0,0,0.09); }
+    .socmed-icon { font-size: 2rem; margin-bottom: 8px; display: block; }
+    .socmed-name { font-size: 11px; font-weight: 700; color: var(--slate); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+    .socmed-handle { font-size: 11px; color: var(--stone); margin-bottom: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .socmed-followers { font-size: 20px; font-weight: 700; color: #0a0a22; letter-spacing: -0.5px; }
+    .socmed-followers-label { font-size: 10px; color: var(--stone); font-weight: 500; }
+    .socmed-badge {
+      display: inline-block; font-size: 10px; font-weight: 600;
+      padding: 2px 8px; border-radius: 10px; margin-top: 6px;
+    }
+    .socmed-badge.connected { background: #d9f3e1; color: #1aae39; }
+    .socmed-badge.disconnected { background: #f6f5f4; color: var(--stone); }
+
+    /* ── REFERRAL LINK ── */
+    .referral-box {
+      background: var(--canvas); border: 1px solid var(--hairline);
+      border-radius: 14px; padding: 18px 20px;
+      display: flex; align-items: center; gap: 12px;
+      margin-bottom: 24px; animation: fadeUp 0.4s 0.2s ease both;
+    }
+    .referral-box-label { font-size: 11px; font-weight: 700; color: var(--slate); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 4px; }
+    .referral-link-text { font-size: 0.9rem; color: #0a0a22; font-weight: 500; flex: 1; word-break: break-all; }
+    .copy-btn {
+      background: var(--gold); color: #fff; border: none;
+      padding: 9px 18px; border-radius: 9px; font-weight: 600;
+      font-size: 0.83rem; cursor: pointer; white-space: nowrap;
+      transition: background 0.2s, transform 0.15s;
+    }
+    .copy-btn:hover { background: #e8931a; transform: scale(1.03); }
+    .copy-btn:active { transform: scale(0.97); }
+
+    /* ── CHART AREA ── */
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; animation: fadeUp 0.4s 0.25s ease both; }
+    .chart-card {
+      background: var(--canvas); border: 1px solid var(--hairline);
+      border-radius: 14px; padding: 20px 20px;
+    }
+    .chart-card-title { font-size: 13px; font-weight: 700; color: #0a0a22; margin-bottom: 4px; }
+    .chart-card-sub { font-size: 11px; color: var(--stone); margin-bottom: 16px; }
+    .chart-wrap { position: relative; height: 200px; }
+
+    /* ── TIER CARD ── */
+    .tier-section { margin-bottom: 24px; animation: fadeUp 0.4s 0.28s ease both; }
+    .tier-card {
+      background: linear-gradient(135deg, #1a0e4a 0%, #0d0d2b 100%);
+      border-radius: 14px; padding: 22px 24px;
+      display: flex; align-items: center; gap: 20px; flex-wrap: wrap;
+    }
+    .tier-badge-big { font-size: 2.8rem; }
+    .tier-info { flex: 1; }
+    .tier-label { font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.45); text-transform: uppercase; letter-spacing: 1px; }
+    .tier-name { font-size: 22px; font-weight: 700; color: var(--gold); margin-top: 3px; }
+    .tier-desc { font-size: 12px; color: rgba(255,255,255,0.55); margin-top: 4px; }
+    .tier-progress-wrap { flex: 2; min-width: 200px; }
+    .tier-progress-label { display: flex; justify-content: space-between; font-size: 11px; color: rgba(255,255,255,0.5); margin-bottom: 6px; }
+    .tier-progress-bar { background: rgba(255,255,255,0.1); border-radius: 9999px; height: 8px; overflow: hidden; }
+    .tier-progress-fill { height: 100%; border-radius: 9999px; background: linear-gradient(90deg, var(--gold), var(--gold-light)); transition: width 0.6s ease; }
+    .tier-progress-next { font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 6px; text-align: right; }
+
+    /* ── CLIENT TABLE (Referral Agent tab) ── */
+    .table-card { background: var(--canvas); border: 1px solid var(--hairline); border-radius: 14px; overflow: hidden; margin-bottom: 24px; animation: fadeUp 0.4s 0.2s ease both; }
+    .table-head { padding: 16px 20px; border-bottom: 1px solid var(--hairline); display: flex; align-items: center; justify-content: space-between; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th { font-size: 11px; font-weight: 700; color: var(--stone); text-transform: uppercase; letter-spacing: 0.8px; padding: 10px 16px; text-align: left; background: #fafaf9; border-bottom: 1px solid var(--hairline); }
+    td { padding: 12px 16px; font-size: 13px; color: var(--ink); border-bottom: 1px solid var(--hairline-soft, #f0ede9); }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #fafaf9; }
+    .status-pill { display: inline-block; padding: 3px 10px; border-radius: 9999px; font-size: 11px; font-weight: 600; }
+    .status-aktif { background: #d9f3e1; color: #1aae39; }
+    .status-inaktif { background: #f6f5f4; color: var(--stone); }
+
+    /* ── KOMISI HISTORY ── */
+    .history-list { display: flex; flex-direction: column; gap: 10px; }
+    .history-item {
+      background: var(--canvas); border: 1px solid var(--hairline);
+      border-radius: 12px; padding: 14px 18px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .history-month { font-size: 13px; font-weight: 600; color: var(--ink); }
+    .history-period { font-size: 11px; color: var(--stone); margin-top: 2px; }
+    .history-amount { font-size: 16px; font-weight: 700; color: var(--green); }
+    .history-status { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 9999px; }
+    .history-paid { background: #d9f3e1; color: #1aae39; }
+    .history-pending { background: var(--tint-yellow); color: #856400; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 900px) {
+      .kpi-grid-4, .kpi-grid-5 { grid-template-columns: repeat(2, 1fr); }
+      .socmed-grid { grid-template-columns: repeat(3, 1fr); }
+      .two-col { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 600px) {
+      .kpi-grid-4, .kpi-grid-5 { grid-template-columns: repeat(2, 1fr); }
+      .socmed-grid { grid-template-columns: repeat(2, 1fr); }
+      .page { padding: 20px 14px 40px; }
+      .hero-card { padding: 20px 18px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-brand">
+    <img src="assets/logo/ikutin pp.png" alt="Petik Profit" onerror="this.style.display='none'"/>
+  </div>
+  <div class="topbar-right">
+    <div class="topbar-user">
+      <div>
+        <div class="topbar-name" id="topbarName">—</div>
+        <div class="topbar-role">Influencer</div>
+      </div>
+      <div class="topbar-avatar" id="topbarAvatar">?</div>
+    </div>
+    <button class="logout-btn" onclick="doLogout()">Keluar</button>
+  </div>
+</div>
+
+<div class="page">
+
+  <!-- HERO -->
+  <div class="hero-card">
+    <div class="hero-left">
+      <div class="hero-greeting" id="heroGreeting">Selamat Pagi</div>
+      <div class="hero-name">Halo, <span id="heroName">—</span>!</div>
+      <div class="hero-sub">Pantau performa konten dan komisi Anda hari ini</div>
+      <div class="hero-badges">
+        <span class="badge-pill gold">🏆 <span id="tierBadge">Silver Influencer</span></span>
+        <span class="badge-pill" id="sekuritasBadge">🏦 —</span>
+        <span class="badge-pill">🔗 Kode: <span id="refCodeBadge">—</span></span>
+      </div>
+    </div>
+    <div class="hero-right">
+      <div class="hero-date" id="heroDay">—</div>
+      <div class="hero-clock" id="heroClock">—</div>
+      <div class="hero-datestr" id="heroDate">—</div>
+    </div>
+  </div>
+
+  <!-- TAB BAR -->
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('influencer', this)">📢 Influencer</button>
+    <button class="tab-btn" onclick="switchTab('agent', this)">👥 Referral Agent</button>
+  </div>
+
+  <!-- ══════════════ TAB: INFLUENCER ══════════════ -->
+  <div class="tab-content active" id="tab-influencer">
+
+    <!-- KPI Row -->
+    <div class="kpi-grid kpi-grid-4" style="animation-delay:0.1s">
+      <div class="kpi-card lavender" style="animation-delay:0.08s">
+        <span class="kpi-icon">👥</span>
+        <div class="kpi-label">Total Fans / Follower</div>
+        <div class="kpi-accent purple"></div>
+        <div class="kpi-value" id="kpiTotalFans">—</div>
+        <div class="kpi-sub">Gabungan semua platform</div>
+      </div>
+      <div class="kpi-card mint" style="animation-delay:0.13s">
+        <span class="kpi-icon">🔁</span>
+        <div class="kpi-label">Referral Berhasil</div>
+        <div class="kpi-accent green"></div>
+        <div class="kpi-value" id="kpiReferral">—</div>
+        <div class="kpi-sub">Total nasabah ter-referral</div>
+      </div>
+      <div class="kpi-card peach" style="animation-delay:0.18s">
+        <span class="kpi-icon">💵</span>
+        <div class="kpi-label">Revenue (Bulan Ini)</div>
+        <div class="kpi-accent orange"></div>
+        <div class="kpi-value sm" id="kpiRevenue">Rp 0</div>
+        <div class="kpi-sub" id="kpiRevenueSub">—</div>
+      </div>
+      <div class="kpi-card yellow" style="animation-delay:0.23s">
+        <span class="kpi-icon">🏅</span>
+        <div class="kpi-label">Komisi Berjalan</div>
+        <div class="kpi-accent gold"></div>
+        <div class="kpi-value sm" id="kpiKomisi">Rp 0</div>
+        <div class="kpi-sub" id="kpiKomisiSub">Bulan ini</div>
+      </div>
+    </div>
+
+    <!-- Referral Link -->
+    <div class="referral-box">
+      <div style="flex:1">
+        <div class="referral-box-label">🔗 Link Referral Unik Anda</div>
+        <div class="referral-link-text" id="refLinkText">—</div>
+      </div>
+      <button class="copy-btn" onclick="copyRefLink()">📋 Salin Link</button>
+    </div>
+
+    <!-- Tier Progress -->
+    <div class="tier-section">
+      <div class="section-title">🏆 Level Influencer</div>
+      <div class="tier-card">
+        <div class="tier-badge-big" id="tierIcon">🥈</div>
+        <div class="tier-info">
+          <div class="tier-label">Level Saat Ini</div>
+          <div class="tier-name" id="tierName">Silver</div>
+          <div class="tier-desc">Komisi rate: <strong style="color:var(--gold-light)" id="tierRate">8%</strong> dari trading fee referral</div>
+        </div>
+        <div class="tier-progress-wrap">
+          <div class="tier-progress-label">
+            <span>Progress ke <span id="tierNext">Gold</span></span>
+            <span id="tierPct">60%</span>
+          </div>
+          <div class="tier-progress-bar">
+            <div class="tier-progress-fill" id="tierFill" style="width:60%"></div>
+          </div>
+          <div class="tier-progress-next" id="tierNextDesc">Butuh 40 referral lagi untuk naik ke Gold</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Social Media -->
+    <div class="section-title">📱 Social Media <span class="section-sub">Klik untuk edit handle</span></div>
+    <div class="socmed-grid">
+      <div class="socmed-card" onclick="editSocmed('instagram')">
+        <span class="socmed-icon">📸</span>
+        <div class="socmed-name">Instagram</div>
+        <div class="socmed-handle" id="sm-ig-handle">@—</div>
+        <div class="socmed-followers" id="sm-ig-followers">—</div>
+        <div class="socmed-followers-label">Followers</div>
+        <span class="socmed-badge" id="sm-ig-badge">Belum terhubung</span>
+      </div>
+      <div class="socmed-card" onclick="editSocmed('tiktok')">
+        <span class="socmed-icon">🎵</span>
+        <div class="socmed-name">TikTok</div>
+        <div class="socmed-handle" id="sm-tt-handle">@—</div>
+        <div class="socmed-followers" id="sm-tt-followers">—</div>
+        <div class="socmed-followers-label">Followers</div>
+        <span class="socmed-badge" id="sm-tt-badge">Belum terhubung</span>
+      </div>
+      <div class="socmed-card" onclick="editSocmed('threads')">
+        <span class="socmed-icon">🧵</span>
+        <div class="socmed-name">Threads</div>
+        <div class="socmed-handle" id="sm-th-handle">@—</div>
+        <div class="socmed-followers" id="sm-th-followers">—</div>
+        <div class="socmed-followers-label">Followers</div>
+        <span class="socmed-badge" id="sm-th-badge">Belum terhubung</span>
+      </div>
+      <div class="socmed-card" onclick="editSocmed('x')">
+        <span class="socmed-icon">🐦</span>
+        <div class="socmed-name">X (Twitter)</div>
+        <div class="socmed-handle" id="sm-x-handle">@—</div>
+        <div class="socmed-followers" id="sm-x-followers">—</div>
+        <div class="socmed-followers-label">Followers</div>
+        <span class="socmed-badge" id="sm-x-badge">Belum terhubung</span>
+      </div>
+      <div class="socmed-card" onclick="editSocmed('youtube')">
+        <span class="socmed-icon">▶️</span>
+        <div class="socmed-name">YouTube</div>
+        <div class="socmed-handle" id="sm-yt-handle">@—</div>
+        <div class="socmed-followers" id="sm-yt-followers">—</div>
+        <div class="socmed-followers-label">Subscribers</div>
+        <span class="socmed-badge" id="sm-yt-badge">Belum terhubung</span>
+      </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="two-col">
+      <div class="chart-card">
+        <div class="chart-card-title">📈 Pertumbuhan Referral</div>
+        <div class="chart-card-sub">6 bulan terakhir</div>
+        <div class="chart-wrap"><canvas id="chartReferral"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-title">💰 Komisi Bulanan</div>
+        <div class="chart-card-sub">6 bulan terakhir</div>
+        <div class="chart-wrap"><canvas id="chartKomisi"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Komisi History -->
+    <div class="section-title">📅 Riwayat Komisi</div>
+    <div class="history-list" id="historyList">
+      <div style="padding:20px;text-align:center;color:var(--stone);font-size:13px;">Memuat data...</div>
+    </div>
+
+  </div><!-- end tab-influencer -->
+
+  <!-- ══════════════ TAB: REFERRAL AGENT ══════════════ -->
+  <div class="tab-content" id="tab-agent">
+
+    <!-- KPI Row -->
+    <div class="kpi-grid kpi-grid-5" style="animation-delay:0.1s">
+      <div class="kpi-card lavender" style="animation-delay:0.08s">
+        <span class="kpi-icon">👥</span>
+        <div class="kpi-label">Jumlah Client</div>
+        <div class="kpi-accent purple"></div>
+        <div class="kpi-value" id="agKpiClient">—</div>
+        <div class="kpi-sub">Total terdaftar</div>
+      </div>
+      <div class="kpi-card mint" style="animation-delay:0.12s">
+        <span class="kpi-icon">✅</span>
+        <div class="kpi-label">Client Aktif</div>
+        <div class="kpi-accent green"></div>
+        <div class="kpi-value" id="agKpiAktif">—</div>
+        <div class="kpi-sub">Trading bulan ini</div>
+      </div>
+      <div class="kpi-card sky" style="animation-delay:0.16s">
+        <span class="kpi-icon">📊</span>
+        <div class="kpi-label">Trading Volume</div>
+        <div class="kpi-accent blue"></div>
+        <div class="kpi-value sm" id="agKpiVolume">Rp 0</div>
+        <div class="kpi-sub">Bulan ini</div>
+      </div>
+      <div class="kpi-card peach" style="animation-delay:0.20s">
+        <span class="kpi-icon">💳</span>
+        <div class="kpi-label">Trading Fee</div>
+        <div class="kpi-accent orange"></div>
+        <div class="kpi-value sm" id="agKpiFee">Rp 0</div>
+        <div class="kpi-sub">Bulan ini</div>
+      </div>
+      <div class="kpi-card yellow" style="animation-delay:0.24s">
+        <span class="kpi-icon">🏅</span>
+        <div class="kpi-label">Komisi Berjalan</div>
+        <div class="kpi-accent gold"></div>
+        <div class="kpi-value sm" id="agKpiKomisi">Rp 0</div>
+        <div class="kpi-sub">Bulan ini</div>
+      </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="two-col">
+      <div class="chart-card">
+        <div class="chart-card-title">📊 Trading Volume Bulanan</div>
+        <div class="chart-card-sub">6 bulan terakhir</div>
+        <div class="chart-wrap"><canvas id="agChartVolume"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-title">💰 Trading Fee & Komisi</div>
+        <div class="chart-card-sub">6 bulan terakhir</div>
+        <div class="chart-wrap"><canvas id="agChartFee"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Client Table -->
+    <div class="section-title">👤 Daftar Client</div>
+    <div class="table-card">
+      <div class="table-head">
+        <span style="font-size:13px;font-weight:700;color:#0a0a22;">Client Terdaftar</span>
+        <input type="text" id="clientSearch" placeholder="Cari client..." onkeyup="filterClients()"
+          style="padding:7px 12px;border:1px solid var(--hairline);border-radius:8px;font-size:12px;outline:none;font-family:Inter,sans-serif;"/>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Nama Client</th>
+              <th>Client Code</th>
+              <th>Sekuritas</th>
+              <th>Status</th>
+              <th>Vol. Bulan Ini</th>
+              <th>Fee Bulan Ini</th>
+            </tr>
+          </thead>
+          <tbody id="clientTableBody">
+            <tr><td colspan="7" style="text-align:center;color:var(--stone);padding:24px;">Memuat data...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Komisi History Agent -->
+    <div class="section-title">📅 Riwayat Komisi</div>
+    <div class="history-list" id="agHistoryList">
+      <div style="padding:20px;text-align:center;color:var(--stone);font-size:13px;">Memuat data...</div>
+    </div>
+
+  </div><!-- end tab-agent -->
+
+</div><!-- end .page -->
+
+<!-- SOCIAL MEDIA EDIT MODAL -->
+<div id="smModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:16px;padding:28px;width:360px;max-width:90vw;">
+    <div style="font-size:15px;font-weight:700;color:#0a0a22;margin-bottom:16px;">Edit Social Media</div>
+    <input type="hidden" id="smPlatform"/>
+    <label style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.8px;display:block;margin-bottom:6px;">Handle / Username</label>
+    <input id="smHandle" type="text" placeholder="@username" style="width:100%;padding:11px 14px;border:1.5px solid #e0e0ef;border-radius:10px;font-size:14px;outline:none;font-family:Inter,sans-serif;margin-bottom:12px;"/>
+    <label style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.8px;display:block;margin-bottom:6px;">Jumlah Followers / Subscribers</label>
+    <input id="smFollowers" type="number" placeholder="10000" style="width:100%;padding:11px 14px;border:1.5px solid #e0e0ef;border-radius:10px;font-size:14px;outline:none;font-family:Inter,sans-serif;margin-bottom:20px;"/>
+    <div style="display:flex;gap:10px;justify-content:flex-end;">
+      <button onclick="closeSmModal()" style="padding:9px 18px;border:1px solid #e0e0ef;border-radius:9px;background:#fff;font-size:13px;cursor:pointer;">Batal</button>
+      <button onclick="saveSmModal()" style="padding:9px 18px;background:#f5a623;color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;">Simpan</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const SUPABASE_URL = (window.__FAWZ_CONFIG__ || {}).supabaseUrl || '';
+  const SUPABASE_KEY = (window.__FAWZ_CONFIG__ || {}).supabaseKey || '';
+  const _sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  // ── AUTH ──
+  function getUser() {
+    try {
+      const raw = sessionStorage.getItem('fawz_influencer') || localStorage.getItem('fawz_influencer');
+      return raw ? JSON.parse(raw) : null;
+    } catch(e) { return null; }
+  }
+  const _user = getUser();
+  // For demo: allow viewing without strict auth guard — redirect only if no session at all
+  // In production, add proper influencer auth
+
+  // ── CLOCK ──
+  function updateClock() {
+    const now = new Date();
+    const h = now.getHours();
+    const greeting = h < 11 ? 'Selamat Pagi' : h < 15 ? 'Selamat Siang' : h < 18 ? 'Selamat Sore' : 'Selamat Malam';
+    const days = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+    const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+    const clock = String(h).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+    document.getElementById('heroGreeting').textContent = greeting;
+    document.getElementById('heroDay').textContent = days[now.getDay()];
+    document.getElementById('heroClock').textContent = clock;
+    document.getElementById('heroDate').textContent = now.getDate() + ' ' + months[now.getMonth()] + ' ' + now.getFullYear();
+  }
+  updateClock(); setInterval(updateClock, 30000);
+
+  // ── USER INFO ──
+  function initUserInfo() {
+    const name = (_user && _user.name) || 'Influencer';
+    const initial = name.charAt(0).toUpperCase();
+    document.getElementById('heroName').textContent  = name;
+    document.getElementById('topbarName').textContent = name;
+    document.getElementById('topbarAvatar').textContent = initial;
+    document.getElementById('refCodeBadge').textContent = (_user && _user.ref_code) || 'PP-' + Math.random().toString(36).substr(2,6).toUpperCase();
+    document.getElementById('sekuritasBadge').textContent = '🏦 ' + ((_user && _user.sekuritas) || 'Maybank Sekuritas');
+    const refCode = (_user && _user.ref_code) || 'PP-DEMO';
+    document.getElementById('refLinkText').textContent = 'https://ikutinpp.id/daftar?ref=' + refCode;
+  }
+  initUserInfo();
+
+  // ── TAB SWITCH ──
+  function switchTab(tabId, btn) {
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + tabId).classList.add('active');
+    btn.classList.add('active');
+  }
+
+  // ── COPY REFERRAL LINK ──
+  function copyRefLink() {
+    const txt = document.getElementById('refLinkText').textContent;
+    navigator.clipboard.writeText(txt).then(() => {
+      const btn = document.querySelector('.copy-btn');
+      btn.textContent = '✅ Tersalin!';
+      setTimeout(() => btn.textContent = '📋 Salin Link', 2000);
+    });
+  }
+
+  // ── SOCIAL MEDIA MODAL ──
+  const smData = { instagram:{}, tiktok:{}, threads:{}, x:{}, youtube:{} };
+  const smKeys = { instagram:['sm-ig','📸'], tiktok:['sm-tt','🎵'], threads:['sm-th','🧵'], x:['sm-x','🐦'], youtube:['sm-yt','▶️'] };
+
+  function editSocmed(platform) {
+    document.getElementById('smPlatform').value = platform;
+    document.getElementById('smHandle').value = smData[platform].handle || '';
+    document.getElementById('smFollowers').value = smData[platform].followers || '';
+    const modal = document.getElementById('smModal');
+    modal.style.display = 'flex';
+  }
+  function closeSmModal() { document.getElementById('smModal').style.display = 'none'; }
+  function saveSmModal() {
+    const platform = document.getElementById('smPlatform').value;
+    const handle   = document.getElementById('smHandle').value.trim();
+    const followers = parseInt(document.getElementById('smFollowers').value) || 0;
+    smData[platform] = { handle, followers };
+    renderSocmed(platform);
+    updateTotalFans();
+    closeSmModal();
+    // TODO: save to Supabase influencer_profiles
+  }
+  function renderSocmed(platform) {
+    const d = smData[platform];
+    const key = smKeys[platform][0];
+    const connected = d.handle && d.handle.length > 0;
+    document.getElementById(key + '-handle').textContent    = d.handle ? '@' + d.handle.replace('@','') : '@—';
+    document.getElementById(key + '-followers').textContent = d.followers ? fmtNum(d.followers) : '—';
+    const badge = document.getElementById(key + '-badge');
+    badge.textContent  = connected ? 'Terhubung' : 'Belum terhubung';
+    badge.className    = 'socmed-badge ' + (connected ? 'connected' : 'disconnected');
+  }
+  function updateTotalFans() {
+    const total = Object.values(smData).reduce((s,d) => s + (parseInt(d.followers) || 0), 0);
+    document.getElementById('kpiTotalFans').textContent = total ? fmtNum(total) : '—';
+  }
+
+  // ── FORMAT HELPERS ──
+  function fmtRp(v) { return 'Rp ' + Math.round(v||0).toLocaleString('id-ID'); }
+  function fmtNum(v) {
+    v = parseInt(v||0);
+    if (v >= 1000000) return (v/1000000).toFixed(1).replace('.0','') + 'Jt';
+    if (v >= 1000)    return (v/1000).toFixed(1).replace('.0','') + 'K';
+    return v.toLocaleString('id-ID');
+  }
+
+  // ── TIER LOGIC ──
+  function updateTier(referralCount) {
+    let tier, icon, rate, next, pct, nextDesc;
+    if (referralCount >= 100)      { tier='Platinum'; icon='💎'; rate='15%'; next='Max'; pct=100; nextDesc='Anda sudah di level tertinggi!'; }
+    else if (referralCount >= 50)  { tier='Gold';     icon='🥇'; rate='12%'; next='Platinum'; pct=Math.round((referralCount-50)/50*100); nextDesc='Butuh '+(100-referralCount)+' referral lagi ke Platinum'; }
+    else if (referralCount >= 20)  { tier='Silver';   icon='🥈'; rate='8%';  next='Gold';     pct=Math.round((referralCount-20)/30*100); nextDesc='Butuh '+(50-referralCount)+' referral lagi ke Gold'; }
+    else                           { tier='Bronze';   icon='🥉'; rate='5%';  next='Silver';   pct=Math.round(referralCount/20*100); nextDesc='Butuh '+(20-referralCount)+' referral lagi ke Silver'; }
+    document.getElementById('tierName').textContent  = tier;
+    document.getElementById('tierIcon').textContent  = icon;
+    document.getElementById('tierRate').textContent  = rate;
+    document.getElementById('tierBadge').textContent = tier + ' Influencer';
+    document.getElementById('tierNext').textContent  = next;
+    document.getElementById('tierPct').textContent   = pct + '%';
+    document.getElementById('tierNextDesc').textContent = nextDesc;
+    document.getElementById('tierFill').style.width  = pct + '%';
+  }
+
+  // ── CHARTS ──
+  const months6 = ['Jan','Feb','Mar','Apr','Mei','Jun'];
+  function initCharts() {
+    // Referral growth (demo data)
+    new Chart(document.getElementById('chartReferral'), {
+      type: 'line',
+      data: {
+        labels: months6,
+        datasets: [{ label: 'Referral Baru', data: [3,7,12,9,18,14],
+          borderColor: '#7b3ff2', backgroundColor: 'rgba(123,63,242,0.08)',
+          tension: 0.4, fill: true, pointRadius: 4, pointBackgroundColor: '#7b3ff2' }]
+      },
+      options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false} },
+        scales:{ y:{ beginAtZero:true, grid:{color:'#f0ede9'}, ticks:{font:{size:11}} }, x:{ grid:{display:false}, ticks:{font:{size:11}} } } }
+    });
+    // Komisi bulanan (demo data)
+    new Chart(document.getElementById('chartKomisi'), {
+      type: 'bar',
+      data: {
+        labels: months6,
+        datasets: [{ label: 'Komisi (Rp)', data: [500000,1200000,2100000,1800000,3200000,2700000],
+          backgroundColor: 'rgba(245,166,35,0.75)', borderRadius: 6 }]
+      },
+      options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false} },
+        scales:{ y:{ beginAtZero:true, grid:{color:'#f0ede9'}, ticks:{ font:{size:11}, callback: v => v>=1000000 ? (v/1000000).toFixed(1)+'Jt' : v>=1000 ? (v/1000)+'K' : v } }, x:{ grid:{display:false}, ticks:{font:{size:11}} } } }
+    });
+    // Agent: Volume
+    new Chart(document.getElementById('agChartVolume'), {
+      type: 'bar',
+      data: {
+        labels: months6,
+        datasets: [{ label: 'Volume (Rp)', data: [120000000,250000000,180000000,320000000,410000000,290000000],
+          backgroundColor: 'rgba(41,128,185,0.7)', borderRadius: 6 }]
+      },
+      options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false} },
+        scales:{ y:{ beginAtZero:true, grid:{color:'#f0ede9'}, ticks:{ font:{size:11}, callback: v => v>=1000000 ? (v/1000000).toFixed(0)+'Jt' : v } }, x:{ grid:{display:false}, ticks:{font:{size:11}} } } }
+    });
+    // Agent: Fee + Komisi
+    new Chart(document.getElementById('agChartFee'), {
+      type: 'line',
+      data: {
+        labels: months6,
+        datasets: [
+          { label: 'Fee', data: [360000,750000,540000,960000,1230000,870000],
+            borderColor: '#dd5b00', backgroundColor: 'rgba(221,91,0,0.07)', tension:0.4, fill:true, pointRadius:4, pointBackgroundColor:'#dd5b00' },
+          { label: 'Komisi', data: [18000,37500,27000,48000,61500,43500],
+            borderColor: '#f5a623', backgroundColor: 'transparent', tension:0.4, borderDash:[4,3], pointRadius:4, pointBackgroundColor:'#f5a623' }
+        ]
+      },
+      options: { responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{ display:true, position:'top', labels:{font:{size:11}, boxWidth:12} } },
+        scales:{ y:{ beginAtZero:true, grid:{color:'#f0ede9'}, ticks:{ font:{size:11}, callback: v => v>=1000000 ? (v/1000000).toFixed(1)+'Jt' : v>=1000 ? (v/1000)+'K' : v } }, x:{ grid:{display:false}, ticks:{font:{size:11}} } } }
+    });
+  }
+
+  // ── LOAD DATA (demo / Supabase ready) ──
+  async function loadInfluencerData() {
+    // Demo values — replace with Supabase queries when influencer_profiles table is ready
+    document.getElementById('kpiReferral').textContent = '37';
+    document.getElementById('kpiRevenue').textContent  = fmtRp(2700000);
+    document.getElementById('kpiRevenueSub').textContent = 'Juni 2026';
+    document.getElementById('kpiKomisi').textContent   = fmtRp(216000);
+    document.getElementById('kpiKomisiSub').textContent = 'Juni 2026';
+    updateTier(37);
+
+    // History
+    const histData = [
+      { month:'Mei 2026',  amount:1800000, status:'paid' },
+      { month:'Apr 2026',  amount:2100000, status:'paid' },
+      { month:'Mar 2026',  amount:1200000, status:'paid' },
+      { month:'Feb 2026',  amount:500000,  status:'paid' },
+      { month:'Jan 2026',  amount:320000,  status:'paid' },
+    ];
+    document.getElementById('historyList').innerHTML = histData.map(h => `
+      <div class="history-item">
+        <div><div class="history-month">${h.month}</div><div class="history-period">Komisi referral</div></div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <span class="history-amount">${fmtRp(h.amount)}</span>
+          <span class="history-status ${h.status==='paid'?'history-paid':'history-pending'}">${h.status==='paid'?'Dibayar':'Pending'}</span>
+        </div>
+      </div>`).join('');
+  }
+
+  async function loadAgentData() {
+    // KPI demo
+    document.getElementById('agKpiClient').textContent  = '37';
+    document.getElementById('agKpiAktif').textContent   = '24';
+    document.getElementById('agKpiVolume').textContent  = fmtRp(290000000);
+    document.getElementById('agKpiFee').textContent     = fmtRp(870000);
+    document.getElementById('agKpiKomisi').textContent  = fmtRp(43500);
+
+    // Client table demo
+    const clients = [
+      { name:'Budi Santoso',   code:'MYB-001', sek:'Maybank', aktif:true,  vol:45000000, fee:135000 },
+      { name:'Rina Kusuma',    code:'MYB-002', sek:'Maybank', aktif:true,  vol:82000000, fee:246000 },
+      { name:'Doni Prakasa',   code:'TMG-003', sek:'Trimegah',aktif:false, vol:0,        fee:0      },
+      { name:'Sari Dewi',      code:'MYB-004', sek:'Maybank', aktif:true,  vol:63000000, fee:189000 },
+      { name:'Ahmad Fauzi',    code:'TMG-005', sek:'Trimegah',aktif:true,  vol:100000000,fee:300000 },
+    ];
+    window._clientData = clients;
+    renderClientTable(clients);
+
+    // History
+    const agHist = [
+      { month:'Mei 2026', amount:61500, status:'paid' },
+      { month:'Apr 2026', amount:48000, status:'paid' },
+      { month:'Mar 2026', amount:27000, status:'paid' },
+    ];
+    document.getElementById('agHistoryList').innerHTML = agHist.map(h => `
+      <div class="history-item">
+        <div><div class="history-month">${h.month}</div><div class="history-period">Komisi trading fee client</div></div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <span class="history-amount">${fmtRp(h.amount)}</span>
+          <span class="history-status ${h.status==='paid'?'history-paid':'history-pending'}">${h.status==='paid'?'Dibayar':'Pending'}</span>
+        </div>
+      </div>`).join('');
+  }
+
+  function renderClientTable(data) {
+    const tbody = document.getElementById('clientTableBody');
+    if (!data.length) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--stone);padding:24px;">Belum ada client</td></tr>'; return; }
+    tbody.innerHTML = data.map((c,i) => `
+      <tr>
+        <td>${i+1}</td>
+        <td style="font-weight:600">${c.name}</td>
+        <td style="font-family:monospace;font-size:12px;">${c.code}</td>
+        <td>${c.sek}</td>
+        <td><span class="status-pill ${c.aktif?'status-aktif':'status-inaktif'}">${c.aktif?'Aktif':'Tidak Aktif'}</span></td>
+        <td>${c.vol ? fmtRp(c.vol) : '—'}</td>
+        <td>${c.fee ? fmtRp(c.fee) : '—'}</td>
+      </tr>`).join('');
+  }
+
+  function filterClients() {
+    const q = document.getElementById('clientSearch').value.toLowerCase();
+    const filtered = (window._clientData || []).filter(c => c.name.toLowerCase().includes(q) || c.code.toLowerCase().includes(q));
+    renderClientTable(filtered);
+  }
+
+  function doLogout() {
+    sessionStorage.removeItem('fawz_influencer');
+    localStorage.removeItem('fawz_influencer');
+    window.location.href = 'influencer-register.html';
+  }
+
+  // ── INIT ──
+  document.addEventListener('DOMContentLoaded', () => {
+    initCharts();
+    loadInfluencerData();
+    loadAgentData();
+  });
+</script>
+</body>
+</html>
