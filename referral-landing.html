@@ -339,6 +339,12 @@
           <div class="field-error" id="errRef">Kode referral tidak ditemukan</div>
         </div>
 
+        <div class="field" id="fldPhone">
+          <label for="iPhone">Nomor HP</label>
+          <input type="tel" id="iPhone" placeholder="Contoh: 08123456789" autocomplete="tel"/>
+          <div class="field-error">Nomor HP wajib diisi</div>
+        </div>
+
         <div class="field" id="fldEmail">
           <label for="iEmail">Email</label>
           <input type="email" id="iEmail" placeholder="Masukkan email kamu" autocomplete="email"/>
@@ -503,6 +509,10 @@
     setErr('fldEmail', !emailOk);
     if (!emailOk) ok = false;
 
+    const phone = document.getElementById('iPhone').value.trim();
+    setErr('fldPhone', !phone);
+    if (!phone) ok = false;
+
     return ok;
   }
 
@@ -524,6 +534,7 @@
     const nama  = document.getElementById('iNama').value.trim();
     const ref   = document.getElementById('iRef').value.trim().toUpperCase();
     const email = document.getElementById('iEmail').value.trim();
+    const phone = document.getElementById('iPhone').value.trim();
 
     try {
       const { data: inserted, error } = await _sb
@@ -531,6 +542,7 @@
         .insert({
           nama,
           email,
+          phone,
           referral_code:    ref,
           agent_id:         _agentData?.id   ?? null,
           agent_name:       _agentData ? (_agentData.nama || _agentData.client_name) : null,
