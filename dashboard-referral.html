@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <script src="config.js"></script>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Petik Profit | Dashboard Referral Agent</title>
+  <link rel="icon" type="image/png" href="assets/logo/fawz.png"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+    :root {
+      --navy:#0d0d2b; --gold:#f5a623; --gold-light:#ffc857;
+      --ink:#1a1a1a; --slate:#5d5b54; --stone:#a4a097;
+      --canvas:#ffffff; --surface:#f6f5f4; --hairline:#e5e3df;
+      --tint-lavender:#e6e0f5; --tint-mint:#d9f3e1;
+      --tint-peach:#ffe8d4; --tint-sky:#dcecfa;
+      --tint-yellow:#fef7d6;
+      --green:#1aae39; --orange:#dd5b00;
+    }
+    body { font-family:'Inter',sans-serif; background:var(--surface); min-height:100vh; color:var(--ink); }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+    .page { max-width:1160px; margin:0 auto; padding:32px 24px 60px; }
+    /* TOPBAR */
+    .topbar { background:linear-gradient(135deg,var(--navy) 0%,#1a0e4a 60%,#0d1a3a 100%); padding:0 28px; height:64px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:100; box-shadow:0 2px 16px rgba(0,0,0,0.3); }
+    .topbar-brand img { height:40px; object-fit:contain; }
+    .topbar-right { display:flex; align-items:center; gap:14px; }
+    .topbar-user { display:flex; align-items:center; gap:8px; }
+    .topbar-avatar { width:34px; height:34px; border-radius:50%; background:linear-gradient(135deg,var(--gold),var(--gold-light)); display:flex; align-items:center; justify-content:center; font-weight:700; color:#fff; font-size:.88rem; }
+    .topbar-name { font-size:.85rem; font-weight:600; color:#fff; }
+    .topbar-role { font-size:.72rem; color:rgba(255,255,255,0.5); }
+    .nav-link-inf { color:rgba(255,255,255,0.75); text-decoration:none; font-size:.85rem; font-weight:500; padding:7px 14px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); transition:all .2s; }
+    .nav-link-inf:hover { background:rgba(255,255,255,0.1); color:#fff; }
+    .logout-btn { background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.15); color:rgba(255,255,255,0.75); padding:6px 14px; border-radius:8px; font-size:.8rem; cursor:pointer; transition:all .2s; }
+    .logout-btn:hover { background:rgba(255,255,255,0.18); color:#fff; }
+    /* HERO */
+    .hero-card { background:linear-gradient(135deg,#0d2b1a 0%,#0a2040 100%); border-radius:16px; padding:28px 32px; display:flex; align-items:center; justify-content:space-between; gap:20px; flex-wrap:wrap; margin-bottom:24px; position:relative; overflow:hidden; animation:fadeUp .4s ease both; }
+    .hero-card::before { content:''; position:absolute; width:320px; height:320px; border-radius:50%; background:radial-gradient(circle,rgba(26,174,57,.1) 0%,transparent 70%); right:-80px; top:-80px; pointer-events:none; }
+    .hero-left { position:relative; z-index:1; }
+    .hero-greeting { font-size:12px; font-weight:600; color:rgba(255,255,255,0.5); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px; }
+    .hero-name { font-size:26px; font-weight:700; color:#fff; letter-spacing:-.5px; }
+    .hero-name span { color:#4ade80; }
+    .hero-sub { font-size:13px; color:rgba(255,255,255,0.55); margin-top:6px; }
+    .hero-badges { display:flex; gap:8px; margin-top:14px; flex-wrap:wrap; }
+    .badge-pill { display:inline-flex; align-items:center; gap:5px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.15); color:rgba(255,255,255,0.8); padding:5px 12px; border-radius:20px; font-size:.78rem; font-weight:500; }
+    .badge-pill.green { background:rgba(26,174,57,0.2); border-color:rgba(26,174,57,0.4); color:#4ade80; }
+    .hero-right { position:relative; z-index:1; text-align:right; }
+    .hero-clock { font-size:28px; font-weight:700; color:#fff; letter-spacing:2px; margin-top:4px; }
+    .hero-datestr { font-size:13px; color:rgba(255,255,255,0.55); margin-top:3px; }
+    /* KPI */
+    .kpi-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:16px; margin-bottom:24px; }
+    .kpi-card { background:var(--canvas); border-radius:14px; padding:22px 20px; border:1px solid var(--hairline); position:relative; overflow:hidden; animation:fadeUp .4s ease both; transition:transform .2s,box-shadow .2s; }
+    .kpi-card:hover { transform:translateY(-2px); box-shadow:0 6px 24px rgba(0,0,0,.08); }
+    .kpi-card.lavender{background:var(--tint-lavender);border-color:#d0c8f0}
+    .kpi-card.mint   {background:var(--tint-mint);  border-color:#b5e8c3}
+    .kpi-card.sky    {background:var(--tint-sky);   border-color:#a8d8f5}
+    .kpi-card.peach  {background:var(--tint-peach); border-color:#f5ccaa}
+    .kpi-card.yellow {background:var(--tint-yellow);border-color:#f0d870}
+    .kpi-label { font-size:11px; font-weight:700; color:var(--slate); text-transform:uppercase; letter-spacing:.8px; margin-bottom:10px; }
+    .kpi-accent { width:20px; height:2px; border-radius:2px; margin-bottom:8px; }
+    .kpi-accent.purple{background:#7b3ff2} .kpi-accent.green{background:var(--green)} .kpi-accent.blue{background:#2980b9} .kpi-accent.orange{background:var(--orange)} .kpi-accent.gold{background:var(--gold)}
+    .kpi-value { font-size:32px; font-weight:700; color:#0a0a22; letter-spacing:-1px; line-height:1; }
+    .kpi-value.sm { font-size:22px; letter-spacing:-.5px; }
+    .kpi-sub { font-size:12px; color:var(--stone); margin-top:6px; font-weight:500; }
+    .kpi-icon { position:absolute; right:16px; top:16px; font-size:1.6rem; opacity:.35; }
+    /* CHARTS */
+    .section-title { font-size:16px; font-weight:700; color:#0a0a22; margin-bottom:14px; letter-spacing:-.3px; }
+    .two-col { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:24px; animation:fadeUp .4s .2s ease both; }
+    .chart-card { background:var(--canvas); border:1px solid var(--hairline); border-radius:14px; padding:20px; }
+    .chart-card-title { font-size:13px; font-weight:700; color:#0a0a22; margin-bottom:4px; }
+    .chart-card-sub { font-size:11px; color:var(--stone); margin-bottom:16px; }
+    .chart-wrap { position:relative; height:200px; }
+    /* TABLE */
+    .table-card { background:var(--canvas); border:1px solid var(--hairline); border-radius:14px; overflow:hidden; margin-bottom:24px; animation:fadeUp .4s .25s ease both; }
+    .table-head { padding:16px 20px; border-bottom:1px solid var(--hairline); display:flex; align-items:center; justify-content:space-between; }
+    .table-wrap { overflow-x:auto; }
+    table { width:100%; border-collapse:collapse; }
+    th { font-size:11px; font-weight:700; color:var(--stone); text-transform:uppercase; letter-spacing:.8px; padding:10px 16px; text-align:left; background:#fafaf9; border-bottom:1px solid var(--hairline); }
+    td { padding:12px 16px; font-size:13px; color:var(--ink); border-bottom:1px solid #f0ede9; }
+    tr:last-child td { border-bottom:none; }
+    tr:hover td { background:#fafaf9; }
+    .status-pill { display:inline-block; padding:3px 10px; border-radius:9999px; font-size:11px; font-weight:600; }
+    .status-aktif   { background:#d9f3e1; color:#1aae39; }
+    .status-inaktif { background:#f6f5f4; color:var(--stone); }
+    /* HISTORY */
+    .history-list { display:flex; flex-direction:column; gap:10px; margin-bottom:24px; }
+    .history-item { background:var(--canvas); border:1px solid var(--hairline); border-radius:12px; padding:14px 18px; display:flex; align-items:center; justify-content:space-between; }
+    .history-month { font-size:13px; font-weight:600; color:var(--ink); }
+    .history-period { font-size:11px; color:var(--stone); margin-top:2px; }
+    .history-amount { font-size:16px; font-weight:700; color:var(--green); }
+    .history-status { font-size:11px; font-weight:600; padding:3px 10px; border-radius:9999px; }
+    .history-paid    { background:#d9f3e1; color:#1aae39; }
+    .history-pending { background:var(--tint-yellow); color:#856400; }
+    /* RESPONSIVE */
+    @media(max-width:900px) { .kpi-grid{grid-template-columns:repeat(3,1fr)} .two-col{grid-template-columns:1fr} }
+    @media(max-width:600px) { .kpi-grid{grid-template-columns:repeat(2,1fr)} .page{padding:20px 14px 40px} }
+  </style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-brand">
+    <img src="assets/logo/ikutin pp.png" alt="Petik Profit" onerror="this.style.display='none'"/>
+  </div>
+  <div class="topbar-right">
+    <a class="nav-link-inf" href="dashboard-influencer.html">📢 Influencer</a>
+    <div class="topbar-user">
+      <div>
+        <div class="topbar-name" id="topbarName">—</div>
+        <div class="topbar-role">Referral Agent</div>
+      </div>
+      <div class="topbar-avatar" id="topbarAvatar">?</div>
+    </div>
+    <button class="logout-btn" onclick="doLogout()">Keluar</button>
+  </div>
+</div>
+
+<div class="page">
+  <!-- HERO -->
+  <div class="hero-card">
+    <div class="hero-left">
+      <div class="hero-greeting" id="heroGreeting">Selamat Pagi</div>
+      <div class="hero-name">Halo, <span id="heroName">—</span>!</div>
+      <div class="hero-sub">Pantau client dan komisi trading Anda hari ini</div>
+      <div class="hero-badges">
+        <span class="badge-pill green">👥 Referral Agent</span>
+        <span class="badge-pill" id="sekuritasBadge">🏦 —</span>
+        <span class="badge-pill" id="clientCodeBadge">🪪 —</span>
+      </div>
+    </div>
+    <div class="hero-right">
+      <div style="font-size:12px;color:rgba(255,255,255,0.4);font-weight:600;text-transform:uppercase;letter-spacing:1px;" id="heroDay">—</div>
+      <div class="hero-clock" id="heroClock">—</div>
+      <div class="hero-datestr" id="heroDate">—</div>
+    </div>
+  </div>
+
+  <!-- KPI -->
+  <div class="kpi-grid">
+    <div class="kpi-card lavender" style="animation-delay:.08s"><span class="kpi-icon">👥</span><div class="kpi-label">Jumlah Client</div><div class="kpi-accent purple"></div><div class="kpi-value" id="kpiClient">—</div><div class="kpi-sub">Total terdaftar</div></div>
+    <div class="kpi-card mint"     style="animation-delay:.12s"><span class="kpi-icon">✅</span><div class="kpi-label">Client Aktif</div><div class="kpi-accent green"></div><div class="kpi-value" id="kpiAktif">—</div><div class="kpi-sub">Trading bulan ini</div></div>
+    <div class="kpi-card sky"      style="animation-delay:.16s"><span class="kpi-icon">📊</span><div class="kpi-label">Trading Volume</div><div class="kpi-accent blue"></div><div class="kpi-value sm" id="kpiVolume">Rp 0</div><div class="kpi-sub">Bulan ini</div></div>
+    <div class="kpi-card peach"    style="animation-delay:.20s"><span class="kpi-icon">💳</span><div class="kpi-label">Trading Fee</div><div class="kpi-accent orange"></div><div class="kpi-value sm" id="kpiFee">Rp 0</div><div class="kpi-sub">Bulan ini</div></div>
+    <div class="kpi-card yellow"   style="animation-delay:.24s"><span class="kpi-icon">🏅</span><div class="kpi-label">Komisi Berjalan</div><div class="kpi-accent gold"></div><div class="kpi-value sm" id="kpiKomisi">Rp 0</div><div class="kpi-sub">Bulan ini</div></div>
+  </div>
+
+  <!-- CHARTS -->
+  <div class="two-col">
+    <div class="chart-card"><div class="chart-card-title">📊 Trading Volume Bulanan</div><div class="chart-card-sub">6 bulan terakhir</div><div class="chart-wrap"><canvas id="chartVolume"></canvas></div></div>
+    <div class="chart-card"><div class="chart-card-title">💰 Trading Fee & Komisi</div><div class="chart-card-sub">6 bulan terakhir</div><div class="chart-wrap"><canvas id="chartFee"></canvas></div></div>
+  </div>
+
+  <!-- CLIENT TABLE -->
+  <div class="section-title">👤 Daftar Client</div>
+  <div class="table-card">
+    <div class="table-head">
+      <span style="font-size:13px;font-weight:700;color:#0a0a22;">Client Terdaftar</span>
+      <input type="text" id="clientSearch" placeholder="Cari nama / kode..." onkeyup="filterClients()"
+        style="padding:7px 12px;border:1px solid var(--hairline);border-radius:8px;font-size:12px;outline:none;font-family:Inter,sans-serif;"/>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th><th>Nama Client</th><th>Client Code</th>
+            <th>Sekuritas</th><th>Status</th>
+            <th>Vol. Bulan Ini</th><th>Fee Bulan Ini</th>
+          </tr>
+        </thead>
+        <tbody id="clientTableBody">
+          <tr><td colspan="7" style="text-align:center;color:var(--stone);padding:24px;">Memuat data...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="section-title">📅 Riwayat Komisi</div>
+  <div class="history-list" id="historyList">
+    <div style="padding:20px;text-align:center;color:var(--stone);font-size:13px;">Memuat data...</div>
+  </div>
+</div>
+
+<script>
+  const SUPABASE_URL=(window.__FAWZ_CONFIG__||{}).supabaseUrl||'';
+  const SUPABASE_KEY=(window.__FAWZ_CONFIG__||{}).supabaseKey||'';
+  const _sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+
+  function getUser(){try{const r=sessionStorage.getItem('fawz_influencer')||localStorage.getItem('fawz_influencer');return r?JSON.parse(r):null;}catch(e){return null;}}
+  const _user=getUser();
+
+  function fmtRp(v){return'Rp '+Math.round(v||0).toLocaleString('id-ID');}
+  function fmtNum(v){v=parseInt(v||0);if(v>=1000000)return(v/1000000).toFixed(1).replace('.0','')+'Jt';if(v>=1000)return(v/1000).toFixed(1).replace('.0','')+'K';return v.toLocaleString('id-ID');}
+
+  // CLOCK
+  function updateClock(){
+    const now=new Date(); const h=now.getHours();
+    const g=h<11?'Selamat Pagi':h<15?'Selamat Siang':h<18?'Selamat Sore':'Selamat Malam';
+    const days=['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+    const months=['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+    document.getElementById('heroGreeting').textContent=g;
+    document.getElementById('heroDay').textContent=days[now.getDay()];
+    document.getElementById('heroClock').textContent=String(h).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+    document.getElementById('heroDate').textContent=now.getDate()+' '+months[now.getMonth()]+' '+now.getFullYear();
+  }
+  updateClock(); setInterval(updateClock,30000);
+
+  // USER INFO
+  function initUserInfo(){
+    const name=(_user&&_user.name)||'Referral Agent';
+    document.getElementById('heroName').textContent=name;
+    document.getElementById('topbarName').textContent=name;
+    document.getElementById('topbarAvatar').textContent=name.charAt(0).toUpperCase();
+    document.getElementById('sekuritasBadge').textContent='🏦 '+((_user&&_user.sekuritas)||'Maybank Sekuritas');
+    document.getElementById('clientCodeBadge').textContent='🪪 '+((_user&&_user.client_code)||'—');
+  }
+  initUserInfo();
+
+  // LOAD DATA
+  function loadData(){
+    document.getElementById('kpiClient').textContent='37';
+    document.getElementById('kpiAktif').textContent='24';
+    document.getElementById('kpiVolume').textContent=fmtRp(290000000);
+    document.getElementById('kpiFee').textContent=fmtRp(870000);
+    document.getElementById('kpiKomisi').textContent=fmtRp(43500);
+    const clients=[
+      {name:'Budi Santoso',  code:'MYB-001',sek:'Maybank',  aktif:true, vol:45000000,fee:135000},
+      {name:'Rina Kusuma',   code:'MYB-002',sek:'Maybank',  aktif:true, vol:82000000,fee:246000},
+      {name:'Doni Prakasa',  code:'TMG-003',sek:'Trimegah', aktif:false,vol:0,        fee:0},
+      {name:'Sari Dewi',     code:'MYB-004',sek:'Maybank',  aktif:true, vol:63000000,fee:189000},
+      {name:'Ahmad Fauzi',   code:'TMG-005',sek:'Trimegah', aktif:true, vol:100000000,fee:300000},
+    ];
+    window._clients=clients; renderClients(clients);
+    const hist=[{m:'Mei 2026',a:61500,s:'paid'},{m:'Apr 2026',a:48000,s:'paid'},{m:'Mar 2026',a:27000,s:'paid'},{m:'Feb 2026',a:18000,s:'paid'}];
+    document.getElementById('historyList').innerHTML=hist.map(h=>`<div class="history-item"><div><div class="history-month">${h.m}</div><div class="history-period">Komisi trading fee client</div></div><div style="display:flex;align-items:center;gap:12px;"><span class="history-amount">${fmtRp(h.a)}</span><span class="history-status history-paid">Dibayar</span></div></div>`).join('');
+  }
+
+  function renderClients(data){
+    const tbody=document.getElementById('clientTableBody');
+    if(!data.length){tbody.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--stone);padding:24px;">Tidak ada data</td></tr>';return;}
+    tbody.innerHTML=data.map((c,i)=>`<tr><td>${i+1}</td><td style="font-weight:600">${c.name}</td><td style="font-family:monospace;font-size:12px">${c.code}</td><td>${c.sek}</td><td><span class="status-pill ${c.aktif?'status-aktif':'status-inaktif'}">${c.aktif?'Aktif':'Tidak Aktif'}</span></td><td>${c.vol?fmtRp(c.vol):'—'}</td><td>${c.fee?fmtRp(c.fee):'—'}</td></tr>`).join('');
+  }
+
+  function filterClients(){
+    const q=document.getElementById('clientSearch').value.toLowerCase();
+    renderClients((window._clients||[]).filter(c=>c.name.toLowerCase().includes(q)||c.code.toLowerCase().includes(q)));
+  }
+
+  // CHARTS
+  function initCharts(){
+    const m6=['Jan','Feb','Mar','Apr','Mei','Jun'];
+    new Chart(document.getElementById('chartVolume'),{type:'bar',data:{labels:m6,datasets:[{label:'Volume',data:[120000000,250000000,180000000,320000000,410000000,290000000],backgroundColor:'rgba(41,128,185,.7)',borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:'#f0ede9'},ticks:{font:{size:11},callback:v=>v>=1000000?(v/1000000).toFixed(0)+'Jt':v}},x:{grid:{display:false},ticks:{font:{size:11}}}}}});
+    new Chart(document.getElementById('chartFee'),{type:'line',data:{labels:m6,datasets:[{label:'Fee',data:[360000,750000,540000,960000,1230000,870000],borderColor:'#dd5b00',backgroundColor:'rgba(221,91,0,.07)',tension:.4,fill:true,pointRadius:4,pointBackgroundColor:'#dd5b00'},{label:'Komisi',data:[18000,37500,27000,48000,61500,43500],borderColor:'#f5a623',backgroundColor:'transparent',tension:.4,borderDash:[4,3],pointRadius:4,pointBackgroundColor:'#f5a623'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'top',labels:{font:{size:11},boxWidth:12}}},scales:{y:{beginAtZero:true,grid:{color:'#f0ede9'},ticks:{font:{size:11},callback:v=>v>=1000000?(v/1000000).toFixed(1)+'Jt':v>=1000?(v/1000)+'K':v}},x:{grid:{display:false},ticks:{font:{size:11}}}}}});
+  }
+
+  function doLogout(){sessionStorage.removeItem('fawz_influencer');localStorage.removeItem('fawz_influencer');window.location.href='influencer-register.html';}
+
+  document.addEventListener('DOMContentLoaded',()=>{loadData();initCharts();});
+</script>
+</body>
+</html>
