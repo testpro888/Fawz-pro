@@ -15,28 +15,42 @@
     document.head.appendChild(link);
   })();
 
-  /* ── 0b. SUPABASE INIT — singleton, cegah multiple instances ── */
+  /* ── 0b. SUPABASE INIT — strict singleton, cegah multiple GoTrueClient ── */
   (function() {
-    // Sudah ada instance yang valid → pakai langsung
-    if (window._supabase && typeof window._supabase.from === 'function') return;
+    // Guard flag — kalau sudah pernah init dari navbar.js, skip total
+    if (window.__FAWZ_SB_INIT__) return;
 
-    const SUPABASE_URL = (window.__FAWZ_CONFIG__ || {}).supabaseUrl || '';
-    const SUPABASE_KEY = (window.__FAWZ_CONFIG__ || {}).supabaseKey || '';
-    if (!SUPABASE_URL || !SUPABASE_KEY) { console.warn('Fawz: config.js belum dimuat'); return; }
+    // Sudah ada instance valid dari halaman → pakai, set flag, keluar
+    if (window._supabase && typeof window._supabase.from === 'function') {
+      window.__FAWZ_SB_INIT__ = true;
+      return;
+    }
 
-    // Cari instance yang mungkin sudah dibuat halaman dengan nama berbeda
+    // Cari instance dengan nama variabel lain yang mungkin dibuat halaman
     const knownKeys = ['_sb', '_sbDash', '_sbClient', '_sbSales', '_sbBonds', '_sbAdmin'];
     const found = knownKeys.find(k => window[k] && typeof window[k].from === 'function');
     if (found) {
       window._supabase = window[found];
+      window.__FAWZ_SB_INIT__ = true;
       return;
     }
 
-    // Belum ada sama sekali → buat satu, lalu jangan buat lagi
+    // Belum ada sama sekali → buat SATU instance, set flag supaya tidak dibuat lagi
+    const SUPABASE_URL = (window.__FAWZ_CONFIG__ || {}).supabaseUrl || '';
+    const SUPABASE_KEY = (window.__FAWZ_CONFIG__ || {}).supabaseKey || '';
+    if (!SUPABASE_URL || !SUPABASE_KEY) { console.warn('Fawz: config.js belum dimuat'); return; }
+
     const tryInit = () => {
-      if (window._supabase && typeof window._supabase.from === 'function') return; // sudah dibuat
+      if (window.__FAWZ_SB_INIT__) return; // sudah dibuat di antara retry
       if (window.supabase && window.supabase.createClient) {
-        window._supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        // Cek sekali lagi sebelum createClient
+        const found2 = knownKeys.find(k => window[k] && typeof window[k].from === 'function');
+        if (found2) {
+          window._supabase = window[found2];
+        } else {
+          window._supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        }
+        window.__FAWZ_SB_INIT__ = true;
       } else {
         setTimeout(tryInit, 300);
       }
@@ -340,6 +354,7 @@
       }
 
       // Update avatar ring + count
+      console.log('[Fawz] fetchPendingTasks result:', { pendingCount, unreadReplies, totalCount, role: user.role, username: user.username });
       updateAvatarNotifRing(totalCount);
 
     } catch(e) { /* silent */ }
