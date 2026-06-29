@@ -2,7 +2,9 @@
    navbar.js — Fawz Pro Navbar Logic
    Di-load via <script src="navbar.js"> di setiap halaman.
    Menghandle: session sync, user info, dropdown, active link.
+   v2.5.0 — avatar ring notif
    ============================================================ */
+console.log('[Fawz navbar.js] v2.5.0 loaded');
 
 (function () {
 
