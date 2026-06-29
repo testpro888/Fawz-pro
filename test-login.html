@@ -103,7 +103,7 @@
     @keyframes rotate { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
 
     /* RIGHT */
-    .right-panel { width: 45%; display: flex; align-items: center; justify-content: center; background: #f7f8fc; padding: 60px 50px; }
+    .right-panel { width: 45%; display: flex; align-items: center; justify-content: center; background: #f7f8fc; padding: 60px 50px; overflow-y: auto; }
     .login-card { width: 100%; max-width: 400px; }
     .login-header { margin-bottom: 28px; }
     .login-header h2 { font-size: 1.85rem; font-weight: 700; color: var(--navy); margin-bottom: 4px; letter-spacing: -0.5px; }
@@ -165,6 +165,8 @@
       align-items: center;
       text-align: center;
       gap: 12px;
+      width: 100%;
+      max-width: 400px;
     }
     .success-screen.active { display: flex; }
     .login-card.hide { display: none; }
@@ -179,6 +181,7 @@
     @keyframes popIn { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
     .success-name { font-size: 1.4rem; font-weight: 700; color: var(--navy); margin-top: 4px; }
     .success-sub { font-size: 0.88rem; color: #888; }
+
     .success-detail {
       background: #f7f8fc;
       border: 1px solid #e0e0ef;
@@ -186,12 +189,45 @@
       padding: 16px 20px;
       width: 100%;
       text-align: left;
-      margin-top: 8px;
+      margin-top: 4px;
     }
     .detail-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid #f0f0f8; font-size: 0.83rem; }
     .detail-row:last-child { border-bottom: none; }
     .detail-row .dk { color: #999; font-weight: 500; }
     .detail-row .dv { color: var(--navy); font-weight: 600; }
+
+    /* Menu shortcut */
+    .menu-section { width: 100%; margin-top: 4px; }
+    .menu-title {
+      font-size: 0.72rem; font-weight: 700; color: #aaa;
+      letter-spacing: 1.5px; text-transform: uppercase;
+      text-align: left; margin-bottom: 10px;
+    }
+    .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .menu-card {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 8px; padding: 18px 12px;
+      background: #fff; border: 1.5px solid #e0e0ef; border-radius: 14px;
+      cursor: pointer; text-decoration: none;
+      transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
+    }
+    .menu-card:hover {
+      border-color: var(--gold);
+      box-shadow: 0 4px 16px rgba(245,166,35,0.18);
+      transform: translateY(-2px);
+    }
+    .menu-card .mc-icon { font-size: 1.8rem; line-height: 1; }
+    .menu-card .mc-label {
+      font-size: 0.78rem; font-weight: 700; color: var(--navy);
+      text-align: center; line-height: 1.3;
+    }
+    .menu-card .mc-sub {
+      font-size: 0.68rem; color: #aaa; text-align: center; line-height: 1.3;
+    }
+    .menu-card-wide {
+      grid-column: 1 / -1;
+    }
+
     .btn-logout {
       width: 100%; padding: 13px;
       background: #fff; border: 1.5px solid #e0e0ef; border-radius: 12px;
@@ -199,7 +235,7 @@
       cursor: pointer; transition: border-color 0.2s, color 0.2s;
       margin-top: 4px;
     }
-    .btn-logout:hover { border-color: var(--gold); color: var(--gold); }
+    .btn-logout:hover { border-color: #e74c3c; color: #e74c3c; }
 
     @media (max-width: 768px) { .left-panel { display: none; } .right-panel { width: 100%; padding: 40px 24px; } }
   </style>
@@ -289,7 +325,8 @@
   <div class="success-screen" id="successScreen">
     <div class="check-circle">✓</div>
     <div class="success-name" id="successName"></div>
-    <div class="success-sub">Login berhasil — identitas terverifikasi</div>
+    <div class="success-sub">Login berhasil — selamat datang</div>
+
     <div class="success-detail">
       <div class="detail-row">
         <span class="dk">Email</span>
@@ -304,6 +341,50 @@
         <span class="dv" style="color:#27ae60;">✅ Terverifikasi</span>
       </div>
     </div>
+
+    <!-- Menu Shortcut -->
+    <div class="menu-section">
+      <div class="menu-title">Navigasi Cepat</div>
+      <div class="menu-grid">
+
+        <!-- Referral Agent -->
+        <a href="referral-agent.html" class="menu-card">
+          <span class="mc-icon">🤝</span>
+          <span class="mc-label">Referral Agent</span>
+          <span class="mc-sub">Data & manajemen</span>
+        </a>
+
+        <!-- Dashboard Referral -->
+        <a href="dashboard-referral.html" class="menu-card">
+          <span class="mc-icon">📊</span>
+          <span class="mc-label">Dashboard Referral</span>
+          <span class="mc-sub">Statistik referral</span>
+        </a>
+
+        <!-- Influencer -->
+        <a href="influencer-register.html" class="menu-card">
+          <span class="mc-icon">🌟</span>
+          <span class="mc-label">Influencer</span>
+          <span class="mc-sub">Registrasi influencer</span>
+        </a>
+
+        <!-- Dashboard Influencer -->
+        <a href="dashboard-influencer.html" class="menu-card">
+          <span class="mc-icon">📈</span>
+          <span class="mc-label">Dashboard Influencer</span>
+          <span class="mc-sub">Statistik influencer</span>
+        </a>
+
+        <!-- Dashboard Utama -->
+        <a href="dashboard.html" class="menu-card menu-card-wide">
+          <span class="mc-icon">🏠</span>
+          <span class="mc-label">Dashboard Utama</span>
+          <span class="mc-sub">Halaman utama Fawz Pro</span>
+        </a>
+
+      </div>
+    </div>
+
     <button class="btn-logout" onclick="doLogout()">🚪 Keluar</button>
   </div>
 
