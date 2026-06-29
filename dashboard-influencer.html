@@ -112,7 +112,7 @@
     <img src="assets/logo/ikutin pp.png" alt="Petik Profit" onerror="this.style.display='none'"/>
   </div>
   <div class="topbar-right">
-    <a class="nav-link-agent" href="dashboard-referral.html">👥 Referral Agent</a>
+
     <div class="topbar-user">
       <div>
         <div class="topbar-name" id="topbarName">—</div>
@@ -311,14 +311,12 @@
 
   // LOAD DATA
   function loadData(){
-    const ref=37;
-    document.getElementById('kpiReferral').textContent=ref;
-    document.getElementById('kpiRevenue').textContent=fmtRp(2700000);
-    document.getElementById('kpiRevenueSub').textContent='Juni 2026';
-    document.getElementById('kpiKomisi').textContent=fmtRp(216000);
-    document.getElementById('kpiKomisiSub').textContent='Juni 2026';
-    const hist=[{month:'Mei 2026',amount:1800000,s:'paid'},{month:'Apr 2026',amount:2100000,s:'paid'},{month:'Mar 2026',amount:1200000,s:'paid'},{month:'Feb 2026',amount:500000,s:'paid'},{month:'Jan 2026',amount:320000,s:'paid'}];
-    document.getElementById('historyList').innerHTML=hist.map(h=>`<div class="history-item"><div><div class="history-month">${h.month}</div><div class="history-period">Komisi referral</div></div><div style="display:flex;align-items:center;gap:12px;"><span class="history-amount">${fmtRp(h.amount)}</span><span class="history-status history-paid">Dibayar</span></div></div>`).join('');
+    document.getElementById('kpiReferral').textContent='—';
+    document.getElementById('kpiRevenue').textContent='—';
+    document.getElementById('kpiRevenueSub').textContent='—';
+    document.getElementById('kpiKomisi').textContent='—';
+    document.getElementById('kpiKomisiSub').textContent='—';
+    document.getElementById('historyList').innerHTML='<div style="padding:20px;text-align:center;color:var(--stone);font-size:13px;">Belum ada data komisi.</div>';
   }
 
   // CHARTS
