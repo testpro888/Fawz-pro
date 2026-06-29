@@ -13,6 +13,7 @@
     const SUPABASE_URL = (window.__FAWZ_CONFIG__ || {}).supabaseUrl || '';
     const SUPABASE_KEY = (window.__FAWZ_CONFIG__ || {}).supabaseKey || '';
     const _sbDash = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    window._supabase = _sbDash; // expose untuk navbar.js
 
     async function loadObligasiCount() {
       try {
