@@ -1082,6 +1082,77 @@
       document.getElementById('actionModal').classList.remove('open');
   }
 
+  // ══════════════════════════════════
+  //  AUTO-CREATE AGENT FROM REGISTRATION
+  // ══════════════════════════════════
+  async function autoCreateAgent(reg) {
+    try {
+      // Cek duplikat: pertama cek by email, lalu by client_code (terpisah agar query valid)
+      let isDuplicate = false;
+
+      if (reg.email) {
+        const { data: byEmail } = await window._supabase
+          .from('referral_agents')
+          .select('id')
+          .eq('email', reg.email)
+          .limit(1);
+        if (byEmail && byEmail.length > 0) isDuplicate = true;
+      }
+
+      if (!isDuplicate && reg.client_code) {
+        const { data: byCode } = await window._supabase
+          .from('referral_agents')
+          .select('id')
+          .eq('client_id', reg.client_code)
+          .limit(1);
+        if (byCode && byCode.length > 0) isDuplicate = true;
+      }
+
+      if (isDuplicate) {
+        console.log('[autoCreateAgent] Agent sudah ada, skip insert.');
+        return;
+      }
+
+      const newAgent = {
+        nama:           reg.nama            || null,
+        email:          reg.email           || null,
+        phone:          reg.phone           || null,
+        sekuritas:      reg.sekuritas       || null,
+        client_id:      reg.client_code     || null,
+        agent_code:     reg.client_code     || null,
+        influencer:     reg.influencer_code || null,
+        fee_status:     'free',
+        target_fee:     10000000,
+        fee_below_pct:  5,
+        fee_target_pct: 12
+      };
+
+      console.log('[autoCreateAgent] Inserting agent:', newAgent);
+
+      const { data: agentData, error: agentErr } = await window._supabase
+        .from('referral_agents')
+        .insert(newAgent)
+        .select()
+        .single();
+
+      if (agentErr) {
+        console.error('[autoCreateAgent] Insert error:', agentErr.message, agentErr);
+        showToast('Agent dibuat tapi ada error: ' + agentErr.message);
+        return;
+      }
+
+      if (agentData) {
+        console.log('[autoCreateAgent] Agent berhasil dibuat:', agentData);
+        _all.unshift(agentData);
+        populateFilters();
+        updateStats();
+        applyFilter();
+      }
+    } catch(e) {
+      console.error('[autoCreateAgent] Exception:', e);
+    }
+  }
+
   async function doAction() {
     if (!_pendingAction) return;
     const { id, type } = _pendingAction;
@@ -1104,45 +1175,7 @@
       if (type === 'confirm') {
         const reg = _allReg[idx];
         if (reg) {
-          try {
-            // Cek apakah sudah ada di referral_agents berdasarkan email atau client_code
-            const { data: existing } = await window._supabase
-              .from('referral_agents')
-              .select('id')
-              .or(`email.eq.${reg.email}${reg.client_code ? `,client_id.eq.${reg.client_code}` : ''}`)
-              .limit(1);
-
-            if (!existing || existing.length === 0) {
-              const newAgent = {
-                nama:          reg.nama         || null,
-                email:         reg.email        || null,
-                phone:         reg.phone        || null,
-                sekuritas:     reg.sekuritas    || null,
-                client_id:     reg.client_code  || null,
-                agent_code:    reg.client_code  || null,
-                influencer:    reg.influencer_code || null,
-                fee_status:    'free',
-                target_fee:    10000000,
-                fee_below_pct: 5,
-                fee_target_pct: 12
-              };
-              const { data: agentData, error: agentErr } = await window._supabase
-                .from('referral_agents')
-                .insert(newAgent)
-                .select()
-                .single();
-              if (agentErr) {
-                console.warn('[doAction] Gagal insert referral_agents:', agentErr.message);
-              } else if (agentData) {
-                _all.unshift(agentData);
-                populateFilters();
-                updateStats();
-                applyFilter();
-              }
-            }
-          } catch(e2) {
-            console.warn('[doAction] Error saat auto-create agent:', e2);
-          }
+          await autoCreateAgent(reg);
         }
       }
 
