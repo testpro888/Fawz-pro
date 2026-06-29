@@ -15,6 +15,48 @@
     document.head.appendChild(link);
   })();
 
+  /* ── 0a. INJECT AVATAR RING CSS — langsung dari JS, tidak bergantung pada fetch navbar.html ── */
+  (function() {
+    if (document.getElementById('fawz-avatar-ring-css')) return; // sudah diinject
+    const style = document.createElement('style');
+    style.id = 'fawz-avatar-ring-css';
+    style.textContent = `
+      .avatar-wrapper { position: relative; flex-shrink: 0; }
+      .avatar-wrapper.has-notif::before {
+        content: '';
+        position: absolute;
+        top: -3px; left: -3px; right: -3px; bottom: -3px;
+        border-radius: 50%;
+        border: 2.5px solid #e74c3c;
+        animation: fawz-ring-pulse 1.8s ease-in-out infinite;
+        z-index: 1;
+        pointer-events: none;
+      }
+      @keyframes fawz-ring-pulse {
+        0%, 100% { opacity: 1; transform: scale(1); box-shadow: 0 0 0 0 rgba(231,76,60,0.5); }
+        50%       { opacity: 0.85; transform: scale(1.08); box-shadow: 0 0 0 5px rgba(231,76,60,0); }
+      }
+      .avatar-notif-count {
+        position: absolute;
+        top: -4px; right: -4px;
+        min-width: 17px; height: 17px;
+        background: #e74c3c;
+        color: #fff; font-size: .6rem; font-weight: 700;
+        border-radius: 10px; padding: 0 4px;
+        display: none; align-items: center; justify-content: center;
+        border: 2px solid #0d0d2b;
+        z-index: 2;
+        animation: fawz-badge-pulse 1.8s infinite;
+      }
+      .avatar-notif-count.visible { display: flex !important; }
+      @keyframes fawz-badge-pulse {
+        0%,100% { transform: scale(1); }
+        50%      { transform: scale(1.15); }
+      }
+    `;
+    document.head.appendChild(style);
+  })();
+
   /* ── 0b. SUPABASE INIT — strict singleton, cegah multiple GoTrueClient ── */
   (function() {
     // Guard flag — kalau sudah pernah init dari navbar.js, skip total
@@ -365,9 +407,9 @@
     const wrapper = document.getElementById('avatarWrapper');
     const badge   = document.getElementById('avatarNotifCount');
 
-    // Jika elemen belum ada di DOM (race condition), retry setelah 300ms
+    // Jika elemen belum ada di DOM (navbar belum selesai di-inject), retry
     if (!wrapper || !badge) {
-      setTimeout(() => updateAvatarNotifRing(count), 300);
+      setTimeout(() => updateAvatarNotifRing(count), 200);
       return;
     }
 
