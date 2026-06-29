@@ -241,7 +241,7 @@
   async function fetchPendingTasks(user) {
     if (!window._supabase) return;
     try {
-      let count = 0;
+      let pendingCount = 0;
 
       if (user.role === 'head_account') {
         // Head account: hitung semua task pending
@@ -249,7 +249,7 @@
           .from('job_tasks')
           .select('id', { count: 'exact', head: true })
           .eq('status', 'pending');
-        if (!error) count = c || 0;
+        if (!error) pendingCount = c || 0;
       } else {
         // Task yang ditujukan ke seluruh role (assigned_to null)
         const { count: c1 } = await window._supabase
@@ -267,13 +267,65 @@
           .eq('assigned_role', user.role)
           .eq('assigned_to', user.username);
 
-        count = (c1 || 0) + (c2 || 0);
+        pendingCount = (c1 || 0) + (c2 || 0);
       }
+
+      // Hitung unread replies — reply dari orang lain yang belum dibaca
+      let unreadReplies = 0;
+      try {
+        const replyReadKey = 'fawz_reply_read_' + (user.username || user.name || 'anon');
+        const replyLastRead = JSON.parse(localStorage.getItem(replyReadKey) || '{}');
+
+        // Ambil task yang relevan untuk user ini
+        let taskIds = [];
+        if (user.role === 'head_account') {
+          const { data: tasks } = await window._supabase
+            .from('job_tasks')
+            .select('id')
+            .neq('status', 'deleted');
+          taskIds = (tasks || []).map(t => t.id);
+        } else {
+          const { data: t1 } = await window._supabase
+            .from('job_tasks')
+            .select('id')
+            .eq('assigned_role', user.role)
+            .is('assigned_to', null);
+          const { data: t2 } = await window._supabase
+            .from('job_tasks')
+            .select('id')
+            .eq('assigned_role', user.role)
+            .eq('assigned_to', user.username);
+          taskIds = [...(t1 || []), ...(t2 || [])].map(t => t.id);
+        }
+
+        if (taskIds.length > 0) {
+          const { data: replies } = await window._supabase
+            .from('job_task_replies')
+            .select('task_id, created_at, created_by')
+            .in('task_id', taskIds)
+            .neq('created_by', user.username)
+            .order('created_at', { ascending: false });
+
+          // Ambil reply terbaru per task, cek apakah sudah dibaca
+          const latestPerTask = {};
+          (replies || []).forEach(r => {
+            if (!latestPerTask[r.task_id]) latestPerTask[r.task_id] = r.created_at;
+          });
+
+          unreadReplies = Object.entries(latestPerTask).filter(([taskId, latestAt]) => {
+            const lastRead = replyLastRead[taskId];
+            if (!lastRead) return true;
+            return new Date(latestAt) > new Date(lastRead);
+          }).length;
+        }
+      } catch(e) { /* silent */ }
+
+      const totalCount = pendingCount + unreadReplies;
 
       // Update badge di link Job Report
       const badge = document.getElementById('jobReportBadge');
       const mobBadge = document.getElementById('mobJobReportBadge');
-      const cnt = count || 0;
+      const cnt = pendingCount || 0;
 
       if (badge) {
         badge.textContent = cnt > 99 ? '99+' : cnt;
@@ -283,7 +335,27 @@
         mobBadge.textContent = cnt > 99 ? '99+' : cnt;
         mobBadge.style.display = cnt > 0 ? 'inline-flex' : 'none';
       }
+
+      // Update avatar ring + count
+      updateAvatarNotifRing(totalCount);
+
     } catch(e) { /* silent */ }
+  }
+
+  /* Update lingkaran merah & angka di avatar profile */
+  function updateAvatarNotifRing(count) {
+    const wrapper = document.getElementById('avatarWrapper');
+    const badge   = document.getElementById('avatarNotifCount');
+    if (!wrapper || !badge) return;
+
+    if (count > 0) {
+      wrapper.classList.add('has-notif');
+      badge.textContent = count > 99 ? '99+' : count;
+      badge.classList.add('visible');
+    } else {
+      wrapper.classList.remove('has-notif');
+      badge.classList.remove('visible');
+    }
   }
 
 
