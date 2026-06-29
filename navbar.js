@@ -346,7 +346,12 @@
   function updateAvatarNotifRing(count) {
     const wrapper = document.getElementById('avatarWrapper');
     const badge   = document.getElementById('avatarNotifCount');
-    if (!wrapper || !badge) return;
+
+    // Jika elemen belum ada di DOM (race condition), retry setelah 300ms
+    if (!wrapper || !badge) {
+      setTimeout(() => updateAvatarNotifRing(count), 300);
+      return;
+    }
 
     if (count > 0) {
       wrapper.classList.add('has-notif');
@@ -587,7 +592,7 @@
   });
 
   /* ── 6. FETCH & INJECT NAVBAR HTML, LALU INIT ── */
-  fetch('navbar.html')
+  fetch('navbar.html?v=' + Date.now())
     .then(r => r.text())
     .then(html => {
       const parser = new DOMParser();
