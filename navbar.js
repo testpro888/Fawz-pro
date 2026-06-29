@@ -2,7 +2,9 @@
    navbar.js — Fawz Pro Navbar Logic
    Di-load via <script src="navbar.js"> di setiap halaman.
    Menghandle: session sync, user info, dropdown, active link.
+   v2.5.0 — avatar ring notif
    ============================================================ */
+console.log('[Fawz navbar.js] v2.5.0 loaded');
 
 (function () {
 
@@ -15,28 +17,84 @@
     document.head.appendChild(link);
   })();
 
-  /* ── 0b. SUPABASE INIT — singleton, cegah multiple instances ── */
+  /* ── 0a. INJECT AVATAR RING CSS — langsung dari JS, tidak bergantung pada fetch navbar.html ── */
   (function() {
-    // Sudah ada instance yang valid → pakai langsung
-    if (window._supabase && typeof window._supabase.from === 'function') return;
+    if (document.getElementById('fawz-avatar-ring-css')) return; // sudah diinject
+    const style = document.createElement('style');
+    style.id = 'fawz-avatar-ring-css';
+    style.textContent = `
+      .avatar-wrapper { position: relative; flex-shrink: 0; }
+      .avatar-wrapper.has-notif::before {
+        content: '';
+        position: absolute;
+        top: -3px; left: -3px; right: -3px; bottom: -3px;
+        border-radius: 50%;
+        border: 2.5px solid #e74c3c;
+        animation: fawz-ring-pulse 1.8s ease-in-out infinite;
+        z-index: 1;
+        pointer-events: none;
+      }
+      @keyframes fawz-ring-pulse {
+        0%, 100% { opacity: 1; transform: scale(1); box-shadow: 0 0 0 0 rgba(231,76,60,0.5); }
+        50%       { opacity: 0.85; transform: scale(1.08); box-shadow: 0 0 0 5px rgba(231,76,60,0); }
+      }
+      .avatar-notif-count {
+        position: absolute;
+        top: -4px; right: -4px;
+        min-width: 17px; height: 17px;
+        background: #e74c3c;
+        color: #fff; font-size: .6rem; font-weight: 700;
+        border-radius: 10px; padding: 0 4px;
+        display: none; align-items: center; justify-content: center;
+        border: 2px solid #0d0d2b;
+        z-index: 2;
+        animation: fawz-badge-pulse 1.8s infinite;
+      }
+      .avatar-notif-count.visible { display: flex !important; }
+      @keyframes fawz-badge-pulse {
+        0%,100% { transform: scale(1); }
+        50%      { transform: scale(1.15); }
+      }
+    `;
+    document.head.appendChild(style);
+  })();
 
-    const SUPABASE_URL = (window.__FAWZ_CONFIG__ || {}).supabaseUrl || '';
-    const SUPABASE_KEY = (window.__FAWZ_CONFIG__ || {}).supabaseKey || '';
-    if (!SUPABASE_URL || !SUPABASE_KEY) { console.warn('Fawz: config.js belum dimuat'); return; }
+  /* ── 0b. SUPABASE INIT — strict singleton, cegah multiple GoTrueClient ── */
+  (function() {
+    // Guard flag — kalau sudah pernah init dari navbar.js, skip total
+    if (window.__FAWZ_SB_INIT__) return;
 
-    // Cari instance yang mungkin sudah dibuat halaman dengan nama berbeda
+    // Sudah ada instance valid dari halaman → pakai, set flag, keluar
+    if (window._supabase && typeof window._supabase.from === 'function') {
+      window.__FAWZ_SB_INIT__ = true;
+      return;
+    }
+
+    // Cari instance dengan nama variabel lain yang mungkin dibuat halaman
     const knownKeys = ['_sb', '_sbDash', '_sbClient', '_sbSales', '_sbBonds', '_sbAdmin'];
     const found = knownKeys.find(k => window[k] && typeof window[k].from === 'function');
     if (found) {
       window._supabase = window[found];
+      window.__FAWZ_SB_INIT__ = true;
       return;
     }
 
-    // Belum ada sama sekali → buat satu, lalu jangan buat lagi
+    // Belum ada sama sekali → buat SATU instance, set flag supaya tidak dibuat lagi
+    const SUPABASE_URL = (window.__FAWZ_CONFIG__ || {}).supabaseUrl || '';
+    const SUPABASE_KEY = (window.__FAWZ_CONFIG__ || {}).supabaseKey || '';
+    if (!SUPABASE_URL || !SUPABASE_KEY) { console.warn('Fawz: config.js belum dimuat'); return; }
+
     const tryInit = () => {
-      if (window._supabase && typeof window._supabase.from === 'function') return; // sudah dibuat
+      if (window.__FAWZ_SB_INIT__) return; // sudah dibuat di antara retry
       if (window.supabase && window.supabase.createClient) {
-        window._supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        // Cek sekali lagi sebelum createClient
+        const found2 = knownKeys.find(k => window[k] && typeof window[k].from === 'function');
+        if (found2) {
+          window._supabase = window[found2];
+        } else {
+          window._supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        }
+        window.__FAWZ_SB_INIT__ = true;
       } else {
         setTimeout(tryInit, 300);
       }
@@ -340,6 +398,7 @@
       }
 
       // Update avatar ring + count
+      console.log('[Fawz] fetchPendingTasks result:', { pendingCount, unreadReplies, totalCount, role: user.role, username: user.username });
       updateAvatarNotifRing(totalCount);
 
     } catch(e) { /* silent */ }
@@ -350,9 +409,9 @@
     const wrapper = document.getElementById('avatarWrapper');
     const badge   = document.getElementById('avatarNotifCount');
 
-    // Jika elemen belum ada di DOM (race condition), retry setelah 300ms
+    // Jika elemen belum ada di DOM (navbar belum selesai di-inject), retry
     if (!wrapper || !badge) {
-      setTimeout(() => updateAvatarNotifRing(count), 300);
+      setTimeout(() => updateAvatarNotifRing(count), 200);
       return;
     }
 
