@@ -11,6 +11,7 @@
     const SUPABASE_URL = (window.__FAWZ_CONFIG__ || {}).supabaseUrl || '';
     const SUPABASE_KEY = (window.__FAWZ_CONFIG__ || {}).supabaseKey || '';
     const _sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    window._supabase = _sb;
   </script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
