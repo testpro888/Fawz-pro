@@ -92,6 +92,10 @@
     }
     .hint-item .hint-val { color: rgba(255,255,255,0.8); word-break: break-all; }
 
+    .eye-toggle { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #aaa; user-select: none; display:flex; align-items:center; padding:4px; border-radius:4px; transition: color 0.2s; }
+    .eye-toggle:hover { color: #666; }
+    .eye-toggle svg { width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+
     .geo { position: absolute; border: 1px solid rgba(245,166,35,0.15); border-radius: 4px; animation: rotate 20s linear infinite; }
     .geo-1 { width:80px; height:80px; top:15%; right:10%; animation-duration:25s; }
     .geo-2 { width:40px; height:40px; bottom:20%; left:8%; animation-duration:18s; }
@@ -226,12 +230,8 @@
           <span class="hint-val">razaqa2812@gmail.com</span>
         </div>
         <div class="hint-item">
-          <span class="hint-label">Nama</span>
-          <span class="hint-val">Muhammad Razaq Arafi</span>
-        </div>
-        <div class="hint-item">
-          <span class="hint-label">No HP</span>
-          <span class="hint-val">085156150372</span>
+          <span class="hint-label">Password</span>
+          <span class="hint-val">12345</span>
         </div>
       </div>
     </div>
@@ -265,18 +265,14 @@
     </div>
 
     <div class="form-group">
-      <label>Nama Lengkap</label>
+      <label>Password</label>
       <div class="input-wrap">
-        <span class="input-icon">👤</span>
-        <input type="text" id="inputNama" placeholder="Nama sesuai identitas" autocomplete="name"/>
-      </div>
-    </div>
-
-    <div class="form-group">
-      <label>Nomor HP</label>
-      <div class="input-wrap">
-        <span class="input-icon">📱</span>
-        <input type="tel" id="inputHp" placeholder="08xxxxxxxxxx" autocomplete="tel"/>
+        <span class="input-icon">🔒</span>
+        <input type="password" id="inputPassword" placeholder="Masukkan password" autocomplete="current-password"/>
+        <span class="eye-toggle" onclick="togglePwd()" title="Tampilkan/sembunyikan password">
+          <svg id="eyeIconShow" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          <svg id="eyeIconHide" viewBox="0 0 24 24" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+        </span>
       </div>
     </div>
 
@@ -317,15 +313,24 @@
   // ─── Daftar akun terdaftar (hardcoded untuk test) ───────────────────────────
   const REGISTERED_ACCOUNTS = [
     {
-      email: 'razaqa2812@gmail.com',
-      nama:  'Muhammad Razaq Arafi',
-      hp:    '085156150372'
+      email:    'razaqa2812@gmail.com',
+      password: '12345',
+      nama:     'Muhammad Razaq Arafi',
+      hp:       '085156150372'
     }
   ];
 
-  // Normalise: hapus spasi, lowercase email
   function normalize(str) { return (str || '').trim().toLowerCase(); }
-  function normalizeHp(hp) { return (hp || '').trim().replace(/\s+/g, ''); }
+
+  function togglePwd() {
+    const p = document.getElementById('inputPassword');
+    const iconShow = document.getElementById('eyeIconShow');
+    const iconHide = document.getElementById('eyeIconHide');
+    const isHidden = p.type === 'password';
+    p.type = isHidden ? 'text' : 'password';
+    iconShow.style.display = isHidden ? 'none' : '';
+    iconHide.style.display = isHidden ? '' : 'none';
+  }
 
   function showMsg(type, text) {
     document.getElementById('msgError').style.display = 'none';
@@ -351,74 +356,77 @@
     }
   }
 
-  function markError(id) {
-    document.getElementById(id).classList.add('error');
-  }
+  function markError(id) { document.getElementById(id).classList.add('error'); }
   function clearErrors() {
-    ['inputEmail','inputNama','inputHp'].forEach(id => {
+    ['inputEmail','inputPassword'].forEach(id => {
       document.getElementById(id).classList.remove('error');
     });
   }
 
+  let _attempts = 0;
+  let _lockedUntil = 0;
+
   function doLogin() {
     clearErrors();
-    const email = document.getElementById('inputEmail').value.trim();
-    const nama  = document.getElementById('inputNama').value.trim();
-    const hp    = document.getElementById('inputHp').value.trim();
+    const email    = document.getElementById('inputEmail').value.trim();
+    const password = document.getElementById('inputPassword').value;
 
     // Validasi kosong
     let hasEmpty = false;
-    if (!email) { markError('inputEmail'); hasEmpty = true; }
-    if (!nama)  { markError('inputNama');  hasEmpty = true; }
-    if (!hp)    { markError('inputHp');    hasEmpty = true; }
-    if (hasEmpty) {
-      showMsg('error', '⚠️ Semua kolom wajib diisi.');
-      return;
-    }
+    if (!email)    { markError('inputEmail');    hasEmpty = true; }
+    if (!password) { markError('inputPassword'); hasEmpty = true; }
+    if (hasEmpty) { showMsg('error', '⚠️ Email dan password wajib diisi.'); return; }
 
-    // Validasi format email sederhana
+    // Validasi format email
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       markError('inputEmail');
       showMsg('error', '⚠️ Format email tidak valid.');
       return;
     }
 
+    // Brute-force protection
+    if (Date.now() < _lockedUntil) {
+      const sisa = Math.ceil((_lockedUntil - Date.now()) / 1000);
+      showMsg('error', `⏳ Terlalu banyak percobaan. Coba lagi dalam ${sisa} detik.`);
+      return;
+    }
+
     setLoading(true);
 
-    // Simulasi delay jaringan kecil
     setTimeout(() => {
       const match = REGISTERED_ACCOUNTS.find(acc =>
         normalize(acc.email) === normalize(email) &&
-        normalize(acc.nama)  === normalize(nama) &&
-        normalizeHp(acc.hp)  === normalizeHp(hp)
+        acc.password === password
       );
 
       if (match) {
-        showMsg('success', '✅ Identitas terverifikasi!');
+        _attempts = 0;
+        showMsg('success', '✅ Login berhasil!');
         setTimeout(() => {
           document.getElementById('loginCard').classList.add('hide');
           const ss = document.getElementById('successScreen');
           ss.classList.add('active');
-          document.getElementById('successName').textContent = match.nama;
-          document.getElementById('detailEmail').textContent = match.email;
-          document.getElementById('detailHp').textContent    = match.hp;
+          document.getElementById('successName').textContent  = match.nama;
+          document.getElementById('detailEmail').textContent  = match.email;
+          document.getElementById('detailHp').textContent     = match.hp;
         }, 700);
       } else {
-        // Cari tahu field mana yang salah untuk pesan lebih jelas
-        const emailMatch = REGISTERED_ACCOUNTS.find(a => normalize(a.email) === normalize(email));
-        if (!emailMatch) {
-          markError('inputEmail');
-          showMsg('error', '❌ Email tidak terdaftar dalam sistem.');
+        _attempts++;
+        if (_attempts >= 5) {
+          _lockedUntil = Date.now() + 30_000;
+          _attempts = 0;
+          showMsg('error', '🔒 Terlalu banyak percobaan. Akun dikunci 30 detik.');
         } else {
-          const namaMatch = emailMatch && normalize(emailMatch.nama) === normalize(nama);
-          if (!namaMatch) {
-            markError('inputNama');
-            showMsg('error', '❌ Nama tidak sesuai dengan email yang terdaftar.');
+          const emailMatch = REGISTERED_ACCOUNTS.find(a => normalize(a.email) === normalize(email));
+          if (!emailMatch) {
+            markError('inputEmail');
+            showMsg('error', `❌ Email tidak terdaftar. (${_attempts}/5)`);
           } else {
-            markError('inputHp');
-            showMsg('error', '❌ Nomor HP tidak sesuai.');
+            markError('inputPassword');
+            showMsg('error', `❌ Password salah. (${_attempts}/5)`);
           }
         }
+        document.getElementById('inputPassword').value = '';
         setLoading(false);
       }
     }, 600);
@@ -427,14 +435,12 @@
   function doLogout() {
     document.getElementById('successScreen').classList.remove('active');
     document.getElementById('loginCard').classList.remove('hide');
-    document.getElementById('inputEmail').value = '';
-    document.getElementById('inputNama').value  = '';
-    document.getElementById('inputHp').value    = '';
+    document.getElementById('inputEmail').value    = '';
+    document.getElementById('inputPassword').value = '';
     document.getElementById('msgSuccess').style.display = 'none';
     setLoading(false);
   }
 
-  // Enter key support
   document.addEventListener('keydown', e => {
     if (e.key === 'Enter' && !document.getElementById('loginCard').classList.contains('hide')) {
       doLogin();
