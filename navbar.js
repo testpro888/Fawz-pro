@@ -15,26 +15,36 @@
     document.head.appendChild(link);
   })();
 
-  /* ── 0b. SUPABASE INIT (jika belum ada di halaman) ── */
+  /* ── 0b. SUPABASE INIT — singleton, cegah multiple instances ── */
   (function() {
-    if (window._supabase) return; // sudah diinit oleh halaman
+    // Sudah ada instance yang valid → pakai langsung
+    if (window._supabase && typeof window._supabase.from === 'function') return;
+
     const SUPABASE_URL = (window.__FAWZ_CONFIG__ || {}).supabaseUrl || '';
     const SUPABASE_KEY = (window.__FAWZ_CONFIG__ || {}).supabaseKey || '';
     if (!SUPABASE_URL || !SUPABASE_KEY) { console.warn('Fawz: config.js belum dimuat'); return; }
-    // Tunggu supabase SDK tersedia (dimuat lewat CDN di head)
+
+    // Cari instance yang mungkin sudah dibuat halaman dengan nama berbeda
+    const knownKeys = ['_sb', '_sbDash', '_sbClient', '_sbSales', '_sbBonds', '_sbAdmin'];
+    const found = knownKeys.find(k => window[k] && typeof window[k].from === 'function');
+    if (found) {
+      window._supabase = window[found];
+      return;
+    }
+
+    // Belum ada sama sekali → buat satu, lalu jangan buat lagi
     const tryInit = () => {
+      if (window._supabase && typeof window._supabase.from === 'function') return; // sudah dibuat
       if (window.supabase && window.supabase.createClient) {
         window._supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
       } else {
         setTimeout(tryInit, 300);
       }
     };
-    // Hanya init jika SDK sudah ada
+
     if (window.supabase) {
-      try { window._supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); }
-      catch(e) { setTimeout(tryInit, 300); }
+      tryInit();
     } else {
-      // Inject Supabase SDK jika tidak ada
       const s = document.createElement('script');
       s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
       s.onload = tryInit;
