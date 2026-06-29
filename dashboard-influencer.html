@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <script src="config.js"></script>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Petik Profit | Dashboard Influencer</title>
+  <link rel="icon" type="image/png" href="assets/logo/fawz.png"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --navy:#0d0d2b; --gold:#f5a623; --gold-light:#ffc857;
+      --ink:#1a1a1a; --slate:#5d5b54; --stone:#a4a097;
+      --canvas:#ffffff; --surface:#f6f5f4; --hairline:#e5e3df;
+      --tint-lavender:#e6e0f5; --tint-mint:#d9f3e1;
+      --tint-peach:#ffe8d4; --tint-yellow:#fef7d6;
+      --green:#1aae39; --orange:#dd5b00;
+    }
+    body { font-family:'Inter',sans-serif; background:var(--surface); min-height:100vh; color:var(--ink); }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+    .page { max-width:1160px; margin:0 auto; padding:32px 24px 60px; }
+    /* TOPBAR */
+    .topbar { background:linear-gradient(135deg,var(--navy) 0%,#1a0e4a 60%,#0d1a3a 100%); padding:0 28px; height:64px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:100; box-shadow:0 2px 16px rgba(0,0,0,0.3); }
+    .topbar-brand img { height:40px; object-fit:contain; }
+    .topbar-right { display:flex; align-items:center; gap:14px; }
+    .topbar-user { display:flex; align-items:center; gap:8px; }
+    .topbar-avatar { width:34px; height:34px; border-radius:50%; background:linear-gradient(135deg,var(--gold),var(--gold-light)); display:flex; align-items:center; justify-content:center; font-weight:700; color:#fff; font-size:.88rem; }
+    .topbar-name { font-size:.85rem; font-weight:600; color:#fff; }
+    .topbar-role { font-size:.72rem; color:rgba(255,255,255,0.5); }
+    .nav-link-agent { color:rgba(255,255,255,0.75); text-decoration:none; font-size:.85rem; font-weight:500; padding:7px 14px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); transition:all .2s; }
+    .nav-link-agent:hover { background:rgba(255,255,255,0.1); color:#fff; }
+    .logout-btn { background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.15); color:rgba(255,255,255,0.75); padding:6px 14px; border-radius:8px; font-size:.8rem; cursor:pointer; transition:all .2s; }
+    .logout-btn:hover { background:rgba(255,255,255,0.18); color:#fff; }
+    /* HERO */
+    .hero-card { background:linear-gradient(135deg,var(--navy) 0%,#1a0e4a 100%); border-radius:16px; padding:28px 32px; display:flex; align-items:center; justify-content:space-between; gap:20px; flex-wrap:wrap; margin-bottom:24px; position:relative; overflow:hidden; animation:fadeUp .4s ease both; }
+    .hero-card::before { content:''; position:absolute; width:320px; height:320px; border-radius:50%; background:radial-gradient(circle,rgba(245,166,35,.12) 0%,transparent 70%); right:-80px; top:-80px; pointer-events:none; }
+    .hero-left { position:relative; z-index:1; }
+    .hero-greeting { font-size:12px; font-weight:600; color:rgba(255,255,255,0.5); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px; }
+    .hero-name { font-size:26px; font-weight:700; color:#fff; letter-spacing:-.5px; }
+    .hero-name span { color:var(--gold); }
+    .hero-sub { font-size:13px; color:rgba(255,255,255,0.55); margin-top:6px; }
+    .hero-badges { display:flex; gap:8px; margin-top:14px; flex-wrap:wrap; }
+    .badge-pill { display:inline-flex; align-items:center; gap:5px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.15); color:rgba(255,255,255,0.8); padding:5px 12px; border-radius:20px; font-size:.78rem; font-weight:500; }
+    .badge-pill.gold { background:rgba(245,166,35,0.2); border-color:rgba(245,166,35,0.4); color:var(--gold-light); }
+    .hero-right { position:relative; z-index:1; text-align:right; }
+    .hero-clock { font-size:28px; font-weight:700; color:#fff; letter-spacing:2px; margin-top:4px; }
+    .hero-datestr { font-size:13px; color:rgba(255,255,255,0.55); margin-top:3px; }
+    /* KPI */
+    .kpi-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:24px; }
+    .kpi-card { background:var(--canvas); border-radius:14px; padding:22px 20px; border:1px solid var(--hairline); position:relative; overflow:hidden; animation:fadeUp .4s ease both; transition:transform .2s,box-shadow .2s; }
+    .kpi-card:hover { transform:translateY(-2px); box-shadow:0 6px 24px rgba(0,0,0,.08); }
+    .kpi-card.lavender { background:var(--tint-lavender); border-color:#d0c8f0; }
+    .kpi-card.mint  { background:var(--tint-mint);  border-color:#b5e8c3; }
+    .kpi-card.peach { background:var(--tint-peach); border-color:#f5ccaa; }
+    .kpi-card.yellow{ background:var(--tint-yellow);border-color:#f0d870; }
+    .kpi-label { font-size:11px; font-weight:700; color:var(--slate); text-transform:uppercase; letter-spacing:.8px; margin-bottom:10px; }
+    .kpi-accent { width:20px; height:2px; border-radius:2px; margin-bottom:8px; }
+    .kpi-accent.purple{background:#7b3ff2} .kpi-accent.green{background:var(--green)} .kpi-accent.orange{background:var(--orange)} .kpi-accent.gold{background:var(--gold)}
+    .kpi-value { font-size:32px; font-weight:700; color:#0a0a22; letter-spacing:-1px; line-height:1; }
+    .kpi-value.sm { font-size:22px; letter-spacing:-.5px; }
+    .kpi-sub { font-size:12px; color:var(--stone); margin-top:6px; font-weight:500; }
+    .kpi-icon { position:absolute; right:16px; top:16px; font-size:1.6rem; opacity:.35; }
+    /* REFERRAL BOX */
+    .referral-box { background:var(--canvas); border:1px solid var(--hairline); border-radius:14px; padding:18px 20px; display:flex; align-items:center; gap:12px; margin-bottom:24px; animation:fadeUp .4s .2s ease both; }
+    .referral-box-label { font-size:11px; font-weight:700; color:var(--slate); text-transform:uppercase; letter-spacing:.8px; margin-bottom:4px; }
+    .referral-link-text { font-size:.9rem; color:#0a0a22; font-weight:500; flex:1; word-break:break-all; }
+    .copy-btn { background:var(--gold); color:#fff; border:none; padding:9px 18px; border-radius:9px; font-weight:600; font-size:.83rem; cursor:pointer; white-space:nowrap; transition:background .2s,transform .15s; font-family:'Inter',sans-serif; }
+    .copy-btn:hover { background:#e8931a; transform:scale(1.03); }
+    /* TIER */
+    .section-title { font-size:16px; font-weight:700; color:#0a0a22; margin-bottom:14px; letter-spacing:-.3px; }
+    /* SOCIAL MEDIA */
+    .section-sub { font-size:12px; color:var(--stone); font-weight:500; margin-left:8px; }
+    .socmed-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin-bottom:24px; animation:fadeUp .4s .15s ease both; }
+    .socmed-card { background:var(--canvas); border:1px solid var(--hairline); border-radius:14px; padding:18px 14px; text-align:center; transition:transform .2s,box-shadow .2s; cursor:pointer; }
+    .socmed-card:hover { transform:translateY(-3px); box-shadow:0 6px 20px rgba(0,0,0,.09); }
+    .socmed-icon { width:40px; height:40px; margin:0 auto 10px; display:flex; align-items:center; justify-content:center; }
+    .socmed-name { font-size:11px; font-weight:700; color:var(--slate); text-transform:uppercase; letter-spacing:.5px; margin-bottom:6px; }
+    .socmed-handle { font-size:11px; color:var(--stone); margin-bottom:10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .socmed-followers { font-size:20px; font-weight:700; color:#0a0a22; letter-spacing:-.5px; }
+    .socmed-followers-label { font-size:10px; color:var(--stone); font-weight:500; }
+    .socmed-badge { display:inline-block; font-size:10px; font-weight:600; padding:2px 8px; border-radius:10px; margin-top:6px; }
+    .socmed-badge.connected { background:#d9f3e1; color:#1aae39; }
+    .socmed-badge.disconnected { background:#f6f5f4; color:var(--stone); }
+    /* CHARTS */
+    .two-col { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:24px; animation:fadeUp .4s .25s ease both; }
+    .chart-card { background:var(--canvas); border:1px solid var(--hairline); border-radius:14px; padding:20px; }
+    .chart-card-title { font-size:13px; font-weight:700; color:#0a0a22; margin-bottom:4px; }
+    .chart-card-sub { font-size:11px; color:var(--stone); margin-bottom:16px; }
+    .chart-wrap { position:relative; height:200px; }
+    /* HISTORY */
+    .history-list { display:flex; flex-direction:column; gap:10px; margin-bottom:24px; }
+    .history-item { background:var(--canvas); border:1px solid var(--hairline); border-radius:12px; padding:14px 18px; display:flex; align-items:center; justify-content:space-between; }
+    .history-month { font-size:13px; font-weight:600; color:var(--ink); }
+    .history-period { font-size:11px; color:var(--stone); margin-top:2px; }
+    .history-amount { font-size:16px; font-weight:700; color:var(--green); }
+    .history-status { font-size:11px; font-weight:600; padding:3px 10px; border-radius:9999px; }
+    .history-paid { background:#d9f3e1; color:#1aae39; }
+    .history-pending { background:var(--tint-yellow); color:#856400; }
+    /* RESPONSIVE */
+    @media(max-width:900px) { .kpi-grid{grid-template-columns:repeat(2,1fr)} .socmed-grid{grid-template-columns:repeat(3,1fr)} .two-col{grid-template-columns:1fr} }
+    @media(max-width:600px) { .socmed-grid{grid-template-columns:repeat(2,1fr)} .page{padding:20px 14px 40px} }
+  </style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-brand">
+    <img src="assets/logo/ikutin pp.png" alt="Petik Profit" onerror="this.style.display='none'"/>
+  </div>
+  <div class="topbar-right">
+    <a class="nav-link-agent" href="dashboard-referral.html">👥 Referral Agent</a>
+    <div class="topbar-user">
+      <div>
+        <div class="topbar-name" id="topbarName">—</div>
+        <div class="topbar-role">Influencer</div>
+      </div>
+      <div class="topbar-avatar" id="topbarAvatar">?</div>
+    </div>
+    <button class="logout-btn" onclick="doLogout()">Keluar</button>
+  </div>
+</div>
+
+<div class="page">
+  <!-- HERO -->
+  <div class="hero-card">
+    <div class="hero-left">
+      <div class="hero-greeting" id="heroGreeting">Selamat Pagi</div>
+      <div class="hero-name">Halo, <span id="heroName">—</span>!</div>
+      <div class="hero-sub">Pantau performa konten dan komisi Anda hari ini</div>
+      <div class="hero-badges">
+        <span class="badge-pill" id="sekuritasBadge">🏦 —</span>
+        <span class="badge-pill">🔗 Kode: <span id="refCodeBadge">—</span></span>
+      </div>
+    </div>
+    <div class="hero-right">
+      <div style="font-size:12px;color:rgba(255,255,255,0.4);font-weight:600;text-transform:uppercase;letter-spacing:1px;" id="heroDay">—</div>
+      <div class="hero-clock" id="heroClock">—</div>
+      <div class="hero-datestr" id="heroDate">—</div>
+    </div>
+  </div>
+
+  <!-- KPI -->
+  <div class="kpi-grid">
+    <div class="kpi-card lavender" style="animation-delay:.08s"><span class="kpi-icon">👥</span><div class="kpi-label">Fans / Referral</div><div class="kpi-accent purple"></div><div class="kpi-value" id="kpiTotalFans">—</div><div class="kpi-sub">Gabungan semua platform</div></div>
+    <div class="kpi-card mint"     style="animation-delay:.13s"><span class="kpi-icon">🔁</span><div class="kpi-label">Referral Berhasil</div><div class="kpi-accent green"></div><div class="kpi-value" id="kpiReferral">—</div><div class="kpi-sub">Total nasabah ter-referral</div></div>
+    <div class="kpi-card peach"    style="animation-delay:.18s"><span class="kpi-icon">💵</span><div class="kpi-label">Revenue Bulan Ini</div><div class="kpi-accent orange"></div><div class="kpi-value sm" id="kpiRevenue">Rp 0</div><div class="kpi-sub" id="kpiRevenueSub">—</div></div>
+    <div class="kpi-card yellow"   style="animation-delay:.23s"><span class="kpi-icon">🏅</span><div class="kpi-label">Komisi Berjalan</div><div class="kpi-accent gold"></div><div class="kpi-value sm" id="kpiKomisi">Rp 0</div><div class="kpi-sub" id="kpiKomisiSub">Bulan ini</div></div>
+  </div>
+
+  <!-- REFERRAL LINK -->
+  <div class="referral-box">
+    <div style="flex:1"><div class="referral-box-label">🔗 Link Referral Unik Anda</div><div class="referral-link-text" id="refLinkText">—</div></div>
+    <button class="copy-btn" onclick="copyRefLink()">📋 Salin Link</button>
+  </div>
+
+  <!-- SOCIAL MEDIA -->
+  <div class="section-title">📱 Social Media <span class="section-sub">Klik untuk edit handle & followers</span></div>
+  <div class="socmed-grid">
+    <div class="socmed-card" onclick="editSocmed('instagram')">
+      <span class="socmed-icon"><svg viewBox="0 0 24 24" width="36" height="36"><defs><radialGradient id="ig1" cx="30%" cy="107%" r="150%"><stop offset="0%" stop-color="#fdf497"/><stop offset="5%" stop-color="#fdf497"/><stop offset="45%" stop-color="#fd5949"/><stop offset="60%" stop-color="#d6249f"/><stop offset="90%" stop-color="#285AEB"/></radialGradient></defs><path fill="url(#ig1)" d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg></span>
+      <div class="socmed-name">Instagram</div>
+      <div class="socmed-handle" id="sm-ig-handle">@—</div>
+      <div class="socmed-followers" id="sm-ig-followers">—</div>
+      <div class="socmed-followers-label">Followers</div>
+      <span class="socmed-badge disconnected" id="sm-ig-badge">Belum terhubung</span>
+    </div>
+    <div class="socmed-card" onclick="editSocmed('tiktok')">
+      <span class="socmed-icon"><svg viewBox="0 0 24 24" width="36" height="36"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.32 6.32 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.75a4.85 4.85 0 0 1-1.01-.06z" fill="#000"/></svg></span>
+      <div class="socmed-name">TikTok</div>
+      <div class="socmed-handle" id="sm-tt-handle">@—</div>
+      <div class="socmed-followers" id="sm-tt-followers">—</div>
+      <div class="socmed-followers-label">Followers</div>
+      <span class="socmed-badge disconnected" id="sm-tt-badge">Belum terhubung</span>
+    </div>
+    <div class="socmed-card" onclick="editSocmed('threads')">
+      <span class="socmed-icon"><svg viewBox="0 0 192 192" width="36" height="36"><path d="M141.537 88.988a66.667 66.667 0 0 0-2.518-1.143c-1.482-27.307-16.403-42.94-41.457-43.1h-.34c-14.986 0-27.449 6.396-35.12 18.036l13.779 9.452c5.73-8.695 14.724-10.548 21.348-10.548h.23c8.248.054 14.474 2.452 18.502 7.13 2.932 3.405 4.893 8.111 5.864 14.05-7.314-1.243-15.224-1.626-23.68-1.14-23.82 1.372-39.134 15.265-38.105 34.569.522 9.792 5.4 18.216 13.735 23.719 7.047 4.652 16.124 6.927 25.557 6.412 12.458-.683 22.231-5.436 29.049-14.127 5.178-6.6 8.453-15.153 9.899-25.93 5.937 3.583 10.337 8.298 12.767 13.966 4.132 9.635 4.373 25.468-8.546 38.376-11.319 11.308-24.925 16.2-45.488 16.351-22.809-.169-40.07-7.484-51.306-21.742C35.857 137.96 30.216 118.99 30 96c.216-22.99 5.857-41.96 16.884-56.404C58.136 25.484 75.397 18.17 98.206 18c22.857.17 40.37 7.5 52.05 21.795 5.75 7.025 10.028 15.83 12.759 26.012l16.286-4.333c-3.417-12.66-8.983-23.616-16.618-32.647C147.036 11.999 125.607 2.203 98.274 2L98 2C70.718 2 49.443 11.796 34.676 35.148 21.358 56.238 14.925 84.337 15 96v.07c-.075 11.633 6.358 39.732 19.676 60.822C49.443 180.204 70.718 190 98 190h.274c24.268-.185 41.525-6.732 55.372-20.568 18.177-18.164 17.706-40.926 11.701-54.923-4.357-10.158-12.765-18.395-23.81-23.521zm-41.573 44.48c-10.437.572-21.256-4.1-21.82-14.178-.421-7.894 5.618-16.694 23.733-17.714 2.076-.12 4.108-.176 6.098-.176 6.308 0 12.202.606 17.518 1.776-1.995 24.975-15.043 29.732-25.529 30.292z" fill="#000101"/></svg></span>
+      <div class="socmed-name">Threads</div>
+      <div class="socmed-handle" id="sm-th-handle">@—</div>
+      <div class="socmed-followers" id="sm-th-followers">—</div>
+      <div class="socmed-followers-label">Followers</div>
+      <span class="socmed-badge disconnected" id="sm-th-badge">Belum terhubung</span>
+    </div>
+    <div class="socmed-card" onclick="editSocmed('x')">
+      <span class="socmed-icon"><svg viewBox="0 0 24 24" width="36" height="36"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.746l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" fill="#000"/></svg></span>
+      <div class="socmed-name">X (Twitter)</div>
+      <div class="socmed-handle" id="sm-x-handle">@—</div>
+      <div class="socmed-followers" id="sm-x-followers">—</div>
+      <div class="socmed-followers-label">Followers</div>
+      <span class="socmed-badge disconnected" id="sm-x-badge">Belum terhubung</span>
+    </div>
+    <div class="socmed-card" onclick="editSocmed('youtube')">
+      <span class="socmed-icon"><svg viewBox="0 0 24 24" width="36" height="36"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" fill="#FF0000"/></svg></span>
+      <div class="socmed-name">YouTube</div>
+      <div class="socmed-handle" id="sm-yt-handle">@—</div>
+      <div class="socmed-followers" id="sm-yt-followers">—</div>
+      <div class="socmed-followers-label">Subscribers</div>
+      <span class="socmed-badge disconnected" id="sm-yt-badge">Belum terhubung</span>
+    </div>
+  </div>
+
+  <!-- CHARTS -->
+  <div class="two-col">
+    <div class="chart-card"><div class="chart-card-title">📈 Pertumbuhan Referral</div><div class="chart-card-sub">6 bulan terakhir</div><div class="chart-wrap"><canvas id="chartReferral"></canvas></div></div>
+    <div class="chart-card"><div class="chart-card-title">💰 Komisi Bulanan</div><div class="chart-card-sub">6 bulan terakhir</div><div class="chart-wrap"><canvas id="chartKomisi"></canvas></div></div>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="section-title">📅 Riwayat Komisi</div>
+  <div class="history-list" id="historyList">
+    <div style="padding:20px;text-align:center;color:var(--stone);font-size:13px;">Memuat data...</div>
+  </div>
+</div>
+
+<!-- SOCIAL MEDIA MODAL -->
+<div id="smModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:16px;padding:28px;width:360px;max-width:90vw;">
+    <div style="font-size:15px;font-weight:700;color:#0a0a22;margin-bottom:16px;">Edit Social Media</div>
+    <input type="hidden" id="smPlatform"/>
+    <label style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.8px;display:block;margin-bottom:6px;">Handle / Username</label>
+    <input id="smHandle" type="text" placeholder="@username" style="width:100%;padding:11px 14px;border:1.5px solid #e0e0ef;border-radius:10px;font-size:14px;outline:none;font-family:Inter,sans-serif;margin-bottom:12px;"/>
+    <label style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.8px;display:block;margin-bottom:6px;">Jumlah Followers / Subscribers</label>
+    <input id="smFollowers" type="number" placeholder="10000" style="width:100%;padding:11px 14px;border:1.5px solid #e0e0ef;border-radius:10px;font-size:14px;outline:none;font-family:Inter,sans-serif;margin-bottom:20px;"/>
+    <div style="display:flex;gap:10px;justify-content:flex-end;">
+      <button onclick="closeSmModal()" style="padding:9px 18px;border:1px solid #e0e0ef;border-radius:9px;background:#fff;font-size:13px;cursor:pointer;font-family:Inter,sans-serif;">Batal</button>
+      <button onclick="saveSmModal()" style="padding:9px 18px;background:#f5a623;color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;">Simpan</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const SUPABASE_URL=(window.__FAWZ_CONFIG__||{}).supabaseUrl||'';
+  const SUPABASE_KEY=(window.__FAWZ_CONFIG__||{}).supabaseKey||'';
+  const _sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+
+  function getUser(){try{const r=sessionStorage.getItem('fawz_influencer')||localStorage.getItem('fawz_influencer');return r?JSON.parse(r):null;}catch(e){return null;}}
+  const _user=getUser();
+
+  function fmtRp(v){return'Rp '+Math.round(v||0).toLocaleString('id-ID');}
+  function fmtNum(v){v=parseInt(v||0);if(v>=1000000)return(v/1000000).toFixed(1).replace('.0','')+'Jt';if(v>=1000)return(v/1000).toFixed(1).replace('.0','')+'K';return v.toLocaleString('id-ID');}
+
+  // CLOCK
+  function updateClock(){
+    const now=new Date(); const h=now.getHours();
+    const g=h<11?'Selamat Pagi':h<15?'Selamat Siang':h<18?'Selamat Sore':'Selamat Malam';
+    const days=['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+    const months=['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+    document.getElementById('heroGreeting').textContent=g;
+    document.getElementById('heroDay').textContent=days[now.getDay()];
+    document.getElementById('heroClock').textContent=String(h).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+    document.getElementById('heroDate').textContent=now.getDate()+' '+months[now.getMonth()]+' '+now.getFullYear();
+  }
+  updateClock(); setInterval(updateClock,30000);
+
+  // USER INFO
+  function initUserInfo(){
+    const name=(_user&&_user.name)||'Influencer';
+    document.getElementById('heroName').textContent=name;
+    document.getElementById('topbarName').textContent=name;
+    document.getElementById('topbarAvatar').textContent=name.charAt(0).toUpperCase();
+    const code=(_user&&_user.ref_code)||'PP-'+Math.random().toString(36).substr(2,6).toUpperCase();
+    document.getElementById('refCodeBadge').textContent=code;
+    document.getElementById('sekuritasBadge').textContent='🏦 '+((_user&&_user.sekuritas)||'Maybank Sekuritas');
+    document.getElementById('refLinkText').textContent='https://ikutinpp.id/daftar?ref='+code;
+  }
+  initUserInfo();
+
+  function copyRefLink(){
+    navigator.clipboard.writeText(document.getElementById('refLinkText').textContent).then(()=>{
+      const b=document.querySelector('.copy-btn'); b.textContent='✅ Tersalin!';
+      setTimeout(()=>b.textContent='📋 Salin Link',2000);
+    });
+  }
+
+  // TIER
+  function updateTier(n){
+    let t,i,r,nx,p,nd;
+    if(n>=100){t='Platinum';i='💎';r='15%';nx='Max';p=100;nd='Anda sudah di level tertinggi!';}
+    else if(n>=50){t='Gold';i='🥇';r='12%';nx='Platinum';p=Math.round((n-50)/50*100);nd='Butuh '+(100-n)+' referral lagi ke Platinum';}
+    else if(n>=20){t='Silver';i='🥈';r='8%';nx='Gold';p=Math.round((n-20)/30*100);nd='Butuh '+(50-n)+' referral lagi ke Gold';}
+    else{t='Bronze';i='🥉';r='5%';nx='Silver';p=Math.round(n/20*100);nd='Butuh '+(20-n)+' referral lagi ke Silver';}
+    document.getElementById('tierName').textContent=t; document.getElementById('tierIcon').textContent=i;
+    document.getElementById('tierRate').textContent=r; document.getElementById('tierBadge').textContent=t+' Influencer';
+    document.getElementById('tierNext').textContent=nx; document.getElementById('tierPct').textContent=p+'%';
+    document.getElementById('tierNextDesc').textContent=nd; document.getElementById('tierFill').style.width=p+'%';
+  }
+
+  // SOCIAL MEDIA
+  const smData={instagram:{},tiktok:{},threads:{},x:{},youtube:{}};
+  const smKey={instagram:'sm-ig',tiktok:'sm-tt',threads:'sm-th',x:'sm-x',youtube:'sm-yt'};
+  function editSocmed(p){document.getElementById('smPlatform').value=p;document.getElementById('smHandle').value=smData[p].handle||'';document.getElementById('smFollowers').value=smData[p].followers||'';document.getElementById('smModal').style.display='flex';}
+  function closeSmModal(){document.getElementById('smModal').style.display='none';}
+  function saveSmModal(){
+    const p=document.getElementById('smPlatform').value;
+    const h=document.getElementById('smHandle').value.trim();
+    const f=parseInt(document.getElementById('smFollowers').value)||0;
+    smData[p]={handle:h,followers:f};
+    const k=smKey[p]; const conn=h.length>0;
+    document.getElementById(k+'-handle').textContent=h?'@'+h.replace('@',''):'@—';
+    document.getElementById(k+'-followers').textContent=f?fmtNum(f):'—';
+    const b=document.getElementById(k+'-badge'); b.textContent=conn?'Terhubung':'Belum terhubung'; b.className='socmed-badge '+(conn?'connected':'disconnected');
+    const total=Object.values(smData).reduce((s,d)=>s+(parseInt(d.followers)||0),0);
+    document.getElementById('kpiTotalFans').textContent=total?fmtNum(total):'—';
+    closeSmModal();
+  }
+
+  function doLogout(){sessionStorage.removeItem('fawz_influencer');localStorage.removeItem('fawz_influencer');window.location.href='influencer-register.html';}
+
+  // LOAD DATA
+  function loadData(){
+    const ref=37;
+    document.getElementById('kpiReferral').textContent=ref;
+    document.getElementById('kpiRevenue').textContent=fmtRp(2700000);
+    document.getElementById('kpiRevenueSub').textContent='Juni 2026';
+    document.getElementById('kpiKomisi').textContent=fmtRp(216000);
+    document.getElementById('kpiKomisiSub').textContent='Juni 2026';
+    const hist=[{month:'Mei 2026',amount:1800000,s:'paid'},{month:'Apr 2026',amount:2100000,s:'paid'},{month:'Mar 2026',amount:1200000,s:'paid'},{month:'Feb 2026',amount:500000,s:'paid'},{month:'Jan 2026',amount:320000,s:'paid'}];
+    document.getElementById('historyList').innerHTML=hist.map(h=>`<div class="history-item"><div><div class="history-month">${h.month}</div><div class="history-period">Komisi referral</div></div><div style="display:flex;align-items:center;gap:12px;"><span class="history-amount">${fmtRp(h.amount)}</span><span class="history-status history-paid">Dibayar</span></div></div>`).join('');
+  }
+
+  // CHARTS
+  function initCharts(){
+    const m6=['Jan','Feb','Mar','Apr','Mei','Jun'];
+    new Chart(document.getElementById('chartReferral'),{type:'line',data:{labels:m6,datasets:[{label:'Referral Baru',data:[3,7,12,9,18,14],borderColor:'#7b3ff2',backgroundColor:'rgba(123,63,242,.08)',tension:.4,fill:true,pointRadius:4,pointBackgroundColor:'#7b3ff2'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:'#f0ede9'},ticks:{font:{size:11}}},x:{grid:{display:false},ticks:{font:{size:11}}}}}});
+    new Chart(document.getElementById('chartKomisi'),{type:'bar',data:{labels:m6,datasets:[{label:'Komisi',data:[500000,1200000,2100000,1800000,3200000,2700000],backgroundColor:'rgba(245,166,35,.75)',borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:'#f0ede9'},ticks:{font:{size:11},callback:v=>v>=1000000?(v/1000000).toFixed(1)+'Jt':v>=1000?(v/1000)+'K':v}},x:{grid:{display:false},ticks:{font:{size:11}}}}}});
+  }
+
+  document.addEventListener('DOMContentLoaded',()=>{loadData();initCharts();});
+</script>
+</body>
+</html>

@@ -59,7 +59,7 @@
       top: -150px; left: 50%; transform: translateX(-50%);
       pointer-events: none;
     }
-    .hero-logo { width: 140px; margin-bottom: 18px; filter: drop-shadow(0 0 20px rgba(245,166,35,0.3)); }
+    .hero-logo { width: 200px; margin-bottom: 18px; }
     .hero-title {
       font-size: 1.8rem; font-weight: 800; color: #fff;
       letter-spacing: -0.5px; line-height: 1.25; margin-bottom: 8px;
@@ -345,9 +345,9 @@
 
 <!-- ══ HERO HEADER ══ -->
 <div class="hero">
-  <img src="assets/logo/fawzpro.png" alt="Fawz Pro" class="hero-logo"
+  <img src="assets/logo/pp.png" alt="Fawz Pro" class="hero-logo"
     onerror="this.style.display='none'"/>
-  <div class="hero-title">Registrasi via <span>Agen Referral</span></div>
+  <div class="hero-title">Registrasi <span>Agen Referral</span></div>
   <div class="hero-sub">Bergabung dan mulai perjalanan investasi Anda bersama Fawz Finansial Indonesia.</div>
 
   <!-- Stepper -->
@@ -417,9 +417,6 @@
           <div style="background:#fff; border:1px solid var(--border); border-radius:8px; padding:5px 10px; display:flex; align-items:center; justify-content:center; height:36px;">
             <img src="assets/logo/trimegah.png" alt="Trimegah" style="height:26px; object-fit:contain;" onerror="this.parentElement.innerHTML='Trimegah'"/>
           </div>
-          <div style="background:#fff; border:1px solid var(--border); border-radius:8px; padding:5px 10px; display:flex; align-items:center; justify-content:center; height:36px;">
-            <img src="assets/logo/rhb.png" alt="RHB" style="height:26px; object-fit:contain;" onerror="this.parentElement.innerHTML='RHB'"/>
-          </div>
         </div>
       </div>
 
@@ -469,14 +466,6 @@
             <div class="sek-desc">Trimegah Asset Management</div>
           </div>
           <div class="sek-radio" id="radio-trimegah"></div>
-        </div>
-        <div class="sek-card" id="sek-rhb" onclick="pilihSekuritas('rhb')">
-          <div class="sek-badge"><img src="assets/logo/rhb.png" alt="RHB Sekuritas" onerror="this.style.display='none';this.parentElement.textContent='💼'"/></div>
-          <div>
-            <div class="sek-name">RHB Sekuritas</div>
-            <div class="sek-desc">RHB Sekuritas Indonesia</div>
-          </div>
-          <div class="sek-radio" id="radio-rhb"></div>
         </div>
       </div>
 
@@ -660,7 +649,7 @@
   // ══════════════════════════════════════════════
   let currentStep   = 1;
   let statusPilihan = null;   // 'sudah' | 'belum'
-  let sekuritasPilihan = null; // 'maybank' | 'trimegah' | 'rhb'
+  let sekuritasPilihan = null; // 'maybank' | 'trimegah'
   let _pendingEmailData = null; // data ditahan sampai user klik "Setuju" di modal
 
   function confirmEmailRedirect() {
@@ -728,8 +717,9 @@
   // ══════════════════════════════════════════════
   function pilihSekuritas(val) {
     sekuritasPilihan = val;
-    ['maybank','trimegah','rhb'].forEach(s => {
-      document.getElementById('sek-' + s).classList.toggle('selected', s === val);
+    ['maybank','trimegah'].forEach(s => {
+      const el = document.getElementById('sek-' + s);
+      if (el) el.classList.toggle('selected', s === val);
     });
   }
 
@@ -750,7 +740,7 @@
     const btn = document.getElementById('btnSubmit3a');
     btn.disabled = true; btn.textContent = 'Mengirim...';
 
-    const sekLabel = { maybank: 'Maybank Sekuritas', trimegah: 'Trimegah Sekuritas', rhb: 'RHB Sekuritas' }[sekuritasPilihan];
+    const sekLabel = { maybank: 'Maybank Sekuritas', trimegah: 'Trimegah Sekuritas' }[sekuritasPilihan];
     const codeNotFound = (_ccStatus === 'notfound'); // kuning = kode tidak ditemukan di customers
 
     try {
@@ -834,13 +824,9 @@ ${nama}`
       return;
     }
 
-    // ── TRIMEGAH / RHB / sekuritas lain: belum disiapkan templatenya ──
+    // ── TRIMEGAH / sekuritas lain: belum disiapkan templatenya ──
     // TODO: lengkapi template email khusus untuk sekuritas selain Maybank.
     if (sekuritasKey === 'trimegah') {
-      // (kosong — belum ada template)
-      return;
-    }
-    if (sekuritasKey === 'rhb') {
       // (kosong — belum ada template)
       return;
     }

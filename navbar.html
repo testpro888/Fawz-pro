@@ -240,12 +240,49 @@
     .user-name { font-size: 0.85rem; font-weight: 600; color: #fff; line-height: 1.2; }
     .user-role { font-size: 0.72rem; color: rgba(255,255,255,0.5); }
 
+    /* ── AVATAR WRAPPER (untuk ring notif) ── */
+    .avatar-wrapper {
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    /* Ring merah berputar saat ada notif */
+    .avatar-wrapper.has-notif::before {
+      content: '';
+      position: absolute;
+      inset: -3px;
+      border-radius: 50%;
+      border: 2.5px solid #e74c3c;
+      animation: ring-pulse 1.8s ease-in-out infinite;
+      z-index: 1;
+    }
+
+    @keyframes ring-pulse {
+      0%, 100% { opacity: 1; transform: scale(1); box-shadow: 0 0 0 0 rgba(231,76,60,0.5); }
+      50%       { opacity: 0.85; transform: scale(1.06); box-shadow: 0 0 0 4px rgba(231,76,60,0); }
+    }
+
+    /* Badge angka di atas avatar */
+    .avatar-notif-count {
+      position: absolute;
+      top: -4px; right: -4px;
+      min-width: 17px; height: 17px;
+      background: #e74c3c;
+      color: #fff; font-size: .6rem; font-weight: 700;
+      border-radius: 10px; padding: 0 4px;
+      display: none; align-items: center; justify-content: center;
+      border: 2px solid #0d0d2b;
+      z-index: 2;
+      animation: pulse-badge 1.8s infinite;
+    }
+    .avatar-notif-count.visible { display: flex; }
+
     .user-avatar {
       width: 36px; height: 36px; border-radius: 50%;
       background: linear-gradient(135deg, var(--gold), var(--gold-light));
       display: flex; align-items: center; justify-content: center;
       font-size: 0.9rem; font-weight: 700; color: #fff;
-      flex-shrink: 0; overflow: hidden;
+      overflow: hidden; position: relative; z-index: 0;
     }
     .user-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
 
@@ -559,7 +596,10 @@
         <div class="user-name" id="navUserName">—</div>
         <div class="user-role" id="navUserRole">—</div>
       </div>
-      <div class="user-avatar" id="navAvatar">?</div>
+      <div class="avatar-wrapper" id="avatarWrapper">
+        <div class="user-avatar" id="navAvatar">?</div>
+        <span class="avatar-notif-count" id="avatarNotifCount">0</span>
+      </div>
 
       <div class="user-dropdown">
         <div class="user-dd-header">
