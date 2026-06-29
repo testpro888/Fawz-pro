@@ -251,23 +251,19 @@
           .eq('status', 'pending');
         if (!error) pendingCount = c || 0;
       } else {
-        // Task yang ditujukan ke seluruh role (assigned_to null)
-        const { count: c1 } = await window._supabase
+        // Fetch semua task pending untuk role ini (gabung assigned_to null + user spesifik)
+        const { data: taskData, error: taskErr } = await window._supabase
           .from('job_tasks')
-          .select('id', { count: 'exact', head: true })
+          .select('id, assigned_to')
           .eq('status', 'pending')
-          .eq('assigned_role', user.role)
-          .is('assigned_to', null);
+          .eq('assigned_role', user.role);
 
-        // Task yang ditujukan khusus ke user ini
-        const { count: c2 } = await window._supabase
-          .from('job_tasks')
-          .select('id', { count: 'exact', head: true })
-          .eq('status', 'pending')
-          .eq('assigned_role', user.role)
-          .eq('assigned_to', user.username);
-
-        pendingCount = (c1 || 0) + (c2 || 0);
+        if (!taskErr && taskData) {
+          // Filter: assigned_to null (untuk semua role) ATAU assigned_to = username saya
+          pendingCount = taskData.filter(t =>
+            t.assigned_to === null || t.assigned_to === user.username
+          ).length;
+        }
       }
 
       // Hitung unread replies — reply dari orang lain yang belum dibaca
@@ -285,17 +281,14 @@
             .neq('status', 'deleted');
           taskIds = (tasks || []).map(t => t.id);
         } else {
-          const { data: t1 } = await window._supabase
+          const { data: tAll } = await window._supabase
             .from('job_tasks')
-            .select('id')
-            .eq('assigned_role', user.role)
-            .is('assigned_to', null);
-          const { data: t2 } = await window._supabase
-            .from('job_tasks')
-            .select('id')
-            .eq('assigned_role', user.role)
-            .eq('assigned_to', user.username);
-          taskIds = [...(t1 || []), ...(t2 || [])].map(t => t.id);
+            .select('id, assigned_to')
+            .eq('assigned_role', user.role);
+
+          taskIds = (tAll || [])
+            .filter(t => t.assigned_to === null || t.assigned_to === user.username)
+            .map(t => t.id);
         }
 
         if (taskIds.length > 0) {
