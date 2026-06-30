@@ -465,34 +465,44 @@
 
   // ─── Cek status di Supabase ───────────────────────────────────────
   async function checkRegistrationStatus(clientId) {
-    // Default: belum terdaftar (tampilkan Sign Up)
-    let isReferral    = false;
-    let isInfluencer  = false;
+    let isReferral   = false;
+    let isInfluencer = false;
 
     try {
-      // Tunggu _supabase siap (config.js inject async)
       const sb = await waitForSupabase();
       if (sb && clientId) {
-        // Cek referral_agents
-        const { data: raData } = await sb
+
+        // Cek referral_agents — pakai dua query terpisah untuk hindari bug .or()
+        const { data: ra1 } = await sb
           .from('referral_agents')
           .select('id')
-          .or(`client_id.eq.${clientId},agent_code.eq.${clientId}`)
+          .eq('client_id', clientId)
           .limit(1);
-        isReferral = !!(raData && raData.length > 0);
+
+        const { data: ra2 } = await sb
+          .from('referral_agents')
+          .select('id')
+          .eq('agent_code', clientId)
+          .limit(1);
+
+        isReferral = (ra1 && ra1.length > 0) || (ra2 && ra2.length > 0);
 
         // Cek influencer_registrations
-        const { data: infData } = await sb
+        const { data: infData, error: infErr } = await sb
           .from('influencer_registrations')
           .select('id')
           .eq('client_id', clientId)
           .limit(1);
-        isInfluencer = !!(infData && infData.length > 0);
+
+        // Hanya set true kalau tidak ada error DAN ada data
+        isInfluencer = !infErr && !!(infData && infData.length > 0);
       }
     } catch(e) {
       console.warn('checkRegistrationStatus error:', e);
+      // Error → tetap false (Sign Up)
     }
 
+    console.log(`[test-login] clientId=${clientId} → referral=${isReferral}, influencer=${isInfluencer}`);
     buildNavMenu(isReferral, isInfluencer);
   }
 
