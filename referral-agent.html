@@ -377,6 +377,16 @@
         </div>
       </div>
 
+      <div class="aa-field">
+        <label class="aa-form-label">Kode Referral <span style="font-size:0.7rem;font-weight:600;color:#e74c3c;">*</span></label>
+        <div style="position:relative;">
+          <input type="text" id="aaRefCode" placeholder="Contoh: MRJ-2024 (bukan Client ID)" style="width:100%;padding:9px 12px;padding-right:32px;border:1.5px solid var(--border);border-radius:10px;font-family:'Courier New',monospace;font-size:0.875rem;color:var(--text);outline:none;background:#fafbff;text-transform:uppercase;letter-spacing:1px;" onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor='var(--border)'" oninput="aaValidateRefCode(this)"/>
+          <span id="aaRefCodeIcon" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:1rem;pointer-events:none;"></span>
+        </div>
+        <div id="aaRefCodeMsg" style="font-size:0.7rem;margin-top:4px;"></div>
+        <div class="aa-pct-hint" style="margin-top:3px;">⚠️ Kode referral harus berbeda dengan Client ID. Kode ini yang dipakai di link &amp; dashboard referral.</div>
+      </div>
+
       <div class="aa-field" style="margin-top:4px;">
         <label class="aa-form-label">Influencer <span style="font-size:0.7rem;font-weight:400;color:#aaa;">(opsional)</span></label>
         <input type="text" id="aaInfluencer" placeholder="Nama akun / platform influencer..." style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:10px;font-family:'Inter',sans-serif;font-size:0.875rem;color:var(--text);outline:none;background:#fafbff;" onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor='var(--border)'"/>
@@ -767,6 +777,12 @@
     document.getElementById('aaTargetFee').value = '10.000.000';
     aaSetStatus('free');
     document.getElementById('aaInfluencer').value = '';
+    const refInput = document.getElementById('aaRefCode');
+    if (refInput) { refInput.value = ''; refInput.style.borderColor = 'var(--border)'; }
+    const refMsg = document.getElementById('aaRefCodeMsg');
+    if (refMsg) refMsg.textContent = '';
+    const refIcon = document.getElementById('aaRefCodeIcon');
+    if (refIcon) refIcon.textContent = '';
     document.getElementById('aaStep1').style.display = '';
     document.getElementById('aaStep2').style.display = 'none';
     document.getElementById('addAgentModal').classList.add('open');
@@ -817,6 +833,17 @@
     document.getElementById('aaSelClientId').textContent = c.client_id || '—';
     document.getElementById('aaSelPhone').textContent = c.phone || '—';
     document.getElementById('aaSelEmail').textContent = c.email || '—';
+
+    // Auto-generate a suggested referral code (different from client_id)
+    const cid = (c.client_id || '').toUpperCase().replace(/[^A-Z0-9]/g,'');
+    const namePart = (c.client_name || '').toUpperCase().replace(/[^A-Z]/g,'').substring(0,2);
+    const suggested = (namePart || cid.substring(0,2)) + cid + '-REF';
+    const refInput = document.getElementById('aaRefCode');
+    if (refInput && !refInput.value) {
+      refInput.value = suggested;
+      aaValidateRefCode(refInput);
+    }
+
     document.getElementById('aaStep1').style.display = 'none';
     document.getElementById('aaStep2').style.display = '';
   }
@@ -837,9 +864,39 @@
     input.value = digits ? Number(digits).toLocaleString('id-ID') : '';
   }
 
+  function aaValidateRefCode(input) {
+    const val = input.value.trim().toUpperCase();
+    input.value = val;
+    const clientId = (_aaSelectedCustomer?.client_id || '').toUpperCase().trim();
+    const msg  = document.getElementById('aaRefCodeMsg');
+    const icon = document.getElementById('aaRefCodeIcon');
+    if (!val) {
+      msg.textContent = ''; icon.textContent = '';
+      input.style.borderColor = 'var(--border)'; return;
+    }
+    if (clientId && val === clientId) {
+      msg.textContent = '⛔ Kode referral tidak boleh sama dengan Client ID (' + clientId + ')';
+      msg.style.color = '#e74c3c';
+      icon.textContent = '❌';
+      input.style.borderColor = '#e74c3c';
+    } else {
+      msg.textContent = '✓ Kode referral valid';
+      msg.style.color = '#10b981';
+      icon.textContent = '✅';
+      input.style.borderColor = '#10b981';
+    }
+  }
+
   async function saveNewAgent() {
     if (!_aaSelectedCustomer) { showToast('Pilih customer terlebih dahulu'); return; }
     const c = _aaSelectedCustomer;
+
+    // Validate referral code
+    const refCode = (document.getElementById('aaRefCode')?.value || '').trim().toUpperCase();
+    const clientId = (c.client_id || '').toUpperCase().trim();
+    if (!refCode) { showToast('⚠️ Kode referral wajib diisi'); return; }
+    if (refCode === clientId) { showToast('⛔ Kode referral tidak boleh sama dengan Client ID'); return; }
+
     const targetFee = Number((document.getElementById('aaTargetFee').value || '0').replace(/\D/g, '')) || 0;
     const status = document.querySelector('.aa-status-btn.active').dataset.status;
     const pctBelow = parseFloat(document.getElementById('aaPctBelow').value) || 0;
@@ -853,7 +910,7 @@
         nama: c.client_name || null,
         email: c.email || null,
         phone: c.phone || null,
-        agent_code: c.client_id || null,
+        agent_code: refCode,   // kode referral BERBEDA dari client_id
         target_fee: targetFee,
         fee_status: status,
         fee_below_pct: pctBelow,
@@ -1119,7 +1176,8 @@
         phone:          reg.phone           || null,
         sekuritas:      reg.sekuritas       || null,
         client_id:      reg.client_code     || null,
-        agent_code:     reg.client_code     || null,
+        // agent_code (kode referral) harus berbeda dari client_code
+        agent_code:     reg.client_code ? reg.client_code + '-REF' : null,
         influencer:     reg.influencer_code || null,
         fee_status:     'free',
         target_fee:     10000000,
