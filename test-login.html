@@ -9,416 +9,388 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --navy: #0d0d2b; --purple: #2d1b69;
-      --gold: #f5a623; --gold-light: #ffc857;
-      --white: #ffffff; --gray: #8888aa;
-      --border: rgba(255,255,255,0.12);
+      --navy: #0d0d2b; --gold: #f5a623; --gold-light: #ffc857;
+      --nav-h: 64px;
     }
-    body { font-family: 'Inter', sans-serif; background: var(--navy); min-height: 100vh; display: flex; overflow: hidden; }
+    body { font-family: 'Inter', sans-serif; background: var(--navy); min-height: 100vh; }
 
-    /* LEFT */
+    /* ========== LOGIN PAGE ========== */
+    #loginPage {
+      display: flex; min-height: 100vh; overflow: hidden;
+    }
     .left-panel {
       width: 55%; position: relative;
       background: linear-gradient(145deg, #0a0a22 0%, #1a0e4a 40%, #0d0d2b 100%);
       display: flex; align-items: center; justify-content: center; overflow: hidden;
     }
     .left-panel::before {
-      content: ''; position: absolute; width: 600px; height: 600px; border-radius: 50%;
-      background: radial-gradient(circle, rgba(245,166,35,0.15) 0%, transparent 70%);
-      top: -100px; left: -100px; animation: pulse 6s ease-in-out infinite;
+      content:''; position:absolute; width:600px; height:600px; border-radius:50%;
+      background:radial-gradient(circle,rgba(245,166,35,.15) 0%,transparent 70%);
+      top:-100px; left:-100px; animation:pulse 6s ease-in-out infinite;
     }
     .left-panel::after {
-      content: ''; position: absolute; width: 400px; height: 400px; border-radius: 50%;
-      background: radial-gradient(circle, rgba(93,63,211,0.2) 0%, transparent 70%);
-      bottom: -80px; right: -80px; animation: pulse 8s ease-in-out infinite reverse;
+      content:''; position:absolute; width:400px; height:400px; border-radius:50%;
+      background:radial-gradient(circle,rgba(93,63,211,.2) 0%,transparent 70%);
+      bottom:-80px; right:-80px; animation:pulse 8s ease-in-out infinite reverse;
     }
-    @keyframes pulse { 0%,100% { transform:scale(1); opacity:.8; } 50% { transform:scale(1.1); opacity:1; } }
-
-    .left-content { position: relative; z-index: 2; text-align: center; padding: 40px; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; }
-    .brand-logo { width: 340px; max-width: 80%; filter: drop-shadow(0 0 30px rgba(245,166,35,0.45)); animation: floatLogo 4s ease-in-out infinite; }
-    @keyframes floatLogo { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-10px); } }
-
+    @keyframes pulse { 0%,100%{transform:scale(1);opacity:.8}50%{transform:scale(1.1);opacity:1} }
+    .left-content {
+      position:relative; z-index:2; text-align:center; padding:40px;
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
+    }
+    .brand-logo {
+      width:300px; max-width:80%;
+      filter:drop-shadow(0 0 30px rgba(245,166,35,.45));
+      animation:floatLogo 4s ease-in-out infinite;
+    }
+    @keyframes floatLogo { 0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)} }
     .test-badge {
-      margin-top: 24px;
-      background: rgba(245,166,35,0.15);
-      border: 1px solid rgba(245,166,35,0.35);
-      border-radius: 20px;
-      padding: 6px 18px;
-      font-size: 0.75rem;
-      font-weight: 600;
-      color: var(--gold-light);
-      letter-spacing: 2px;
-      text-transform: uppercase;
+      margin-top:20px; background:rgba(245,166,35,.15);
+      border:1px solid rgba(245,166,35,.35); border-radius:20px;
+      padding:5px 16px; font-size:.72rem; font-weight:700;
+      color:var(--gold-light); letter-spacing:2px; text-transform:uppercase;
     }
-
     .hint-box {
-      margin-top: 28px;
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 14px;
-      padding: 18px 22px;
-      text-align: left;
-      width: 80%;
-      max-width: 320px;
+      margin-top:22px; background:rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.1); border-radius:14px;
+      padding:16px 20px; text-align:left; width:78%; max-width:300px;
     }
-    .hint-box .hint-title {
-      font-size: 0.7rem;
-      font-weight: 700;
-      color: var(--gold);
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      margin-bottom: 12px;
-    }
-    .hint-row {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .hint-item {
-      display: flex;
-      align-items: flex-start;
-      gap: 10px;
-      font-size: 0.78rem;
-      color: rgba(255,255,255,0.65);
-    }
-    .hint-item .hint-label {
-      font-weight: 600;
-      color: rgba(255,255,255,0.45);
-      min-width: 52px;
-      font-size: 0.72rem;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      padding-top: 1px;
-    }
-    .hint-item .hint-val { color: rgba(255,255,255,0.8); word-break: break-all; }
+    .hint-title { font-size:.68rem; font-weight:700; color:var(--gold); letter-spacing:1.5px; text-transform:uppercase; margin-bottom:10px; }
+    .hint-row { display:flex; flex-direction:column; gap:7px; }
+    .hint-item { display:flex; align-items:flex-start; gap:8px; font-size:.76rem; }
+    .hint-label { font-weight:600; color:rgba(255,255,255,.4); min-width:60px; font-size:.7rem; text-transform:uppercase; letter-spacing:.5px; padding-top:1px; }
+    .hint-val { color:rgba(255,255,255,.8); word-break:break-all; }
+    .geo { position:absolute; border:1px solid rgba(245,166,35,.15); border-radius:4px; animation:rotate 20s linear infinite; }
+    .geo-1{width:80px;height:80px;top:15%;right:10%;animation-duration:25s}
+    .geo-2{width:40px;height:40px;bottom:20%;left:8%;animation-duration:18s}
+    .geo-3{width:120px;height:120px;top:60%;right:5%;border-color:rgba(93,63,211,.2);animation-duration:30s;animation-direction:reverse}
+    @keyframes rotate{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 
-    .eye-toggle { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #aaa; user-select: none; display:flex; align-items:center; padding:4px; border-radius:4px; transition: color 0.2s; }
-    .eye-toggle:hover { color: #666; }
-    .eye-toggle svg { width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
-
-    .geo { position: absolute; border: 1px solid rgba(245,166,35,0.15); border-radius: 4px; animation: rotate 20s linear infinite; }
-    .geo-1 { width:80px; height:80px; top:15%; right:10%; animation-duration:25s; }
-    .geo-2 { width:40px; height:40px; bottom:20%; left:8%; animation-duration:18s; }
-    .geo-3 { width:120px; height:120px; top:60%; right:5%; border-color:rgba(93,63,211,0.2); animation-duration:30s; animation-direction:reverse; }
-    @keyframes rotate { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
-
-    /* RIGHT */
-    .right-panel { width: 45%; display: flex; align-items: center; justify-content: center; background: #f7f8fc; padding: 60px 50px; overflow-y: auto; }
-    .login-card { width: 100%; max-width: 400px; }
-    .login-header { margin-bottom: 28px; }
-    .login-header h2 { font-size: 1.85rem; font-weight: 700; color: var(--navy); margin-bottom: 4px; letter-spacing: -0.5px; }
-    .login-header p { font-size: 0.88rem; color: #999; font-weight: 400; }
-    .login-header-line { width: 36px; height: 3px; background: linear-gradient(90deg, #f5a623, #ffc857); border-radius: 2px; margin-top: 10px; }
-
+    /* right panel */
+    .right-panel {
+      width:45%; display:flex; align-items:center; justify-content:center;
+      background:#f7f8fc; padding:60px 50px;
+    }
+    .login-card { width:100%; max-width:400px; }
+    .login-header { margin-bottom:28px; }
+    .login-header h2 { font-size:1.85rem; font-weight:700; color:var(--navy); margin-bottom:4px; letter-spacing:-.5px; }
+    .login-header p { font-size:.88rem; color:#999; }
+    .login-header-line { width:36px; height:3px; background:linear-gradient(90deg,#f5a623,#ffc857); border-radius:2px; margin-top:10px; }
     .test-warning {
-      background: #fffbea;
-      border: 1px solid #ffe082;
-      border-radius: 10px;
-      padding: 10px 14px;
-      font-size: 0.8rem;
-      color: #7a5c00;
-      margin-bottom: 22px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
+      background:#fffbea; border:1px solid #ffe082; border-radius:10px;
+      padding:9px 14px; font-size:.79rem; color:#7a5c00; margin-bottom:20px;
     }
-
-    .form-group { margin-bottom: 18px; }
-    .form-group label { display: block; font-size: 0.8rem; font-weight: 600; color: #444; margin-bottom: 7px; letter-spacing: 0.5px; text-transform: uppercase; }
-    .input-wrap { position: relative; }
+    .form-group { margin-bottom:18px; }
+    .form-group label { display:block; font-size:.78rem; font-weight:600; color:#444; margin-bottom:6px; letter-spacing:.5px; text-transform:uppercase; }
+    .input-wrap { position:relative; }
     .input-wrap input {
-      width: 100%; padding: 13px 16px 13px 46px;
-      border: 1.5px solid #e0e0ef; border-radius: 12px;
-      font-family: 'Inter', sans-serif; font-size: 0.95rem; color: var(--navy);
-      background: #fff; transition: border 0.2s, box-shadow 0.2s; outline: none;
+      width:100%; padding:13px 16px 13px 46px;
+      border:1.5px solid #e0e0ef; border-radius:12px;
+      font-family:'Inter',sans-serif; font-size:.95rem; color:var(--navy);
+      background:#fff; transition:border .2s,box-shadow .2s; outline:none;
     }
-    .input-wrap input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(245,166,35,0.12); }
-    .input-wrap input.error { border-color: #e74c3c; box-shadow: 0 0 0 3px rgba(231,76,60,0.1); }
-    .input-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 1.05rem; }
-
+    .input-wrap input:focus { border-color:var(--gold); box-shadow:0 0 0 3px rgba(245,166,35,.12); }
+    .input-wrap input.error { border-color:#e74c3c; box-shadow:0 0 0 3px rgba(231,76,60,.1); }
+    .input-icon { position:absolute; left:14px; top:50%; transform:translateY(-50%); font-size:1rem; }
+    .eye-toggle {
+      position:absolute; right:14px; top:50%; transform:translateY(-50%);
+      cursor:pointer; color:#aaa; display:flex; align-items:center; padding:4px; border-radius:4px; transition:color .2s;
+    }
+    .eye-toggle:hover { color:#666; }
+    .eye-toggle svg { width:17px; height:17px; stroke:currentColor; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
     .btn-login {
-      width: 100%; padding: 15px;
-      background: linear-gradient(135deg, #f5a623, #e8931a);
-      border: none; border-radius: 12px;
-      font-family: 'Inter', sans-serif; font-size: 1rem; font-weight: 600; color: #fff;
-      cursor: pointer; transition: transform 0.15s, box-shadow 0.2s;
-      box-shadow: 0 6px 20px rgba(245,166,35,0.35);
-      display: flex; align-items: center; justify-content: center; gap: 8px;
-      margin-top: 8px;
+      width:100%; padding:15px;
+      background:linear-gradient(135deg,#f5a623,#e8931a);
+      border:none; border-radius:12px;
+      font-family:'Inter',sans-serif; font-size:1rem; font-weight:600; color:#fff;
+      cursor:pointer; transition:transform .15s,box-shadow .2s;
+      box-shadow:0 6px 20px rgba(245,166,35,.35);
+      display:flex; align-items:center; justify-content:center; gap:8px; margin-top:6px;
     }
-    .btn-login:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(245,166,35,0.45); }
-    .btn-login:disabled { opacity: 0.7; cursor: not-allowed; transform: none; }
+    .btn-login:hover { transform:translateY(-2px); box-shadow:0 10px 28px rgba(245,166,35,.45); }
+    .btn-login:disabled { opacity:.7; cursor:not-allowed; transform:none; }
+    .login-footer { margin-top:24px; text-align:center; font-size:.76rem; color:#bbb; }
+    .msg-box { border-radius:10px; padding:10px 14px; font-size:.84rem; margin-bottom:14px; display:none; }
+    .msg-error { background:#fff0f0; border:1px solid #ffcccc; color:#c0392b; }
+    .msg-success { background:#f0fff4; border:1px solid #a8e6c1; color:#27ae60; }
+    .spinner { width:17px; height:17px; border:2px solid rgba(255,255,255,.4); border-top-color:#fff; border-radius:50%; animation:spin .7s linear infinite; }
+    @keyframes spin { to{transform:rotate(360deg)} }
+    @media (max-width:768px) { .left-panel{display:none} .right-panel{width:100%;padding:40px 24px} }
 
-    .login-footer { margin-top: 28px; text-align: center; font-size: 0.78rem; color: #bbb; }
+    /* ========== DASHBOARD PAGE ========== */
+    #dashPage { display:none; flex-direction:column; min-height:100vh; background:#f0f2f7; }
 
-    .msg-box { border-radius: 10px; padding: 11px 15px; font-size: 0.85rem; margin-bottom: 16px; display: none; }
-    .msg-error { background: #fff0f0; border: 1px solid #ffcccc; color: #c0392b; }
-    .msg-success { background: #f0fff4; border: 1px solid #a8e6c1; color: #27ae60; }
-
-    .spinner { width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.4); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    /* Halaman sukses */
-    .success-screen {
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-      gap: 12px;
-      width: 100%;
-      max-width: 400px;
+    /* NAVBAR */
+    .fawz-navbar {
+      position:fixed; top:0; left:0; right:0; z-index:1000;
+      height:var(--nav-h);
+      background:linear-gradient(90deg,var(--navy) 0%,#1a0e4a 60%,#0d0d2b 100%);
+      display:flex; align-items:center; justify-content:space-between;
+      padding:0 28px; box-shadow:0 2px 20px rgba(0,0,0,.4); overflow:visible;
     }
-    .success-screen.active { display: flex; }
-    .login-card.hide { display: none; }
-    .check-circle {
-      width: 72px; height: 72px; border-radius: 50%;
-      background: linear-gradient(135deg, #27ae60, #2ecc71);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 2rem;
-      box-shadow: 0 8px 24px rgba(39,174,96,0.35);
-      animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    }
-    @keyframes popIn { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-    .success-name { font-size: 1.4rem; font-weight: 700; color: var(--navy); margin-top: 4px; }
-    .success-sub { font-size: 0.88rem; color: #888; }
-
-    .success-detail {
-      background: #f7f8fc;
-      border: 1px solid #e0e0ef;
-      border-radius: 14px;
-      padding: 16px 20px;
-      width: 100%;
-      text-align: left;
-      margin-top: 4px;
-    }
-    .detail-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid #f0f0f8; font-size: 0.83rem; }
-    .detail-row:last-child { border-bottom: none; }
-    .detail-row .dk { color: #999; font-weight: 500; }
-    .detail-row .dv { color: var(--navy); font-weight: 600; }
-
-    /* Menu shortcut */
-    .menu-section { width: 100%; margin-top: 4px; }
-    .menu-title {
-      font-size: 0.72rem; font-weight: 700; color: #aaa;
-      letter-spacing: 1.5px; text-transform: uppercase;
-      text-align: left; margin-bottom: 10px;
-    }
-    .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .menu-card {
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      gap: 8px; padding: 18px 12px;
-      background: #fff; border: 1.5px solid #e0e0ef; border-radius: 14px;
-      cursor: pointer; text-decoration: none;
-      transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
-    }
-    .menu-card:hover {
-      border-color: var(--gold);
-      box-shadow: 0 4px 16px rgba(245,166,35,0.18);
-      transform: translateY(-2px);
-    }
-    .menu-card .mc-icon { font-size: 1.8rem; line-height: 1; }
-    .menu-card .mc-label {
-      font-size: 0.78rem; font-weight: 700; color: var(--navy);
-      text-align: center; line-height: 1.3;
-    }
-    .menu-card .mc-sub {
-      font-size: 0.68rem; color: #aaa; text-align: center; line-height: 1.3;
-    }
-    .menu-card-wide {
-      grid-column: 1 / -1;
+    .nav-brand { display:flex; align-items:center; gap:10px; text-decoration:none; }
+    .nav-brand img { height:46px; filter:drop-shadow(0 0 8px rgba(245,166,35,.4)); }
+    .brand-fallback { font-size:1.3rem; font-weight:700; color:var(--gold); letter-spacing:1px; }
+    .brand-badge {
+      background:linear-gradient(135deg,var(--gold),var(--gold-light));
+      color:#fff; font-size:.56rem; font-weight:700;
+      padding:2px 6px; border-radius:4px; letter-spacing:1px;
+      margin-left:-4px; align-self:flex-start; margin-top:6px;
     }
 
-    .btn-logout {
-      width: 100%; padding: 13px;
-      background: #fff; border: 1.5px solid #e0e0ef; border-radius: 12px;
-      font-family: 'Inter', sans-serif; font-size: 0.9rem; font-weight: 600; color: #666;
-      cursor: pointer; transition: border-color 0.2s, color 0.2s;
-      margin-top: 4px;
+    /* Nav menu items */
+    .nav-menu-items { display:flex; align-items:center; gap:4px; list-style:none; }
+    .nav-menu-item { position:relative; }
+    .nav-link-btn {
+      display:flex; align-items:center; gap:5px; padding:8px 14px;
+      color:rgba(255,255,255,.8); text-decoration:none;
+      font-size:.875rem; font-weight:500; border-radius:8px;
+      transition:all .2s; white-space:nowrap; cursor:pointer;
+      background:none; border:none; font-family:'Inter',sans-serif;
     }
-    .btn-logout:hover { border-color: #e74c3c; color: #e74c3c; }
+    .nav-link-btn:hover, .nav-link-btn.active { color:var(--gold); background:rgba(245,166,35,.1); }
 
-    @media (max-width: 768px) { .left-panel { display: none; } .right-panel { width: 100%; padding: 40px 24px; } }
+    /* Dropdown */
+    .nav-dropdown {
+      visibility:hidden; opacity:0; pointer-events:none;
+      position:absolute; top:calc(100% + 6px); left:0;
+      background:#fff; border-radius:12px;
+      box-shadow:0 8px 32px rgba(0,0,0,.18); min-width:200px;
+      z-index:9999; transition:opacity .15s,transform .15s,visibility .15s;
+      transform:translateY(-4px); overflow:hidden;
+    }
+    .nav-menu-item.open > .nav-dropdown { visibility:visible; opacity:1; pointer-events:auto; transform:translateY(0); }
+    .dd-item {
+      display:flex; align-items:center; gap:10px;
+      padding:10px 16px; font-size:.84rem; color:#333;
+      text-decoration:none; transition:background .12s,color .12s; white-space:nowrap;
+    }
+    .dd-item:hover { background:#fdf6ec; color:#e8931a; }
+    .chevron { font-size:.6rem; transition:transform .2s; }
+    .nav-menu-item.open .chevron { transform:rotate(180deg); }
+
+    /* Nav right */
+    .nav-right { display:flex; align-items:center; gap:12px; }
+    .nav-user {
+      display:flex; align-items:center; gap:10px;
+      cursor:pointer; padding:6px 10px; border-radius:10px;
+      transition:background .2s; position:relative;
+    }
+    .nav-user:hover { background:rgba(255,255,255,.07); }
+    .user-info { text-align:right; }
+    .user-name-nav { font-size:.84rem; font-weight:600; color:#fff; line-height:1.2; }
+    .user-role-nav { font-size:.7rem; color:rgba(255,255,255,.5); }
+    .user-avatar {
+      width:36px; height:36px; border-radius:50%;
+      background:linear-gradient(135deg,var(--gold),var(--gold-light));
+      display:flex; align-items:center; justify-content:center;
+      font-size:.9rem; font-weight:700; color:#fff; flex-shrink:0;
+    }
+
+    /* User dropdown */
+    .user-dropdown {
+      visibility:hidden; opacity:0; pointer-events:none;
+      position:absolute; top:calc(100% + 8px); right:0;
+      background:#fff; border-radius:12px;
+      box-shadow:0 8px 32px rgba(0,0,0,.18); min-width:200px;
+      z-index:9999; transition:opacity .15s,transform .15s,visibility .15s;
+      transform:translateY(-4px); overflow:hidden;
+    }
+    .nav-user.open > .user-dropdown { visibility:visible; opacity:1; pointer-events:auto; transform:translateY(0); }
+    .dd-header { padding:14px 16px; background:#fafafa; border-bottom:1px solid #f0f0f5; }
+    .dd-uname { font-weight:600; font-size:.87rem; color:#222; }
+    .dd-uemail { font-size:.72rem; color:#888; margin-top:2px; }
+    .dd-uphp { font-size:.72rem; color:#aaa; margin-top:1px; }
+    .dd-item-link {
+      display:flex; align-items:center; gap:10px;
+      padding:10px 16px; font-size:.84rem; color:#444;
+      text-decoration:none; transition:background .12s; cursor:pointer;
+    }
+    .dd-item-link:hover { background:#f5f5fb; }
+    .dd-item-link.logout { color:#e74c3c; }
+    .dd-item-link.logout:hover { background:#fff5f5; }
+
+    /* Dashboard body */
+    .dash-body { margin-top:var(--nav-h); flex:1; display:flex; align-items:center; justify-content:center; padding:40px 24px; }
+    .empty-state { text-align:center; }
+    .empty-icon { font-size:4rem; margin-bottom:16px; opacity:.4; }
+    .empty-title { font-size:1.2rem; font-weight:600; color:#aaa; }
+    .empty-sub { font-size:.85rem; color:#bbb; margin-top:6px; }
   </style>
 </head>
 <body>
 
-<!-- LEFT PANEL -->
-<div class="left-panel">
-  <div class="geo geo-1"></div>
-  <div class="geo geo-2"></div>
-  <div class="geo geo-3"></div>
-  <div class="left-content">
-    <img src="assets/logo/fawzpro.png" alt="FAWZ Pro" class="brand-logo"
-      onerror="this.style.display='none'; document.getElementById('logoFallback').style.display='block'"/>
-    <div id="logoFallback" style="display:none; text-align:center;">
-      <div style="font-size:5rem; line-height:1;">🦁</div>
-      <div style="font-size:2.5rem; font-weight:700; color:#f5a623; letter-spacing:4px; margin-top:8px;">FAWZ</div>
-      <div style="font-size:0.7rem; color:rgba(245,166,35,0.55); letter-spacing:5px; margin-top:4px;">BEYOND GENERATIONS</div>
-    </div>
-    <div class="test-badge">🧪 Test Mode</div>
+<!-- ==================== LOGIN PAGE ==================== -->
+<div id="loginPage">
 
-    <!-- Hint akun terdaftar -->
-    <div class="hint-box">
-      <div class="hint-title">Akun Terdaftar</div>
-      <div class="hint-row">
-        <div class="hint-item">
-          <span class="hint-label">Email</span>
-          <span class="hint-val">razaqa2812@gmail.com</span>
-        </div>
-        <div class="hint-item">
-          <span class="hint-label">Password</span>
-          <span class="hint-val">12345</span>
+  <div class="left-panel">
+    <div class="geo geo-1"></div>
+    <div class="geo geo-2"></div>
+    <div class="geo geo-3"></div>
+    <div class="left-content">
+      <img src="assets/logo/fawzpro.png" alt="FAWZ Pro" class="brand-logo"
+        onerror="this.style.display='none';document.getElementById('logoFb').style.display='block'"/>
+      <div id="logoFb" style="display:none;text-align:center;">
+        <div style="font-size:4.5rem;line-height:1;">🦁</div>
+        <div style="font-size:2.2rem;font-weight:700;color:#f5a623;letter-spacing:4px;margin-top:8px;">FAWZ</div>
+        <div style="font-size:.68rem;color:rgba(245,166,35,.55);letter-spacing:5px;margin-top:4px;">BEYOND GENERATIONS</div>
+      </div>
+      <div class="test-badge">🧪 Test Mode</div>
+      <div class="hint-box">
+        <div class="hint-title">Akun Terdaftar</div>
+        <div class="hint-row">
+          <div class="hint-item">
+            <span class="hint-label">Email</span>
+            <span class="hint-val">razaqa2812@gmail.com</span>
+          </div>
+          <div class="hint-item">
+            <span class="hint-label">Password</span>
+            <span class="hint-val">12345</span>
+          </div>
         </div>
       </div>
+    </div>
+  </div>
+
+  <div class="right-panel">
+    <div class="login-card">
+      <div class="login-header">
+        <h2>Selamat Datang</h2>
+        <p>Masuk ke akun Fawz Pro Anda</p>
+        <div class="login-header-line"></div>
+      </div>
+      <div class="test-warning">⚠️ Halaman ini hanya untuk keperluan <strong>testing</strong>.</div>
+      <div class="msg-box msg-error" id="msgError"></div>
+      <div class="msg-box msg-success" id="msgSuccess"></div>
+
+      <div class="form-group">
+        <label>Email</label>
+        <div class="input-wrap">
+          <span class="input-icon">📧</span>
+          <input type="email" id="inputEmail" placeholder="contoh@email.com" autocomplete="email"/>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Password</label>
+        <div class="input-wrap">
+          <span class="input-icon">🔒</span>
+          <input type="password" id="inputPassword" placeholder="Masukkan password" autocomplete="current-password"/>
+          <span class="eye-toggle" onclick="togglePwd()">
+            <svg id="eyeShow" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            <svg id="eyeHide" viewBox="0 0 24 24" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+          </span>
+        </div>
+      </div>
+
+      <button class="btn-login" id="loginBtn" onclick="doLogin()">
+        <span id="btnText">Masuk Sekarang</span>
+      </button>
+      <div class="login-footer">© 2026 PT Fawz Finansial Indonesia</div>
     </div>
   </div>
 </div>
 
-<!-- RIGHT PANEL -->
-<div class="right-panel">
+<!-- ==================== DASHBOARD PAGE ==================== -->
+<div id="dashPage">
 
-  <!-- Form Login -->
-  <div class="login-card" id="loginCard">
-    <div class="login-header">
-      <h2>Verifikasi Identitas</h2>
-      <p>Masukkan data Anda untuk melanjutkan</p>
-      <div class="login-header-line"></div>
-    </div>
+  <!-- NAVBAR -->
+  <nav class="fawz-navbar">
+    <a class="nav-brand" href="#">
+      <img src="assets/logo/fawzpro.png" alt="FAWZ Pro"
+        onerror="this.style.display='none';document.getElementById('brandFb').style.display='flex'"/>
+      <div id="brandFb" style="display:none;align-items:center;gap:6px;">
+        <span class="brand-fallback">FAWZ</span>
+        <span class="brand-badge">PRO</span>
+      </div>
+    </a>
 
-    <div class="test-warning">
-      ⚠️ Halaman ini hanya untuk keperluan <strong>&nbsp;testing</strong>. Bukan untuk produksi.
-    </div>
+    <!-- Main menu -->
+    <ul class="nav-menu-items">
 
-    <div class="msg-box msg-error" id="msgError"></div>
-    <div class="msg-box msg-success" id="msgSuccess"></div>
+      <!-- Influencer -->
+      <li class="nav-menu-item" id="navInfluencer">
+        <button class="nav-link-btn" onclick="toggleNav('navInfluencer')">
+          🌟 Influencer <span class="chevron">▾</span>
+        </button>
+        <div class="nav-dropdown">
+          <a class="dd-item" href="influencer-register.html">📋 Registrasi Influencer</a>
+          <a class="dd-item" href="dashboard-influencer.html">📈 Dashboard Influencer</a>
+        </div>
+      </li>
 
-    <div class="form-group">
-      <label>Email</label>
-      <div class="input-wrap">
-        <span class="input-icon">📧</span>
-        <input type="email" id="inputEmail" placeholder="contoh@email.com" autocomplete="email"/>
+      <!-- Referral Fee -->
+      <li class="nav-menu-item" id="navReferral">
+        <button class="nav-link-btn" onclick="toggleNav('navReferral')">
+          🤝 Referral Fee <span class="chevron">▾</span>
+        </button>
+        <div class="nav-dropdown">
+          <a class="dd-item" href="referral-agent.html">👥 Referral Agent</a>
+          <a class="dd-item" href="dashboard-referral.html">📊 Dashboard Referral</a>
+          <a class="dd-item" href="referral-landing.html">🔗 Referral Landing</a>
+        </div>
+      </li>
+
+    </ul>
+
+    <!-- Right: Profile -->
+    <div class="nav-right">
+      <div class="nav-user" id="navUser" onclick="toggleUserDd()">
+        <div class="user-info">
+          <div class="user-name-nav" id="navUname">—</div>
+          <div class="user-role-nav">Test Account</div>
+        </div>
+        <div class="user-avatar" id="navAvatar">?</div>
+
+        <div class="user-dropdown" id="userDd">
+          <div class="dd-header">
+            <div class="dd-uname" id="ddName">—</div>
+            <div class="dd-uemail" id="ddEmail">—</div>
+            <div class="dd-uphp" id="ddHp">—</div>
+          </div>
+          <a class="dd-item-link" href="profile.html">👤 Profil Saya</a>
+          <div class="dd-item-link logout" onclick="doLogout()">🚪 Keluar</div>
+        </div>
       </div>
     </div>
+  </nav>
 
-    <div class="form-group">
-      <label>Password</label>
-      <div class="input-wrap">
-        <span class="input-icon">🔒</span>
-        <input type="password" id="inputPassword" placeholder="Masukkan password" autocomplete="current-password"/>
-        <span class="eye-toggle" onclick="togglePwd()" title="Tampilkan/sembunyikan password">
-          <svg id="eyeIconShow" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-          <svg id="eyeIconHide" viewBox="0 0 24 24" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-        </span>
-      </div>
+  <!-- Empty body -->
+  <div class="dash-body">
+    <div class="empty-state">
+      <div class="empty-icon">🏠</div>
+      <div class="empty-title">Halaman Utama</div>
+      <div class="empty-sub">Gunakan menu di navbar untuk navigasi</div>
     </div>
-
-    <button class="btn-login" id="loginBtn" onclick="doLogin()">
-      <span id="btnText">Masuk</span>
-    </button>
-
-    <div class="login-footer">
-      © 2026 PT Fawz Finansial Indonesia
-    </div>
-  </div>
-
-  <!-- Halaman sukses setelah login -->
-  <div class="success-screen" id="successScreen">
-    <div class="check-circle">✓</div>
-    <div class="success-name" id="successName"></div>
-    <div class="success-sub">Login berhasil — selamat datang</div>
-
-    <div class="success-detail">
-      <div class="detail-row">
-        <span class="dk">Email</span>
-        <span class="dv" id="detailEmail"></span>
-      </div>
-      <div class="detail-row">
-        <span class="dk">Nomor HP</span>
-        <span class="dv" id="detailHp"></span>
-      </div>
-      <div class="detail-row">
-        <span class="dk">Status</span>
-        <span class="dv" style="color:#27ae60;">✅ Terverifikasi</span>
-      </div>
-    </div>
-
-    <!-- Menu Shortcut -->
-    <div class="menu-section">
-      <div class="menu-title">Navigasi Cepat</div>
-      <div class="menu-grid">
-
-        <!-- Referral Agent -->
-        <a href="referral-agent.html" class="menu-card">
-          <span class="mc-icon">🤝</span>
-          <span class="mc-label">Referral Agent</span>
-          <span class="mc-sub">Data & manajemen</span>
-        </a>
-
-        <!-- Dashboard Referral -->
-        <a href="dashboard-referral.html" class="menu-card">
-          <span class="mc-icon">📊</span>
-          <span class="mc-label">Dashboard Referral</span>
-          <span class="mc-sub">Statistik referral</span>
-        </a>
-
-        <!-- Influencer -->
-        <a href="influencer-register.html" class="menu-card">
-          <span class="mc-icon">🌟</span>
-          <span class="mc-label">Influencer</span>
-          <span class="mc-sub">Registrasi influencer</span>
-        </a>
-
-        <!-- Dashboard Influencer -->
-        <a href="dashboard-influencer.html" class="menu-card">
-          <span class="mc-icon">📈</span>
-          <span class="mc-label">Dashboard Influencer</span>
-          <span class="mc-sub">Statistik influencer</span>
-        </a>
-
-        <!-- Dashboard Utama -->
-        <a href="dashboard.html" class="menu-card menu-card-wide">
-          <span class="mc-icon">🏠</span>
-          <span class="mc-label">Dashboard Utama</span>
-          <span class="mc-sub">Halaman utama Fawz Pro</span>
-        </a>
-
-      </div>
-    </div>
-
-    <button class="btn-logout" onclick="doLogout()">🚪 Keluar</button>
   </div>
 
 </div>
 
 <script>
-  // ─── Daftar akun terdaftar (hardcoded untuk test) ───────────────────────────
-  const REGISTERED_ACCOUNTS = [
-    {
-      email:    'razaqa2812@gmail.com',
-      password: '12345',
-      nama:     'Muhammad Razaq Arafi',
-      hp:       '085156150372'
-    }
+  // ─── Data akun terdaftar ─────────────────────────────────────────
+  const ACCOUNTS = [
+    { email: 'razaqa2812@gmail.com', password: '12345', nama: 'Muhammad Razaq Arafi', hp: '085156150372' }
   ];
 
-  function normalize(str) { return (str || '').trim().toLowerCase(); }
+  let _attempts = 0, _lockedUntil = 0;
+  let currentUser = null;
 
+  function normalize(s) { return (s||'').trim().toLowerCase(); }
+
+  // ─── Toggle password visibility ──────────────────────────────────
   function togglePwd() {
     const p = document.getElementById('inputPassword');
-    const iconShow = document.getElementById('eyeIconShow');
-    const iconHide = document.getElementById('eyeIconHide');
     const isHidden = p.type === 'password';
     p.type = isHidden ? 'text' : 'password';
-    iconShow.style.display = isHidden ? 'none' : '';
-    iconHide.style.display = isHidden ? '' : 'none';
+    document.getElementById('eyeShow').style.display = isHidden ? 'none' : '';
+    document.getElementById('eyeHide').style.display = isHidden ? '' : 'none';
   }
 
   function showMsg(type, text) {
     document.getElementById('msgError').style.display = 'none';
     document.getElementById('msgSuccess').style.display = 'none';
     const el = document.getElementById(type === 'error' ? 'msgError' : 'msgSuccess');
-    el.textContent = text;
-    el.style.display = 'block';
+    el.textContent = text; el.style.display = 'block';
   }
 
   function setLoading(on) {
@@ -427,85 +399,46 @@
     btn.disabled = on;
     if (on) {
       txt.textContent = '';
-      const sp = document.createElement('div');
-      sp.className = 'spinner'; sp.id = 'spinner';
+      const sp = document.createElement('div'); sp.className='spinner'; sp.id='spinner';
       btn.appendChild(sp);
     } else {
-      const sp = document.getElementById('spinner');
-      if (sp) sp.remove();
-      txt.textContent = 'Masuk';
+      const sp = document.getElementById('spinner'); if(sp) sp.remove();
+      txt.textContent = 'Masuk Sekarang';
     }
   }
 
   function markError(id) { document.getElementById(id).classList.add('error'); }
-  function clearErrors() {
-    ['inputEmail','inputPassword'].forEach(id => {
-      document.getElementById(id).classList.remove('error');
-    });
-  }
+  function clearErrors() { ['inputEmail','inputPassword'].forEach(id => document.getElementById(id).classList.remove('error')); }
 
-  let _attempts = 0;
-  let _lockedUntil = 0;
-
+  // ─── Login ────────────────────────────────────────────────────────
   function doLogin() {
     clearErrors();
     const email    = document.getElementById('inputEmail').value.trim();
     const password = document.getElementById('inputPassword').value;
 
-    // Validasi kosong
-    let hasEmpty = false;
-    if (!email)    { markError('inputEmail');    hasEmpty = true; }
-    if (!password) { markError('inputPassword'); hasEmpty = true; }
-    if (hasEmpty) { showMsg('error', '⚠️ Email dan password wajib diisi.'); return; }
+    if (!email)    { markError('inputEmail');    showMsg('error','⚠️ Email wajib diisi.'); return; }
+    if (!password) { markError('inputPassword'); showMsg('error','⚠️ Password wajib diisi.'); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { markError('inputEmail'); showMsg('error','⚠️ Format email tidak valid.'); return; }
 
-    // Validasi format email
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      markError('inputEmail');
-      showMsg('error', '⚠️ Format email tidak valid.');
-      return;
-    }
-
-    // Brute-force protection
     if (Date.now() < _lockedUntil) {
       const sisa = Math.ceil((_lockedUntil - Date.now()) / 1000);
-      showMsg('error', `⏳ Terlalu banyak percobaan. Coba lagi dalam ${sisa} detik.`);
-      return;
+      showMsg('error',`⏳ Terlalu banyak percobaan. Coba lagi dalam ${sisa} detik.`); return;
     }
 
     setLoading(true);
-
     setTimeout(() => {
-      const match = REGISTERED_ACCOUNTS.find(acc =>
-        normalize(acc.email) === normalize(email) &&
-        acc.password === password
-      );
-
+      const match = ACCOUNTS.find(a => normalize(a.email)===normalize(email) && a.password===password);
       if (match) {
-        _attempts = 0;
-        showMsg('success', '✅ Login berhasil!');
-        setTimeout(() => {
-          document.getElementById('loginCard').classList.add('hide');
-          const ss = document.getElementById('successScreen');
-          ss.classList.add('active');
-          document.getElementById('successName').textContent  = match.nama;
-          document.getElementById('detailEmail').textContent  = match.email;
-          document.getElementById('detailHp').textContent     = match.hp;
-        }, 700);
+        _attempts = 0; currentUser = match;
+        showMsg('success','✅ Login berhasil! Mengalihkan...');
+        setTimeout(() => showDashboard(match), 800);
       } else {
         _attempts++;
-        if (_attempts >= 5) {
-          _lockedUntil = Date.now() + 30_000;
-          _attempts = 0;
-          showMsg('error', '🔒 Terlalu banyak percobaan. Akun dikunci 30 detik.');
-        } else {
-          const emailMatch = REGISTERED_ACCOUNTS.find(a => normalize(a.email) === normalize(email));
-          if (!emailMatch) {
-            markError('inputEmail');
-            showMsg('error', `❌ Email tidak terdaftar. (${_attempts}/5)`);
-          } else {
-            markError('inputPassword');
-            showMsg('error', `❌ Password salah. (${_attempts}/5)`);
-          }
+        if (_attempts >= 5) { _lockedUntil = Date.now()+30000; _attempts=0; showMsg('error','🔒 Terlalu banyak percobaan. Akun dikunci 30 detik.'); }
+        else {
+          const emailOk = ACCOUNTS.find(a => normalize(a.email)===normalize(email));
+          if (!emailOk) { markError('inputEmail'); showMsg('error',`❌ Email tidak terdaftar. (${_attempts}/5)`); }
+          else { markError('inputPassword'); showMsg('error',`❌ Password salah. (${_attempts}/5)`); }
         }
         document.getElementById('inputPassword').value = '';
         setLoading(false);
@@ -513,19 +446,64 @@
     }, 600);
   }
 
+  // ─── Show Dashboard ───────────────────────────────────────────────
+  function showDashboard(user) {
+    document.getElementById('loginPage').style.display = 'none';
+    document.body.style.background = '#f0f2f7';
+    const dp = document.getElementById('dashPage');
+    dp.style.display = 'flex';
+
+    // Fill navbar user info
+    const initials = user.nama.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+    document.getElementById('navUname').textContent  = user.nama;
+    document.getElementById('navAvatar').textContent = initials;
+    document.getElementById('ddName').textContent    = user.nama;
+    document.getElementById('ddEmail').textContent   = user.email;
+    document.getElementById('ddHp').textContent      = '📱 ' + user.hp;
+  }
+
+  // ─── Logout ───────────────────────────────────────────────────────
   function doLogout() {
-    document.getElementById('successScreen').classList.remove('active');
-    document.getElementById('loginCard').classList.remove('hide');
+    currentUser = null;
+    document.getElementById('dashPage').style.display = 'none';
+    document.body.style.background = '';
+    document.getElementById('loginPage').style.display = 'flex';
     document.getElementById('inputEmail').value    = '';
     document.getElementById('inputPassword').value = '';
     document.getElementById('msgSuccess').style.display = 'none';
+    document.getElementById('msgError').style.display   = 'none';
     setLoading(false);
+    closeAllNav();
   }
 
+  // ─── Navbar dropdown toggle ───────────────────────────────────────
+  function toggleNav(id) {
+    const el = document.getElementById(id);
+    const isOpen = el.classList.contains('open');
+    closeAllNav();
+    if (!isOpen) el.classList.add('open');
+  }
+
+  function toggleUserDd() {
+    const el = document.getElementById('navUser');
+    el.classList.toggle('open');
+    // close other nav dropdowns
+    document.querySelectorAll('.nav-menu-item.open').forEach(i => i.classList.remove('open'));
+  }
+
+  function closeAllNav() {
+    document.querySelectorAll('.nav-menu-item.open').forEach(i=>i.classList.remove('open'));
+    document.getElementById('navUser').classList.remove('open');
+  }
+
+  // Close on outside click
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.nav-menu-item') && !e.target.closest('.nav-user')) closeAllNav();
+  });
+
+  // Enter key
   document.addEventListener('keydown', e => {
-    if (e.key === 'Enter' && !document.getElementById('loginCard').classList.contains('hide')) {
-      doLogin();
-    }
+    if (e.key==='Enter' && document.getElementById('loginPage').style.display!=='none') doLogin();
   });
 </script>
 </body>
