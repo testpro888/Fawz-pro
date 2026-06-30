@@ -6,6 +6,7 @@
   <title>Fawz Pro | Test Login</title>
   <link rel="icon" type="image/png" href="assets/logo/fawz.png"/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <script src="config.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -313,9 +314,8 @@
         <button class="nav-link-btn" onclick="toggleNav('navInfluencer')">
           🌟 Influencer <span class="chevron">▾</span>
         </button>
-        <div class="nav-dropdown">
-          <a class="dd-item" href="influencer-register.html">📋 Registrasi Influencer</a>
-          <a class="dd-item" href="dashboard-influencer.html">📈 Dashboard Influencer</a>
+        <div class="nav-dropdown" id="ddInfluencer">
+          <div class="dd-item" style="color:#aaa;font-style:italic;pointer-events:none;">⏳ Memuat...</div>
         </div>
       </li>
 
@@ -324,10 +324,8 @@
         <button class="nav-link-btn" onclick="toggleNav('navReferral')">
           🤝 Referral Fee <span class="chevron">▾</span>
         </button>
-        <div class="nav-dropdown">
-          <a class="dd-item" href="referral-agent.html">👥 Referral Agent</a>
-          <a class="dd-item" href="dashboard-referral.html">📊 Dashboard Referral</a>
-          <a class="dd-item" href="referral-landing.html">🔗 Referral Landing</a>
+        <div class="nav-dropdown" id="ddReferral">
+          <div class="dd-item" style="color:#aaa;font-style:italic;pointer-events:none;">⏳ Memuat...</div>
         </div>
       </li>
 
@@ -369,7 +367,7 @@
 <script>
   // ─── Data akun terdaftar ─────────────────────────────────────────
   const ACCOUNTS = [
-    { email: 'razaqa2812@gmail.com', password: '12345', nama: 'Muhammad Razaq Arafi', hp: '085156150372' }
+    { email: 'razaqa2812@gmail.com', password: '12345', nama: 'Muhammad Razaq Arafi', hp: '085156150372', clientId: 'MR028N' }
   ];
 
   let _attempts = 0, _lockedUntil = 0;
@@ -460,6 +458,78 @@
     document.getElementById('ddName').textContent    = user.nama;
     document.getElementById('ddEmail').textContent   = user.email;
     document.getElementById('ddHp').textContent      = '📱 ' + user.hp;
+
+    // Cek status registrasi di Supabase lalu build menu
+    checkRegistrationStatus(user.clientId);
+  }
+
+  // ─── Cek status di Supabase ───────────────────────────────────────
+  async function checkRegistrationStatus(clientId) {
+    // Default: belum terdaftar (tampilkan Sign Up)
+    let isReferral    = false;
+    let isInfluencer  = false;
+
+    try {
+      // Tunggu _supabase siap (config.js inject async)
+      const sb = await waitForSupabase();
+      if (sb && clientId) {
+        // Cek referral_agents
+        const { data: raData } = await sb
+          .from('referral_agents')
+          .select('id')
+          .or(`client_id.eq.${clientId},agent_code.eq.${clientId}`)
+          .limit(1);
+        isReferral = !!(raData && raData.length > 0);
+
+        // Cek influencer_registrations
+        const { data: infData } = await sb
+          .from('influencer_registrations')
+          .select('id')
+          .eq('client_id', clientId)
+          .limit(1);
+        isInfluencer = !!(infData && infData.length > 0);
+      }
+    } catch(e) {
+      console.warn('checkRegistrationStatus error:', e);
+    }
+
+    buildNavMenu(isReferral, isInfluencer);
+  }
+
+  // ─── Tunggu window._supabase siap ────────────────────────────────
+  function waitForSupabase(timeout = 5000) {
+    return new Promise(resolve => {
+      if (window._supabase) { resolve(window._supabase); return; }
+      const start = Date.now();
+      const iv = setInterval(() => {
+        if (window._supabase) { clearInterval(iv); resolve(window._supabase); }
+        else if (Date.now() - start > timeout) { clearInterval(iv); resolve(null); }
+      }, 100);
+    });
+  }
+
+  // ─── Build menu dinamis ───────────────────────────────────────────
+  function buildNavMenu(isReferral, isInfluencer) {
+    // --- Influencer menu ---
+    const infDd = document.getElementById('ddInfluencer');
+    if (isInfluencer) {
+      infDd.innerHTML = `
+        <a class="dd-item" href="dashboard-influencer.html">📈 Dashboard Influencer</a>`;
+    } else {
+      infDd.innerHTML = `
+        <a class="dd-item" href="influencer-register.html">✍️ Sign Up Influencer</a>`;
+    }
+
+    // --- Referral Fee menu ---
+    const refDd = document.getElementById('ddReferral');
+    if (isReferral) {
+      refDd.innerHTML = `
+        <a class="dd-item" href="referral-agent.html">👥 Referral Agent</a>
+        <a class="dd-item" href="dashboard-referral.html">📊 Dashboard Referral</a>`;
+    } else {
+      refDd.innerHTML = `
+        <a class="dd-item" href="referral-agent-regist.html">✍️ Sign Up Referral</a>`;
+    }
   }
 
   // ─── Logout ───────────────────────────────────────────────────────
