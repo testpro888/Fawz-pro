@@ -834,10 +834,13 @@
     document.getElementById('aaSelPhone').textContent = c.phone || '—';
     document.getElementById('aaSelEmail').textContent = c.email || '—';
 
-    // Auto-generate a suggested referral code (different from client_id)
-    const cid = (c.client_id || '').toUpperCase().replace(/[^A-Z0-9]/g,'');
-    const namePart = (c.client_name || '').toUpperCase().replace(/[^A-Z]/g,'').substring(0,2);
-    const suggested = (namePart || cid.substring(0,2)) + cid + '-REF';
+    // Auto-generate referral code: PP + inisial 2 kata pertama (atau huruf+0 jika 1 kata) + 2 angka random
+    // Contoh: "Muhammad Razaq Arafi" → PPMR20 | "Dimas" → PPD098
+    const _words = (c.client_name || '').trim().toUpperCase().replace(/[^A-Z ]/g,'').split(/\s+/).filter(Boolean);
+    const _initial1 = (_words[0] || ' ')[0] || '0';
+    const _initial2 = _words.length >= 2 ? (_words[1][0] || '0') : '0';
+    const _randNum  = String(Math.floor(Math.random() * 100)).padStart(2, '0');
+    const suggested = 'PP' + _initial1 + _initial2 + _randNum;
     const refInput = document.getElementById('aaRefCode');
     if (refInput && !refInput.value) {
       refInput.value = suggested;
