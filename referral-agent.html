@@ -1179,8 +1179,14 @@
         phone:          reg.phone           || null,
         sekuritas:      reg.sekuritas       || null,
         client_id:      reg.client_code     || null,
-        // agent_code (kode referral) harus berbeda dari client_code
-        agent_code:     reg.client_code ? reg.client_code + '-REF' : null,
+        // agent_code (kode referral): PP + inisial 2 kata pertama nama + 2 angka random
+        agent_code:     (function() {
+          const w = (reg.nama || '').trim().toUpperCase().replace(/[^A-Z ]/g,'').split(/\s+/).filter(Boolean);
+          const i1 = (w[0] || ' ')[0] || '0';
+          const i2 = w.length >= 2 ? (w[1][0] || '0') : '0';
+          const rn = String(Math.floor(Math.random() * 100)).padStart(2, '0');
+          return 'PP' + i1 + i2 + rn;
+        })(),
         influencer:     reg.influencer_code || null,
         fee_status:     'free',
         target_fee:     10000000,
