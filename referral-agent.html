@@ -127,41 +127,70 @@
     .tab.active { background: var(--navy); color: #fff; box-shadow: 0 2px 10px rgba(13,13,43,0.20); }
     .tab-badge { background: var(--red); color: #fff; font-size: 0.65rem; font-weight: 800; border-radius: 999px; padding: 1px 7px; min-width: 18px; text-align: center; }
 
-    /* ── REGISTRATION CARDS ── */
-    .reg-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px,1fr)); gap: 16px; }
-    .reg-card { background: var(--white); border-radius: 18px; padding: 22px; border: 1px solid var(--border); box-shadow: var(--shadow-sm); transition: transform 0.2s, box-shadow 0.2s; display: flex; flex-direction: column; }
-    .reg-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+    /* ── REGISTRATION TABLE ── */
+    .reg-grid { display: flex; flex-direction: column; gap: 0; overflow-x: auto; border-radius: 16px; border: 1px solid var(--border); box-shadow: var(--shadow-sm); background: var(--white); }
 
-    .reg-card-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px; gap: 10px; }
-    .reg-card-identity { display: flex; align-items: center; gap: 12px; }
-    .reg-avatar { width: 42px; height: 42px; border-radius: 12px; flex-shrink: 0; background: linear-gradient(135deg, var(--navy), #2a2a6a); display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 800; color: var(--gold); letter-spacing: 1px; }
-    .reg-card-name { font-size: 0.97rem; font-weight: 700; color: var(--navy); line-height: 1.2; }
-    .reg-card-email { font-size: 0.75rem; color: var(--gray); margin-top: 3px; }
+    /* Table header */
+    .reg-table-head {
+      display: grid;
+      grid-template-columns: 220px 140px 130px 130px 120px 110px 110px 110px 110px 180px;
+      gap: 0;
+      background: #f4f5fb;
+      border-bottom: 2px solid var(--border);
+      border-radius: 16px 16px 0 0;
+      padding: 0 16px;
+      position: sticky; top: 0; z-index: 2;
+    }
+    .reg-th {
+      font-size: 0.64rem; font-weight: 700; color: #999;
+      text-transform: uppercase; letter-spacing: 0.6px;
+      padding: 11px 8px;
+    }
 
-    .reg-status-badge { font-size: 0.68rem; font-weight: 700; padding: 5px 12px; border-radius: 999px; white-space: nowrap; flex-shrink: 0; }
+    /* Row */
+    .reg-card {
+      display: grid;
+      grid-template-columns: 220px 140px 130px 130px 120px 110px 110px 110px 110px 180px;
+      gap: 0;
+      align-items: center;
+      background: var(--white);
+      border-bottom: 1px solid #f0f0fa;
+      padding: 0 16px;
+      transition: background 0.15s;
+      min-height: 64px;
+    }
+    .reg-card:last-child { border-bottom: none; border-radius: 0 0 16px 16px; }
+    .reg-card:hover { background: #fafbff; }
+
+    /* Cell styles */
+    .rc-cell { padding: 10px 8px; font-size: 0.82rem; color: var(--navy); word-break: break-word; display: flex; flex-direction: column; justify-content: center; gap: 2px; }
+    .rc-label { font-size: 0.62rem; font-weight: 700; color: #bbb; text-transform: uppercase; letter-spacing: 0.5px; display: none; }
+    .rc-val { font-size: 0.82rem; font-weight: 500; color: var(--navy); line-height: 1.35; word-break: break-word; }
+    .rc-sub { font-size: 0.72rem; color: var(--gray); line-height: 1.3; }
+
+    /* Identity cell */
+    .rc-identity { display: flex; align-items: center; gap: 10px; padding: 10px 8px; }
+    .reg-avatar { width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0; background: linear-gradient(135deg, var(--navy), #2a2a6a); display: flex; align-items: center; justify-content: center; font-size: 0.78rem; font-weight: 800; color: var(--gold); letter-spacing: 1px; }
+    .reg-card-name { font-size: 0.85rem; font-weight: 700; color: var(--navy); line-height: 1.2; }
+    .reg-card-email { font-size: 0.71rem; color: var(--gray); margin-top: 2px; }
+
+    .reg-status-badge { font-size: 0.66rem; font-weight: 700; padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
     .status-pending    { background: #fffbea; color: #92610a; border: 1px solid #f9e79f; }
     .status-confirmed  { background: #edfff3; color: #136b30; border: 1px solid #a8e6c1; }
     .status-rejected   { background: #fff0f0; color: #9b1c1c; border: 1px solid #ffcccc; }
 
-    .reg-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
-    .reg-meta-item { background: #f8f9ff; border-radius: 10px; padding: 9px 11px; border: 1px solid #ededf8; }
-    .reg-meta-label { font-size: 0.6rem; font-weight: 700; color: #aaa; text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 3px; }
-    .reg-meta-val { font-size: 0.82rem; font-weight: 600; color: var(--navy); word-break: break-word; display: flex; align-items: center; gap: 5px; }
+    .reg-note { font-size: 0.72rem; color: #b45309; background: #fffbea; border-left: 3px solid #f9e79f; padding: 4px 8px; margin: 0 8px; border-radius: 4px; grid-column: 1/-1; }
 
-    /* Action buttons - redesigned */
-    .reg-actions { display: flex; gap: 8px; margin-top: auto; padding-top: 14px; border-top: 1px solid #f0f0fa; }
-    .btn-confirm { flex: 1; background: linear-gradient(135deg, #10b981, #059669); color: #fff; border: none; padding: 10px 14px; border-radius: 10px; font-family: 'Inter', sans-serif; font-size: 0.8rem; font-weight: 700; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 5px; }
-    .btn-confirm:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(16,185,129,0.35); }
-    .btn-reject { flex: 1; background: var(--white); color: var(--red); border: 1.5px solid #fecaca; padding: 10px 14px; border-radius: 10px; font-family: 'Inter', sans-serif; font-size: 0.8rem; font-weight: 700; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 5px; }
+    /* Action buttons — compact for table layout */
+    .reg-actions { display: flex; gap: 5px; align-items: center; padding: 6px 8px; flex-wrap: wrap; }
+    .btn-confirm { background: linear-gradient(135deg, #10b981, #059669); color: #fff; border: none; padding: 7px 10px; border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 0.72rem; font-weight: 700; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 4px; white-space: nowrap; }
+    .btn-confirm:hover { transform: translateY(-1px); box-shadow: 0 3px 10px rgba(16,185,129,0.35); }
+    .btn-reject { background: var(--white); color: var(--red); border: 1.5px solid #fecaca; padding: 7px 10px; border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 0.72rem; font-weight: 700; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 4px; white-space: nowrap; }
     .btn-reject:hover { background: #fff5f5; border-color: var(--red); }
-
-    /* WA & Hapus as icon buttons */
-    .btn-wa { background: #25d366; color: #fff; border: none; width: 40px; height: 40px; border-radius: 10px; cursor: pointer; font-size: 0.75rem; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.2s; }
-    .btn-wa:hover { background: #1db954; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(37,211,102,0.35); }
-    .btn-del { background: #fff5f5; color: #dc2626; border: 1.5px solid #fecaca; width: 40px; height: 40px; border-radius: 10px; cursor: pointer; font-size: 0.75rem; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.2s; }
-    .btn-del:hover { background: #fee2e2; border-color: #dc2626; transform: translateY(-1px); }
-
-    .reg-note { font-size: 0.72rem; color: var(--gray); margin-top: 10px; font-style: italic; background: #fafbff; border-radius: 8px; padding: 7px 10px; border-left: 3px solid var(--gold); }
+    .btn-wa  { background: #25d366; color: #fff; border: none; width: 32px; height: 32px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.2s; }
+    .btn-wa:hover  { background: #1db954; transform: translateY(-1px); }
+    .btn-del { background: #fff5f5; color: #dc2626; border: 1.5px solid #fecaca; width: 32px; height: 32px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.2s; }
+    .btn-del:hover { background: #fee2e2; border-color: #dc2626; }
     .reg-date { font-size: 0.65rem; color: #c0c0d8; margin-top: 10px; text-align: right; }
 
     /* filter tabs for reg */
@@ -298,7 +327,21 @@
       <button class="reg-ftab" onclick="setRegStatusFilter('rejected',this)">Ditolak</button>
     </div>
 
-    <div class="reg-grid" id="regGrid"></div>
+    <div style="overflow-x:auto;">
+      <div class="reg-table-head" id="regTableHead" style="display:none;">
+        <div class="reg-th">Pendaftar</div>
+        <div class="reg-th">Telepon</div>
+        <div class="reg-th">NIK</div>
+        <div class="reg-th">Sekuritas</div>
+        <div class="reg-th">Kode Client</div>
+        <div class="reg-th">No. RDN</div>
+        <div class="reg-th">Kode Referral</div>
+        <div class="reg-th">Kode Influencer</div>
+        <div class="reg-th">Tipe & Status</div>
+        <div class="reg-th">Aksi</div>
+      </div>
+      <div class="reg-grid" id="regGrid"></div>
+    </div>
     <div id="rStateBox" class="state-box" style="display:none;">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
       <p id="rStateMsg">Belum ada pendaftaran masuk</p>
@@ -1028,13 +1071,17 @@
   function renderRegCards(list) {
     const grid = document.getElementById('regGrid');
     const box  = document.getElementById('rStateBox');
+    const thead = document.getElementById('regTableHead');
+
     if (!list.length) {
       grid.innerHTML = '';
+      if (thead) thead.style.display = 'none';
       document.getElementById('rStateMsg').textContent = _allReg.length === 0 ? 'Belum ada pendaftaran masuk' : 'Tidak ada hasil yang cocok';
       box.style.display = 'block';
       return;
     }
     box.style.display = 'none';
+    if (thead) thead.style.display = 'grid';
 
     const sekLogos = { 'Maybank Sekuritas': 'maybank', 'Trimegah Sekuritas': 'trimegah', 'RHB Sekuritas': 'rhb' };
 
@@ -1060,13 +1107,7 @@
         : '';
       const note     = r.admin_note ? `<div class="reg-note">Catatan: ${_esc(r.admin_note)}</div>` : '';
       const phoneWA  = (r.phone || '').replace(/\D/g,'').replace(/^0/,'62');
-      const influencerBadge = r.influencer_code
-        ? `<div class="reg-meta-item" style="grid-column:1/-1;"><div class="reg-meta-label">Kode Influencer</div><div class="reg-meta-val" style="font-family:monospace;color:#7c3aed;font-weight:700;">${_esc(r.influencer_code)}</div></div>`
-        : '';
-      const nikBadge    = `<div class="reg-meta-item"><div class="reg-meta-label">NIK</div><div class="reg-meta-val" style="font-family:monospace;">${nikMask}</div></div>`;
-      const rdnBadge    = r.no_rdn ? `<div class="reg-meta-item"><div class="reg-meta-label">No. RDN</div><div class="reg-meta-val" style="font-family:monospace;">${noRdn}</div></div>` : '';
-      const refBadge    = r.referral_code ? `<div class="reg-meta-item"><div class="reg-meta-label">Kode Referral</div><div class="reg-meta-val">${refCode}</div></div>` : '';
-      const signBadge   = r.agreement_signature ? `<div class="reg-meta-item" style="grid-column:1/-1;"><div class="reg-meta-label">Tanda Tangan</div><div class="reg-meta-val" style="font-style:italic;">${signVal}</div></div>` : '';
+      const influencerCode = r.influencer_code ? _esc(r.influencer_code) : null;
 
       const waBtn = phoneWA ? `<button class="btn-wa" onclick="window.open('https://wa.me/${phoneWA}','_blank')" title="Chat WhatsApp">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.553 4.116 1.523 5.844L.057 23.43a.75.75 0 0 0 .914.914l5.587-1.466A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.896 0-3.67-.52-5.186-1.428l-.37-.218-3.839 1.007 1.007-3.84-.217-.37A9.965 9.965 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
@@ -1100,31 +1141,41 @@
       `;
 
       const initials2 = (r.nama||'?').replace(/[^A-Za-z ]/g,'').trim().split(' ').map(w=>w[0]||'').join('').substring(0,2).toUpperCase()||'?';
+      const influencerVal = r.influencer_code ? `<span style="font-family:monospace;color:#7c3aed;font-weight:700;">${_esc(r.influencer_code)}</span>` : '<span style="color:#ccc;">—</span>';
+      const signRow = r.agreement_signature ? `<div style="font-size:0.72rem;color:#555;margin-top:3px;">✍️ <em>${_esc(r.agreement_signature)}</em></div>` : '';
+
       return `<div class="reg-card" id="regcard-${safeId}">
-        <div class="reg-card-top">
-          <div class="reg-card-identity">
-            <div class="reg-avatar">${initials2}</div>
-            <div>
-              <div class="reg-card-name">${nama}</div>
-              <div class="reg-card-email">${email}</div>
-            </div>
+        <!-- Col 1: Pendaftar -->
+        <div class="rc-identity">
+          <div class="reg-avatar">${initials2}</div>
+          <div>
+            <div class="reg-card-name">${nama}</div>
+            <div class="reg-card-email">${email}</div>
+            <div style="font-size:0.68rem;color:#bbb;margin-top:2px;">${dateStr}</div>
           </div>
+        </div>
+        <!-- Col 2: Telepon -->
+        <div class="rc-cell"><div class="rc-val">${phone}</div></div>
+        <!-- Col 3: NIK -->
+        <div class="rc-cell"><div class="rc-val" style="font-family:monospace;font-size:0.78rem;">${nikMask}</div></div>
+        <!-- Col 4: Sekuritas -->
+        <div class="rc-cell"><div class="rc-val">${logoHtml}${sek}</div></div>
+        <!-- Col 5: Kode Client -->
+        <div class="rc-cell"><div class="rc-val" style="font-family:monospace;">${code}</div>${noRdn !== '—' ? `<div class="rc-sub">RDN: ${noRdn}</div>` : ''}</div>
+        <!-- Col 6: No. RDN -->
+        <div class="rc-cell"><div class="rc-val" style="font-family:monospace;font-size:0.78rem;">${noRdn}</div></div>
+        <!-- Col 7: Kode Referral -->
+        <div class="rc-cell">${refCode}</div>
+        <!-- Col 8: Kode Influencer -->
+        <div class="rc-cell">${influencerVal}${signRow}</div>
+        <!-- Col 9: Tipe & Status -->
+        <div class="rc-cell">
           <span class="reg-status-badge ${statusClass}">${statusLabel}</span>
+          <div class="rc-sub" style="margin-top:4px;">${regType}</div>
+          ${r.admin_note ? `<div style="font-size:0.68rem;color:#b45309;margin-top:3px;">📝 ${_esc(r.admin_note)}</div>` : ''}
         </div>
-        <div class="reg-meta">
-          <div class="reg-meta-item"><div class="reg-meta-label">Telepon</div><div class="reg-meta-val">${phone}</div></div>
-          <div class="reg-meta-item"><div class="reg-meta-label">Sekuritas</div><div class="reg-meta-val">${logoHtml}${sek}</div></div>
-          ${nikBadge}
-          ${rdnBadge}
-          <div class="reg-meta-item"><div class="reg-meta-label">Kode Client</div><div class="reg-meta-val" style="font-family:monospace;">${code}</div></div>
-          <div class="reg-meta-item"><div class="reg-meta-label">Tipe</div><div class="reg-meta-val" style="font-size:0.72rem;">${regType}</div></div>
-          ${refBadge}
-          ${influencerBadge}
-          ${signBadge}
-        </div>
-        ${note}
+        <!-- Col 10: Aksi -->
         <div class="reg-actions">${actionBtns}</div>
-        <div class="reg-date">Daftar: ${dateStr}</div>
       </div>`;
     }).join('');
   }
