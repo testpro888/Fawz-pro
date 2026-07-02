@@ -497,6 +497,12 @@
         <span>Pastikan kode client sesuai dengan yang terdaftar di sekuritas pilihan Anda. Tim kami akan memverifikasi data ini.</span>
       </div>
 
+      <div class="form-group" style="margin-top: 16px;">
+        <label class="form-label">Kode Influencer <span style="font-size:0.75rem;font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0;">(opsional)</span></label>
+        <input type="text" id="influencerCode3a" class="form-input" placeholder="Masukkan kode influencer jika ada" autocomplete="off" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()"/>
+        <div style="font-size:0.72rem;color:var(--muted);margin-top:5px;">Jika Anda mengetahui kode referral dari influencer, masukkan di sini.</div>
+      </div>
+
       <div style="margin-top: 20px;">
         <button class="btn btn-gold" id="btnSubmit3a" onclick="submitSudahDaftar()">
           Kirim & Tunggu Konfirmasi →
@@ -559,6 +565,12 @@
           <option value="maybank">Maybank Sekuritas</option>
           <option value="trimegah">Trimegah Sekuritas</option>
         </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Kode Influencer <span style="font-size:0.75rem;font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0;">(opsional)</span></label>
+        <input type="text" id="influencerCode3b" class="form-input" placeholder="Masukkan kode influencer jika ada" autocomplete="off" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()"/>
+        <div style="font-size:0.72rem;color:var(--muted);margin-top:5px;">Jika Anda mengetahui kode referral dari influencer, masukkan di sini.</div>
       </div>
 
       <div style="margin-top: 8px;">
@@ -749,6 +761,7 @@
         sekuritas: sekLabel,
         client_code: clientCode,
         status: 'sudah_terdaftar',
+        influencer_code: document.getElementById('influencerCode3a').value.trim().toUpperCase() || null,
         created_at: new Date().toISOString()
       });
     } catch(e) {
@@ -854,6 +867,7 @@ ${nama}`
         sekuritas: sekLabel,
         client_code: null,
         status: 'belum_terdaftar',
+        influencer_code: document.getElementById('influencerCode3b').value.trim().toUpperCase() || null,
         created_at: new Date().toISOString()
       });
     } catch(e) { console.error('Submit error (non-blocking):', e); }

@@ -106,7 +106,7 @@
     <img src="assets/logo/ikutin pp.png" alt="Petik Profit" onerror="this.style.display='none'"/>
   </div>
   <div class="topbar-right">
-    <a class="nav-link-inf" href="dashboard-influencer.html">📢 Influencer</a>
+
     <div class="topbar-user">
       <div>
         <div class="topbar-name" id="topbarName">—</div>
@@ -221,21 +221,13 @@
 
   // LOAD DATA
   function loadData(){
-    document.getElementById('kpiClient').textContent='37';
-    document.getElementById('kpiAktif').textContent='24';
-    document.getElementById('kpiVolume').textContent=fmtRp(290000000);
-    document.getElementById('kpiFee').textContent=fmtRp(870000);
-    document.getElementById('kpiKomisi').textContent=fmtRp(43500);
-    const clients=[
-      {name:'Budi Santoso',  code:'MYB-001',sek:'Maybank',  aktif:true, vol:45000000,fee:135000},
-      {name:'Rina Kusuma',   code:'MYB-002',sek:'Maybank',  aktif:true, vol:82000000,fee:246000},
-      {name:'Doni Prakasa',  code:'TMG-003',sek:'Trimegah', aktif:false,vol:0,        fee:0},
-      {name:'Sari Dewi',     code:'MYB-004',sek:'Maybank',  aktif:true, vol:63000000,fee:189000},
-      {name:'Ahmad Fauzi',   code:'TMG-005',sek:'Trimegah', aktif:true, vol:100000000,fee:300000},
-    ];
-    window._clients=clients; renderClients(clients);
-    const hist=[{m:'Mei 2026',a:61500,s:'paid'},{m:'Apr 2026',a:48000,s:'paid'},{m:'Mar 2026',a:27000,s:'paid'},{m:'Feb 2026',a:18000,s:'paid'}];
-    document.getElementById('historyList').innerHTML=hist.map(h=>`<div class="history-item"><div><div class="history-month">${h.m}</div><div class="history-period">Komisi trading fee client</div></div><div style="display:flex;align-items:center;gap:12px;"><span class="history-amount">${fmtRp(h.a)}</span><span class="history-status history-paid">Dibayar</span></div></div>`).join('');
+    document.getElementById('kpiClient').textContent='—';
+    document.getElementById('kpiAktif').textContent='—';
+    document.getElementById('kpiVolume').textContent='—';
+    document.getElementById('kpiFee').textContent='—';
+    document.getElementById('kpiKomisi').textContent='—';
+    window._clients=[]; renderClients([]);
+    document.getElementById('historyList').innerHTML='<div style="padding:20px;text-align:center;color:var(--stone);font-size:13px;">Belum ada data komisi.</div>';
   }
 
   function renderClients(data){
