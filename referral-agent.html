@@ -1094,7 +1094,7 @@
       const phone    = _esc(r.phone || '—');
       const sek      = _esc(r.sekuritas || '—');
       const code     = _esc(r.client_code || '—');
-      const nikMask  = r.nik ? _esc(r.nik.slice(0,4) + '****' + r.nik.slice(-4)) : '—';
+      const nikMask  = r.nik ? _esc(r.nik) : '—';
       const noRdn    = _esc(r.no_rdn || '—');
       const refCode  = r.referral_code ? `<span style="font-family:monospace;color:#7c3aed;font-weight:700;">${_esc(r.referral_code)}</span>` : '—';
       const signVal  = r.agreement_signature ? `✍️ ${_esc(r.agreement_signature)}` : '—';
@@ -1161,7 +1161,7 @@
         <!-- Col 4: Sekuritas -->
         <div class="rc-cell"><div class="rc-val">${logoHtml}${sek}</div></div>
         <!-- Col 5: Kode Client -->
-        <div class="rc-cell"><div class="rc-val" style="font-family:monospace;">${code}</div>${noRdn !== '—' ? `<div class="rc-sub">RDN: ${noRdn}</div>` : ''}</div>
+        <div class="rc-cell"><div class="rc-val" style="font-family:monospace;">${code}</div></div>
         <!-- Col 6: No. RDN -->
         <div class="rc-cell"><div class="rc-val" style="font-family:monospace;font-size:0.78rem;">${noRdn}</div></div>
         <!-- Col 7: Kode Referral -->
