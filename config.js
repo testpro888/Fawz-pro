@@ -1,6 +1,12 @@
 window.__FAWZ_CONFIG__ = {
   supabaseUrl: "https://yhmrfluehibfapvtxcfi.supabase.co",
-  supabaseKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlobXJmbHVlaGliZmFwdnR4Y2ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNjEzODUsImV4cCI6MjA5NDczNzM4NX0.se_H4n_eLsf81d_1GH5sqsPCpX89MHewlPuuNkY6qcU"
+  supabaseKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlobXJmbHVlaGliZmFwdnR4Y2ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxNjEzODUsImV4cCI6MjA5NDczNzM4NX0.se_H4n_eLsf81d_1GH5sqsPCpX89MHewlPuuNkY6qcU",
+
+  /* ── PETIK PROFIT INTEGRATION ──
+     Digunakan untuk sinkronisasi status Free/Premium agent
+     via endpoint POST /api/fawzpro/check-membership
+     Tidak perlu header auth — dilindungi rate limit 30 req/menit per IP */
+  petikProfitUrl: "https://pp.ikutin.id"
 };
 
 /* ── SUPABASE SINGLETON ──
