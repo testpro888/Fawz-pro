@@ -450,9 +450,12 @@
         : `<span style="color:#ccc;font-size:.75rem;">—</span>`;
       const statusVal = r.confirmed_status || 'pending';
       const statusClass = statusVal === 'registered' ? 's-registered' : statusVal === 'cancel' ? 's-cancel' : 's-pending';
+      const sourceBadge = r.source === 'register_landing'
+        ? `<span style="display:inline-block;margin-left:4px;padding:1px 6px;border-radius:4px;font-size:0.65rem;font-weight:600;background:#fef3c7;color:#92400e;">Landing</span>`
+        : '';
       return `<tr>
         <td style="color:#bbb;font-size:.75rem;">${no}</td>
-        <td><strong>${r.nama||r.name||'—'}</strong></td>
+        <td><strong>${r.nama||r.name||'—'}</strong>${sourceBadge}</td>
         <td style="color:#555;">${r.email||'—'}</td>
         <td style="color:#555;">${r.phone||'—'}</td>
         <td><span class="referral-tag">${(r.referral||'—').toUpperCase()}</span></td>
@@ -514,7 +517,7 @@
     const from     = document.getElementById('filterFrom').value;
     const to       = document.getElementById('filterTo').value;
     const result   = window._allRows.filter(r => {
-      const matchSearch  = !search   || (r.nama||'').toLowerCase().includes(search) || (r.email||'').toLowerCase().includes(search) || (r.referral||'').toLowerCase().includes(search) || (r.phone||'').includes(search);
+      const matchSearch  = !search   || (r.nama||'').toLowerCase().includes(search) || (r.name||'').toLowerCase().includes(search) || (r.email||'').toLowerCase().includes(search) || (r.referral||'').toLowerCase().includes(search) || (r.phone||'').includes(search);
       const matchRef     = !referral || (r.referral||'').toUpperCase()===referral;
       const matchStatus  = !status   || (r.confirmed_status||'pending')===status;
       const d = toDate(r.createdAt);
@@ -653,19 +656,48 @@
     if (!['head_account', 'admin', 'head_sales'].includes(_gu.role)) { window.location.replace('dashboard.html'); return; }
 
     try {
-      // ── Load semua registrasi referral ──
-      const { data: rows, error: leadsErr } = await window._supabase
+      // ── Load dari referral_registrations ──
+      const { data: refRows, error: refErr } = await window._supabase
         .from('referral_registrations')
         .select('id, nama, email, phone, referral_code, agent_name, sekuritas, status, confirmed_status, created_at')
         .order('created_at', { ascending: false });
-      if (leadsErr) throw leadsErr;
+      if (refErr) throw refErr;
 
-      // Normalise field names untuk kompatibilitas render functions
-      const allRows = (rows || []).map(r => ({
+      // ── Load dari register_landing ──
+      const { data: landingRows, error: landingErr } = await window._supabase
+        .from('register_landing')
+        .select('id, name, email, phone, sekuritas, referral_code, created_at')
+        .order('created_at', { ascending: false });
+      if (landingErr) console.warn('register_landing error:', landingErr);
+
+      // Normalise referral_registrations
+      const fromReferral = (refRows || []).map(r => ({
         ...r,
+        source: 'referral_registrations',
         referral:  r.referral_code || '',
         createdAt: r.created_at,
       }));
+
+      // Normalise register_landing
+      const fromLanding = (landingRows || []).map(r => ({
+        id: 'landing_' + r.id, // prefix untuk menghindari collision
+        nama: r.name,
+        email: r.email,
+        phone: r.phone,
+        referral: r.referral_code || '',
+        sekuritas: r.sekuritas,
+        confirmed_status: 'pending', // default status untuk landing page
+        created_at: r.created_at,
+        createdAt: r.created_at,
+        source: 'register_landing'
+      }));
+
+      // Gabungkan kedua sumber data
+      const allRows = [...fromReferral, ...fromLanding].sort((a, b) => {
+        const dateA = toDate(a.createdAt);
+        const dateB = toDate(b.createdAt);
+        return dateB - dateA; // descending
+      });
 
       window._allRows = allRows;
       populateReferralFilter(window._allRows);
@@ -678,7 +710,7 @@
         .map(r => ({
           ...r,
           link:      r.sekuritas,
-          clickedAt: r.created_at,
+          clickedAt: r.created_at || r.createdAt,
         }));
 
       window._allClicks = allClicks;
@@ -695,7 +727,14 @@
   async function deleteRow(id) {
     if (!confirm('Hapus data ini?')) return;
     try {
-      await window._supabase.from('referral_registrations').delete().eq('id', id);
+      // Check apakah dari register_landing atau referral_registrations
+      if (id.startsWith('landing_')) {
+        const realId = id.replace('landing_', '');
+        await window._supabase.from('register_landing').delete().eq('id', realId);
+      } else {
+        await window._supabase.from('referral_registrations').delete().eq('id', id);
+      }
+      
       window._allRows = window._allRows.filter(r => r.id !== id);
       filteredRows    = filteredRows.filter(r => r.id !== id);
       // sync tab sekuritas juga
@@ -714,11 +753,14 @@
       newStatus === 'cancel'     ? 's-cancel'     : 's-pending'
     );
     try {
-      const { error } = await window._supabase
-        .from('referral_registrations')
-        .update({ confirmed_status: newStatus, updated_at: new Date().toISOString() })
-        .eq('id', id);
-      if (error) throw error;
+      // register_landing tidak punya kolom confirmed_status, hanya update referral_registrations
+      if (!id.startsWith('landing_')) {
+        const { error } = await window._supabase
+          .from('referral_registrations')
+          .update({ confirmed_status: newStatus, updated_at: new Date().toISOString() })
+          .eq('id', id);
+        if (error) throw error;
+      }
       // Sync ke _allRows
       const row = window._allRows.find(r => r.id === id);
       if (row) row.confirmed_status = newStatus;
@@ -733,11 +775,20 @@
   async function deleteClick(id) {
     if (!confirm('Hapus pilihan sekuritas ini?')) return;
     try {
-      // Hanya clear kolom sekuritas, lead-nya tetap ada
-      await window._supabase
-        .from('referral_registrations')
-        .update({ sekuritas: null, updated_at: new Date().toISOString() })
-        .eq('id', id);
+      // Check apakah dari register_landing atau referral_registrations
+      if (id.startsWith('landing_')) {
+        const realId = id.replace('landing_', '');
+        await window._supabase
+          .from('register_landing')
+          .update({ sekuritas: null })
+          .eq('id', realId);
+      } else {
+        await window._supabase
+          .from('referral_registrations')
+          .update({ sekuritas: null, updated_at: new Date().toISOString() })
+          .eq('id', id);
+      }
+      
       window._allClicks = window._allClicks.filter(r => r.id !== id);
       filteredClicks    = filteredClicks.filter(r => r.id !== id);
       // Update _allRows juga supaya sinkron
