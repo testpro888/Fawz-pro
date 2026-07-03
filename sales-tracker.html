@@ -668,7 +668,14 @@
         .from('register_landing')
         .select('id, name, email, phone, sekuritas, referral_code, created_at')
         .order('created_at', { ascending: false });
-      if (landingErr) console.warn('register_landing error:', landingErr);
+      
+      console.log('📊 Sales Tracker Data Sources:');
+      console.log('  → referral_registrations:', (refRows || []).length, 'rows');
+      console.log('  → register_landing:', (landingRows || []).length, 'rows');
+      
+      if (landingErr) {
+        console.error('❌ register_landing fetch error:', landingErr);
+      }
 
       // Normalise referral_registrations
       const fromReferral = (refRows || []).map(r => ({
@@ -678,19 +685,21 @@
         createdAt: r.created_at,
       }));
 
-      // Normalise register_landing
+      // Normalise register_landing (landingRows bisa null jika RLS block atau tabel error)
       const fromLanding = (landingRows || []).map(r => ({
-        id: 'landing_' + r.id, // prefix untuk menghindari collision
-        nama: r.name,
-        email: r.email,
-        phone: r.phone,
+        id: 'landing_' + r.id,
+        nama: r.name || '—',
+        email: r.email || '',
+        phone: r.phone || '',
         referral: r.referral_code || '',
-        sekuritas: r.sekuritas,
-        confirmed_status: 'pending', // default status untuk landing page
+        sekuritas: r.sekuritas || null,
+        confirmed_status: 'pending',
         created_at: r.created_at,
         createdAt: r.created_at,
         source: 'register_landing'
       }));
+      
+      console.log('  → fromLanding normalized:', fromLanding.length, 'rows', fromLanding.slice(0,2));
 
       // Gabungkan kedua sumber data
       const allRows = [...fromReferral, ...fromLanding].sort((a, b) => {
