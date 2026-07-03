@@ -587,7 +587,7 @@
   async function checkMembership(email) {
     if (!email) return null;
     const cfg = window.__FAWZ_CONFIG__ || {};
-    const baseUrl = cfg.petikProfitUrl || 'https://app.ikutin.id';
+    const baseUrl = cfg.petikProfitUrl || 'https://pp.ikutin.id';
     try {
       const res = await fetch(baseUrl + '/api/fawzpro/check-membership', {
         method: 'POST',
