@@ -127,41 +127,70 @@
     .tab.active { background: var(--navy); color: #fff; box-shadow: 0 2px 10px rgba(13,13,43,0.20); }
     .tab-badge { background: var(--red); color: #fff; font-size: 0.65rem; font-weight: 800; border-radius: 999px; padding: 1px 7px; min-width: 18px; text-align: center; }
 
-    /* ── REGISTRATION CARDS ── */
-    .reg-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px,1fr)); gap: 16px; }
-    .reg-card { background: var(--white); border-radius: 18px; padding: 22px; border: 1px solid var(--border); box-shadow: var(--shadow-sm); transition: transform 0.2s, box-shadow 0.2s; display: flex; flex-direction: column; }
-    .reg-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+    /* ── REGISTRATION TABLE ── */
+    .reg-grid { display: flex; flex-direction: column; gap: 0; overflow-x: auto; border-radius: 16px; border: 1px solid var(--border); box-shadow: var(--shadow-sm); background: var(--white); }
 
-    .reg-card-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px; gap: 10px; }
-    .reg-card-identity { display: flex; align-items: center; gap: 12px; }
-    .reg-avatar { width: 42px; height: 42px; border-radius: 12px; flex-shrink: 0; background: linear-gradient(135deg, var(--navy), #2a2a6a); display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 800; color: var(--gold); letter-spacing: 1px; }
-    .reg-card-name { font-size: 0.97rem; font-weight: 700; color: var(--navy); line-height: 1.2; }
-    .reg-card-email { font-size: 0.75rem; color: var(--gray); margin-top: 3px; }
+    /* Table header */
+    .reg-table-head {
+      display: grid;
+      grid-template-columns: 220px 140px 130px 130px 120px 110px 110px 110px 110px 180px;
+      gap: 0;
+      background: #f4f5fb;
+      border-bottom: 2px solid var(--border);
+      border-radius: 16px 16px 0 0;
+      padding: 0 16px;
+      position: sticky; top: 0; z-index: 2;
+    }
+    .reg-th {
+      font-size: 0.64rem; font-weight: 700; color: #999;
+      text-transform: uppercase; letter-spacing: 0.6px;
+      padding: 11px 8px;
+    }
 
-    .reg-status-badge { font-size: 0.68rem; font-weight: 700; padding: 5px 12px; border-radius: 999px; white-space: nowrap; flex-shrink: 0; }
+    /* Row */
+    .reg-card {
+      display: grid;
+      grid-template-columns: 220px 140px 130px 130px 120px 110px 110px 110px 110px 180px;
+      gap: 0;
+      align-items: center;
+      background: var(--white);
+      border-bottom: 1px solid #f0f0fa;
+      padding: 0 16px;
+      transition: background 0.15s;
+      min-height: 64px;
+    }
+    .reg-card:last-child { border-bottom: none; border-radius: 0 0 16px 16px; }
+    .reg-card:hover { background: #fafbff; }
+
+    /* Cell styles */
+    .rc-cell { padding: 10px 8px; font-size: 0.82rem; color: var(--navy); word-break: break-word; display: flex; flex-direction: column; justify-content: center; gap: 2px; }
+    .rc-label { font-size: 0.62rem; font-weight: 700; color: #bbb; text-transform: uppercase; letter-spacing: 0.5px; display: none; }
+    .rc-val { font-size: 0.82rem; font-weight: 500; color: var(--navy); line-height: 1.35; word-break: break-word; }
+    .rc-sub { font-size: 0.72rem; color: var(--gray); line-height: 1.3; }
+
+    /* Identity cell */
+    .rc-identity { display: flex; align-items: center; gap: 10px; padding: 10px 8px; }
+    .reg-avatar { width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0; background: linear-gradient(135deg, var(--navy), #2a2a6a); display: flex; align-items: center; justify-content: center; font-size: 0.78rem; font-weight: 800; color: var(--gold); letter-spacing: 1px; }
+    .reg-card-name { font-size: 0.85rem; font-weight: 700; color: var(--navy); line-height: 1.2; }
+    .reg-card-email { font-size: 0.71rem; color: var(--gray); margin-top: 2px; }
+
+    .reg-status-badge { font-size: 0.66rem; font-weight: 700; padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
     .status-pending    { background: #fffbea; color: #92610a; border: 1px solid #f9e79f; }
     .status-confirmed  { background: #edfff3; color: #136b30; border: 1px solid #a8e6c1; }
     .status-rejected   { background: #fff0f0; color: #9b1c1c; border: 1px solid #ffcccc; }
 
-    .reg-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
-    .reg-meta-item { background: #f8f9ff; border-radius: 10px; padding: 9px 11px; border: 1px solid #ededf8; }
-    .reg-meta-label { font-size: 0.6rem; font-weight: 700; color: #aaa; text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 3px; }
-    .reg-meta-val { font-size: 0.82rem; font-weight: 600; color: var(--navy); word-break: break-word; display: flex; align-items: center; gap: 5px; }
+    .reg-note { font-size: 0.72rem; color: #b45309; background: #fffbea; border-left: 3px solid #f9e79f; padding: 4px 8px; margin: 0 8px; border-radius: 4px; grid-column: 1/-1; }
 
-    /* Action buttons - redesigned */
-    .reg-actions { display: flex; gap: 8px; margin-top: auto; padding-top: 14px; border-top: 1px solid #f0f0fa; }
-    .btn-confirm { flex: 1; background: linear-gradient(135deg, #10b981, #059669); color: #fff; border: none; padding: 10px 14px; border-radius: 10px; font-family: 'Inter', sans-serif; font-size: 0.8rem; font-weight: 700; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 5px; }
-    .btn-confirm:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(16,185,129,0.35); }
-    .btn-reject { flex: 1; background: var(--white); color: var(--red); border: 1.5px solid #fecaca; padding: 10px 14px; border-radius: 10px; font-family: 'Inter', sans-serif; font-size: 0.8rem; font-weight: 700; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 5px; }
+    /* Action buttons — compact for table layout */
+    .reg-actions { display: flex; gap: 5px; align-items: center; padding: 6px 8px; flex-wrap: wrap; }
+    .btn-confirm { background: linear-gradient(135deg, #10b981, #059669); color: #fff; border: none; padding: 7px 10px; border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 0.72rem; font-weight: 700; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 4px; white-space: nowrap; }
+    .btn-confirm:hover { transform: translateY(-1px); box-shadow: 0 3px 10px rgba(16,185,129,0.35); }
+    .btn-reject { background: var(--white); color: var(--red); border: 1.5px solid #fecaca; padding: 7px 10px; border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 0.72rem; font-weight: 700; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 4px; white-space: nowrap; }
     .btn-reject:hover { background: #fff5f5; border-color: var(--red); }
-
-    /* WA & Hapus as icon buttons */
-    .btn-wa { background: #25d366; color: #fff; border: none; width: 40px; height: 40px; border-radius: 10px; cursor: pointer; font-size: 0.75rem; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.2s; }
-    .btn-wa:hover { background: #1db954; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(37,211,102,0.35); }
-    .btn-del { background: #fff5f5; color: #dc2626; border: 1.5px solid #fecaca; width: 40px; height: 40px; border-radius: 10px; cursor: pointer; font-size: 0.75rem; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.2s; }
-    .btn-del:hover { background: #fee2e2; border-color: #dc2626; transform: translateY(-1px); }
-
-    .reg-note { font-size: 0.72rem; color: var(--gray); margin-top: 10px; font-style: italic; background: #fafbff; border-radius: 8px; padding: 7px 10px; border-left: 3px solid var(--gold); }
+    .btn-wa  { background: #25d366; color: #fff; border: none; width: 32px; height: 32px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.2s; }
+    .btn-wa:hover  { background: #1db954; transform: translateY(-1px); }
+    .btn-del { background: #fff5f5; color: #dc2626; border: 1.5px solid #fecaca; width: 32px; height: 32px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.2s; }
+    .btn-del:hover { background: #fee2e2; border-color: #dc2626; }
     .reg-date { font-size: 0.65rem; color: #c0c0d8; margin-top: 10px; text-align: right; }
 
     /* filter tabs for reg */
@@ -217,6 +246,28 @@
     .aa-rp-prefix-wrap { position: relative; }
     .aa-rp-prefix-wrap input { padding-left: 38px !important; }
     .aa-rp-prefix { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 0.82rem; color: var(--gray); font-weight: 600; }
+
+    /* ── EDIT STATUS MODAL ── */
+    .edit-status-modal { width: 400px; text-align: left; }
+    .edit-status-modal .aa-field { margin-bottom: 18px; }
+    .btn-edit-status {
+      display: inline-flex; align-items: center; justify-content: center; gap: 4px;
+      padding: 4px 10px; border-radius: 20px; font-family: 'Inter', sans-serif;
+      font-size: 0.68rem; font-weight: 700; cursor: pointer; border: 1.5px solid;
+      transition: all 0.15s; white-space: nowrap; line-height: 1;
+    }
+    .btn-edit-status:hover { opacity: 0.8; transform: translateY(-1px); }
+    .btn-edit-status.free-style {
+      background: #edfff3; color: #136b30; border-color: #a8e6c1;
+    }
+    .btn-edit-status.premium-style {
+      background: #fffbea; color: #92610a; border-color: #f9e79f;
+    }
+    .es-info-box { background: #f8f9ff; border: 1.5px solid var(--border); border-radius: 10px; padding: 12px 14px; margin-bottom: 18px; font-size: 0.82rem; color: var(--navy); }
+    .es-info-box strong { font-weight: 700; }
+    .modal-save-btn { width: 100%; padding: 12px; border-radius: 10px; background: linear-gradient(135deg, var(--navy), #2a2a6a); color: #fff; font-family: 'Inter', sans-serif; font-size: 0.9rem; font-weight: 700; border: none; cursor: pointer; transition: all 0.2s; }
+    .modal-save-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(13,13,43,0.28); }
+    .modal-save-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
   </style>
 </head>
 <body>
@@ -298,13 +349,74 @@
       <button class="reg-ftab" onclick="setRegStatusFilter('rejected',this)">Ditolak</button>
     </div>
 
-    <div class="reg-grid" id="regGrid"></div>
+    <div style="overflow-x:auto;">
+      <div class="reg-table-head" id="regTableHead" style="display:none;">
+        <div class="reg-th">Pendaftar</div>
+        <div class="reg-th">Telepon</div>
+        <div class="reg-th">NIK</div>
+        <div class="reg-th">Sekuritas</div>
+        <div class="reg-th">Kode Client</div>
+        <div class="reg-th">No. RDN</div>
+        <div class="reg-th">Kode Referral</div>
+        <div class="reg-th">Kode Influencer</div>
+        <div class="reg-th">Tipe & Status</div>
+        <div class="reg-th">Aksi</div>
+      </div>
+      <div class="reg-grid" id="regGrid"></div>
+    </div>
     <div id="rStateBox" class="state-box" style="display:none;">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
       <p id="rStateMsg">Belum ada pendaftaran masuk</p>
     </div>
   </div>
 
+</div>
+
+<!-- Edit Status Modal -->
+<div class="modal-overlay" id="editStatusModal" onclick="closeEditStatusModal(event)">
+  <div class="modal edit-status-modal">
+    <div class="modal-header">
+      <div class="modal-title">Edit Status Agent</div>
+      <button class="modal-close" onclick="document.getElementById('editStatusModal').classList.remove('open')">✕</button>
+    </div>
+
+    <div class="es-info-box" id="esAgentInfo">—</div>
+
+    <div class="aa-field">
+      <label class="aa-form-label">Status</label>
+      <div class="aa-status-toggle" id="esStatusToggle">
+        <button type="button" class="aa-status-btn active" data-status="free" onclick="esSetStatus('free')">Free</button>
+        <button type="button" class="aa-status-btn" data-status="premium" onclick="esSetStatus('premium')">Premium</button>
+      </div>
+    </div>
+
+    <div class="aa-field">
+      <label class="aa-form-label">Target Fee</label>
+      <div class="aa-rp-prefix-wrap">
+        <span class="aa-rp-prefix">Rp</span>
+        <input type="text" id="esTargetFee" oninput="esFormatFee(this)"/>
+      </div>
+    </div>
+
+    <div class="aa-pct-row">
+      <div class="aa-field">
+        <label class="aa-form-label">Fee Below Target</label>
+        <div class="aa-pct-suffix-wrap">
+          <input type="number" id="esPctBelow" min="0" max="100" step="0.5"/>
+          <span class="aa-pct-suffix">%</span>
+        </div>
+      </div>
+      <div class="aa-field">
+        <label class="aa-form-label">Fee On Target</label>
+        <div class="aa-pct-suffix-wrap">
+          <input type="number" id="esPctTarget" min="0" max="100" step="0.5"/>
+          <span class="aa-pct-suffix">%</span>
+        </div>
+      </div>
+    </div>
+
+    <button class="modal-save-btn" id="esSaveBtn" onclick="saveEditStatus()">Simpan Perubahan</button>
+  </div>
 </div>
 
 <!-- Add Agent Modal -->
@@ -464,6 +576,99 @@
     return n.split(' ').map(w => w[0]||'').join('').substring(0,2).toUpperCase() || 'AG';
   }
 
+  // ══════════════════════════════════
+  //  PETIK PROFIT MEMBERSHIP SYNC
+  // ══════════════════════════════════
+
+  /**
+   * Cek membership satu agent ke API Petik Profit.
+   * Return: 'premium' | 'free' | null (null = tidak bisa dicek / error)
+   */
+  async function checkMembership(email) {
+    if (!email) return null;
+    const cfg = window.__FAWZ_CONFIG__ || {};
+    const baseUrl = cfg.petikProfitUrl || 'https://app.ikutin.id';
+    try {
+      const res = await fetch(baseUrl + '/api/fawzpro/check-membership', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      if (!res.ok) {
+        console.warn('[Membership] HTTP', res.status, 'untuk', email);
+        return null;
+      }
+      const json = await res.json();
+      if (json.status !== 'OK' || !json.data) return null;
+      return json.data.is_premium === true ? 'premium' : 'free';
+    } catch(e) {
+      console.warn('[Membership] Gagal cek', email, e.message || e);
+      return null;
+    }
+  }
+
+  /**
+   * Sinkronisasi status Free/Premium semua agent dengan Petik Profit.
+   * - Panggil API per agent (paralel, max 5 sekaligus agar tidak overload)
+   * - Update Supabase hanya jika ada perubahan
+   * - Update _all in-memory langsung agar UI sinkron tanpa reload
+   */
+  async function syncMemberships(agents) {
+    if (!agents || agents.length === 0) return;
+
+    const BATCH = 5; // concurrency limit
+    const toUpdate = []; // { id, newStatus }
+
+    for (let i = 0; i < agents.length; i += BATCH) {
+      const batch = agents.slice(i, i + BATCH);
+      const results = await Promise.all(
+        batch.map(async (r) => {
+          if (!r.email) return null;
+          const newStatus = await checkMembership(r.email);
+          if (newStatus === null) return null; // skip jika API error
+          if (newStatus !== (r.fee_status || 'free')) {
+            return { id: r.id, newStatus, oldStatus: r.fee_status };
+          }
+          return null;
+        })
+      );
+      results.forEach(res => { if (res) toUpdate.push(res); });
+    }
+
+    if (toUpdate.length === 0) {
+      console.log('[Membership] Semua status sudah sinkron, tidak ada perubahan.');
+      return;
+    }
+
+    console.log('[Membership] Ada', toUpdate.length, 'agent yang perlu diupdate:', toUpdate);
+
+    // Update Supabase untuk setiap yang berubah
+    await Promise.all(
+      toUpdate.map(async ({ id, newStatus, oldStatus }) => {
+        try {
+          const { error } = await window._supabase
+            .from('referral_agents')
+            .update({ fee_status: newStatus })
+            .eq('id', id);
+          if (error) {
+            console.error('[Membership] Gagal update id', id, error.message);
+            return;
+          }
+          // Update in-memory juga
+          const idx = _all.findIndex(r => String(r.id) === String(id));
+          if (idx !== -1) _all[idx].fee_status = newStatus;
+          console.log('[Membership] Updated id', id, oldStatus, '→', newStatus);
+        } catch(e) {
+          console.error('[Membership] Exception update id', id, e);
+        }
+      })
+    );
+
+    // Re-render UI dengan data yang sudah diupdate
+    applyFilter();
+    showToast(`🔄 Membership disinkron: ${toUpdate.length} agent diperbarui`);
+  }
+
   async function loadData() {
     document.getElementById('stateBox').style.display = 'none';
     document.getElementById('stateMsg').textContent = 'Memuat data...';
@@ -492,6 +697,9 @@
     populateFilters();
     updateStats();
     applyFilter();
+
+    // Sinkron status Free/Premium dari Petik Profit (background, tidak block UI)
+    syncMemberships(_all);
   }
 
   function populateFilters() {
@@ -585,7 +793,10 @@
       const targetFee  = r.target_fee != null ? Number(r.target_fee).toLocaleString('id-ID') : null;
       const pctBelow   = r.fee_below_pct != null ? r.fee_below_pct : null;
       const pctTarget  = r.fee_target_pct != null ? r.fee_target_pct : null;
-      const statusTagHtml = `<span class="tag" style="${feeStatus==='premium' ? 'background:#fffbea;color:#92610a;border-color:#f9e79f;' : 'background:#edfff3;color:#136b30;border-color:#a8e6c1;'}">${feeStatus==='premium' ? 'Premium' : 'Free'}</span>`;
+      const statusTagHtml = `<button class="btn-edit-status ${feeStatus==='premium' ? 'premium-style' : 'free-style'}" onclick="openEditStatus('${safeId}')" title="Klik untuk edit status">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        ${feeStatus==='premium' ? 'Premium' : 'Free'}
+      </button>`;
       const feeInfoHtml = targetFee != null ? `
         <div class="referral-link-box" style="margin-bottom:14px;">
           <div class="referral-link-label">Target Fee &amp; Komisi</div>
@@ -940,6 +1151,89 @@
   }
 
 
+  // ══════════════════════════════════
+  //  EDIT STATUS AGENT
+  // ══════════════════════════════════
+  let _esCurrentId = null;
+  const ES_FEE_DEFAULTS = { free: { below: 5, target: 12 }, premium: { below: 8, target: 16 } };
+
+  function openEditStatus(id) {
+    const r = _all.find(x => String(x.id) === String(id));
+    if (!r) return;
+    _esCurrentId = id;
+    const nama   = getNama(r);
+    const code   = getCode(r);
+    const status = r.fee_status || 'free';
+    document.getElementById('esAgentInfo').innerHTML =
+      `<strong>${_esc(nama)}</strong><br>
+       <span style="font-family:monospace;font-size:0.78rem;color:#5a5aaa;">${_esc(code)}</span>
+       &nbsp;·&nbsp; <span style="color:var(--gray);">${_esc(r.email || '—')}</span>`;
+    // set status toggle
+    esSetStatus(status);
+    // set target fee
+    const tf = r.target_fee != null ? Number(r.target_fee).toLocaleString('id-ID') : '10.000.000';
+    document.getElementById('esTargetFee').value = tf;
+    // set pct
+    document.getElementById('esPctBelow').value  = r.fee_below_pct  != null ? r.fee_below_pct  : ES_FEE_DEFAULTS[status].below;
+    document.getElementById('esPctTarget').value = r.fee_target_pct != null ? r.fee_target_pct : ES_FEE_DEFAULTS[status].target;
+    const btn = document.getElementById('esSaveBtn');
+    btn.disabled = false; btn.textContent = 'Simpan Perubahan';
+    document.getElementById('editStatusModal').classList.add('open');
+  }
+
+  function closeEditStatusModal(e) {
+    if (e.target === document.getElementById('editStatusModal'))
+      document.getElementById('editStatusModal').classList.remove('open');
+  }
+
+  function esSetStatus(status) {
+    document.querySelectorAll('#esStatusToggle .aa-status-btn').forEach(b => b.classList.toggle('active', b.dataset.status === status));
+    // auto-fill default pct kalau masih di default lama
+    const belowInput  = document.getElementById('esPctBelow');
+    const targetInput = document.getElementById('esPctTarget');
+    const oldStatus   = status === 'free' ? 'premium' : 'free';
+    if (parseFloat(belowInput.value)  === ES_FEE_DEFAULTS[oldStatus].below)  belowInput.value  = ES_FEE_DEFAULTS[status].below;
+    if (parseFloat(targetInput.value) === ES_FEE_DEFAULTS[oldStatus].target) targetInput.value = ES_FEE_DEFAULTS[status].target;
+  }
+
+  function esFormatFee(input) {
+    const digits = input.value.replace(/\D/g, '');
+    input.value = digits ? Number(digits).toLocaleString('id-ID') : '';
+  }
+
+  async function saveEditStatus() {
+    if (!_esCurrentId) return;
+    const status    = document.querySelector('#esStatusToggle .aa-status-btn.active').dataset.status;
+    const targetFee = Number((document.getElementById('esTargetFee').value || '0').replace(/\D/g, '')) || 0;
+    const pctBelow  = parseFloat(document.getElementById('esPctBelow').value)  || 0;
+    const pctTarget = parseFloat(document.getElementById('esPctTarget').value) || 0;
+    const btn = document.getElementById('esSaveBtn');
+    btn.disabled = true; btn.textContent = 'Menyimpan...';
+    try {
+      const { error } = await window._supabase
+        .from('referral_agents')
+        .update({ fee_status: status, target_fee: targetFee, fee_below_pct: pctBelow, fee_target_pct: pctTarget })
+        .eq('id', _esCurrentId);
+      if (error) throw error;
+      // update in-memory
+      const idx = _all.findIndex(r => String(r.id) === String(_esCurrentId));
+      if (idx !== -1) {
+        _all[idx].fee_status     = status;
+        _all[idx].target_fee     = targetFee;
+        _all[idx].fee_below_pct  = pctBelow;
+        _all[idx].fee_target_pct = pctTarget;
+      }
+      document.getElementById('editStatusModal').classList.remove('open');
+      applyFilter();
+      showToast(`Status agent diperbarui → ${status === 'premium' ? '⭐ Premium' : '🟢 Free'}`);
+    } catch(e) {
+      console.error(e);
+      showToast('Gagal menyimpan: ' + (e.message || e));
+    }
+    btn.disabled = false; btn.textContent = 'Simpan Perubahan';
+    _esCurrentId = null;
+  }
+
   function switchTab(tab) {
     _activeTab = tab;
     document.getElementById('section-agents').style.display = tab === 'agents' ? '' : 'none';
@@ -1028,13 +1322,17 @@
   function renderRegCards(list) {
     const grid = document.getElementById('regGrid');
     const box  = document.getElementById('rStateBox');
+    const thead = document.getElementById('regTableHead');
+
     if (!list.length) {
       grid.innerHTML = '';
+      if (thead) thead.style.display = 'none';
       document.getElementById('rStateMsg').textContent = _allReg.length === 0 ? 'Belum ada pendaftaran masuk' : 'Tidak ada hasil yang cocok';
       box.style.display = 'block';
       return;
     }
     box.style.display = 'none';
+    if (thead) thead.style.display = 'grid';
 
     const sekLogos = { 'Maybank Sekuritas': 'maybank', 'Trimegah Sekuritas': 'trimegah', 'RHB Sekuritas': 'rhb' };
 
@@ -1047,6 +1345,10 @@
       const phone    = _esc(r.phone || '—');
       const sek      = _esc(r.sekuritas || '—');
       const code     = _esc(r.client_code || '—');
+      const nikMask  = r.nik ? _esc(r.nik) : '—';
+      const noRdn    = _esc(r.no_rdn || '—');
+      const refCode  = r.referral_code ? `<span style="font-family:monospace;color:#7c3aed;font-weight:700;">${_esc(r.referral_code)}</span>` : '—';
+      const signVal  = r.agreement_signature ? `✍️ ${_esc(r.agreement_signature)}` : '—';
       const regType  = r.status === 'sudah_terdaftar' ? 'Sudah punya akun' : 'Belum punya akun';
       const safeId   = _esc(String(r.id));
       const dateStr  = r.created_at ? new Date(r.created_at).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
@@ -1056,9 +1358,7 @@
         : '';
       const note     = r.admin_note ? `<div class="reg-note">Catatan: ${_esc(r.admin_note)}</div>` : '';
       const phoneWA  = (r.phone || '').replace(/\D/g,'').replace(/^0/,'62');
-      const influencerBadge = r.influencer_code
-        ? `<div class="reg-meta-item" style="grid-column:1/-1;"><div class="reg-meta-label">Kode Influencer</div><div class="reg-meta-val" style="font-family:monospace;color:#7c3aed;font-weight:700;">${_esc(r.influencer_code)}</div></div>`
-        : '';
+      const influencerCode = r.influencer_code ? _esc(r.influencer_code) : null;
 
       const waBtn = phoneWA ? `<button class="btn-wa" onclick="window.open('https://wa.me/${phoneWA}','_blank')" title="Chat WhatsApp">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.553 4.116 1.523 5.844L.057 23.43a.75.75 0 0 0 .914.914l5.587-1.466A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.896 0-3.67-.52-5.186-1.428l-.37-.218-3.839 1.007 1.007-3.84-.217-.37A9.965 9.965 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
@@ -1092,27 +1392,41 @@
       `;
 
       const initials2 = (r.nama||'?').replace(/[^A-Za-z ]/g,'').trim().split(' ').map(w=>w[0]||'').join('').substring(0,2).toUpperCase()||'?';
+      const influencerVal = r.influencer_code ? `<span style="font-family:monospace;color:#7c3aed;font-weight:700;">${_esc(r.influencer_code)}</span>` : '<span style="color:#ccc;">—</span>';
+      const signRow = r.agreement_signature ? `<div style="font-size:0.72rem;color:#555;margin-top:3px;">✍️ <em>${_esc(r.agreement_signature)}</em></div>` : '';
+
       return `<div class="reg-card" id="regcard-${safeId}">
-        <div class="reg-card-top">
-          <div class="reg-card-identity">
-            <div class="reg-avatar">${initials2}</div>
-            <div>
-              <div class="reg-card-name">${nama}</div>
-              <div class="reg-card-email">${email}</div>
-            </div>
+        <!-- Col 1: Pendaftar -->
+        <div class="rc-identity">
+          <div class="reg-avatar">${initials2}</div>
+          <div>
+            <div class="reg-card-name">${nama}</div>
+            <div class="reg-card-email">${email}</div>
+            <div style="font-size:0.68rem;color:#bbb;margin-top:2px;">${dateStr}</div>
           </div>
+        </div>
+        <!-- Col 2: Telepon -->
+        <div class="rc-cell"><div class="rc-val">${phone}</div></div>
+        <!-- Col 3: NIK -->
+        <div class="rc-cell"><div class="rc-val" style="font-family:monospace;font-size:0.78rem;">${nikMask}</div></div>
+        <!-- Col 4: Sekuritas -->
+        <div class="rc-cell"><div class="rc-val">${logoHtml}${sek}</div></div>
+        <!-- Col 5: Kode Client -->
+        <div class="rc-cell"><div class="rc-val" style="font-family:monospace;">${code}</div></div>
+        <!-- Col 6: No. RDN -->
+        <div class="rc-cell"><div class="rc-val" style="font-family:monospace;font-size:0.78rem;">${noRdn}</div></div>
+        <!-- Col 7: Kode Referral -->
+        <div class="rc-cell">${refCode}</div>
+        <!-- Col 8: Kode Influencer -->
+        <div class="rc-cell">${influencerVal}${signRow}</div>
+        <!-- Col 9: Tipe & Status -->
+        <div class="rc-cell">
           <span class="reg-status-badge ${statusClass}">${statusLabel}</span>
+          <div class="rc-sub" style="margin-top:4px;">${regType}</div>
+          ${r.admin_note ? `<div style="font-size:0.68rem;color:#b45309;margin-top:3px;">📝 ${_esc(r.admin_note)}</div>` : ''}
         </div>
-        <div class="reg-meta">
-          <div class="reg-meta-item"><div class="reg-meta-label">Telepon</div><div class="reg-meta-val">${phone}</div></div>
-          <div class="reg-meta-item"><div class="reg-meta-label">Sekuritas</div><div class="reg-meta-val">${logoHtml}${sek}</div></div>
-          <div class="reg-meta-item"><div class="reg-meta-label">Kode Client</div><div class="reg-meta-val" style="font-family:monospace;">${code}</div></div>
-          <div class="reg-meta-item"><div class="reg-meta-label">Tipe</div><div class="reg-meta-val" style="font-size:0.72rem;">${regType}</div></div>
-          ${influencerBadge}
-        </div>
-        ${note}
+        <!-- Col 10: Aksi -->
         <div class="reg-actions">${actionBtns}</div>
-        <div class="reg-date">Daftar: ${dateStr}</div>
       </div>`;
     }).join('');
   }
@@ -1179,8 +1493,8 @@
         phone:          reg.phone           || null,
         sekuritas:      reg.sekuritas       || null,
         client_id:      reg.client_code     || null,
-        // agent_code (kode referral): PP + inisial 2 kata pertama nama + 2 angka random
-        agent_code:     (function() {
+        // agent_code: gunakan kode referral dari form jika ada, jika tidak generate otomatis
+        agent_code:     reg.referral_code   || (function() {
           const w = (reg.nama || '').trim().toUpperCase().replace(/[^A-Z ]/g,'').split(/\s+/).filter(Boolean);
           const i1 = (w[0] || ' ')[0] || '0';
           const i2 = w.length >= 2 ? (w[1][0] || '0') : '0';

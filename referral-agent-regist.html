@@ -307,6 +307,39 @@
       box-shadow: 0 0 0 3px rgba(230,184,0,0.10) !important;
     }
 
+    /* ── AGREEMENT CHECKBOXES ── */
+    .agreement-list { display: flex; flex-direction: column; gap: 12px; margin: 16px 0; }
+    .agreement-item {
+      display: flex; gap: 12px; align-items: flex-start;
+      padding: 12px 14px; border-radius: 10px;
+      border: 1.5px solid var(--border);
+      cursor: pointer; transition: border-color 0.2s, background 0.2s;
+    }
+    .agreement-item:hover { border-color: var(--purple); background: #fafafe; }
+    .agreement-item.checked { border-color: var(--purple); background: #f0edff; }
+    .agreement-item input[type="checkbox"] {
+      width: 18px; height: 18px; flex-shrink: 0; margin-top: 1px;
+      accent-color: var(--purple); cursor: pointer;
+    }
+    .agreement-item .ag-text { font-size: 0.85rem; color: var(--text); line-height: 1.55; }
+    .agreement-item .ag-badge {
+      display: inline-flex; align-items: center;
+      font-size: 0.68rem; font-weight: 700; padding: 2px 7px;
+      border-radius: 6px; margin-right: 5px; vertical-align: middle;
+    }
+    .ag-badge.wajib   { background: #ffe0e0; color: var(--red); }
+    .ag-badge.opsional { background: #f0f0f0; color: var(--gray); }
+
+    /* ── DIGITAL SIGNATURE ── */
+    .signature-wrap { margin-top: 20px; }
+    .signature-wrap label { display: block; font-size: 0.92rem; font-weight: 700; color: var(--navy); margin-bottom: 6px; }
+    .signature-hint { font-size: 0.75rem; color: var(--gray); margin-top: 5px; line-height: 1.5; }
+    .form-input.signature-input { font-family: 'Georgia', serif; font-size: 1rem; color: var(--navy); }
+
+    /* ── STEP LABEL OVERRIDE ── */
+    #stepperWrap .step-label { display: none; }
+    @media (min-width: 400px) { #stepperWrap .step-label { display: block; } }
+
     /* ── EMAIL CONFIRM MODAL ── */
     .modal-overlay {
       position: fixed; inset: 0; background: rgba(13,13,43,0.55);
@@ -364,11 +397,16 @@
     <div class="step-line" id="line2"></div>
     <div class="step-item">
       <div class="step-dot" id="dot3">3</div>
-      <div class="step-label">Detail</div>
+      <div class="step-label">Data</div>
     </div>
     <div class="step-line" id="line3"></div>
     <div class="step-item">
       <div class="step-dot" id="dot4">4</div>
+      <div class="step-label">Ketentuan</div>
+    </div>
+    <div class="step-line" id="line4"></div>
+    <div class="step-item">
+      <div class="step-dot" id="dot5">5</div>
       <div class="step-label">Selesai</div>
     </div>
   </div>
@@ -448,7 +486,7 @@
     <div class="panel" id="panel3a">
       <div class="back-link" onclick="goStep(2)">← Kembali</div>
       <div class="sec-title">Pilih Sekuritas & Isi Data</div>
-      <div class="sec-sub">Pilih sekuritas yang Anda gunakan, lalu masukkan kode client Anda.</div>
+      <div class="sec-sub">Pilih sekuritas yang Anda gunakan, lalu lengkapi data diri Anda.</div>
 
       <div class="sekuritas-cards">
         <div class="sek-card" id="sek-maybank" onclick="pilihSekuritas('maybank')">
@@ -478,12 +516,21 @@
         <input type="text" id="nama3a" class="form-input" placeholder="Sesuai KTP" autocomplete="name"/>
       </div>
       <div class="form-group">
+        <label class="form-label">NIK (Nomor Induk Kependudukan) *</label>
+        <input type="text" id="nik3a" class="form-input" placeholder="16 digit sesuai KTP" maxlength="16" inputmode="numeric" autocomplete="off"/>
+      </div>
+      <div class="form-group">
         <label class="form-label">Email *</label>
         <input type="email" id="email3a" class="form-input" placeholder="email@anda.com" autocomplete="email"/>
       </div>
       <div class="form-group">
-        <label class="form-label">Nomor Telepon (WhatsApp)</label>
+        <label class="form-label">Nomor HP / WhatsApp *</label>
         <input type="tel" id="phone3a" class="form-input" placeholder="08xx-xxxx-xxxx" autocomplete="tel"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Nomor RDN *</label>
+        <input type="text" id="noRdn3a" class="form-input" placeholder="Nomor Rekening Dana Nasabah" autocomplete="off"/>
+        <div style="font-size:0.72rem;color:var(--muted);margin-top:5px;">Nomor RDN tertera di buku tabungan atau aplikasi sekuritas Anda.</div>
       </div>
       <div class="form-group">
         <label class="form-label">Client Code / Kode Nasabah *</label>
@@ -498,14 +545,19 @@
       </div>
 
       <div class="form-group" style="margin-top: 16px;">
+        <label class="form-label">Kode Referral *</label>
+        <input type="text" id="referralCode3a" class="form-input" placeholder="Masukkan kode referral agen" autocomplete="off" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()"/>
+      </div>
+
+      <div class="form-group">
         <label class="form-label">Kode Influencer <span style="font-size:0.75rem;font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0;">(opsional)</span></label>
         <input type="text" id="influencerCode3a" class="form-input" placeholder="Masukkan kode influencer jika ada" autocomplete="off" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()"/>
-        <div style="font-size:0.72rem;color:var(--muted);margin-top:5px;">Jika Anda mengetahui kode referral dari influencer, masukkan di sini.</div>
+        <div style="font-size:0.72rem;color:var(--muted);margin-top:5px;">Jika Anda mengetahui kode influencer, masukkan di sini.</div>
       </div>
 
       <div style="margin-top: 20px;">
-        <button class="btn btn-gold" id="btnSubmit3a" onclick="submitSudahDaftar()">
-          Kirim & Tunggu Konfirmasi →
+        <button class="btn btn-gold" id="btnNext3a" onclick="lanjutKeKetentuan('sudah')">
+          Lanjut ke Ketentuan →
         </button>
       </div>
     </div>
@@ -516,7 +568,7 @@
       <div class="sec-title">Buka Akun Sekuritas</div>
       <div class="sec-sub">
         Silakan buka akun di salah satu sekuritas rekanan kami di bawah ini,
-        lalu hubungi agen Fawz Anda untuk langkah selanjutnya.
+        lalu isi data diri Anda untuk melanjutkan proses pendaftaran agen.
       </div>
 
       <div class="open-acct-cards">
@@ -538,28 +590,15 @@
 
       <hr class="divider"/>
 
-      <div class="sec-title" style="font-size:1rem;">Sudah mendaftar di sekuritas?</div>
+      <div class="sec-title" style="font-size:1rem;">Isi Data Diri Anda</div>
       <div class="sec-sub" style="margin-bottom: 12px;">
-        Setelah akun Anda aktif, kembali ke sini dan daftarkan kode client Anda ke agen Fawz.
+        Lengkapi data berikut agar tim Fawz dapat menghubungi dan memandu Anda.
       </div>
 
       <div class="msg-box msg-error" id="msgErr3b"></div>
 
       <div class="form-group">
-        <label class="form-label">Nama Lengkap *</label>
-        <input type="text" id="nama3b" class="form-input" placeholder="Sesuai KTP" autocomplete="name"/>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Email *</label>
-        <input type="email" id="email3b" class="form-input" placeholder="email@anda.com" autocomplete="email"/>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Nomor Telepon (WhatsApp)</label>
-        <input type="tel" id="phone3b" class="form-input" placeholder="08xx-xxxx-xxxx" autocomplete="tel"/>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label">Sekuritas yang Didaftarkan *</label>
+        <label class="form-label">Sekuritas yang Dipilih *</label>
         <select id="sekuritas3b" class="form-input form-select">
           <option value="">-- Pilih Sekuritas --</option>
           <option value="maybank">Maybank Sekuritas</option>
@@ -568,18 +607,102 @@
       </div>
 
       <div class="form-group">
+        <label class="form-label">NIK (Nomor Induk Kependudukan) *</label>
+        <input type="text" id="nik3b" class="form-input" placeholder="16 digit sesuai KTP" maxlength="16" inputmode="numeric" autocomplete="off"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email *</label>
+        <input type="email" id="email3b" class="form-input" placeholder="email@anda.com" autocomplete="email"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Nomor HP / WhatsApp *</label>
+        <input type="tel" id="phone3b" class="form-input" placeholder="08xx-xxxx-xxxx" autocomplete="tel"/>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Kode Referral *</label>
+        <input type="text" id="referralCode3b" class="form-input" placeholder="Masukkan kode referral agen" autocomplete="off" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()"/>
+      </div>
+
+      <div class="form-group">
         <label class="form-label">Kode Influencer <span style="font-size:0.75rem;font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0;">(opsional)</span></label>
         <input type="text" id="influencerCode3b" class="form-input" placeholder="Masukkan kode influencer jika ada" autocomplete="off" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()"/>
-        <div style="font-size:0.72rem;color:var(--muted);margin-top:5px;">Jika Anda mengetahui kode referral dari influencer, masukkan di sini.</div>
+        <div style="font-size:0.72rem;color:var(--muted);margin-top:5px;">Jika Anda mengetahui kode influencer, masukkan di sini.</div>
       </div>
 
       <div style="margin-top: 8px;">
-        <button class="btn btn-navy" onclick="submitBelumDaftar()">Kirim Data & Hubungi Agen →</button>
+        <button class="btn btn-navy" onclick="lanjutKeKetentuan('belum')">Lanjut ke Ketentuan →</button>
       </div>
     </div>
 
-    <!-- ─── PANEL 4A: MENUNGGU KONFIRMASI ─── -->
-    <div class="panel" id="panel4a">
+    <!-- ─── PANEL 4: KETENTUAN & TANDA TANGAN DIGITAL ─── -->
+    <div class="panel" id="panel4">
+      <div class="back-link" onclick="goStep(3)">← Kembali</div>
+      <div class="sec-title">Ketentuan & Persetujuan</div>
+      <div class="sec-sub">Mohon baca dan centang persetujuan berikut sebelum melanjutkan.</div>
+
+      <div class="msg-box msg-error" id="msgErr4"></div>
+
+      <div class="agreement-list">
+        <!-- Ketentuan Wajib -->
+        <div class="agreement-item" id="agr1" onclick="toggleAgreement('agr1','chk1')">
+          <input type="checkbox" id="chk1" onclick="event.stopPropagation();toggleAgreement('agr1','chk1')"/>
+          <div class="ag-text">
+            <span class="ag-badge wajib">Wajib</span>
+            Seluruh data identitas dan RDN yang saya isikan adalah benar, sah, dan merupakan milik saya pribadi.
+          </div>
+        </div>
+
+        <div class="agreement-item" id="agr2" onclick="toggleAgreement('agr2','chk2')">
+          <input type="checkbox" id="chk2" onclick="event.stopPropagation();toggleAgreement('agr2','chk2')"/>
+          <div class="ag-text">
+            <span class="ag-badge wajib">Wajib</span>
+            Saya telah membaca, memahami, dan menyetujui seluruh Persetujuan Risiko Investasi di atas.
+          </div>
+        </div>
+
+        <div class="agreement-item" id="agr3" onclick="toggleAgreement('agr3','chk3')">
+          <input type="checkbox" id="chk3" onclick="event.stopPropagation();toggleAgreement('agr3','chk3')"/>
+          <div class="ag-text">
+            <span class="ag-badge wajib">Wajib</span>
+            Saya telah membaca, memahami, dan menyetujui Syarat &amp; Ketentuan Keanggotaan dan Agen Referral di atas, termasuk sifat permanen kode referral dan ketentuan satu identitas satu akun.
+          </div>
+        </div>
+
+        <div class="agreement-item" id="agr4" onclick="toggleAgreement('agr4','chk4')">
+          <input type="checkbox" id="chk4" onclick="event.stopPropagation();toggleAgreement('agr4','chk4')"/>
+          <div class="ag-text">
+            <span class="ag-badge wajib">Wajib</span>
+            Saya menyetujui pencairan poin komisi referral ke RDN yang saya daftarkan, sesuai jadwal dan ketentuan yang berlaku.
+          </div>
+        </div>
+
+        <div class="agreement-item" id="agr5" onclick="toggleAgreement('agr5','chk5')">
+          <input type="checkbox" id="chk5" onclick="event.stopPropagation();toggleAgreement('agr5','chk5')"/>
+          <div class="ag-text">
+            <span class="ag-badge opsional">Opsional</span>
+            Saya bersedia menerima informasi promosi, event, dan penawaran dari Petik Profit melalui email atau WhatsApp.
+          </div>
+        </div>
+      </div>
+
+      <div class="signature-wrap">
+        <label>Tanda Tangan Digital *</label>
+        <input type="text" id="signatureName" class="form-input signature-input" placeholder="Ketik nama lengkap Anda sebagai tanda tangan"/>
+        <div class="signature-hint">
+          Tanda tangan digital ini memiliki kekuatan hukum yang sama dengan tanda tangan basah, sesuai UU ITE No. 19 Tahun 2016.
+        </div>
+      </div>
+
+      <div style="margin-top: 24px;">
+        <button class="btn btn-green" id="btnSubmitFinal" onclick="submitFinal()">
+          Setuju & Kirim Pendaftaran →
+        </button>
+      </div>
+    </div>
+
+    <!-- ─── PANEL 5A: MENUNGGU KONFIRMASI (SUDAH TERDAFTAR) ─── -->
+    <div class="panel" id="panel5a">
       <div class="waiting-box">
         <div class="waiting-spinner"></div>
         <div class="waiting-title">Menunggu Konfirmasi</div>
@@ -590,7 +713,7 @@
         <div class="badge-pending">Sedang diproses oleh tim kami</div>
       </div>
 
-      <div class="data-review" id="reviewData4a"></div>
+      <div class="data-review" id="reviewData5a"></div>
 
       <div class="info-box blue" style="margin-top: 12px;">
         <span class="ib-icon">
@@ -607,8 +730,8 @@
       </div>
     </div>
 
-    <!-- ─── PANEL 4B: SUBMIT BELUM DAFTAR SUKSES ─── -->
-    <div class="panel" id="panel4b">
+    <!-- ─── PANEL 5B: SUBMIT BELUM DAFTAR SUKSES ─── -->
+    <div class="panel" id="panel5b">
       <div style="text-align:center; padding: 16px 0 8px;">
         <div class="success-icon">
           <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#1aae39" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:0 auto 12px;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
@@ -619,7 +742,7 @@
         </div>
       </div>
 
-      <div class="data-review" id="reviewData4b"></div>
+      <div class="data-review" id="reviewData5b"></div>
 
       <div class="info-box green" style="margin-top: 12px;">
         <span class="ib-icon">
@@ -659,10 +782,12 @@
   // ══════════════════════════════════════════════
   //  STATE
   // ══════════════════════════════════════════════
-  let currentStep   = 1;
-  let statusPilihan = null;   // 'sudah' | 'belum'
-  let sekuritasPilihan = null; // 'maybank' | 'trimegah'
-  let _pendingEmailData = null; // data ditahan sampai user klik "Setuju" di modal
+  let currentStep      = 1;
+  let statusPilihan    = null;
+  let sekuritasPilihan = null;
+  let _pendingEmailData = null;
+  let _ccStatus        = null;
+  let _formData        = {};
 
   function confirmEmailRedirect() {
     document.getElementById('emailConfirmModal').classList.remove('active');
@@ -671,39 +796,34 @@
     bukaEmailDraft(nama, email, phone, clientCode, sekLabel, sekKey);
     _pendingEmailData = null;
   }
-  let _ccStatus = null; // 'found' | 'notfound' | null
 
   // ══════════════════════════════════════════════
-  //  STEPPER
+  //  STEPPER (5 steps)
   // ══════════════════════════════════════════════
   function goStep(step) {
-    // Hide all panels
     document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-
-    if (step === 1) { document.getElementById('panel1').classList.add('active'); }
-    else if (step === 2) { document.getElementById('panel2').classList.add('active'); }
+    if (step === 1)      document.getElementById('panel1').classList.add('active');
+    else if (step === 2) document.getElementById('panel2').classList.add('active');
     else if (step === 3) {
       if (statusPilihan === 'sudah') document.getElementById('panel3a').classList.add('active');
       else                           document.getElementById('panel3b').classList.add('active');
-    } else if (step === 4) {
-      // panel4a / panel4b shown by submit handlers
     }
-
+    else if (step === 4) document.getElementById('panel4').classList.add('active');
     currentStep = step;
     updateStepper(step);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   function updateStepper(step) {
-    for (let i = 1; i <= 4; i++) {
+    for (let i = 1; i <= 5; i++) {
       const dot  = document.getElementById('dot' + i);
       const line = document.getElementById('line' + i);
+      if (!dot) continue;
       dot.classList.remove('active', 'done');
-      if (i < step)       { dot.classList.add('done'); dot.textContent = '✓'; }
-      else if (i === step){ dot.classList.add('active'); dot.textContent = i; }
+      if (i < step)        { dot.classList.add('done'); dot.textContent = '✓'; }
+      else if (i === step) { dot.classList.add('active'); dot.textContent = i; }
       else                 { dot.textContent = i; }
-      if (line && i < step) line.classList.add('done');
-      else if (line)        line.classList.remove('done');
+      if (line) { if (i < step) line.classList.add('done'); else line.classList.remove('done'); }
     }
   }
 
@@ -715,17 +835,12 @@
     document.getElementById('cc-sudah').classList.toggle('selected', val === 'sudah');
     document.getElementById('cc-belum').classList.toggle('selected', val === 'belum');
     const btn = document.getElementById('btnStatus');
-    btn.disabled = false;
-    btn.style.opacity = '1';
+    btn.disabled = false; btn.style.opacity = '1';
   }
-
-  function lanjutDariStatus() {
-    if (!statusPilihan) return;
-    goStep(3);
-  }
+  function lanjutDariStatus() { if (!statusPilihan) return; goStep(3); }
 
   // ══════════════════════════════════════════════
-  //  STEP 3A: SUDAH TERDAFTAR
+  //  STEP 3A: SEKURITAS PICKER
   // ══════════════════════════════════════════════
   function pilihSekuritas(val) {
     sekuritasPilihan = val;
@@ -735,71 +850,160 @@
     });
   }
 
-  async function submitSudahDaftar() {
-    const nama       = document.getElementById('nama3a').value.trim();
-    const email      = document.getElementById('email3a').value.trim();
-    const phone      = document.getElementById('phone3a').value.trim();
-    const clientCode = document.getElementById('clientCode').value.trim().toUpperCase();
-    const msgEl      = document.getElementById('msgErr3a');
-
+  // ══════════════════════════════════════════════
+  //  STEP 3 → 4: VALIDASI DATA LALU KE KETENTUAN
+  // ══════════════════════════════════════════════
+  function lanjutKeKetentuan(tipe) {
+    const msgEl = document.getElementById(tipe === 'sudah' ? 'msgErr3a' : 'msgErr3b');
     msgEl.style.display = 'none';
 
-    if (!sekuritasPilihan) { showMsg(msgEl, 'Pilih sekuritas terlebih dahulu.'); return; }
-    if (!nama)   { showMsg(msgEl, 'Nama lengkap wajib diisi.'); return; }
-    if (!email || !email.includes('@')) { showMsg(msgEl, 'Email tidak valid.'); return; }
-    if (!clientCode) { showMsg(msgEl, 'Kode client wajib diisi.'); return; }
+    if (tipe === 'sudah') {
+      const nama        = document.getElementById('nama3a').value.trim();
+      const nik         = document.getElementById('nik3a').value.trim();
+      const email       = document.getElementById('email3a').value.trim();
+      const phone       = document.getElementById('phone3a').value.trim();
+      const noRdn       = document.getElementById('noRdn3a').value.trim();
+      const clientCode  = document.getElementById('clientCode').value.trim().toUpperCase();
+      const referralCode= document.getElementById('referralCode3a').value.trim().toUpperCase();
+      const influencer  = document.getElementById('influencerCode3a').value.trim().toUpperCase();
 
-    const btn = document.getElementById('btnSubmit3a');
-    btn.disabled = true; btn.textContent = 'Mengirim...';
+      if (!sekuritasPilihan)                              { showMsg(msgEl,'Pilih sekuritas terlebih dahulu.'); return; }
+      if (!nama)                                          { showMsg(msgEl,'Nama lengkap wajib diisi.'); return; }
+      if (!nik || nik.length !== 16 || !/^\d+$/.test(nik)){ showMsg(msgEl,'NIK harus 16 digit angka.'); return; }
+      if (!email || !email.includes('@'))                 { showMsg(msgEl,'Email tidak valid.'); return; }
+      if (!phone)                                         { showMsg(msgEl,'Nomor HP wajib diisi.'); return; }
+      if (!noRdn)                                         { showMsg(msgEl,'Nomor RDN wajib diisi.'); return; }
+      if (!clientCode)                                    { showMsg(msgEl,'Client code wajib diisi.'); return; }
+      if (!referralCode)                                  { showMsg(msgEl,'Kode Referral wajib diisi.'); return; }
 
-    const sekLabel = { maybank: 'Maybank Sekuritas', trimegah: 'Trimegah Sekuritas' }[sekuritasPilihan];
-    const codeNotFound = (_ccStatus === 'notfound'); // kuning = kode tidak ditemukan di customers
+      const sekLabel = { maybank:'Maybank Sekuritas', trimegah:'Trimegah Sekuritas' }[sekuritasPilihan];
+      _formData = { tipe:'sudah', nama, nik, email, phone, noRdn, clientCode,
+                    sekLabel, referralCode, influencer, sekuritasKey: sekuritasPilihan };
+    } else {
+      const sekuritas   = document.getElementById('sekuritas3b').value;
+      const nik         = document.getElementById('nik3b').value.trim();
+      const email       = document.getElementById('email3b').value.trim();
+      const phone       = document.getElementById('phone3b').value.trim();
+      const referralCode= document.getElementById('referralCode3b').value.trim().toUpperCase();
+      const influencer  = document.getElementById('influencerCode3b').value.trim().toUpperCase();
 
-    try {
-      await _sb.from('referral_registrations').insert({
-        nama, email, phone: phone || null,
-        sekuritas: sekLabel,
-        client_code: clientCode,
-        status: 'sudah_terdaftar',
-        influencer_code: document.getElementById('influencerCode3a').value.trim().toUpperCase() || null,
-        created_at: new Date().toISOString()
-      });
-    } catch(e) {
-      console.error('Insert error (non-blocking):', e);
+      if (!sekuritas)                                     { showMsg(msgEl,'Pilih sekuritas terlebih dahulu.'); return; }
+      if (!nik || nik.length !== 16 || !/^\d+$/.test(nik)){ showMsg(msgEl,'NIK harus 16 digit angka.'); return; }
+      if (!email || !email.includes('@'))                 { showMsg(msgEl,'Email tidak valid.'); return; }
+      if (!phone)                                         { showMsg(msgEl,'Nomor HP wajib diisi.'); return; }
+      if (!referralCode)                                  { showMsg(msgEl,'Kode Referral wajib diisi.'); return; }
+
+      const sekLabel = { maybank:'Maybank Sekuritas', trimegah:'Trimegah Sekuritas' }[sekuritas] || sekuritas;
+      _formData = { tipe:'belum', nik, email, phone, sekuritas, sekLabel, referralCode, influencer };
     }
-
-    // Build review data
-    buildReview('reviewData4a', [
-      { label: 'Nama', val: nama },
-      { label: 'Email', val: email },
-      { label: 'Telepon', val: phone || '—' },
-      { label: 'Sekuritas', val: sekLabel },
-      { label: 'Client Code', val: clientCode },
-      { label: 'Status', val: codeNotFound ? 'Kode belum terverifikasi — tim akan menghubungi' : 'Menunggu Konfirmasi' }
-    ]);
-
-    // Show waiting panel
-    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-    document.getElementById('panel4a').classList.add('active');
-    updateStepper(4);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-
-    // Jika kode TIDAK ditemukan (kuning) DAN sekuritas Maybank → tampilkan pop-up konfirmasi
-    if (codeNotFound && sekuritasPilihan === 'maybank') {
-      _pendingEmailData = { nama, email, phone, clientCode, sekLabel, sekuritasPilihan };
-      document.getElementById('emailConfirmModal').classList.add('active');
-    }
-
-    btn.disabled = false; btn.textContent = 'Kirim & Tunggu Konfirmasi →';
+    goStep(4);
   }
 
   // ══════════════════════════════════════════════
-  //  DRAFT EMAIL — dipanggil jika kode tidak ditemukan
+  //  AGREEMENT TOGGLE
+  // ══════════════════════════════════════════════
+  function toggleAgreement(itemId, chkId) {
+    const chk  = document.getElementById(chkId);
+    const item = document.getElementById(itemId);
+    chk.checked = !chk.checked;
+    item.classList.toggle('checked', chk.checked);
+  }
+
+  // ══════════════════════════════════════════════
+  //  STEP 4 → SUBMIT FINAL ke Supabase
+  // ══════════════════════════════════════════════
+  async function submitFinal() {
+    const msgEl    = document.getElementById('msgErr4');
+    const signature = document.getElementById('signatureName').value.trim();
+    msgEl.style.display = 'none';
+
+    const wajib = ['chk1','chk2','chk3','chk4'];
+    for (const id of wajib) {
+      if (!document.getElementById(id).checked) {
+        showMsg(msgEl, 'Mohon centang semua ketentuan yang wajib terlebih dahulu.');
+        return;
+      }
+    }
+    if (!signature) { showMsg(msgEl, 'Tanda tangan digital (nama lengkap) wajib diisi.'); return; }
+
+    const btn = document.getElementById('btnSubmitFinal');
+    btn.disabled = true; btn.textContent = 'Mengirim...';
+
+    const agreePromo = document.getElementById('chk5').checked;
+    const agreementTerms = [
+      { id:'data_identity',    label:'Data identitas & RDN benar dan milik pribadi',     checked:true },
+      { id:'risk_agreement',   label:'Menyetujui Persetujuan Risiko Investasi',           checked:true },
+      { id:'terms_conditions', label:'Menyetujui Syarat & Ketentuan Keanggotaan Agen',   checked:true },
+      { id:'commission_rdn',   label:'Menyetujui pencairan komisi ke RDN terdaftar',     checked:true },
+      { id:'promo_consent',    label:'Bersedia menerima info promosi via email/WhatsApp', checked:agreePromo },
+    ];
+    const now = new Date().toISOString();
+
+    try {
+      if (_formData.tipe === 'sudah') {
+        const { nama, nik, email, phone, noRdn, clientCode, sekLabel, referralCode, influencer, sekuritasKey } = _formData;
+        await _sb.from('referral_registrations').insert({
+          nama, nik, email, phone: phone||null, no_rdn: noRdn||null,
+          sekuritas: sekLabel, client_code: clientCode, status: 'sudah_terdaftar',
+          referral_code: referralCode||null, influencer_code: influencer||null,
+          agreement_terms: agreementTerms, agreement_signature: signature,
+          agreement_timestamp: now, agree_promo: agreePromo, created_at: now
+        });
+        const codeNotFound = (_ccStatus === 'notfound');
+        buildReview('reviewData5a', [
+          { label:'Nama',          val: nama },
+          { label:'NIK',           val: nik.slice(0,4)+'****'+nik.slice(-4) },
+          { label:'Email',         val: email },
+          { label:'Telepon',       val: phone||'—' },
+          { label:'No. RDN',       val: noRdn||'—' },
+          { label:'Sekuritas',     val: sekLabel },
+          { label:'Client Code',   val: clientCode },
+          { label:'Kode Referral', val: referralCode||'—' },
+          { label:'Status',        val: codeNotFound?'Kode belum terverifikasi — tim akan menghubungi':'Menunggu Konfirmasi' }
+        ]);
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+        document.getElementById('panel5a').classList.add('active');
+        updateStepper(5);
+        window.scrollTo({ top:0, behavior:'smooth' });
+        if (codeNotFound && sekuritasKey === 'maybank') {
+          _pendingEmailData = { nama, email, phone, clientCode, sekLabel, sekuritasPilihan: sekuritasKey };
+          document.getElementById('emailConfirmModal').classList.add('active');
+        }
+      } else {
+        const { nik, email, phone, sekLabel, referralCode, influencer } = _formData;
+        await _sb.from('referral_registrations').insert({
+          nik, email, phone: phone||null, sekuritas: sekLabel, client_code: null,
+          status: 'belum_terdaftar', referral_code: referralCode||null,
+          influencer_code: influencer||null, agreement_terms: agreementTerms,
+          agreement_signature: signature, agreement_timestamp: now,
+          agree_promo: agreePromo, created_at: now
+        });
+        buildReview('reviewData5b', [
+          { label:'NIK',           val: nik.slice(0,4)+'****'+nik.slice(-4) },
+          { label:'Email',         val: email },
+          { label:'Telepon',       val: phone||'—' },
+          { label:'Sekuritas',     val: sekLabel },
+          { label:'Kode Referral', val: referralCode||'—' },
+          { label:'Status',        val: '🟡 Akan dihubungi tim Fawz' }
+        ]);
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+        document.getElementById('panel5b').classList.add('active');
+        updateStepper(5);
+        window.scrollTo({ top:0, behavior:'smooth' });
+      }
+    } catch(e) {
+      console.error('Submit error:', e);
+      showMsg(msgEl, 'Terjadi kesalahan saat mengirim data. Silakan coba lagi.');
+      btn.disabled = false; btn.textContent = 'Setuju & Kirim Pendaftaran →';
+      return;
+    }
+    btn.disabled = false; btn.textContent = 'Setuju & Kirim Pendaftaran →';
+  }
+
+  // ══════════════════════════════════════════════
+  //  DRAFT EMAIL
   // ══════════════════════════════════════════════
   function bukaEmailDraft(nama, email, phone, clientCode, sekLabel, sekuritasKey) {
-
-    // ── MAYBANK: kirim ke CS Maybank untuk minta pindah Sales Rep ke Zuraina ──
-    if (sekuritasKey === 'maybank') {
       const toEmail = 'CS.Indonesia@maybank.com';
       const ccEmail = 'Helpdesk.Indonesia@maybank.com';
 
@@ -846,94 +1050,33 @@ ${nama}`
   }
 
   // ══════════════════════════════════════════════
-  //  STEP 3B: BELUM TERDAFTAR
-  // ══════════════════════════════════════════════
-  async function submitBelumDaftar() {
-    const nama      = document.getElementById('nama3b').value.trim();
-    const email     = document.getElementById('email3b').value.trim();
-    const phone     = document.getElementById('phone3b').value.trim();
-    const sekuritas = document.getElementById('sekuritas3b').value;
-    const msgEl     = document.getElementById('msgErr3b');
-
-    msgEl.style.display = 'none';
-
-    if (!nama)  { showMsg(msgEl, 'Nama lengkap wajib diisi.'); return; }
-    if (!email || !email.includes('@')) { showMsg(msgEl, 'Email tidak valid.'); return; }
-
-    try {
-      const sekLabel = { maybank: 'Maybank Sekuritas', trimegah: 'Trimegah Sekuritas' }[sekuritas] || sekuritas || null;
-      await _sb.from('referral_registrations').insert({
-        nama, email, phone: phone || null,
-        sekuritas: sekLabel,
-        client_code: null,
-        status: 'belum_terdaftar',
-        influencer_code: document.getElementById('influencerCode3b').value.trim().toUpperCase() || null,
-        created_at: new Date().toISOString()
-      });
-    } catch(e) { console.error('Submit error (non-blocking):', e); }
-
-    const sekLabel = { maybank: 'Maybank Sekuritas', trimegah: 'Trimegah Sekuritas' }[document.getElementById('sekuritas3b').value] || '—';
-    buildReview('reviewData4b', [
-      { label: 'Nama', val: nama },
-      { label: 'Email', val: email },
-      { label: 'Telepon', val: phone || '—' },
-      { label: 'Sekuritas Pilihan', val: sekLabel },
-      { label: 'Status', val: '🟡 Akan dihubungi tim Fawz' }
-    ]);
-
-    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-    document.getElementById('panel4b').classList.add('active');
-    updateStepper(4);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
-
-  // ══════════════════════════════════════════════
-  //  HELPERS
-  // ══════════════════════════════════════════════
-
-  // ══════════════════════════════════════════════
-  //  CLIENT CODE VALIDATION — cek ke tabel customers
+  //  CLIENT CODE VALIDATION
   // ══════════════════════════════════════════════
   let _ccDebounce = null;
 
   function validateClientCode(input) {
     const val = input.value.trim().toUpperCase();
-
-    // Reset state
     _ccStatus = null;
     input.classList.remove('cc-found', 'cc-notfound');
-
     clearTimeout(_ccDebounce);
     if (val.length < 2) return;
-
-
     _ccDebounce = setTimeout(async () => {
       try {
         const { data, error } = await _sb
-          .from('customers')
-          .select('client_id, client_name')
-          .ilike('client_id', val)
-          .limit(1);
-
+          .from('customers').select('client_id, client_name').ilike('client_id', val).limit(1);
         if (error) throw error;
-
-        if (data && data.length > 0) {
-          const nama = data[0].client_name || data[0].client_id;
-          _ccStatus = 'found';
-          input.classList.add('cc-found');
-        } else {
-          _ccStatus = 'notfound';
-          input.classList.add('cc-notfound');
-        }
-      } catch(e) {
-        console.error('CC lookup error:', e);
-      }
+        if (data && data.length > 0) { _ccStatus = 'found'; input.classList.add('cc-found'); }
+        else { _ccStatus = 'notfound'; input.classList.add('cc-notfound'); }
+      } catch(e) { console.error('CC lookup error:', e); }
     }, 600);
   }
 
+  // ══════════════════════════════════════════════
+  //  HELPERS
+  // ══════════════════════════════════════════════
   function showMsg(el, txt) {
-    el.textContent = txt;
-    el.style.display = 'block';
+    el.textContent = txt; el.style.display = 'block';
+    el.scrollIntoView({ behavior:'smooth', block:'nearest' });
   }
 
   function buildReview(containerId, rows) {
