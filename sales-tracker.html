@@ -1352,17 +1352,17 @@
 
     try {
       const payload = {
-        client_id:            clientId,
-        ktp_number:           nik      || null,
-        client_name:          row.nama || row.name || '',
-        email:                row.email    || null,
-        phone:                row.phone    || null,
-        ksei_single_id:       sid      || null,
-        sales_person_id_legacy: window._modalSalesId   ? String(window._modalSalesId) : null,
-        sales_person_name:    window._modalSalesName || null,
-        referral_agents:      row.referral || null,
-        client_status:        'Aktif',
-        created_at:           new Date().toISOString()
+        client_id:              clientId,
+        ktp_number:             nik      || null,
+        client_name:            row.nama || row.name || '',
+        email:                  row.email    || null,
+        phone:                  row.phone    || null,
+        ksei_single_id:         sid      || null,
+        sales_person_id_legacy: (row.referral || '').toUpperCase() || null,
+        sales_person_name:      (row.referral || '').toUpperCase() || null,
+        referral_agents:        row.referral || null,
+        client_status:          'Aktif',
+        created_at:             new Date().toISOString()
       };
 
       const { data: inserted, error } = await window._supabase
