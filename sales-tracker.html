@@ -604,7 +604,7 @@
       .map(r => {
         const regDate = toDate(r.createdAt);
         if (!regDate) return null;
-        const followUpDate = addWorkingDays(regDate, 2);
+        const followUpDate = addWorkingDays(regDate, 3);
         const passed = workingDaysPassed(regDate);
         return { ...r, _followUpDate: followUpDate, _workingDaysPassed: passed };
       })
@@ -1120,7 +1120,7 @@
       renderClickTable(window._allClicks);
       renderClickSummary(window._allClicks);
 
-      // ── Tab "Need to Follow Up": pending + sudah >=2 hari kerja ──
+      // ── Tab "Need to Follow Up": pending + sudah >=3 hari kerja ──
       const fuRows = buildFollowUpRows(allRows);
       window._allFuRows = fuRows;
       populateFuReferralFilter(window._allRows);
