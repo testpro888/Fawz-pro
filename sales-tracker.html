@@ -1139,9 +1139,11 @@
       // Check apakah dari register_landing atau referral_registrations
       if (id.startsWith('landing_')) {
         const realId = id.replace('landing_', '');
-        await window._supabase.from('register_landing').delete().eq('id', realId);
+        const { error } = await window._supabase.from('register_landing').delete().eq('id', realId);
+        if (error) throw error;
       } else {
-        await window._supabase.from('referral_registrations').delete().eq('id', id);
+        const { error } = await window._supabase.from('referral_registrations').delete().eq('id', id);
+        if (error) throw error;
       }
       
       window._allRows = window._allRows.filter(r => r.id !== id);
@@ -1159,7 +1161,11 @@
 
   async function updateStatus(id, selectEl) {
     const newStatus = selectEl.value;
-    // Update warna dropdown langsung
+    // Simpan status lama untuk revert jika gagal
+    const row = window._allRows.find(r => r.id === id);
+    const oldStatus = row ? (row.confirmed_status || 'pending') : 'pending';
+
+    // Update warna dropdown langsung (optimistic UI)
     selectEl.className = 'status-select ' + (
       newStatus === 'registered' ? 's-registered' :
       newStatus === 'cancel'     ? 's-cancel'     : 's-pending'
@@ -1173,17 +1179,23 @@
           .eq('id', id);
         if (error) throw error;
       }
-      // Sync ke _allRows
-      const row = window._allRows.find(r => r.id === id);
+      // Sync ke _allRows dan filteredRows
       if (row) row.confirmed_status = newStatus;
+      const filteredRow = filteredRows.find(r => r.id === id);
+      if (filteredRow) filteredRow.confirmed_status = newStatus;
+      // Re-render tabel supaya tombol + Customer muncul/hilang sesuai status
+      renderPage();
       // Rebuild follow up list karena status berubah
       window._allFuRows = buildFollowUpRows(window._allRows);
       renderFuTable(window._allFuRows);
     } catch(e) {
       alert('Gagal update status: ' + e.message);
       // Revert ke nilai sebelumnya
-      const row = window._allRows.find(r => r.id === id);
-      if (row) { selectEl.value = row.confirmed_status || 'pending'; }
+      selectEl.value = oldStatus;
+      selectEl.className = 'status-select ' + (
+        oldStatus === 'registered' ? 's-registered' :
+        oldStatus === 'cancel'     ? 's-cancel'     : 's-pending'
+      );
     }
   }
 
