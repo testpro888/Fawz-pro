@@ -1352,29 +1352,44 @@
 
     try {
       const payload = {
-        client_id:    clientId,
-        nik:          nik,
-        name:         row.nama || row.name || '',
-        email:        row.email || '',
-        phone:        row.phone || '',
-        sekuritas:    row.sekuritas || '',
-        referral_code: row.referral || '',
-        sales_id:     window._modalSalesId   || null,
-        sales_name:   window._modalSalesName || null,
-        sid:          sid   || null,
-        sre:          sre   || null,
-        rdn:          rdn   || null,
-        bank_rdn:     bankRdn || null,
-        notes:        notes  || null,
-        source:       row.source || 'manual',
-        created_at:   new Date().toISOString()
+        client_id:            clientId,
+        ktp_number:           nik      || null,
+        client_name:          row.nama || row.name || '',
+        email:                row.email    || null,
+        phone:                row.phone    || null,
+        ksei_single_id:       sid      || null,
+        sales_person_id_legacy: window._modalSalesId   ? String(window._modalSalesId) : null,
+        sales_person_name:    window._modalSalesName || null,
+        referral_agents:      row.referral || null,
+        client_status:        'Aktif',
+        created_at:           new Date().toISOString()
       };
 
-      const { error } = await window._supabase
+      const { data: inserted, error } = await window._supabase
         .from('customers')
-        .insert([payload]);
+        .insert([payload])
+        .select('id')
+        .single();
 
       if (error) throw error;
+
+      // Insert data sekuritas (SRE / RDN) ke tabel customer_securities
+      if (inserted && inserted.id && (row.sekuritas || sre || rdn || bankRdn)) {
+        const secPayload = {
+          customer_id:      inserted.id,
+          sekuritas_name:   row.sekuritas   || null,
+          sid:              sid             || null,
+          sre:              sre             || null,
+          rdn_account_no:   rdn             || null,
+          rdn_bank_name:    bankRdn         || null,
+          created_at:       new Date().toISOString()
+        };
+        // Tidak throw jika gagal — data customer sudah tersimpan
+        const { error: secErr } = await window._supabase
+          .from('customer_securities')
+          .insert([secPayload]);
+        if (secErr) console.warn('customer_securities insert gagal:', secErr.message);
+      }
 
       alertEl.className = 'modal-alert success';
       alertEl.textContent = '✓ Berhasil ditambahkan ke Data Customer!';
