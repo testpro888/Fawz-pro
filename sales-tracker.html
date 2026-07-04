@@ -1287,15 +1287,15 @@
       try {
         const { data: agents, error } = await window._supabase
           .from('referral_agents')
-          .select('id, name, referral_code')
-          .ilike('referral_code', row.referral)
+          .select('id, nama, agent_code')
+          .ilike('agent_code', row.referral)
           .limit(1);
 
         if (!error && agents && agents.length > 0) {
           const agent = agents[0];
-          document.getElementById('pf-sales').textContent = agent.name + ' (ID: ' + agent.id + ')';
+          document.getElementById('pf-sales').textContent = agent.nama + ' (ID: ' + agent.id + ')';
           window._modalSalesId   = agent.id;
-          window._modalSalesName = agent.name;
+          window._modalSalesName = agent.nama;
         } else if (!row.agent_name) {
           // Coba dari tabel sales jika ada
           const { data: salesData } = await window._supabase
