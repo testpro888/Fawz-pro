@@ -1271,7 +1271,18 @@
     // Buka modal
     document.getElementById('addCustomerModal').classList.add('open');
 
-    // Lookup sales person dari referral_code
+    // Gunakan agent_name dari data row sebagai nilai awal
+    if (row.agent_name) {
+      document.getElementById('pf-sales').textContent = row.agent_name;
+      window._modalSalesId   = null;
+      window._modalSalesName = row.agent_name;
+    } else {
+      document.getElementById('pf-sales').textContent = '—';
+      window._modalSalesId   = null;
+      window._modalSalesName = null;
+    }
+
+    // Lookup ID sales dari referral_agents untuk melengkapi
     if (row.referral) {
       try {
         const { data: agents, error } = await window._supabase
@@ -1279,14 +1290,13 @@
           .select('id, name, referral_code')
           .ilike('referral_code', row.referral)
           .limit(1);
-        
+
         if (!error && agents && agents.length > 0) {
           const agent = agents[0];
           document.getElementById('pf-sales').textContent = agent.name + ' (ID: ' + agent.id + ')';
-          // Simpan untuk dipakai saat save
           window._modalSalesId   = agent.id;
           window._modalSalesName = agent.name;
-        } else {
+        } else if (!row.agent_name) {
           // Coba dari tabel sales jika ada
           const { data: salesData } = await window._supabase
             .from('sales')
@@ -1297,21 +1307,11 @@
             document.getElementById('pf-sales').textContent = salesData[0].name + ' (ID: ' + salesData[0].id + ')';
             window._modalSalesId   = salesData[0].id;
             window._modalSalesName = salesData[0].name;
-          } else {
-            document.getElementById('pf-sales').textContent = '— (tidak ditemukan)';
-            window._modalSalesId   = null;
-            window._modalSalesName = null;
           }
         }
       } catch(e) {
-        document.getElementById('pf-sales').textContent = '— (error lookup)';
-        window._modalSalesId   = null;
-        window._modalSalesName = null;
+        console.warn('Sales lookup error:', e.message);
       }
-    } else {
-      document.getElementById('pf-sales').textContent = '—';
-      window._modalSalesId   = null;
-      window._modalSalesName = null;
     }
   }
 
@@ -1394,6 +1394,22 @@
       alertEl.className = 'modal-alert success';
       alertEl.textContent = '✓ Berhasil ditambahkan ke Data Customer!';
       btn.textContent = '✓ Tersimpan';
+
+      // Update status lead jadi registered
+      if (!_activeLeadId.startsWith('landing_')) {
+        await window._supabase
+          .from('referral_registrations')
+          .update({ confirmed_status: 'registered', updated_at: new Date().toISOString() })
+          .eq('id', _activeLeadId);
+      }
+      // Sync local state
+      const leadRow = window._allRows.find(r => r.id === _activeLeadId);
+      if (leadRow) leadRow.confirmed_status = 'registered';
+      const filteredLead = filteredRows.find(r => r.id === _activeLeadId);
+      if (filteredLead) filteredLead.confirmed_status = 'registered';
+      window._allFuRows = buildFollowUpRows(window._allRows);
+      renderPage();
+      renderFuTable(window._allFuRows);
 
       setTimeout(() => closeAddCustomerModal(), 1800);
 
