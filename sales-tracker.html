@@ -322,6 +322,9 @@
     <button class="tab-btn" id="tab-clicks" onclick="switchTab('clicks')">
       Akun Sekuritas <span class="tab-badge" id="badge-clicks">0</span>
     </button>
+    <button class="tab-btn" id="tab-followup" onclick="switchTab('followup')">
+      Need to Follow Up <span class="tab-badge" id="badge-followup">0</span>
+    </button>
   </div>
 
   <!-- ===== TAB: LEADS ===== -->
@@ -474,6 +477,61 @@
     </div>
   </div>
 
+  <!-- ===== TAB: NEED TO FOLLOW UP ===== -->
+  <div class="tab-panel" id="panel-followup">
+    <div style="background:#fff3cd;border:1px solid #ffc107;border-radius:12px;padding:14px 18px;margin-bottom:20px;font-size:0.82rem;color:#856404;display:flex;align-items:center;gap:10px;">
+      <span style="font-size:1.2rem;">📋</span>
+      <div>
+        <strong>Daftar Lead Perlu Di-Follow Up</strong> — Lead berstatus <strong>Pending</strong> yang sudah melewati 2 hari kerja sejak registrasi (skip Sabtu, Minggu & hari libur nasional).
+      </div>
+    </div>
+
+    <div class="filter-bar">
+      <span class="filter-label">Cari:</span>
+      <input type="text" id="filterFuSearch" placeholder="Nama / Email / HP / Referral..." oninput="applyFuFilter()"/>
+      <span class="filter-label">Referral:</span>
+      <select id="filterFuReferral" onchange="applyFuFilter()">
+        <option value="">Semua</option>
+      </select>
+      <div class="filter-spacer"></div>
+      <button class="btn-reset" onclick="resetFuFilter()">Reset</button>
+    </div>
+
+    <div class="table-wrapper">
+      <div class="table-toolbar">
+        <div class="table-info">Menampilkan <span id="fuRowCount">0</span> data perlu follow up</div>
+      </div>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Nama</th>
+              <th>Email</th>
+              <th>No. HP</th>
+              <th>Kode Referral</th>
+              <th>Sekuritas Dipilih</th>
+              <th>Tgl Registrasi</th>
+              <th>Follow Up Tanggal</th>
+              <th>Hari ke-</th>
+              <th>Status</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="fuTableBody">
+            <tr><td colspan="11" style="padding:0;">
+              <div style="padding:14px 16px;display:flex;flex-direction:column;gap:10px;">
+                <div class="skeleton"></div><div class="skeleton" style="width:90%"></div>
+                <div class="skeleton" style="width:95%"></div>
+              </div>
+            </td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="pagination" id="fuPagination"></div>
+    </div>
+  </div>
+
 </div>
 
 <script>
@@ -482,7 +540,87 @@
   let filteredRows = [];
   let currentClickPage = 1;
   let filteredClicks = [];
+  let currentFuPage = 1;
+  let filteredFuRows = [];
   let currentTab = 'leads';
+
+  // ===== HARI LIBUR NASIONAL INDONESIA (extend sesuai tahun) =====
+  const HOLIDAYS_ID = new Set([
+    // 2026
+    '2026-01-01','2026-01-27','2026-01-28','2026-01-29',
+    '2026-03-20','2026-03-21','2026-03-22','2026-03-23',
+    '2026-03-28','2026-03-29','2026-03-30','2026-03-31',
+    '2026-04-03','2026-04-05','2026-04-13',
+    '2026-05-01','2026-05-14','2026-05-25',
+    '2026-06-01','2026-06-04',
+    '2026-08-17',
+    '2026-09-21','2026-09-22',
+    '2026-12-25','2026-12-26',
+    // 2025
+    '2025-01-01','2025-01-29','2025-01-30',
+    '2025-03-29','2025-03-30','2025-03-31',
+    '2025-04-01','2025-04-07','2025-04-14','2025-04-18',
+    '2025-05-01','2025-05-12','2025-05-29',
+    '2025-06-01','2025-06-02',
+    '2025-06-06','2025-06-27',
+    '2025-07-07',
+    '2025-08-17',
+    '2025-09-05',
+    '2025-10-06',
+    '2025-12-25','2025-12-26',
+  ]);
+
+  function isWeekendOrHoliday(date) {
+    const day = date.getDay(); // 0=Sun, 6=Sat
+    if (day === 0 || day === 6) return true;
+    const iso = date.toISOString().slice(0, 10);
+    return HOLIDAYS_ID.has(iso);
+  }
+
+  // Hitung tanggal follow up: +n hari kerja dari tanggal registrasi
+  function addWorkingDays(date, n) {
+    const d = new Date(date);
+    d.setHours(0, 0, 0, 0);
+    let added = 0;
+    while (added < n) {
+      d.setDate(d.getDate() + 1);
+      if (!isWeekendOrHoliday(d)) added++;
+    }
+    return d;
+  }
+
+  // Hitung berapa hari kerja SETELAH tanggal registrasi sudah berlalu
+  function workingDaysPassed(fromDate) {
+    const from = new Date(fromDate);
+    from.setHours(0, 0, 0, 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (today <= from) return 0;
+    let count = 0;
+    const d = new Date(from);
+    while (true) {
+      d.setDate(d.getDate() + 1);
+      if (d > today) break;
+      if (!isWeekendOrHoliday(d)) count++;
+    }
+    return count;
+  }
+
+  function buildFollowUpRows(allRows) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return allRows
+      .filter(r => (r.confirmed_status || 'pending') === 'pending')
+      .map(r => {
+        const regDate = toDate(r.createdAt);
+        if (!regDate) return null;
+        const followUpDate = addWorkingDays(regDate, 2);
+        const passed = workingDaysPassed(regDate);
+        return { ...r, _followUpDate: followUpDate, _workingDaysPassed: passed };
+      })
+      .filter(r => r !== null && r._followUpDate <= today) // sudah tiba/lewat tanggal follow up
+      .sort((a, b) => a._followUpDate - b._followUpDate);
+  }
 
   // ===== TAB SWITCH =====
   function switchTab(tab) {
@@ -647,6 +785,107 @@
     a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
     a.download = `leads_${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
+  }
+
+  // ===== NEED TO FOLLOW UP =====
+  function populateFuReferralFilter(rows) {
+    const codes = [...new Set(rows.map(r => (r.referral||'').toUpperCase()).filter(Boolean))].sort();
+    const sel = document.getElementById('filterFuReferral');
+    // Clear existing except first option
+    while (sel.options.length > 1) sel.remove(1);
+    codes.forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; sel.appendChild(o); });
+  }
+
+  function renderFuTable(rows) {
+    filteredFuRows = rows;
+    currentFuPage = 1;
+    renderFuPage();
+    renderFuPagination();
+    document.getElementById('fuRowCount').textContent = rows.length.toLocaleString('id-ID');
+    document.getElementById('badge-followup').textContent = rows.length;
+  }
+
+  function renderFuPage() {
+    const start = (currentFuPage - 1) * ROWS_PER_PAGE;
+    const slice = filteredFuRows.slice(start, start + ROWS_PER_PAGE);
+    const tbody = document.getElementById('fuTableBody');
+    const today = new Date(); today.setHours(0,0,0,0);
+    if (!slice.length) {
+      tbody.innerHTML = `<tr><td colspan="11"><div class="empty-state"><div class="empty-icon">✅</div><div style="font-size:.9rem;color:#999;font-weight:600;">Tidak ada lead yang perlu di-follow up saat ini</div></div></td></tr>`;
+      return;
+    }
+    tbody.innerHTML = slice.map((r, i) => {
+      const no = (currentFuPage - 1) * ROWS_PER_PAGE + i + 1;
+      const sekBadge = r.sekuritas
+        ? `<span class="badge ${r.sekuritas.includes('Maybank') ? 'badge-maybank' : 'badge-trimegah'}">${r.sekuritas}</span>`
+        : `<span style="color:#ccc;font-size:.75rem;">—</span>`;
+      const sourceBadge = r.source === 'register_landing'
+        ? `<span style="display:inline-block;margin-left:4px;padding:1px 6px;border-radius:4px;font-size:0.65rem;font-weight:600;background:#dbeafe;color:#1e40af;">from Referral Agent</span>`
+        : '';
+      const fuDateStr = r._followUpDate ? r._followUpDate.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}) : '—';
+      const isOverdue = r._followUpDate && r._followUpDate < today;
+      const fuDateStyle = isOverdue
+        ? 'color:#dc2626;font-weight:700;'
+        : 'color:#d97706;font-weight:700;';
+      const overdueTag = isOverdue
+        ? `<span style="display:inline-block;margin-left:4px;padding:1px 6px;border-radius:4px;font-size:0.65rem;font-weight:700;background:#fee2e2;color:#dc2626;">Terlambat</span>`
+        : `<span style="display:inline-block;margin-left:4px;padding:1px 6px;border-radius:4px;font-size:0.65rem;font-weight:700;background:#fef3c7;color:#d97706;">Hari ini</span>`;
+      const daysPassed = r._workingDaysPassed;
+      return `<tr>
+        <td style="color:#bbb;font-size:.75rem;">${no}</td>
+        <td><strong>${r.nama||r.name||'—'}</strong>${sourceBadge}</td>
+        <td style="color:#555;">${r.email||'—'}</td>
+        <td style="color:#555;">${r.phone||'—'}</td>
+        <td><span class="referral-tag">${(r.referral||'—').toUpperCase()}</span></td>
+        <td>${sekBadge}</td>
+        <td>${formatDate(r.createdAt)}</td>
+        <td style="${fuDateStyle}">${fuDateStr}${overdueTag}</td>
+        <td style="text-align:center;"><span style="display:inline-block;padding:2px 10px;border-radius:20px;font-size:0.72rem;font-weight:700;background:#fef3c7;color:#92400e;">${daysPassed} HK</span></td>
+        <td><span class="badge" style="background:#fefce8;color:#92400e;border:1px solid #fde68a;">Pending</span></td>
+        <td>
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+            <a href="https://wa.me/${(r.phone||'').replace(/[^0-9]/g,'').replace(/^0/,'62')}" target="_blank"
+               style="height:28px;padding:0 10px;border-radius:6px;border:1px solid #86efac;background:#f0fdf4;color:#166534;font-family:Inter,sans-serif;font-size:0.72rem;font-weight:600;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:4px;">
+              💬 WA
+            </a>
+            <button class="btn-delete" onclick="deleteRow('${r.id}')">Hapus</button>
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+
+  function renderFuPagination() {
+    const total = Math.ceil(filteredFuRows.length / ROWS_PER_PAGE);
+    const pag = document.getElementById('fuPagination');
+    if (total <= 1) { pag.innerHTML = ''; return; }
+    let html = `<button class="page-btn" ${currentFuPage===1?'disabled':''} onclick="goFuPage(${currentFuPage-1})">‹</button>`;
+    for (let i = 1; i <= total; i++) {
+      if (i===1||i===total||Math.abs(i-currentFuPage)<=1) html += `<button class="page-btn ${i===currentFuPage?'active':''}" onclick="goFuPage(${i})">${i}</button>`;
+      else if (Math.abs(i-currentFuPage)===2) html += `<button class="page-btn" disabled style="border:none">…</button>`;
+    }
+    html += `<button class="page-btn" ${currentFuPage===total?'disabled':''} onclick="goFuPage(${currentFuPage+1})">›</button>`;
+    pag.innerHTML = html;
+  }
+
+  function goFuPage(n) { currentFuPage = n; renderFuPage(); renderFuPagination(); }
+
+  function applyFuFilter() {
+    if (!window._allFuRows) return;
+    const search   = document.getElementById('filterFuSearch').value.toLowerCase();
+    const referral = document.getElementById('filterFuReferral').value.toUpperCase();
+    const result   = window._allFuRows.filter(r => {
+      const matchSearch  = !search   || (r.nama||'').toLowerCase().includes(search) || (r.name||'').toLowerCase().includes(search) || (r.email||'').toLowerCase().includes(search) || (r.referral||'').toLowerCase().includes(search) || (r.phone||'').includes(search);
+      const matchRef     = !referral || (r.referral||'').toUpperCase()===referral;
+      return matchSearch && matchRef;
+    });
+    renderFuTable(result);
+  }
+
+  function resetFuFilter() {
+    document.getElementById('filterFuSearch').value='';
+    document.getElementById('filterFuReferral').value='';
+    if (window._allFuRows) renderFuTable(window._allFuRows);
   }
 
   // ===== LINK CLICKS =====
@@ -824,6 +1063,12 @@
       renderClickTable(window._allClicks);
       renderClickSummary(window._allClicks);
 
+      // ── Tab "Need to Follow Up": pending + sudah >=2 hari kerja ──
+      const fuRows = buildFollowUpRows(allRows);
+      window._allFuRows = fuRows;
+      populateFuReferralFilter(window._allRows);
+      renderFuTable(window._allFuRows);
+
     } catch(e) {
       console.error('Supabase error:', e);
       document.getElementById('tableBody').innerHTML =
@@ -847,7 +1092,11 @@
       // sync tab sekuritas juga
       window._allClicks = window._allClicks.filter(r => r.id !== id);
       filteredClicks    = filteredClicks.filter(r => r.id !== id);
+      // sync tab follow up juga
+      window._allFuRows = buildFollowUpRows(window._allRows);
+      filteredFuRows    = filteredFuRows.filter(r => r.id !== id);
       renderPage(); renderPagination(); renderSummary(window._allRows);
+      renderFuTable(window._allFuRows);
       document.getElementById('rowCount').textContent = filteredRows.length.toLocaleString('id-ID');
     } catch(e) { alert('Gagal menghapus: ' + e.message); }
   }
@@ -871,6 +1120,9 @@
       // Sync ke _allRows
       const row = window._allRows.find(r => r.id === id);
       if (row) row.confirmed_status = newStatus;
+      // Rebuild follow up list karena status berubah
+      window._allFuRows = buildFollowUpRows(window._allRows);
+      renderFuTable(window._allFuRows);
     } catch(e) {
       alert('Gagal update status: ' + e.message);
       // Revert ke nilai sebelumnya
@@ -918,6 +1170,9 @@
   window.deleteRow         = deleteRow;
   window.deleteClick       = deleteClick;
   window.updateStatus      = updateStatus;
+  window.goFuPage          = goFuPage;
+  window.applyFuFilter     = applyFuFilter;
+  window.resetFuFilter     = resetFuFilter;
   // ===== ADD TO CUSTOMER MODAL =====
   let _activeLeadId = null;
 
