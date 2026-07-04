@@ -479,57 +479,51 @@
 
   <!-- ===== TAB: NEED TO FOLLOW UP ===== -->
   <div class="tab-panel" id="panel-followup">
-    <div style="background:#fff3cd;border:1px solid #ffc107;border-radius:12px;padding:14px 18px;margin-bottom:20px;font-size:0.82rem;color:#856404;display:flex;align-items:center;gap:10px;">
-      <span style="font-size:1.2rem;">📋</span>
-      <div>
-        <strong>Daftar Lead Perlu Di-Follow Up</strong> — Lead berstatus <strong>Pending</strong> yang sudah melewati 2 hari kerja sejak registrasi (skip Sabtu, Minggu & hari libur nasional).
+
+    <!-- Calendar Header -->
+    <div style="background:#fff;border-radius:14px;padding:16px 20px;margin-bottom:16px;box-shadow:0 2px 10px rgba(0,0,0,0.05);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <button onclick="fuCalPrev()" style="width:36px;height:36px;border-radius:8px;border:1px solid #e0e0ee;background:#fff;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;color:var(--navy);">‹</button>
+        <div style="font-size:1.1rem;font-weight:700;color:var(--navy);min-width:180px;text-align:center;" id="fuCalMonthTitle">—</div>
+        <button onclick="fuCalNext()" style="width:36px;height:36px;border-radius:8px;border:1px solid #e0e0ee;background:#fff;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;color:var(--navy);">›</button>
+        <button onclick="fuCalToday()" style="height:36px;padding:0 14px;border-radius:8px;border:1px solid var(--gold);background:#fffbeb;color:#92400e;font-family:Inter,sans-serif;font-size:0.78rem;font-weight:600;cursor:pointer;">Hari Ini</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:16px;font-size:0.75rem;">
+        <span style="display:flex;align-items:center;gap:5px;"><span style="width:12px;height:12px;border-radius:3px;background:#fee2e2;border:1px solid #fca5a5;display:inline-block;"></span>Terlambat</span>
+        <span style="display:flex;align-items:center;gap:5px;"><span style="width:12px;height:12px;border-radius:3px;background:#fef9c3;border:1px solid #fde047;display:inline-block;"></span>Hari ini</span>
+        <span style="display:flex;align-items:center;gap:5px;"><span style="width:12px;height:12px;border-radius:3px;background:#dbeafe;border:1px solid #93c5fd;display:inline-block;"></span>Akan datang</span>
+        <span style="display:flex;align-items:center;gap:5px;"><span style="width:12px;height:12px;border-radius:3px;background:#f3f4f6;border:1px solid #e5e7eb;display:inline-block;"></span>Libur/Weekend</span>
       </div>
     </div>
 
-    <div class="filter-bar">
-      <span class="filter-label">Cari:</span>
-      <input type="text" id="filterFuSearch" placeholder="Nama / Email / HP / Referral..." oninput="applyFuFilter()"/>
-      <span class="filter-label">Referral:</span>
-      <select id="filterFuReferral" onchange="applyFuFilter()">
-        <option value="">Semua</option>
-      </select>
-      <div class="filter-spacer"></div>
-      <button class="btn-reset" onclick="resetFuFilter()">Reset</button>
+    <!-- Calendar Grid -->
+    <div style="background:#fff;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.06);overflow:hidden;">
+      <!-- Day headers -->
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);border-bottom:2px solid #f0f0f8;">
+        <div style="padding:10px 0;text-align:center;font-size:0.72rem;font-weight:700;color:#dc2626;letter-spacing:.5px;">MIN</div>
+        <div style="padding:10px 0;text-align:center;font-size:0.72rem;font-weight:700;color:var(--navy);letter-spacing:.5px;">SEN</div>
+        <div style="padding:10px 0;text-align:center;font-size:0.72rem;font-weight:700;color:var(--navy);letter-spacing:.5px;">SEL</div>
+        <div style="padding:10px 0;text-align:center;font-size:0.72rem;font-weight:700;color:var(--navy);letter-spacing:.5px;">RAB</div>
+        <div style="padding:10px 0;text-align:center;font-size:0.72rem;font-weight:700;color:var(--navy);letter-spacing:.5px;">KAM</div>
+        <div style="padding:10px 0;text-align:center;font-size:0.72rem;font-weight:700;color:var(--navy);letter-spacing:.5px;">JUM</div>
+        <div style="padding:10px 0;text-align:center;font-size:0.72rem;font-weight:700;color:#dc2626;letter-spacing:.5px;">SAB</div>
+      </div>
+      <!-- Calendar cells -->
+      <div id="fuCalGrid" style="display:grid;grid-template-columns:repeat(7,1fr);"></div>
     </div>
 
-    <div class="table-wrapper">
-      <div class="table-toolbar">
-        <div class="table-info">Menampilkan <span id="fuRowCount">0</span> data perlu follow up</div>
+    <!-- Detail panel: leads for selected date -->
+    <div id="fuDetailPanel" style="display:none;margin-top:16px;background:#fff;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.06);overflow:hidden;">
+      <div style="background:var(--navy);color:#fff;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div style="font-size:0.9rem;font-weight:700;" id="fuDetailTitle">Follow Up —</div>
+          <div style="font-size:0.72rem;color:rgba(255,255,255,.6);margin-top:2px;" id="fuDetailSub">Lead yang perlu di-follow up</div>
+        </div>
+        <button onclick="document.getElementById('fuDetailPanel').style.display='none'" style="width:30px;height:30px;border-radius:8px;border:none;background:rgba(255,255,255,.15);color:#fff;cursor:pointer;font-size:1rem;">✕</button>
       </div>
-      <div style="overflow-x:auto;">
-        <table>
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Nama</th>
-              <th>Email</th>
-              <th>No. HP</th>
-              <th>Kode Referral</th>
-              <th>Sekuritas Dipilih</th>
-              <th>Tgl Registrasi</th>
-              <th>Follow Up Tanggal</th>
-              <th>Hari ke-</th>
-              <th>Status</th>
-              <th>Aksi</th>
-            </tr>
-          </thead>
-          <tbody id="fuTableBody">
-            <tr><td colspan="11" style="padding:0;">
-              <div style="padding:14px 16px;display:flex;flex-direction:column;gap:10px;">
-                <div class="skeleton"></div><div class="skeleton" style="width:90%"></div>
-                <div class="skeleton" style="width:95%"></div>
-              </div>
-            </td></tr>
-          </tbody>
-        </table>
-      </div>
-      <div class="pagination" id="fuPagination"></div>
+      <div id="fuDetailList" style="padding:16px 20px;display:flex;flex-direction:column;gap:10px;"></div>
     </div>
+
   </div>
 
 </div>
@@ -540,8 +534,6 @@
   let filteredRows = [];
   let currentClickPage = 1;
   let filteredClicks = [];
-  let currentFuPage = 1;
-  let filteredFuRows = [];
   let currentTab = 'leads';
 
   // ===== HARI LIBUR NASIONAL INDONESIA (extend sesuai tahun) =====
@@ -607,8 +599,6 @@
   }
 
   function buildFollowUpRows(allRows) {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
     return allRows
       .filter(r => (r.confirmed_status || 'pending') === 'pending')
       .map(r => {
@@ -618,7 +608,7 @@
         const passed = workingDaysPassed(regDate);
         return { ...r, _followUpDate: followUpDate, _workingDaysPassed: passed };
       })
-      .filter(r => r !== null && r._followUpDate <= today) // sudah tiba/lewat tanggal follow up
+      .filter(r => r !== null)
       .sort((a, b) => a._followUpDate - b._followUpDate);
   }
 
@@ -787,106 +777,173 @@
     a.click();
   }
 
-  // ===== NEED TO FOLLOW UP =====
+  // ===== NEED TO FOLLOW UP — CALENDAR =====
+  let fuCalYear  = new Date().getFullYear();
+  let fuCalMonth = new Date().getMonth(); // 0-indexed
+
+  const MONTHS_ID = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+
   function populateFuReferralFilter(rows) {
-    const codes = [...new Set(rows.map(r => (r.referral||'').toUpperCase()).filter(Boolean))].sort();
-    const sel = document.getElementById('filterFuReferral');
-    // Clear existing except first option
-    while (sel.options.length > 1) sel.remove(1);
-    codes.forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; sel.appendChild(o); });
+    // kept for compatibility, no-op in calendar view
   }
 
   function renderFuTable(rows) {
-    filteredFuRows = rows;
-    currentFuPage = 1;
-    renderFuPage();
-    renderFuPagination();
-    document.getElementById('fuRowCount').textContent = rows.length.toLocaleString('id-ID');
+    // Store all follow up rows and rebuild calendar
+    window._allFuRows = rows;
     document.getElementById('badge-followup').textContent = rows.length;
+    renderFuCalendar();
   }
 
-  function renderFuPage() {
-    const start = (currentFuPage - 1) * ROWS_PER_PAGE;
-    const slice = filteredFuRows.slice(start, start + ROWS_PER_PAGE);
-    const tbody = document.getElementById('fuTableBody');
+  function renderFuCalendar() {
+    const rows = window._allFuRows || [];
     const today = new Date(); today.setHours(0,0,0,0);
-    if (!slice.length) {
-      tbody.innerHTML = `<tr><td colspan="11"><div class="empty-state"><div class="empty-icon">✅</div><div style="font-size:.9rem;color:#999;font-weight:600;">Tidak ada lead yang perlu di-follow up saat ini</div></div></td></tr>`;
-      return;
-    }
-    tbody.innerHTML = slice.map((r, i) => {
-      const no = (currentFuPage - 1) * ROWS_PER_PAGE + i + 1;
-      const sekBadge = r.sekuritas
-        ? `<span class="badge ${r.sekuritas.includes('Maybank') ? 'badge-maybank' : 'badge-trimegah'}">${r.sekuritas}</span>`
-        : `<span style="color:#ccc;font-size:.75rem;">—</span>`;
-      const sourceBadge = r.source === 'register_landing'
-        ? `<span style="display:inline-block;margin-left:4px;padding:1px 6px;border-radius:4px;font-size:0.65rem;font-weight:600;background:#dbeafe;color:#1e40af;">from Referral Agent</span>`
-        : '';
-      const fuDateStr = r._followUpDate ? r._followUpDate.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}) : '—';
-      const isOverdue = r._followUpDate && r._followUpDate < today;
-      const fuDateStyle = isOverdue
-        ? 'color:#dc2626;font-weight:700;'
-        : 'color:#d97706;font-weight:700;';
-      const overdueTag = isOverdue
-        ? `<span style="display:inline-block;margin-left:4px;padding:1px 6px;border-radius:4px;font-size:0.65rem;font-weight:700;background:#fee2e2;color:#dc2626;">Terlambat</span>`
-        : `<span style="display:inline-block;margin-left:4px;padding:1px 6px;border-radius:4px;font-size:0.65rem;font-weight:700;background:#fef3c7;color:#d97706;">Hari ini</span>`;
-      const daysPassed = r._workingDaysPassed;
-      return `<tr>
-        <td style="color:#bbb;font-size:.75rem;">${no}</td>
-        <td><strong>${r.nama||r.name||'—'}</strong>${sourceBadge}</td>
-        <td style="color:#555;">${r.email||'—'}</td>
-        <td style="color:#555;">${r.phone||'—'}</td>
-        <td><span class="referral-tag">${(r.referral||'—').toUpperCase()}</span></td>
-        <td>${sekBadge}</td>
-        <td>${formatDate(r.createdAt)}</td>
-        <td style="${fuDateStyle}">${fuDateStr}${overdueTag}</td>
-        <td style="text-align:center;"><span style="display:inline-block;padding:2px 10px;border-radius:20px;font-size:0.72rem;font-weight:700;background:#fef3c7;color:#92400e;">${daysPassed} HK</span></td>
-        <td><span class="badge" style="background:#fefce8;color:#92400e;border:1px solid #fde68a;">Pending</span></td>
-        <td>
-          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
-            <a href="https://wa.me/${(r.phone||'').replace(/[^0-9]/g,'').replace(/^0/,'62')}" target="_blank"
-               style="height:28px;padding:0 10px;border-radius:6px;border:1px solid #86efac;background:#f0fdf4;color:#166534;font-family:Inter,sans-serif;font-size:0.72rem;font-weight:600;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:4px;">
-              💬 WA
-            </a>
-            <button class="btn-delete" onclick="deleteRow('${r.id}')">Hapus</button>
-          </div>
-        </td>
-      </tr>`;
-    }).join('');
-  }
 
-  function renderFuPagination() {
-    const total = Math.ceil(filteredFuRows.length / ROWS_PER_PAGE);
-    const pag = document.getElementById('fuPagination');
-    if (total <= 1) { pag.innerHTML = ''; return; }
-    let html = `<button class="page-btn" ${currentFuPage===1?'disabled':''} onclick="goFuPage(${currentFuPage-1})">‹</button>`;
-    for (let i = 1; i <= total; i++) {
-      if (i===1||i===total||Math.abs(i-currentFuPage)<=1) html += `<button class="page-btn ${i===currentFuPage?'active':''}" onclick="goFuPage(${i})">${i}</button>`;
-      else if (Math.abs(i-currentFuPage)===2) html += `<button class="page-btn" disabled style="border:none">…</button>`;
-    }
-    html += `<button class="page-btn" ${currentFuPage===total?'disabled':''} onclick="goFuPage(${currentFuPage+1})">›</button>`;
-    pag.innerHTML = html;
-  }
-
-  function goFuPage(n) { currentFuPage = n; renderFuPage(); renderFuPagination(); }
-
-  function applyFuFilter() {
-    if (!window._allFuRows) return;
-    const search   = document.getElementById('filterFuSearch').value.toLowerCase();
-    const referral = document.getElementById('filterFuReferral').value.toUpperCase();
-    const result   = window._allFuRows.filter(r => {
-      const matchSearch  = !search   || (r.nama||'').toLowerCase().includes(search) || (r.name||'').toLowerCase().includes(search) || (r.email||'').toLowerCase().includes(search) || (r.referral||'').toLowerCase().includes(search) || (r.phone||'').includes(search);
-      const matchRef     = !referral || (r.referral||'').toUpperCase()===referral;
-      return matchSearch && matchRef;
+    // Build map: 'YYYY-MM-DD' -> [row, row, ...]
+    const dayMap = {};
+    rows.forEach(r => {
+      if (!r._followUpDate) return;
+      const key = r._followUpDate.toISOString().slice(0,10);
+      if (!dayMap[key]) dayMap[key] = [];
+      dayMap[key].push(r);
     });
-    renderFuTable(result);
+
+    // Also include overdue (past months) if viewing current month
+    // For past dates show them too if they exist in current view
+
+    const title = `${MONTHS_ID[fuCalMonth]} ${fuCalYear}`;
+    document.getElementById('fuCalMonthTitle').textContent = title;
+
+    const firstDay = new Date(fuCalYear, fuCalMonth, 1).getDay(); // 0=Sun
+    const daysInMonth = new Date(fuCalYear, fuCalMonth + 1, 0).getDate();
+
+    const grid = document.getElementById('fuCalGrid');
+    let html = '';
+
+    // Empty cells before first day
+    for (let i = 0; i < firstDay; i++) {
+      html += `<div style="min-height:110px;border-right:1px solid #f0f0f8;border-bottom:1px solid #f0f0f8;background:#fafafa;"></div>`;
+    }
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      const cellDate = new Date(fuCalYear, fuCalMonth, d);
+      const key = cellDate.toISOString().slice(0,10);
+      const isToday = cellDate.getTime() === today.getTime();
+      const isPast  = cellDate < today;
+      const isWeekend = cellDate.getDay() === 0 || cellDate.getDay() === 6;
+      const isHoliday = HOLIDAYS_ID.has(key);
+      const leadsOnDay = dayMap[key] || [];
+      const colIdx = (firstDay + d - 1) % 7; // 0=Sun,6=Sat
+
+      let cellBg = '#fff';
+      let dateLabelColor = colIdx === 0 || colIdx === 6 ? '#dc2626' : 'var(--navy)';
+      if (isWeekend || isHoliday) { cellBg = '#f9fafb'; }
+      if (leadsOnDay.length > 0 && isPast && !isToday) cellBg = '#fff5f5';
+      if (leadsOnDay.length > 0 && isToday) cellBg = '#fefce8';
+      if (leadsOnDay.length > 0 && !isPast) cellBg = '#eff6ff';
+      if (isToday && leadsOnDay.length === 0) cellBg = '#fefce8';
+
+      const todayRing = isToday ? 'box-shadow:inset 0 0 0 2px var(--gold);' : '';
+      const borderR = colIdx === 6 ? '' : 'border-right:1px solid #f0f0f8;';
+
+      let leadChips = '';
+      const MAX_SHOW = 3;
+      leadsOnDay.slice(0, MAX_SHOW).forEach(r => {
+        const name = (r.nama || r.name || '—').split(' ')[0];
+        const chipColor = isPast && !isToday
+          ? 'background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;'
+          : isToday
+            ? 'background:#fef3c7;color:#92400e;border:1px solid #fde68a;'
+            : 'background:#dbeafe;color:#1e40af;border:1px solid #93c5fd;';
+        leadChips += `<div onclick="fuShowDetail('${key}')" style="cursor:pointer;padding:2px 7px;border-radius:5px;font-size:0.68rem;font-weight:600;${chipColor}white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;" title="${r.nama||r.name}">${name}</div>`;
+      });
+      if (leadsOnDay.length > MAX_SHOW) {
+        leadChips += `<div onclick="fuShowDetail('${key}')" style="cursor:pointer;padding:2px 7px;border-radius:5px;font-size:0.68rem;font-weight:600;background:#e5e7eb;color:#374151;border:1px solid #d1d5db;">+${leadsOnDay.length - MAX_SHOW} lagi</div>`;
+      }
+
+      html += `<div style="min-height:110px;padding:8px 6px;${cellBg?'background:'+cellBg+';':''}${borderR}border-bottom:1px solid #f0f0f8;${todayRing}display:flex;flex-direction:column;gap:4px;position:relative;">
+        <div style="font-size:0.78rem;font-weight:700;color:${dateLabelColor};margin-bottom:2px;">${isToday?`<span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:var(--gold);color:#fff;font-size:0.72rem;">${d}</span>`:d}${isHoliday&&!isWeekend?'<span style="font-size:0.6rem;color:#999;display:block;font-weight:400;">Libur</span>':''}</div>
+        ${leadChips}
+        ${leadsOnDay.length > 0 ? `<div style="margin-top:auto;font-size:0.62rem;color:#aaa;text-align:right;">${leadsOnDay.length} lead</div>` : ''}
+      </div>`;
+    }
+
+    // Fill remaining cells to complete the grid
+    const totalCells = firstDay + daysInMonth;
+    const remainder  = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
+    for (let i = 0; i < remainder; i++) {
+      html += `<div style="min-height:110px;border-right:1px solid #f0f0f8;border-bottom:1px solid #f0f0f8;background:#fafafa;"></div>`;
+    }
+
+    grid.innerHTML = html;
   }
 
-  function resetFuFilter() {
-    document.getElementById('filterFuSearch').value='';
-    document.getElementById('filterFuReferral').value='';
-    if (window._allFuRows) renderFuTable(window._allFuRows);
+  function fuShowDetail(dateKey) {
+    const rows = window._allFuRows || [];
+    const today = new Date(); today.setHours(0,0,0,0);
+    const cellDate = new Date(dateKey + 'T00:00:00');
+    const isPast = cellDate < today;
+    const isToday = cellDate.getTime() === today.getTime();
+
+    const leadsOnDay = rows.filter(r => r._followUpDate && r._followUpDate.toISOString().slice(0,10) === dateKey);
+    if (!leadsOnDay.length) return;
+
+    const [y,m,d] = dateKey.split('-');
+    const dateLabel = `${parseInt(d)} ${MONTHS_ID[parseInt(m)-1]} ${y}`;
+    document.getElementById('fuDetailTitle').textContent = `Follow Up — ${dateLabel}`;
+    document.getElementById('fuDetailSub').textContent   = `${leadsOnDay.length} lead perlu di-follow up`;
+
+    const list = document.getElementById('fuDetailList');
+    list.innerHTML = leadsOnDay.map(r => {
+      const statusStyle = isPast && !isToday
+        ? 'background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;'
+        : isToday
+          ? 'background:#fef3c7;color:#92400e;border:1px solid #fde68a;'
+          : 'background:#dbeafe;color:#1e40af;border:1px solid #93c5fd;';
+      const statusLabel = isPast && !isToday ? 'Terlambat' : isToday ? 'Hari Ini' : 'Akan Datang';
+      const sekBadge = r.sekuritas
+        ? `<span class="badge ${r.sekuritas.includes('Maybank')?'badge-maybank':'badge-trimegah'}" style="font-size:0.68rem;">${r.sekuritas}</span>`
+        : '';
+      const waNum = (r.phone||'').replace(/[^0-9]/g,'').replace(/^0/,'62');
+      return `<div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+        <div style="display:flex;flex-direction:column;gap:3px;flex:1;min-width:150px;">
+          <div style="font-weight:700;color:var(--navy);font-size:0.85rem;">${r.nama||r.name||'—'}</div>
+          <div style="font-size:0.75rem;color:#666;">${r.email||'—'} · ${r.phone||'—'}</div>
+          <div style="display:flex;align-items:center;gap:6px;margin-top:2px;flex-wrap:wrap;">
+            <span class="referral-tag" style="font-size:0.68rem;">${(r.referral||'—').toUpperCase()}</span>
+            ${sekBadge}
+            <span style="font-size:0.68rem;color:#888;">Reg: ${formatDate(r.createdAt)}</span>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+          <span style="padding:3px 10px;border-radius:20px;font-size:0.68rem;font-weight:700;${statusStyle}">${statusLabel}</span>
+          <a href="https://wa.me/${waNum}" target="_blank" style="height:30px;padding:0 12px;border-radius:6px;border:1px solid #86efac;background:#f0fdf4;color:#166534;font-family:Inter,sans-serif;font-size:0.72rem;font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:4px;">💬 WA</a>
+        </div>
+      </div>`;
+    }).join('');
+
+    document.getElementById('fuDetailPanel').style.display = 'block';
+    setTimeout(() => document.getElementById('fuDetailPanel').scrollIntoView({behavior:'smooth',block:'nearest'}), 50);
   }
+
+  function fuCalPrev() {
+    fuCalMonth--;
+    if (fuCalMonth < 0) { fuCalMonth = 11; fuCalYear--; }
+    renderFuCalendar();
+  }
+  function fuCalNext() {
+    fuCalMonth++;
+    if (fuCalMonth > 11) { fuCalMonth = 0; fuCalYear++; }
+    renderFuCalendar();
+  }
+  function fuCalToday() {
+    const now = new Date();
+    fuCalYear  = now.getFullYear();
+    fuCalMonth = now.getMonth();
+    renderFuCalendar();
+  }
+
+  function applyFuFilter() { /* no-op, calendar view doesn't filter */ }
+  function resetFuFilter()  { /* no-op */ }
 
   // ===== LINK CLICKS =====
   function renderClickSummary(rows) {
@@ -1094,7 +1151,6 @@
       filteredClicks    = filteredClicks.filter(r => r.id !== id);
       // sync tab follow up juga
       window._allFuRows = buildFollowUpRows(window._allRows);
-      filteredFuRows    = filteredFuRows.filter(r => r.id !== id);
       renderPage(); renderPagination(); renderSummary(window._allRows);
       renderFuTable(window._allFuRows);
       document.getElementById('rowCount').textContent = filteredRows.length.toLocaleString('id-ID');
@@ -1170,9 +1226,12 @@
   window.deleteRow         = deleteRow;
   window.deleteClick       = deleteClick;
   window.updateStatus      = updateStatus;
-  window.goFuPage          = goFuPage;
   window.applyFuFilter     = applyFuFilter;
   window.resetFuFilter     = resetFuFilter;
+  window.fuCalPrev         = fuCalPrev;
+  window.fuCalNext         = fuCalNext;
+  window.fuCalToday        = fuCalToday;
+  window.fuShowDetail      = fuShowDetail;
   // ===== ADD TO CUSTOMER MODAL =====
   let _activeLeadId = null;
 
