@@ -287,27 +287,27 @@
     <div class="form-grid col3">
       <div class="form-group">
         <label class="form-label">Nominal (Rp) <span class="req">*</span></label>
-        <input type="number" class="form-input" id="f-nominal" placeholder="0" oninput="recalc()"/>
+        <input type="text" class="form-input" id="f-nominal" placeholder="0" oninput="fmtInput(this);recalc()"/>
       </div>
       <div class="form-group">
         <label class="form-label">Unit Count <span style="font-size:.65rem;color:#aaa;">(Nominal÷100)</span></label>
-        <input type="number" class="form-input auto-calc" id="f-unit" readonly/>
+        <input type="text" class="form-input auto-calc" id="f-unit" readonly/>
       </div>
       <div class="form-group">
         <label class="form-label">Modal (Rp/unit)</label>
-        <input type="number" class="form-input" id="f-modal-per-unit" placeholder="0" oninput="recalc()"/>
+        <input type="text" class="form-input" id="f-modal-per-unit" placeholder="0" oninput="fmtInput(this);recalc()"/>
       </div>
       <div class="form-group">
         <label class="form-label">Modal Total <span style="font-size:.65rem;color:#aaa;">(Unit×Modal/unit)</span></label>
-        <input type="number" class="form-input auto-calc" id="f-modal" readonly/>
+        <input type="text" class="form-input auto-calc" id="f-modal" readonly/>
       </div>
       <div class="form-group">
         <label class="form-label">Modal to Sales (Rp/unit)</label>
-        <input type="number" class="form-input" id="f-modal-sales" placeholder="0" oninput="recalc()"/>
+        <input type="text" class="form-input" id="f-modal-sales" placeholder="0" oninput="fmtInput(this);recalc()"/>
       </div>
       <div class="form-group">
         <label class="form-label">Harga to Customer (Rp/unit)</label>
-        <input type="number" class="form-input" id="f-harga-customer" placeholder="0" oninput="recalc()"/>
+        <input type="text" class="form-input" id="f-harga-customer" placeholder="0" oninput="fmtInput(this);recalc()"/>
       </div>
     </div>
 
@@ -696,7 +696,23 @@
     setTimeout(() => t.remove(), 3500);
   }
 
-  // ===== ADD TRANSACTION =====
+  // Helper: format ribuan saat ketik, simpan posisi cursor
+  function fmtInput(el) {
+    const pos = el.selectionStart;
+    const raw = el.value.replace(/\D/g, '');
+    const formatted = raw ? parseInt(raw, 10).toLocaleString('id-ID') : '';
+    const prevLen = el.value.length;
+    el.value = formatted;
+    // Pertahankan posisi cursor
+    const diff = formatted.length - prevLen;
+    try { el.setSelectionRange(pos + diff, pos + diff); } catch(e) {}
+  }
+
+  // Helper: ambil nilai numerik dari field yang sudah diformat
+  function getNum(id) {
+    const val = document.getElementById(id).value.replace(/\./g, '').replace(/,/g, '').replace(/[^\d]/g, '');
+    return parseFloat(val) || 0;
+  }
   function openAddModal() {
     // Reset form
     ['f-tanggal','f-client-id','f-nama','f-seri','f-nominal','f-unit',
@@ -747,19 +763,19 @@
   }
 
   function recalc() {
-    const nominal      = parseFloat(document.getElementById('f-nominal').value) || 0;
-    const modalPerUnit = parseFloat(document.getElementById('f-modal-per-unit').value) || 0;
-    const modalSales   = parseFloat(document.getElementById('f-modal-sales').value) || 0;
-    const hargaCust    = parseFloat(document.getElementById('f-harga-customer').value) || 0;
+    const nominal      = getNum('f-nominal');
+    const modalPerUnit = getNum('f-modal-per-unit');
+    const modalSales   = getNum('f-modal-sales');
+    const hargaCust    = getNum('f-harga-customer');
     const tlaCode      = parseInt(document.getElementById('f-tla-code').value) || 0;
 
     // Unit Count = Nominal / 100
     const unit = nominal / 100;
-    document.getElementById('f-unit').value  = unit ? unit.toLocaleString('id-ID') : '';
+    document.getElementById('f-unit').value = unit ? unit.toLocaleString('id-ID') : '';
 
     // Modal total = unit × modal per unit
     const modalTotal = unit * modalPerUnit;
-    document.getElementById('f-modal').value = modalTotal ? Math.round(modalTotal) : '';
+    document.getElementById('f-modal').value = modalTotal ? Math.round(modalTotal).toLocaleString('id-ID') : '';
 
     if (!unit || !hargaCust) { resetCalcSummary(); return; }
 
@@ -815,10 +831,10 @@
     const jenis     = document.getElementById('f-jenis').value;
     const sekuritas = document.getElementById('f-sekuritas').value;
     const seri      = document.getElementById('f-seri').value.trim().toUpperCase();
-    const nominal   = parseFloat(document.getElementById('f-nominal').value) || 0;
-    const modalPerUnit  = parseFloat(document.getElementById('f-modal-per-unit').value) || 0;
-    const modalSales    = parseFloat(document.getElementById('f-modal-sales').value) || 0;
-    const hargaCust     = parseFloat(document.getElementById('f-harga-customer').value) || 0;
+    const nominal   = getNum('f-nominal');
+    const modalPerUnit  = getNum('f-modal-per-unit');
+    const modalSales    = getNum('f-modal-sales');
+    const hargaCust     = getNum('f-harga-customer');
     const salesNama     = document.getElementById('f-sales').value.trim();
     const tla           = document.getElementById('f-tla').value.trim();
     const tlaCode       = parseInt(document.getElementById('f-tla-code').value) || 0;
