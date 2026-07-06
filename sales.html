@@ -970,13 +970,13 @@
     try {
       if (window._supabase) {
         if (editId) {
-          const { error } = await window.__sb().from('sales').update(data).eq('id', editId);
+          const { error } = await window._supabase.from('sales').update(data).eq('id', editId);
           if (error) throw error;
           const idx = window._allSales.findIndex(s => s.id === editId);
           if (idx > -1) window._allSales[idx] = { id: editId, ...data };
         } else {
           data.createdAt = new Date().toISOString();
-          const { data: inserted, error } = await window.__sb().from('sales').insert(data).select().single();
+          const { data: inserted, error } = await window._supabase.from('sales').insert(data).select().single();
           if (error) throw error;
           window._allSales = window._allSales || [];
           window._allSales.unshift(inserted);
@@ -1002,7 +1002,7 @@
     if (!confirm(`Hapus sales "${nama}"? Tindakan ini tidak bisa dibatalkan.`)) return;
     try {
       if (window._supabase)
-        await window.__sb().from('sales').delete().eq('id', id);
+        await window._supabase.from('sales').delete().eq('id', id);
     } catch(e) { console.warn('Delete error:', e); }
     window._allSales = (window._allSales||[]).filter(s => s.id !== id);
     renderTable(window._allSales);
