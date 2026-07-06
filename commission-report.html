@@ -687,8 +687,6 @@ function buildReportHTML(salesObj, monthName, month, year, period, saham, obl, s
     if (obl.totalFee > 0) drawBarChart('chartObl', chartOblData, chartLabels, `Revenue Obligasi ${year}`, currentMonthIdx);
   }, 80);
 }
-  }, 80);
-}
 
 function reportHeaderHTML() {
   return `
