@@ -336,7 +336,7 @@
       <div class="calc-row"><span class="lbl">Revenue Fawz</span><span class="val green" id="cs-rev-fawz">—</span></div>
       <div class="calc-row"><span class="lbl">Payout Sekuritas (30%)</span><span class="val" id="cs-payout-sek">—</span></div>
       <div class="calc-row"><span class="lbl">Revenue Sales</span><span class="val" id="cs-rev-sales">—</span></div>
-      <div class="calc-row"><span class="lbl">Komisi Sales (20% × 60%)</span><span class="val red" id="cs-comm-sales">—</span></div>
+      <div class="calc-row"><span class="lbl">Komisi Sales (60% × 10%)</span><span class="val red" id="cs-comm-sales">—</span></div>
       <div class="calc-row"><span class="lbl">Komisi TLA</span><span class="val red" id="cs-comm-tla">—</span></div>
       <div class="calc-row"><span class="lbl">Total Expenses</span><span class="val red" id="cs-total-exp">—</span></div>
       <div class="calc-row"><span class="lbl">Profit Fawz</span><span class="val gold" id="cs-profit">—</span></div>
@@ -789,8 +789,8 @@
     // Revenue Sales = RevFawz (sama)
     const revSales = revFawz;
 
-    // Komisi Sales = (RevSales × 60%) × 20%
-    const commSales = (revSales * 0.60) * 0.20;
+    // Komisi Sales = (RevSales × 60%) × 10%
+    const commSales = (revSales * 0.60) * 0.10;
 
     // Komisi TLA = IF(tlaCode=1, commSales×50%, 0)
     const commTla = tlaCode === 1 ? commSales * 0.50 : 0;
@@ -851,7 +851,7 @@
     const revFawz      = grossRevFawz * 0.9;
     const payoutSek    = revFawz * 0.30;
     const revSales     = revFawz;
-    const commSales    = (revSales * 0.60) * 0.20;
+    const commSales    = (revSales * 0.60) * 0.10;
     const commTla      = tlaCode === 1 ? commSales * 0.50 : 0;
     const totalExp     = commSales + commTla;
     const profit       = payoutSek - commSales - commTla;
