@@ -358,14 +358,23 @@ async function fetchSahamData(salesId, period) {
     let rows = [];
     if (salesName) {
       // ilike = case-insensitive, sama seperti sales-commission.html
-      const { data, error } = await window._supabase
-        .from('saham_transaksi')
-        .select('client_id, client_name, volume, fee, tanggal, sales_name')
-        .ilike('sales_name', salesName)
-        .gte('tanggal', start)
-        .lte('tanggal', end);
-      if (!error && data) rows = data;
-      else if (error) console.warn('saham_transaksi error:', error.message, error.code);
+      // paginate 1000 rows untuk handle data besar
+      let offset = 0, pageSize = 1000, hasMore = true;
+      while (hasMore) {
+        const { data, error } = await window._supabase
+          .from('saham_transaksi')
+          .select('client_id, client_name, volume, fee, tanggal, sales_name')
+          .ilike('sales_name', salesName)
+          .gte('tanggal', start)
+          .lte('tanggal', end)
+          .not('fee', 'is', null)
+          .gt('fee', 0)
+          .range(offset, offset + pageSize - 1);
+        if (error) { console.warn('saham_transaksi error:', error.message); break; }
+        rows = rows.concat(data || []);
+        if ((data||[]).length < pageSize) hasMore = false;
+        else offset += pageSize;
+      }
     }
     const clientMap = {};
     rows.forEach(r => {
@@ -463,65 +472,70 @@ async function fetchSlipInfo(salesId, period) {
 
 async function fetchYearlyFee(salesId, year, type) {
   const months = Array(12).fill(0);
+  const salesObj3 = allSales.find(s => s.id === salesId) || {};
+  const sName = (salesObj3.nama || salesObj3.name || '').trim();
+  if (!sName) return months;
+
   try {
     if (type === 'saham') {
-      const salesObj3 = allSales.find(s => s.id === salesId) || {};
-      const sName = (salesObj3.nama || salesObj3.name || '').trim();
-      if (sName) {
+      // Ambil semua data setahun sekaligus, paginate 1000 — sama persis seperti sales-commission.html
+      let offset = 0, pageSize = 1000, hasMore = true;
+      while (hasMore) {
         const { data, error } = await window._supabase
           .from('saham_transaksi')
           .select('tanggal, fee')
           .ilike('sales_name', sName)
           .gte('tanggal', `${year}-01-01`)
-          .lte('tanggal', `${year}-12-31`);
-        if (!error && data) {
-          data.forEach(r => {
-            const mo = parseInt((r.tanggal||'').split('-')[1],10);
-            if (mo >= 1 && mo <= 12) months[mo-1] += Number(r.fee)||0;
-          });
-        }
+          .lte('tanggal', `${year}-12-31`)
+          .not('fee', 'is', null)
+          .gt('fee', 0)
+          .range(offset, offset + pageSize - 1);
+        if (error) { console.warn('saham yearly:', error.message); break; }
+        (data || []).forEach(r => {
+          const mo = parseInt((r.tanggal||'').split('-')[1], 10);
+          if (mo >= 1 && mo <= 12) months[mo-1] += Number(r.fee)||0;
+        });
+        if ((data||[]).length < pageSize) hasMore = false;
+        else offset += pageSize;
       }
     } else {
-      const salesObj4 = allSales.find(s => s.id === salesId) || {};
-      const sPic = salesObj4.nama || salesObj4.name || '';
-      if (sPic) {
-        // bb_orders: sales_pic + status verified
-        try {
-          const { data, error } = await window._supabase
-            .from('bb_orders')
-            .select('created_at, nominal, komisi, commission_sales')
-            .eq('status','verified')
-            .eq('sales_pic', sPic)
-            .gte('created_at', `${year}-01-01T00:00:00`)
-            .lte('created_at', `${year}-12-31T23:59:59`);
-          if (!error && data) {
-            data.forEach(r => {
-              const mo  = parseInt((r.created_at||'').slice(5,7),10);
-              const rev = r.commission_sales != null ? Number(r.commission_sales)
-                        : r.komisi           != null ? Number(r.komisi)
-                        : Number(r.nominal||0) * 0.001;
-              if (mo >= 1 && mo <= 12) months[mo-1] += rev;
-            });
-          }
-        } catch(e) { console.warn('bb_orders yearly:', e.message); }
-        // pasar_sekunder_orders: sales_name (no status filter)
-        try {
-          const { data, error } = await window._supabase
-            .from('pasar_sekunder_orders')
-            .select('created_at, nominal')
-            .eq('sales_name', sPic)
-            .gte('created_at', `${year}-01-01T00:00:00`)
-            .lte('created_at', `${year}-12-31T23:59:59`);
-          if (!error && data) {
-            data.forEach(r => {
-              const mo = parseInt((r.created_at||'').slice(5,7),10);
-              if (mo >= 1 && mo <= 12) months[mo-1] += Number(r.nominal||0) * 0.001;
-            });
-          }
-        } catch(e) { console.warn('pasar_sekunder yearly:', e.message); }
-      }
+      const sPic = sName;
+      // bb_orders
+      try {
+        const { data, error } = await window._supabase
+          .from('bb_orders')
+          .select('created_at, nominal, komisi, commission_sales')
+          .eq('status','verified')
+          .ilike('sales_pic', sPic)
+          .gte('created_at', `${year}-01-01T00:00:00`)
+          .lte('created_at', `${year}-12-31T23:59:59`);
+        if (!error && data) {
+          data.forEach(r => {
+            const mo  = parseInt((r.created_at||'').slice(5,7),10);
+            const rev = r.commission_sales != null ? Number(r.commission_sales)
+                      : r.komisi           != null ? Number(r.komisi)
+                      : Number(r.nominal||0) * 0.001;
+            if (mo >= 1 && mo <= 12) months[mo-1] += rev;
+          });
+        }
+      } catch(e) { console.warn('bb_orders yearly:', e.message); }
+      // pasar_sekunder_orders
+      try {
+        const { data, error } = await window._supabase
+          .from('pasar_sekunder_orders')
+          .select('created_at, nominal')
+          .ilike('sales_name', sPic)
+          .gte('created_at', `${year}-01-01T00:00:00`)
+          .lte('created_at', `${year}-12-31T23:59:59`);
+        if (!error && data) {
+          data.forEach(r => {
+            const mo = parseInt((r.created_at||'').slice(5,7),10);
+            if (mo >= 1 && mo <= 12) months[mo-1] += Number(r.nominal||0) * 0.001;
+          });
+        }
+      } catch(e) { console.warn('pasar_sekunder yearly:', e.message); }
     }
-  } catch(e) { console.warn('yearly fee:', e.message); }
+  } catch(e) { console.warn('fetchYearlyFee:', e.message); }
   return months;
 }
 
