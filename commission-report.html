@@ -333,30 +333,22 @@ async function fetchSahamData(salesId, period) {
   const salesObj2 = allSales.find(s => s.id === salesId) || {};
   const salesName = salesObj2.nama || salesObj2.name || '';
   try {
-    // Try sales_id first, fallback to sales_name
     let rows = [];
-    const { data: d1, error: e1 } = await window._supabase
-      .from('saham_transactions')
-      .select('client_id, client_name, volume, fee, tanggal')
-      .eq('sales_id', salesId)
-      .gte('tanggal', start)
-      .lte('tanggal', end);
-    if (!e1 && d1 && d1.length > 0) {
-      rows = d1;
-    } else if (salesName) {
-      const { data: d2, error: e2 } = await window._supabase
-        .from('saham_transactions')
+    if (salesName) {
+      const { data, error } = await window._supabase
+        .from('saham_transaksi')
         .select('client_id, client_name, volume, fee, tanggal')
         .eq('sales_name', salesName)
         .gte('tanggal', start)
         .lte('tanggal', end);
-      if (!e2 && d2) rows = d2;
+      if (!error && data) rows = data;
     }
     const clientMap = {};
     rows.forEach(r => {
-      if (!clientMap[r.client_id]) clientMap[r.client_id] = { name: r.client_name || r.client_id, volume:0, fee:0 };
-      clientMap[r.client_id].volume += Number(r.volume)||0;
-      clientMap[r.client_id].fee    += Number(r.fee)||0;
+      const key = r.client_id || 'unknown';
+      if (!clientMap[key]) clientMap[key] = { name: r.client_name || key, volume:0, fee:0 };
+      clientMap[key].volume += Number(r.volume)||0;
+      clientMap[key].fee    += Number(r.fee)||0;
     });
     const clients = Object.entries(clientMap).map(([id,v]) => ({ id, ...v }));
     const totalFee    = clients.reduce((s,c) => s + c.fee, 0);
@@ -364,7 +356,7 @@ async function fetchSahamData(salesId, period) {
     const tradingCount = clients.filter(c => c.fee > 0).length;
     return { clients, totalFee, totalVolume, tradingCount, totalCustomer: clients.length };
   } catch(e) {
-    console.warn('saham_transactions:', e.message);
+    console.warn('saham_transaksi:', e.message);
     return { clients:[], totalFee:0, totalVolume:0, tradingCount:0, totalCustomer:0 };
   }
 }
@@ -374,34 +366,54 @@ async function fetchObligasiData(salesId, period) {
   const start = `${y}-${m}-01T00:00:00`;
   const end   = `${y}-${m}-31T23:59:59`;
   const salesObj2 = allSales.find(s => s.id === salesId) || {};
-  const salesPic = salesObj2.nama || salesObj2.name || '';
+  const salesPic  = salesObj2.nama || salesObj2.name || '';
   let clients = {}, totalFee = 0, totalAmount = 0;
 
-  for (const tbl of ['bb_orders', 'pasar_sekunder_orders']) {
+  // bb_orders: filter by sales_pic, status=verified
+  if (salesPic) {
     try {
-      let qb = window._supabase
-        .from(tbl)
-        .select('client_id, customer_name, client_name, nominal, revenue, sales_pic')
+      const { data, error } = await window._supabase
+        .from('bb_orders')
+        .select('client_id, customer_name, nominal, revenue')
         .eq('status', 'verified')
+        .eq('sales_pic', salesPic)
         .gte('created_at', start)
         .lte('created_at', end);
-      if (salesPic) qb = qb.eq('sales_pic', salesPic);
-      const { data, error } = await qb;
       if (!error && data) {
         data.forEach(o => {
-          const cid  = o.client_id || 'unknown';
-          const name = o.customer_name || o.client_name || cid;
-          const nom  = Number(o.nominal)||0;
-          const rev  = Number(o.revenue)||0;
-          if (!clients[cid]) clients[cid] = { name, volume:0, fee:0 };
-          clients[cid].volume += nom;
-          clients[cid].fee    += rev;
-          totalFee    += rev;
-          totalAmount += nom;
+          const cid = o.client_id || 'unknown';
+          const nom = Number(o.nominal)||0;
+          const rev = Number(o.revenue)||0;
+          if (!clients[cid]) clients[cid] = { name: o.customer_name || cid, volume:0, fee:0 };
+          clients[cid].volume += nom; clients[cid].fee += rev;
+          totalFee += rev; totalAmount += nom;
         });
       }
-    } catch(e) { console.warn(tbl, e.message); }
+    } catch(e) { console.warn('bb_orders:', e.message); }
   }
+
+  // pasar_sekunder_orders: filter by sales_name (tidak ada status filter)
+  if (salesPic) {
+    try {
+      const { data, error } = await window._supabase
+        .from('pasar_sekunder_orders')
+        .select('client_id, client_name, nominal, revenue')
+        .eq('sales_name', salesPic)
+        .gte('created_at', start)
+        .lte('created_at', end);
+      if (!error && data) {
+        data.forEach(o => {
+          const cid = o.client_id || 'unknown';
+          const nom = Number(o.nominal)||0;
+          const rev = Number(o.revenue)||0;
+          if (!clients[cid]) clients[cid] = { name: o.client_name || cid, volume:0, fee:0 };
+          clients[cid].volume += nom; clients[cid].fee += rev;
+          totalFee += rev; totalAmount += nom;
+        });
+      }
+    } catch(e) { console.warn('pasar_sekunder_orders:', e.message); }
+  }
+
   const arr = Object.entries(clients).map(([id,v]) => ({ id, ...v }));
   return { clients: arr, totalFee, totalAmount, tradingCount: arr.filter(c=>c.fee>0).length, totalCustomer: arr.length };
 }
@@ -427,51 +439,55 @@ async function fetchYearlyFee(salesId, year, type) {
     if (type === 'saham') {
       const salesObj3 = allSales.find(s => s.id === salesId) || {};
       const sName = salesObj3.nama || salesObj3.name || '';
-      // Try sales_id first, then sales_name
-      let fetchedRows = null;
-      const { data: dr1, error: er1 } = await window._supabase
-        .from('saham_transactions')
-        .select('tanggal, fee')
-        .eq('sales_id', salesId)
-        .gte('tanggal', `${year}-01-01`)
-        .lte('tanggal', `${year}-12-31`);
-      if (!er1 && dr1 && dr1.length > 0) {
-        fetchedRows = dr1;
-      } else if (sName) {
-        const { data: dr2, error: er2 } = await window._supabase
-          .from('saham_transactions')
+      if (sName) {
+        const { data, error } = await window._supabase
+          .from('saham_transaksi')
           .select('tanggal, fee')
           .eq('sales_name', sName)
           .gte('tanggal', `${year}-01-01`)
           .lte('tanggal', `${year}-12-31`);
-        if (!er2 && dr2) fetchedRows = dr2;
-      }
-      if (fetchedRows) {
-        fetchedRows.forEach(r => {
-          const mo = parseInt((r.tanggal||'').split('-')[1],10);
-          if (mo >= 1 && mo <= 12) months[mo-1] += Number(r.fee)||0;
-        });
+        if (!error && data) {
+          data.forEach(r => {
+            const mo = parseInt((r.tanggal||'').split('-')[1],10);
+            if (mo >= 1 && mo <= 12) months[mo-1] += Number(r.fee)||0;
+          });
+        }
       }
     } else {
       const salesObj4 = allSales.find(s => s.id === salesId) || {};
       const sPic = salesObj4.nama || salesObj4.name || '';
-      for (const tbl of ['bb_orders','pasar_sekunder_orders']) {
+      if (sPic) {
+        // bb_orders: sales_pic + status verified
         try {
-          let qObl = window._supabase
-            .from(tbl)
+          const { data, error } = await window._supabase
+            .from('bb_orders')
             .select('created_at, revenue')
             .eq('status','verified')
+            .eq('sales_pic', sPic)
             .gte('created_at', `${year}-01-01T00:00:00`)
             .lte('created_at', `${year}-12-31T23:59:59`);
-          if (sPic) qObl = qObl.eq('sales_pic', sPic);
-          const { data, error } = await qObl;
           if (!error && data) {
             data.forEach(r => {
               const mo = parseInt((r.created_at||'').slice(5,7),10);
               if (mo >= 1 && mo <= 12) months[mo-1] += Number(r.revenue)||0;
             });
           }
-        } catch(e) { console.warn(tbl, e.message); }
+        } catch(e) { console.warn('bb_orders yearly:', e.message); }
+        // pasar_sekunder_orders: sales_name (no status filter)
+        try {
+          const { data, error } = await window._supabase
+            .from('pasar_sekunder_orders')
+            .select('created_at, revenue')
+            .eq('sales_name', sPic)
+            .gte('created_at', `${year}-01-01T00:00:00`)
+            .lte('created_at', `${year}-12-31T23:59:59`);
+          if (!error && data) {
+            data.forEach(r => {
+              const mo = parseInt((r.created_at||'').slice(5,7),10);
+              if (mo >= 1 && mo <= 12) months[mo-1] += Number(r.revenue)||0;
+            });
+          }
+        } catch(e) { console.warn('pasar_sekunder yearly:', e.message); }
       }
     }
   } catch(e) { console.warn('yearly fee:', e.message); }
@@ -510,7 +526,6 @@ function buildReportHTML(salesObj, monthName, month, year, period, saham, obl, s
       <div class="rpt-divider"></div>
       <div class="rpt-meta">
         <div class="rpt-meta-item">Nama Sales : <span>${salesObj.nama || '—'}</span></div>
-        ${salesObj.sales_code ? `<div class="rpt-meta-item">Sales Code : <span>${salesObj.sales_code}</span></div>` : ''}
         <div class="rpt-meta-item">Periode : <span>${monthName} ${year}</span></div>
       </div>
     </div>`;
@@ -590,7 +605,6 @@ function buildReportHTML(salesObj, monthName, month, year, period, saham, obl, s
     <div class="slip-meta">
       <div>Tanggal : <span>${tanggalSlip}</span></div>
       <div>Nama Sales : <span>${salesObj.nama}</span></div>
-      ${salesObj.sales_code ? `<div>Sales Code : <span>${salesObj.sales_code}</span></div>` : ''}
       <div>Periode : <span>${monthName} ${year}</span></div>
     </div>`;
 
