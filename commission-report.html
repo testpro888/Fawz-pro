@@ -369,12 +369,14 @@ async function fetchObligasiData(salesId, period) {
   const salesPic  = salesObj2.nama || salesObj2.name || '';
   let clients = {}, totalFee = 0, totalAmount = 0;
 
-  // bb_orders: filter by sales_pic, status=verified
+  const RATE_OBL = 0.001; // fallback rate jika tidak ada field komisi
+
+  // bb_orders
   if (salesPic) {
     try {
       const { data, error } = await window._supabase
         .from('bb_orders')
-        .select('client_id, customer_name, nominal, revenue')
+        .select('id, client_id, customer_name, nominal, komisi, commission_sales, created_at')
         .eq('status', 'verified')
         .eq('sales_pic', salesPic)
         .gte('created_at', start)
@@ -383,7 +385,9 @@ async function fetchObligasiData(salesId, period) {
         data.forEach(o => {
           const cid = o.client_id || 'unknown';
           const nom = Number(o.nominal)||0;
-          const rev = Number(o.revenue)||0;
+          const rev = o.commission_sales != null ? Number(o.commission_sales)
+                    : o.komisi           != null ? Number(o.komisi)
+                    : nom * RATE_OBL;
           if (!clients[cid]) clients[cid] = { name: o.customer_name || cid, volume:0, fee:0 };
           clients[cid].volume += nom; clients[cid].fee += rev;
           totalFee += rev; totalAmount += nom;
@@ -392,12 +396,12 @@ async function fetchObligasiData(salesId, period) {
     } catch(e) { console.warn('bb_orders:', e.message); }
   }
 
-  // pasar_sekunder_orders: filter by sales_name (tidak ada status filter)
+  // pasar_sekunder_orders
   if (salesPic) {
     try {
       const { data, error } = await window._supabase
         .from('pasar_sekunder_orders')
-        .select('client_id, client_name, nominal, revenue')
+        .select('id, client_id, client_name, nominal, created_at')
         .eq('sales_name', salesPic)
         .gte('created_at', start)
         .lte('created_at', end);
@@ -405,7 +409,7 @@ async function fetchObligasiData(salesId, period) {
         data.forEach(o => {
           const cid = o.client_id || 'unknown';
           const nom = Number(o.nominal)||0;
-          const rev = Number(o.revenue)||0;
+          const rev = nom * RATE_OBL;
           if (!clients[cid]) clients[cid] = { name: o.client_name || cid, volume:0, fee:0 };
           clients[cid].volume += nom; clients[cid].fee += rev;
           totalFee += rev; totalAmount += nom;
@@ -419,15 +423,15 @@ async function fetchObligasiData(salesId, period) {
 }
 
 async function fetchSlipInfo(salesId, period) {
-  // Coba dari tabel accounts (ada bank info)
+  // Ambil info bank dari tabel sales (field bank_name, bank_account, bank_holder jika ada)
   try {
     const { data, error } = await window._supabase
-      .from('accounts')
-      .select('name, bank_name, bank_account, bank_holder')
+      .from('sales')
+      .select('nama, bank_name, bank_account, bank_holder')
       .eq('id', salesId)
       .single();
-    if (!error && data) return { ...data, nama: data.name };
-  } catch(e) { console.warn('accounts slip info:', e.message); }
+    if (!error && data) return { ...data, nama: data.nama };
+  } catch(e) { /* field mungkin tidak ada, fallback */ }
   // Fallback dari allSales local
   const s = allSales.find(x => x.id === salesId) || {};
   return { nama: s.nama || s.name || '', bank_name: '', bank_account: '', bank_holder: '' };
@@ -461,15 +465,18 @@ async function fetchYearlyFee(salesId, year, type) {
         try {
           const { data, error } = await window._supabase
             .from('bb_orders')
-            .select('created_at, revenue')
+            .select('created_at, nominal, komisi, commission_sales')
             .eq('status','verified')
             .eq('sales_pic', sPic)
             .gte('created_at', `${year}-01-01T00:00:00`)
             .lte('created_at', `${year}-12-31T23:59:59`);
           if (!error && data) {
             data.forEach(r => {
-              const mo = parseInt((r.created_at||'').slice(5,7),10);
-              if (mo >= 1 && mo <= 12) months[mo-1] += Number(r.revenue)||0;
+              const mo  = parseInt((r.created_at||'').slice(5,7),10);
+              const rev = r.commission_sales != null ? Number(r.commission_sales)
+                        : r.komisi           != null ? Number(r.komisi)
+                        : Number(r.nominal||0) * 0.001;
+              if (mo >= 1 && mo <= 12) months[mo-1] += rev;
             });
           }
         } catch(e) { console.warn('bb_orders yearly:', e.message); }
@@ -477,14 +484,14 @@ async function fetchYearlyFee(salesId, year, type) {
         try {
           const { data, error } = await window._supabase
             .from('pasar_sekunder_orders')
-            .select('created_at, revenue')
+            .select('created_at, nominal')
             .eq('sales_name', sPic)
             .gte('created_at', `${year}-01-01T00:00:00`)
             .lte('created_at', `${year}-12-31T23:59:59`);
           if (!error && data) {
             data.forEach(r => {
               const mo = parseInt((r.created_at||'').slice(5,7),10);
-              if (mo >= 1 && mo <= 12) months[mo-1] += Number(r.revenue)||0;
+              if (mo >= 1 && mo <= 12) months[mo-1] += Number(r.nominal||0) * 0.001;
             });
           }
         } catch(e) { console.warn('pasar_sekunder yearly:', e.message); }
@@ -506,7 +513,6 @@ function buildReportHTML(salesObj, monthName, month, year, period, saham, obl, s
   const komisiSaham = saham.totalFee * COMMISSION_SAHAM_RATE;
   const komisiObl   = obl.totalFee   * COMMISSION_OBL_RATE;
   const grandTotal  = komisiSaham + komisiObl;
-  const willBePaid  = grandTotal >= COMMISSION_MIN;
 
   const today = new Date();
   const tanggalSlip = today.toLocaleDateString('id-ID', { day:'numeric', month:'long', year:'numeric' });
@@ -629,13 +635,6 @@ function buildReportHTML(salesObj, monthName, month, year, period, saham, obl, s
         <div class="slip-bank-note">(Pembayaran setiap tgl 25)</div>
       </div>`;
   }
-
-  page2.innerHTML += `
-    <div class="slip-nb">
-      Nb : Pembayaran Komisi akan dilakukan hanya untuk yang jumlahnya mencapai atau melebihi
-      Rp100.000. Komisi dengan jumlah kurang dari Rp100.000 tidak akan diproses atau dibayarkan.
-      ${!willBePaid ? '<br><strong style="color:#e74c3c;">⚠ Komisi bulan ini belum mencapai Rp100.000 — tidak akan diproses.</strong>' : ''}
-    </div>`;
 
   page2.innerHTML += reportFooterHTML();
   wrapper.appendChild(page2);
