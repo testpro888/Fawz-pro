@@ -75,15 +75,12 @@
 
     /* ── REPORT HEADER ── */
     .rpt-header {
-      display:flex; justify-content:space-between; align-items:flex-start;
-      padding:28px 36px 20px;
+      display:flex; justify-content:space-between; align-items:center;
+      padding:20px 36px;
       border-bottom:2px solid #f0f0f5;
     }
-    .rpt-logo { display:flex; align-items:center; gap:12px; }
-    .rpt-logo img { height:42px; object-fit:contain; }
-    .rpt-logo-name { font-size:1.3rem; font-weight:900; color:var(--navy); letter-spacing:-.5px; }
-    .rpt-logo-tagline { font-size:.7rem; color:var(--gray); margin-top:2px; }
-    .rpt-address { text-align:right; font-size:.72rem; color:var(--gray); line-height:1.6; }
+    .rpt-logo { display:flex; align-items:center; }
+    .rpt-address { text-align:right; font-size:.72rem; color:var(--gray); line-height:1.8; }
 
     /* ── REPORT TITLE ── */
     .rpt-title-section { padding:24px 36px 0; }
@@ -765,7 +762,7 @@ function reportHeaderHTML() {
   return `
     <div class="rpt-header">
       <div class="rpt-logo">
-        <img src="assets/logo/logofawz-black.png" alt="FAWZ" style="height:72px;object-fit:contain;"/>
+        <img src="assets/logo/logofawz-black.png" alt="FAWZ" style="height:90px;object-fit:contain;display:block;"/>
       </div>
       <div class="rpt-address">
         Komplek Mentari Greenwich no B7-B8,<br>
