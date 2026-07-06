@@ -13,23 +13,21 @@
   <!-- Supabase SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script>
-    const SUPABASE_URL = (window.__FAWZ_CONFIG__ || {}).supabaseUrl || '';
-    const SUPABASE_KEY = (window.__FAWZ_CONFIG__ || {}).supabaseKey || '';
-    var supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-    window._supabase = supabase;
-    window._supabaseReady = true;
+    // Gunakan window._supabase dari config.js (singleton)
+    // Pastikan tersedia sebelum dipakai
+    function _sb() { return window._supabase; }
 
     async function loadSales() {
       try {
         // Fetch existing sales data
-        const { data: rows, error } = await supabase
+        const { data: rows, error } = await _sb()
           .from('sales')
           .select('*')
           .order('created_at', { ascending: false });
         if (error) throw error;
 
         // Fetch accounts with role sales/head_sales that are not yet in sales table
-        const { data: accounts, error: accErr } = await supabase
+        const { data: accounts, error: accErr } = await _sb()
           .from('accounts')
           .select('id, name, username, role')
           .in('role', ['sales', 'head_sales']);
@@ -59,10 +57,10 @@
         // Auto-sync dari nama sales yang ada di transaksi (bb_orders, saham_transaksi, dll)
         try {
           const txSources = [
-            supabase.from('bb_orders').select('sales_pic').not('sales_pic', 'is', null).limit(500),
-            supabase.from('pasar_sekunder_orders').select('sales_name').not('sales_name', 'is', null).limit(500),
-            supabase.from('reksadana_transactions').select('sales_name').not('sales_name', 'is', null).limit(500),
-            supabase.from('saham_transaksi').select('sales_name').not('sales_name', 'is', null).limit(500),
+            _sb().from('bb_orders').select('sales_pic').not('sales_pic', 'is', null).limit(500),
+            _sb().from('pasar_sekunder_orders').select('sales_name').not('sales_name', 'is', null).limit(500),
+            _sb().from('reksadana_transactions').select('sales_name').not('sales_name', 'is', null).limit(500),
+            _sb().from('saham_transaksi').select('sales_name').not('sales_name', 'is', null).limit(500),
           ];
           const results = await Promise.allSettled(txSources.map(q => q));
           const txNames = new Set();
@@ -95,10 +93,10 @@
         }
 
         if (toInsert.length > 0) {
-          const { error: insErr } = await supabase.from('sales').insert(toInsert);
+          const { error: insErr } = await _sb().from('sales').insert(toInsert);
           if (insErr) console.warn('Auto-insert sales error:', insErr.message);
           // Re-fetch after insert
-          const { data: refreshed } = await supabase
+          const { data: refreshed } = await _sb()
             .from('sales').select('*').order('created_at', { ascending: false });
           window._allSales = refreshed || [];
           renderTable(window._allSales);
@@ -121,12 +119,12 @@
       const btn = document.getElementById('btnSync');
       if (btn) { btn.disabled = true; btn.textContent = 'Menyinkronkan...'; }
       try {
-        const { data: existing } = await supabase.from('sales').select('nama');
+        const { data: existing } = await _sb().from('sales').select('nama');
         const existingNames = new Set((existing||[]).map(r => (r.nama||'').toLowerCase().trim()));
         const toInsert = [];
 
         // 1. Sync dari akun dengan role sales/head_sales
-        const { data: accounts, error: accErr } = await supabase
+        const { data: accounts, error: accErr } = await _sb()
           .from('accounts')
           .select('id, name, username, role')
           .in('role', ['sales', 'head_sales']);
@@ -147,10 +145,10 @@
 
         // 2. Sync dari nama sales yang muncul di transaksi
         const txSources = [
-          supabase.from('bb_orders').select('sales_pic').not('sales_pic', 'is', null).limit(500),
-          supabase.from('pasar_sekunder_orders').select('sales_name').not('sales_name', 'is', null).limit(500),
-          supabase.from('reksadana_transactions').select('sales_name').not('sales_name', 'is', null).limit(500),
-          supabase.from('saham_transaksi').select('sales_name').not('sales_name', 'is', null).limit(500),
+          _sb().from('bb_orders').select('sales_pic').not('sales_pic', 'is', null).limit(500),
+          _sb().from('pasar_sekunder_orders').select('sales_name').not('sales_name', 'is', null).limit(500),
+          _sb().from('reksadana_transactions').select('sales_name').not('sales_name', 'is', null).limit(500),
+          _sb().from('saham_transaksi').select('sales_name').not('sales_name', 'is', null).limit(500),
         ];
         const results = await Promise.allSettled(txSources.map(q => q));
         const extractors = ['sales_pic','sales_name','sales_name','sales_name'];
@@ -179,7 +177,7 @@
           return;
         }
 
-        const { error: insErr } = await supabase.from('sales').insert(toInsert);
+        const { error: insErr } = await _sb().from('sales').insert(toInsert);
         if (insErr) throw insErr;
 
         alert(`✅ Berhasil menambahkan ${toInsert.length} sales baru!`);
@@ -1007,13 +1005,13 @@
     try {
       if (window._supabase) {
         if (editId) {
-          const { error } = await window._supabase.from('sales').update(data).eq('id', editId);
+          const { error } = await window.__sb().from('sales').update(data).eq('id', editId);
           if (error) throw error;
           const idx = window._allSales.findIndex(s => s.id === editId);
           if (idx > -1) window._allSales[idx] = { id: editId, ...data };
         } else {
           data.createdAt = new Date().toISOString();
-          const { data: inserted, error } = await window._supabase.from('sales').insert(data).select().single();
+          const { data: inserted, error } = await window.__sb().from('sales').insert(data).select().single();
           if (error) throw error;
           window._allSales = window._allSales || [];
           window._allSales.unshift(inserted);
@@ -1039,7 +1037,7 @@
     if (!confirm(`Hapus sales "${nama}"? Tindakan ini tidak bisa dibatalkan.`)) return;
     try {
       if (window._supabase)
-        await window._supabase.from('sales').delete().eq('id', id);
+        await window.__sb().from('sales').delete().eq('id', id);
     } catch(e) { console.warn('Delete error:', e); }
     window._allSales = (window._allSales||[]).filter(s => s.id !== id);
     renderTable(window._allSales);
