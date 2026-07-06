@@ -37,6 +37,7 @@
         }
 
         const existingNames = new Set((rows||[]).map(r => (r.nama||'').toLowerCase().trim()));
+        const existingKodes = new Set((rows||[]).map(r => (r.kode||'').toLowerCase().trim()));
         const toInsert = [];
 
         if (!accErr && accounts && accounts.length > 0) {
@@ -52,6 +53,32 @@
               existingNames.add(accName);
             }
           });
+        }
+
+        // Auto-sync dari referral_agents yang belum ada di list sales
+        try {
+          const { data: agents } = await _sb()
+            .from('referral_agents')
+            .select('id, nama, agent_code');
+          if (agents && agents.length > 0) {
+            agents.forEach(ag => {
+              const agName  = (ag.nama || '').toLowerCase().trim();
+              const agKode  = (ag.agent_code || '').toLowerCase().trim();
+              // Cek berdasarkan nama ATAU kode referral agar tidak duplikat
+              if (agName && !existingNames.has(agName) && !existingKodes.has(agKode)) {
+                toInsert.push({
+                  nama: ag.nama,
+                  kode: (ag.agent_code || '').toUpperCase(),
+                  tipe: 'Referral',
+                  created_at: new Date().toISOString()
+                });
+                existingNames.add(agName);
+                existingKodes.add(agKode);
+              }
+            });
+          }
+        } catch(agErr) {
+          console.warn('Auto-sync referral_agents error:', agErr.message);
         }
 
         // Auto-sync hanya dari accounts (role sales/head_sales)
