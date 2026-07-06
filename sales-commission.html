@@ -492,8 +492,11 @@
       if (!error && data) {
         data.forEach(o => {
           const nominal = Number(o.nominal) || 0;
+          // Gunakan commission_sales jika ada, fallback ke komisi lama atau nominal * rate
           const rate    = o.rateKomisi != null ? Number(o.rateKomisi) : RATE_OBLIGASI;
-          const komisi  = o.komisi != null ? Number(o.komisi) : nominal * rate;
+          const komisi  = o.commission_sales != null ? Number(o.commission_sales)
+                        : o.komisi           != null ? Number(o.komisi)
+                        : nominal * rate;
           const paid    = paidMap[o.id];
           allRows.push({
             id:          o.id,
@@ -900,7 +903,7 @@
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:.8rem;margin-bottom:14px;">
           <div><span style="color:#888;">Fee Saham</span><br><strong>${fmtRpFull(s.feeSaham)}</strong></div>
-          <div><span style="color:#888;">Fee Obligasi</span><br><strong>${fmtRpFull(s.feeObligasi)}</strong></div>
+          <div><span style="color:#888;">Komisi Obligasi</span><br><strong>${fmtRpFull(s.feeObligasi)}</strong></div>
           <div><span style="color:#888;">Fee Reksadana</span><br><strong>${fmtRpFull(s.feeReksadana)}</strong></div>
           <div><span style="color:#888;">Fee Waran</span><br><strong>${fmtRpFull(s.feeWaran)}</strong></div>
         </div>
