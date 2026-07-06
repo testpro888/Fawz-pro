@@ -295,7 +295,7 @@
       </div>
       <div class="form-group">
         <label class="form-label">Modal (Rp/unit)</label>
-        <input type="text" class="form-input" id="f-modal-per-unit" placeholder="0" oninput="fmtInput(this);recalc()"/>
+        <input type="text" class="form-input" id="f-modal-per-unit" placeholder="99,00" oninput="fmtDecimalInput(this);recalc()"/>
       </div>
       <div class="form-group">
         <label class="form-label">Modal Total <span style="font-size:.65rem;color:#aaa;">(Unit×Modal/unit)</span></label>
@@ -303,11 +303,11 @@
       </div>
       <div class="form-group">
         <label class="form-label">Modal to Sales (Rp/unit)</label>
-        <input type="text" class="form-input" id="f-modal-sales" placeholder="0" oninput="fmtInput(this);recalc()"/>
+        <input type="text" class="form-input" id="f-modal-sales" placeholder="99,50" oninput="fmtDecimalInput(this);recalc()"/>
       </div>
       <div class="form-group">
         <label class="form-label">Harga to Customer (Rp/unit)</label>
-        <input type="text" class="form-input" id="f-harga-customer" placeholder="0" oninput="fmtInput(this);recalc()"/>
+        <input type="text" class="form-input" id="f-harga-customer" placeholder="100,00" oninput="fmtDecimalInput(this);recalc()"/>
       </div>
     </div>
 
@@ -696,21 +696,39 @@
     setTimeout(() => t.remove(), 3500);
   }
 
-  // Helper: format ribuan saat ketik, simpan posisi cursor
+  // Helper: format ribuan saat ketik (integer only)
   function fmtInput(el) {
     const pos = el.selectionStart;
     const raw = el.value.replace(/\D/g, '');
     const formatted = raw ? parseInt(raw, 10).toLocaleString('id-ID') : '';
     const prevLen = el.value.length;
     el.value = formatted;
-    // Pertahankan posisi cursor
     const diff = formatted.length - prevLen;
     try { el.setSelectionRange(pos + diff, pos + diff); } catch(e) {}
   }
 
-  // Helper: ambil nilai numerik dari field yang sudah diformat
+  // Helper: format ribuan dengan desimal (untuk harga/modal yang bisa pakai koma)
+  function fmtDecimalInput(el) {
+    // Izinkan: digit, titik (ribuan), koma (desimal)
+    // Normalize: ganti titik ribuan, pertahankan koma desimal
+    let val = el.value;
+    // Hanya izinkan digit dan satu koma
+    val = val.replace(/[^\d,]/g, '');
+    // Pastikan hanya satu koma
+    const parts = val.split(',');
+    if (parts.length > 2) val = parts[0] + ',' + parts.slice(1).join('');
+    el.value = val;
+  }
+
+  // Helper: ambil nilai numerik dari field integer (dengan pemisah ribuan)
   function getNum(id) {
     const val = document.getElementById(id).value.replace(/\./g, '').replace(/,/g, '').replace(/[^\d]/g, '');
+    return parseFloat(val) || 0;
+  }
+
+  // Helper: ambil nilai numerik dari field desimal (koma = separator desimal)
+  function getDecimal(id) {
+    const val = document.getElementById(id).value.replace(/\./g, '').replace(',', '.');
     return parseFloat(val) || 0;
   }
   function openAddModal() {
@@ -764,9 +782,9 @@
 
   function recalc() {
     const nominal      = getNum('f-nominal');
-    const modalPerUnit = getNum('f-modal-per-unit');
-    const modalSales   = getNum('f-modal-sales');
-    const hargaCust    = getNum('f-harga-customer');
+    const modalPerUnit = getDecimal('f-modal-per-unit');
+    const modalSales   = getDecimal('f-modal-sales');
+    const hargaCust    = getDecimal('f-harga-customer');
     const tlaCode      = parseInt(document.getElementById('f-tla-code').value) || 0;
 
     // Unit Count = Nominal / 100
@@ -832,9 +850,9 @@
     const sekuritas = document.getElementById('f-sekuritas').value;
     const seri      = document.getElementById('f-seri').value.trim().toUpperCase();
     const nominal   = getNum('f-nominal');
-    const modalPerUnit  = getNum('f-modal-per-unit');
-    const modalSales    = getNum('f-modal-sales');
-    const hargaCust     = getNum('f-harga-customer');
+    const modalPerUnit  = getDecimal('f-modal-per-unit');
+    const modalSales    = getDecimal('f-modal-sales');
+    const hargaCust     = getDecimal('f-harga-customer');
     const salesNama     = document.getElementById('f-sales').value.trim();
     const tla           = document.getElementById('f-tla').value.trim();
     const tlaCode       = parseInt(document.getElementById('f-tla-code').value) || 0;
