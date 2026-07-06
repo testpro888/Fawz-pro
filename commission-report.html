@@ -331,44 +331,48 @@ async function fetchSahamData(salesId, period) {
   const start = `${y}-${m}-01`;
   const end   = `${y}-${m}-31`;
   const salesObj2 = allSales.find(s => s.id === salesId) || {};
-  const salesName = salesObj2.nama || salesObj2.name || '';
-  
-  // Total Customer dari tabel customers
+  const salesName = (salesObj2.nama || salesObj2.name || '').trim();
+
+  // Total Customer dari tabel customers (case-insensitive)
   let totalAllCustomers = 0;
-  try {
-    const { count, error } = await window._supabase
-      .from('customers')
-      .select('*', { count: 'exact', head: true })
-      .ilike('sales_person_name', salesName);
-    if (!error && count != null) totalAllCustomers = count;
-  } catch(e) { /* skip */ }
+  if (salesName) {
+    try {
+      const { count, error } = await window._supabase
+        .from('customers')
+        .select('*', { count: 'exact', head: true })
+        .ilike('sales_person_name', salesName);
+      if (!error && count != null) totalAllCustomers = count;
+    } catch(e) { /* skip */ }
+  }
 
   try {
     let rows = [];
     if (salesName) {
+      // ilike = case-insensitive, sama seperti sales-commission.html
       const { data, error } = await window._supabase
         .from('saham_transaksi')
-        .select('client_id, client_name, volume, fee, tanggal')
-        .eq('sales_name', salesName)
+        .select('client_id, client_name, volume, fee, tanggal, sales_name')
+        .ilike('sales_name', salesName)
         .gte('tanggal', start)
         .lte('tanggal', end);
       if (!error && data) rows = data;
+      else if (error) console.warn('saham_transaksi error:', error.message, error.code);
     }
     const clientMap = {};
     rows.forEach(r => {
-      const key = r.client_id || 'unknown';
+      const key = r.client_id || r.client_name || 'unknown';
       if (!clientMap[key]) clientMap[key] = { name: r.client_name || key, volume:0, fee:0 };
       clientMap[key].volume += Number(r.volume)||0;
       clientMap[key].fee    += Number(r.fee)||0;
     });
     const clients = Object.entries(clientMap).map(([id,v]) => ({ id, ...v }));
-    const totalFee    = clients.reduce((s,c) => s + c.fee, 0);
-    const totalVolume = clients.reduce((s,c) => s + c.volume, 0);
-    const tradingCount = clients.filter(c => c.fee > 0).length;
-    return { clients, totalFee, totalVolume, tradingCount, totalCustomer: totalAllCustomers, tradingCustomers: clients.length };
+    const totalFee         = clients.reduce((s,c) => s + c.fee, 0);
+    const totalVolume      = clients.reduce((s,c) => s + c.volume, 0);
+    const tradingCustomers = clients.filter(c => c.fee > 0).length;
+    return { clients, totalFee, totalVolume, tradingCustomers, totalCustomer: totalAllCustomers };
   } catch(e) {
-    console.warn('saham_transaksi:', e.message);
-    return { clients:[], totalFee:0, totalVolume:0, tradingCount:0, totalCustomer:0, tradingCustomers:0 };
+    console.warn('saham_transaksi catch:', e.message);
+    return { clients:[], totalFee:0, totalVolume:0, tradingCustomers:0, totalCustomer:totalAllCustomers };
   }
 }
 
@@ -389,7 +393,7 @@ async function fetchObligasiData(salesId, period) {
         .from('bb_orders')
         .select('id, client_id, customer_name, nominal, komisi, commission_sales, created_at')
         .eq('status', 'verified')
-        .eq('sales_pic', salesPic)
+        .ilike('sales_pic', salesPic)
         .gte('created_at', start)
         .lte('created_at', end);
       if (!error && data) {
@@ -413,7 +417,7 @@ async function fetchObligasiData(salesId, period) {
       const { data, error } = await window._supabase
         .from('pasar_sekunder_orders')
         .select('id, client_id, client_name, nominal, created_at')
-        .eq('sales_name', salesPic)
+        .ilike('sales_name', salesPic)
         .gte('created_at', start)
         .lte('created_at', end);
       if (!error && data) {
@@ -453,12 +457,12 @@ async function fetchYearlyFee(salesId, year, type) {
   try {
     if (type === 'saham') {
       const salesObj3 = allSales.find(s => s.id === salesId) || {};
-      const sName = salesObj3.nama || salesObj3.name || '';
+      const sName = (salesObj3.nama || salesObj3.name || '').trim();
       if (sName) {
         const { data, error } = await window._supabase
           .from('saham_transaksi')
           .select('tanggal, fee')
-          .eq('sales_name', sName)
+          .ilike('sales_name', sName)
           .gte('tanggal', `${year}-01-01`)
           .lte('tanggal', `${year}-12-31`);
         if (!error && data) {
@@ -534,7 +538,7 @@ function buildReportHTML(salesObj, monthName, month, year, period, saham, obl, s
   const chartLabels    = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Ags','Sept','Okt','Nov','Des'].slice(0, currentMonthIdx + 1);
 
   // Total Customer Trading: customer yg punya fee > 0 di bulan ini
-  const tradingCustomers = saham.tradingCustomers || saham.clients.filter(c => c.fee > 0).length;
+  const tradingCustomers = saham.tradingCustomers || 0;
   const totalCustomer    = saham.totalCustomer || 0;
   const tradingPct       = totalCustomer > 0 ? Math.round(tradingCustomers / totalCustomer * 100) : 0;
 
