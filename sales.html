@@ -54,43 +54,8 @@
           });
         }
 
-        // Auto-sync dari nama sales yang ada di transaksi (bb_orders, saham_transaksi, dll)
-        try {
-          const txSources = [
-            _sb().from('bb_orders').select('sales_pic').not('sales_pic', 'is', null).limit(500),
-            _sb().from('pasar_sekunder_orders').select('sales_name').not('sales_name', 'is', null).limit(500),
-            _sb().from('reksadana_transactions').select('sales_name').not('sales_name', 'is', null).limit(500),
-            _sb().from('saham_transaksi').select('sales_name').not('sales_name', 'is', null).limit(500),
-          ];
-          const results = await Promise.allSettled(txSources.map(q => q));
-          const txNames = new Set();
-          const extractors = ['sales_pic','sales_name','sales_name','sales_name'];
-          results.forEach((res, i) => {
-            if (res.status === 'fulfilled' && res.value.data) {
-              res.value.data.forEach(r => {
-                const n = (r[extractors[i]]||'').trim();
-                if (n) txNames.add(n);
-              });
-            }
-          });
-          txNames.forEach(name => {
-            const key = name.toLowerCase().trim();
-            if (key && !existingNames.has(key)) {
-              // Buat kode dari 2 kata pertama nama
-              const words = name.trim().split(/\s+/);
-              const kode = words.slice(0,2).map(w => w.substring(0,3).toUpperCase()).join('');
-              toInsert.push({
-                nama: name,
-                kode: kode.substring(0,8),
-                tipe: 'RM',
-                created_at: new Date().toISOString()
-              });
-              existingNames.add(key);
-            }
-          });
-        } catch(txErr) {
-          console.warn('Auto-sync dari transaksi error:', txErr.message);
-        }
+        // Auto-sync hanya dari accounts (role sales/head_sales)
+        // Sync dari data transaksi TIDAK dilakukan otomatis — gunakan tombol "Sync Akun"
 
         if (toInsert.length > 0) {
           const { error: insErr } = await _sb().from('sales').insert(toInsert);
