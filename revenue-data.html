@@ -945,10 +945,7 @@
   }
   function fmtRp(val) {
     const n=Number(val)||0, abs=Math.abs(n), sign=n<0?'-':'';
-    if (abs>=1e12) return sign+'Rp '+(abs/1e12).toFixed(4).replace(/\.?0+$/,'')+' T';
-    if (abs>=1e9)  return sign+'Rp '+(abs/1e9).toFixed(4).replace(/\.?0+$/,'')+' M';
-    if (abs>=1e6)  return sign+'Rp '+(abs/1e6).toFixed(4).replace(/\.?0+$/,'')+' jt';
-    return sign+'Rp '+abs.toLocaleString('id-ID',{minimumFractionDigits:0,maximumFractionDigits:4});
+    return sign+'Rp '+abs.toLocaleString('id-ID',{minimumFractionDigits:0,maximumFractionDigits:2});
   }
   function fmtRpFull(val) {
     const n=Number(val)||0;
