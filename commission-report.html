@@ -332,6 +332,17 @@ async function fetchSahamData(salesId, period) {
   const end   = `${y}-${m}-31`;
   const salesObj2 = allSales.find(s => s.id === salesId) || {};
   const salesName = salesObj2.nama || salesObj2.name || '';
+  
+  // Total Customer dari tabel customers
+  let totalAllCustomers = 0;
+  try {
+    const { count, error } = await window._supabase
+      .from('customers')
+      .select('*', { count: 'exact', head: true })
+      .ilike('sales_person_name', salesName);
+    if (!error && count != null) totalAllCustomers = count;
+  } catch(e) { /* skip */ }
+
   try {
     let rows = [];
     if (salesName) {
@@ -354,10 +365,10 @@ async function fetchSahamData(salesId, period) {
     const totalFee    = clients.reduce((s,c) => s + c.fee, 0);
     const totalVolume = clients.reduce((s,c) => s + c.volume, 0);
     const tradingCount = clients.filter(c => c.fee > 0).length;
-    return { clients, totalFee, totalVolume, tradingCount, totalCustomer: clients.length };
+    return { clients, totalFee, totalVolume, tradingCount, totalCustomer: totalAllCustomers, tradingCustomers: clients.length };
   } catch(e) {
     console.warn('saham_transaksi:', e.message);
-    return { clients:[], totalFee:0, totalVolume:0, tradingCount:0, totalCustomer:0 };
+    return { clients:[], totalFee:0, totalVolume:0, tradingCount:0, totalCustomer:0, tradingCustomers:0 };
   }
 }
 
@@ -505,20 +516,27 @@ function fmtRp(n) { return 'Rp ' + Math.round(n||0).toLocaleString('id-ID') + ',
 function fmtNum(n) { return Math.round(n||0).toLocaleString('id-ID'); }
 
 function buildReportHTML(salesObj, monthName, month, year, period, saham, obl, slip, yearSaham, yearObl) {
-  // Komisi calculation (60% x 10% rule from the PDF)
-  const COMMISSION_SAHAM_RATE  = 0.06; // 60% x 10% = 6%
-  const COMMISSION_OBL_RATE    = 0.06;
-  const COMMISSION_MIN         = 100000;
+  const COMMISSION_SAHAM_RATE = 0.06; // (60%) x 10% = 6%
+  const COMMISSION_OBL_RATE   = 0.06;
+  const COMMISSION_MIN        = 100000;
 
   const komisiSaham = saham.totalFee * COMMISSION_SAHAM_RATE;
   const komisiObl   = obl.totalFee   * COMMISSION_OBL_RATE;
   const grandTotal  = komisiSaham + komisiObl;
 
   const today = new Date();
-  const tanggalSlip = today.toLocaleDateString('id-ID', { day:'numeric', month:'long', year:'numeric' });
+  const tanggalHariIni = today.toLocaleDateString('id-ID', { day:'numeric', month:'long', year:'numeric' });
 
-  const monthLabels = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Ags','Sept','Okt','Nov','Des'];
-  const currentMonthIdx = parseInt(month,10)-1;
+  const currentMonthIdx = parseInt(month,10) - 1;
+  // Chart hanya tampilkan Jan s/d bulan yg dipilih
+  const chartSahamData = yearSaham.slice(0, currentMonthIdx + 1);
+  const chartOblData   = yearObl.slice(0, currentMonthIdx + 1);
+  const chartLabels    = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Ags','Sept','Okt','Nov','Des'].slice(0, currentMonthIdx + 1);
+
+  // Total Customer Trading: customer yg punya fee > 0 di bulan ini
+  const tradingCustomers = saham.tradingCustomers || saham.clients.filter(c => c.fee > 0).length;
+  const totalCustomer    = saham.totalCustomer || 0;
+  const tradingPct       = totalCustomer > 0 ? Math.round(tradingCustomers / totalCustomer * 100) : 0;
 
   const wrapper = document.getElementById('reportWrapper');
   wrapper.innerHTML = '';
@@ -526,11 +544,12 @@ function buildReportHTML(salesObj, monthName, month, year, period, saham, obl, s
   /* ====== PAGE 1 : LAPORAN PENCAPAIAN ====== */
   const page1 = document.createElement('div');
   page1.className = 'report-card a4-page';
-  page1.innerHTML = reportHeaderHTML(year) + `
+  page1.innerHTML = reportHeaderHTML() + `
     <div class="rpt-title-section">
       <div class="rpt-main-title">Laporan Pencapaian Sales FAWZ</div>
       <div class="rpt-divider"></div>
       <div class="rpt-meta">
+        <div class="rpt-meta-item">Tanggal : <span>${tanggalHariIni}</span></div>
         <div class="rpt-meta-item">Nama Sales : <span>${salesObj.nama || '—'}</span></div>
         <div class="rpt-meta-item">Periode : <span>${monthName} ${year}</span></div>
       </div>
@@ -543,7 +562,7 @@ function buildReportHTML(salesObj, monthName, month, year, period, saham, obl, s
       <div class="chart-box"><canvas id="chartSaham"></canvas></div>
     </div>`;
 
-  /* Table Saham */
+  /* Table Keterangan Saham */
   page1.innerHTML += `
     <div class="rpt-table-section">
       <div class="rpt-section-label">Keterangan Saham</div>
@@ -552,43 +571,24 @@ function buildReportHTML(salesObj, monthName, month, year, period, saham, obl, s
         <tbody>
           <tr><td class="td-label">Trade Fee</td><td class="td-value">${fmtRp(saham.totalFee)}</td></tr>
           <tr><td class="td-label">Trade Amount</td><td class="td-value">${fmtRp(saham.totalVolume)}</td></tr>
-          <tr><td class="td-label">Total Customer</td><td class="td-value">${saham.totalCustomer} Customer</td></tr>
+          <tr><td class="td-label">Total Customer</td><td class="td-value">${totalCustomer} Customer</td></tr>
           <tr><td class="td-label">Total Customer Baru</td><td class="td-value">—</td></tr>
-          <tr><td class="td-label">Total Customer Trading</td><td class="td-value">${saham.tradingCount}/${saham.totalCustomer} (${saham.totalCustomer ? Math.round(saham.tradingCount/saham.totalCustomer*100) : 0}%)</td></tr>
+          <tr><td class="td-label">Total Customer Trading</td><td class="td-value">${tradingCustomers}/${totalCustomer} (${tradingPct}%)</td></tr>
         </tbody>
       </table>
     </div>`;
 
-  /* Chart Obligasi (only if there is data) */
-  if (obl.totalFee > 0) {
-    page1.innerHTML += `
-      <div class="rpt-chart-section">
-        <div class="rpt-chart-title">Pencapaian Revenue Obligasi ${year}</div>
-        <div class="chart-box"><canvas id="chartObl"></canvas></div>
-      </div>
-      <div class="rpt-table-section">
-        <div class="rpt-section-label">Keterangan Obligasi</div>
-        <table class="rpt-data-table">
-          <thead><tr><th style="width:60%">Keterangan</th><th>Total</th></tr></thead>
-          <tbody>
-            <tr><td class="td-label">Trade Fee</td><td class="td-value">${fmtRp(obl.totalFee)}</td></tr>
-            <tr><td class="td-label">Trade Amount</td><td class="td-value">${fmtRp(obl.totalAmount)}</td></tr>
-            <tr><td class="td-label">Total Customer</td><td class="td-value">${obl.totalCustomer} Customer</td></tr>
-            <tr><td class="td-label">Total Customer Baru</td><td class="td-value">—</td></tr>
-            <tr><td class="td-label">Total Customer Trading</td><td class="td-value">${obl.tradingCount}/${obl.totalCustomer} (${obl.totalCustomer ? Math.round(obl.tradingCount/obl.totalCustomer*100) : 0}%)</td></tr>
-          </tbody>
-        </table>
-      </div>`;
-  }
-
-  /* Penghasilan */
+  /* Penghasilan Saham */
   page1.innerHTML += `
     <div class="rpt-income-section">
       <table class="income-table">
         <thead><tr><th style="width:50%">Penghasilan</th><th></th><th>Total</th></tr></thead>
         <tbody>
-          ${saham.totalFee > 0 ? `<tr><td>Komisi Saham</td><td style="font-size:.78rem;color:var(--gray);">(${fmtRp(saham.totalFee)} × 60%) × 10%</td><td style="text-align:right;font-weight:600;">= ${fmtRp(komisiSaham)}</td></tr>` : ''}
-          ${obl.totalFee   > 0 ? `<tr><td>Komisi Obligasi</td><td style="font-size:.78rem;color:var(--gray);">(${fmtRp(obl.totalFee)} × 60%) × 10%</td><td style="text-align:right;font-weight:600;">= ${fmtRp(komisiObl)}</td></tr>` : ''}
+          <tr>
+            <td>Total Komisi</td>
+            <td style="font-size:.78rem;color:var(--gray);">(${fmtRp(saham.totalFee)} × 60%) × 10%</td>
+            <td style="text-align:right;font-weight:600;">= ${fmtRp(komisiSaham)}</td>
+          </tr>
         </tbody>
         <tfoot>
           <tr class="income-grand">
@@ -599,51 +599,68 @@ function buildReportHTML(salesObj, monthName, month, year, period, saham, obl, s
       </table>
     </div>`;
 
-  page1.innerHTML += reportFooterHTML();
+  page1.innerHTML += reportFooterHTML(tanggalHariIni);
   wrapper.appendChild(page1);
 
   /* ====== PAGE 2 : SLIP INSENTIF ====== */
   const page2 = document.createElement('div');
   page2.className = 'report-card a4-page slip-card';
-  page2.innerHTML = reportHeaderHTML(year);
+  page2.innerHTML = reportHeaderHTML();
   page2.innerHTML += `<div class="slip-title">Slip Insentif</div><div class="slip-divider"></div>`;
   page2.innerHTML += `
     <div class="slip-meta">
-      <div>Tanggal : <span>${tanggalSlip}</span></div>
+      <div>Tanggal : <span>${tanggalHariIni}</span></div>
       <div>Nama Sales : <span>${salesObj.nama}</span></div>
       <div>Periode : <span>${monthName} ${year}</span></div>
     </div>`;
 
+  /* IN */
   page2.innerHTML += `<div class="slip-section-label">IN</div>`;
-  let slipRows = '';
-  if (saham.totalFee > 0) slipRows += `<tr><td class="td-cat">SAHAM</td><td></td></tr><tr><td class="td-period">${monthName} ${year}</td><td class="td-val">${fmtRp(komisiSaham)}</td></tr>`;
-  if (obl.totalFee > 0)   slipRows += `<tr><td class="td-cat">OBLIGASI</td><td></td></tr><tr><td class="td-period">${monthName} ${year}</td><td class="td-val">${fmtRp(komisiObl)}</td></tr>`;
+  let slipRows = `<tr><td class="td-cat">SAHAM</td><td></td></tr>
+    <tr><td class="td-period">${monthName} ${year}</td><td class="td-val">${fmtRp(komisiSaham)}</td></tr>`;
+  if (obl.totalFee > 0) {
+    slipRows += `<tr><td class="td-cat">OBLIGASI</td><td></td></tr>
+      <tr><td class="td-period">${monthName} ${year}</td><td class="td-val">${fmtRp(komisiObl)}</td></tr>`;
+  }
   page2.innerHTML += `<table class="slip-table"><tbody>${slipRows}</tbody></table>`;
 
+  /* OUT */
   page2.innerHTML += `<div class="slip-section-label">OUT</div>`;
   page2.innerHTML += `<table class="slip-table"><tbody>
     <tr><td>POTONGAN</td><td class="td-val">Rp. 0</td></tr>
     <tr><td>PAJAK</td><td class="td-val">Rp. 0</td></tr>
-    <tr class="slip-grand-row"><td class="td-cat"><strong>GRAND TOTAL</strong></td><td class="slip-grand-val"><strong>${fmtRp(grandTotal)}</strong></td></tr>
+    <tr class="slip-grand-row">
+      <td class="td-cat"><strong>GRAND TOTAL</strong></td>
+      <td class="slip-grand-val"><strong>${fmtRp(grandTotal)}</strong></td>
+    </tr>
   </tbody></table>`;
 
-  if (slip.bank_name) {
-    page2.innerHTML += `
-      <div class="slip-bank">
-        <div>Transfer To A/C <span class="slip-bank-name">${slip.bank_holder || salesObj.nama}</span></div>
-        <div><span class="slip-bank-name">${slip.bank_name}</span> An. <span class="slip-bank-acc">${slip.bank_account || '—'}</span></div>
-        <div class="slip-bank-note">(Pembayaran setiap tgl 25)</div>
-      </div>`;
-  }
+  /* Bank info box */
+  const bankName = slip.bank_name || '—';
+  const bankAcc  = slip.bank_account || '—';
+  const bankHolder = slip.bank_holder || salesObj.nama || '—';
+  page2.innerHTML += `
+    <div class="slip-bank">
+      <div>Transfer To A/C <span class="slip-bank-name">${salesObj.nama}</span></div>
+      <div><span class="slip-bank-name">${bankName}</span> An. <span class="slip-bank-acc">${bankAcc}</span></div>
+      <div class="slip-bank-note">(Pembayaran setiap tgl 25)</div>
+    </div>`;
 
-  page2.innerHTML += reportFooterHTML();
+  /* NB */
+  page2.innerHTML += `
+    <div class="slip-nb">
+      Nb : Pembayaran Komisi akan dilakukan hanya untuk yang jumlahnya mencapai atau melebihi
+      Rp100.000. Komisi dengan jumlah kurang dari Rp100.000 tidak akan diproses atau dibayarkan.
+    </div>`;
+
+  page2.innerHTML += reportFooterHTML(tanggalHariIni);
   wrapper.appendChild(page2);
 
   /* ====== PAGE 3 : LAMPIRAN RINCIAN BY VOLUME ====== */
   if (saham.clients.length > 0) {
     const page3 = document.createElement('div');
     page3.className = 'report-card a4-page';
-    page3.innerHTML = reportHeaderHTML(year);
+    page3.innerHTML = reportHeaderHTML();
     page3.innerHTML += `
       <div class="rpt-title-section">
         <div class="rpt-main-title" style="text-decoration:underline;">Lampiran Rincian By Volume</div>
@@ -660,18 +677,20 @@ function buildReportHTML(salesObj, monthName, month, year, period, saham, obl, s
           <tbody>${volRows}</tbody>
         </table>
       </div>`;
-    page3.innerHTML += reportFooterHTML(tanggalSlip);
+    page3.innerHTML += reportFooterHTML(tanggalHariIni);
     wrapper.appendChild(page3);
   }
 
-  /* Draw Charts after DOM insert */
+  /* Draw Charts — hanya sampai bulan yang dipilih */
   setTimeout(() => {
-    drawBarChart('chartSaham', yearSaham, `Fee Saham ${year}`, currentMonthIdx);
-    if (obl.totalFee > 0) drawBarChart('chartObl', yearObl, `Revenue Obligasi ${year}`, currentMonthIdx);
+    drawBarChart('chartSaham', chartSahamData, chartLabels, `Fee Saham ${year}`, currentMonthIdx);
+    if (obl.totalFee > 0) drawBarChart('chartObl', chartOblData, chartLabels, `Revenue Obligasi ${year}`, currentMonthIdx);
+  }, 80);
+}
   }, 80);
 }
 
-function reportHeaderHTML(year) {
+function reportHeaderHTML() {
   return `
     <div class="rpt-header">
       <div class="rpt-logo">
@@ -701,7 +720,7 @@ function reportFooterHTML(tanggal) {
 const MONTH_LABELS = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Ags','Sept','Okt','Nov','Des'];
 const chartInstances = {};
 
-function drawBarChart(canvasId, data, label, highlightIdx) {
+function drawBarChart(canvasId, data, labels, label, highlightIdx) {
   const ctx = document.getElementById(canvasId);
   if (!ctx) return;
   if (chartInstances[canvasId]) { chartInstances[canvasId].destroy(); }
@@ -713,7 +732,7 @@ function drawBarChart(canvasId, data, label, highlightIdx) {
   chartInstances[canvasId] = new Chart(ctx, {
     type: 'bar',
     data: {
-      labels: MONTH_LABELS,
+      labels: labels,
       datasets: [{
         label: label,
         data: data,
