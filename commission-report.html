@@ -96,7 +96,7 @@
     /* ── CHART SECTION ── */
     .rpt-chart-section { padding:20px 36px; }
     .rpt-chart-title { font-size:.85rem; font-weight:800; color:var(--navy); text-align:center; margin-bottom:14px; letter-spacing:.3px; }
-    .chart-box { border:1.5px solid #e8e8f5; border-radius:12px; padding:16px; background:#fafafe; position:relative; height:200px; }
+    .chart-box { border:1.5px solid #e8e8f5; border-radius:12px; padding:16px; background:#fafafe; position:relative; height:240px; }
 
     /* ── DATA TABLE SECTION ── */
     .rpt-table-section { padding:0 36px 20px; }
@@ -750,6 +750,9 @@ function drawBarChart(canvasId, data, labels, label, highlightIdx) {
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      layout: {
+        padding: { top: 20, bottom: 5, left: 5, right: 5 }
+      },
       plugins: {
         legend: { display: false },
         tooltip: {
@@ -778,12 +781,20 @@ function drawBarChart(canvasId, data, labels, label, highlightIdx) {
         chart.getDatasetMeta(0).data.forEach((bar, i) => {
           const v = data.datasets[0].data[i];
           if (!v) return;
+          const formatted = 'Rp' + Math.round(v).toLocaleString('id-ID');
           ctx.save();
-          ctx.font = 'bold 9px Inter, sans-serif';
-          ctx.fillStyle = '#333';
+          ctx.font = 'bold 8.5px Inter, sans-serif';
+          ctx.fillStyle = '#444';
           ctx.textAlign = 'center';
           ctx.textBaseline = 'bottom';
-          ctx.fillText('Rp' + Math.round(v).toLocaleString('id-ID'), bar.x, bar.y - 2);
+          // Potong teks jika terlalu panjang
+          const maxW = bar.width + 10;
+          ctx.save();
+          ctx.beginPath();
+          ctx.rect(bar.x - maxW/2, 0, maxW, bar.y - 2);
+          ctx.clip();
+          ctx.fillText(formatted, bar.x, bar.y - 3);
+          ctx.restore();
           ctx.restore();
         });
       }
