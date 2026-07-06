@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <script src="config.js"></script>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Fawz Pro | Laporan Komisi Sales</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script>
+    const SUPABASE_URL = (window.__FAWZ_CONFIG__ || {}).supabaseUrl || '';
+    const SUPABASE_KEY = (window.__FAWZ_CONFIG__ || {}).supabaseKey || '';
+    window.addEventListener('DOMContentLoaded', () => {
+      if (!window._supabase) window._supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      boot();
+    });
+  </script>
+  <style>
+    *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+    :root {
+      --navy:#0d0d2b; --gold:#f5a623; --gold-light:#ffc857;
+      --bg:#f4f5fb; --white:#fff; --border:#e0e0ef; --text:#1a1a3a;
+      --gray:#888; --green:#27ae60; --indigo:#4f46e5; --nav-h:68px;
+    }
+    body { font-family:'Inter',sans-serif; background:var(--bg); min-height:100vh; padding-top:var(--nav-h); color:var(--text); }
+    .page-container { max-width:1100px; margin:0 auto; padding:36px 28px; }
+    .page-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:28px; flex-wrap:wrap; gap:16px; }
+    .page-title { font-size:2rem; font-weight:900; color:var(--navy); }
+    .page-subtitle { font-size:.88rem; color:var(--gray); margin-top:4px; }
+    .title-underline { width:48px; height:3px; background:linear-gradient(90deg,var(--indigo),#818cf8); border-radius:2px; margin-top:8px; }
+    .btn { display:inline-flex; align-items:center; gap:7px; padding:11px 20px; border-radius:10px; font-family:'Inter',sans-serif; font-size:.875rem; font-weight:600; cursor:pointer; transition:all .2s; border:none; white-space:nowrap; }
+    .btn-primary { background:var(--indigo); color:#fff; }
+    .btn-primary:hover { background:#3730a3; }
+    .btn-gold { background:var(--gold); color:#fff; }
+    .btn-gold:hover { background:#e09510; }
+    .btn-outline { background:#fff; color:var(--navy); border:1.5px solid var(--border); }
+    .btn-outline:hover { border-color:var(--indigo); color:var(--indigo); }
+    .btn-sm { padding:8px 16px; font-size:.82rem; }
+    .toolbar { background:#fff; border-radius:14px; padding:16px 20px; display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:24px; box-shadow:0 2px 10px rgba(0,0,0,.05); }
+    .toolbar label { font-size:.82rem; font-weight:600; color:var(--navy); white-space:nowrap; }
+    .filter-select, .date-input { padding:9px 13px; border:1.5px solid var(--border); border-radius:10px; font-family:'Inter',sans-serif; font-size:.85rem; color:var(--text); outline:none; background:#fff; cursor:pointer; }
+    .filter-select:focus, .date-input:focus { border-color:var(--indigo); }
+    .loading-wrap { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:80px; gap:16px; color:#aaa; }
+    .spinner { width:36px; height:36px; border:3px solid #f0f0f5; border-top-color:var(--indigo); border-radius:50%; animation:spin .7s linear infinite; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    .empty-state { text-align:center; padding:80px 20px; color:#bbb; }
+    .empty-icon { font-size:3rem; margin-bottom:12px; }
+
+    /* ── A4 REPORT CARD ── */
+    .report-wrapper { display:flex; flex-direction:column; gap:28px; }
+
+    .report-card {
+      background:#fff; border-radius:20px;
+      box-shadow:0 4px 24px rgba(0,0,0,.09);
+      overflow:hidden; position:relative;
+    }
+
+    /* ── PRINT / PDF ── */
+    @media print {
+      body { background:#fff !important; padding-top:0 !important; }
+      #navbar-placeholder, .toolbar, .page-header, #printControls { display:none !important; }
+      .report-card { break-inside:avoid; page-break-inside:avoid; box-shadow:none !important; border-radius:0 !important; margin:0 !important; }
+      .report-wrapper { gap:0; }
+    }
+
+    /* A4 proportions for the printable area */
+    .a4-page {
+      width:100%;
+      min-height:auto;
+      padding:0;
+      font-size:13px;
+    }
+
+    /* ── REPORT HEADER ── */
+    .rpt-header {
+      display:flex; justify-content:space-between; align-items:flex-start;
+      padding:28px 36px 20px;
+      border-bottom:2px solid #f0f0f5;
+    }
+    .rpt-logo { display:flex; align-items:center; gap:12px; }
+    .rpt-logo img { height:42px; object-fit:contain; }
+    .rpt-logo-name { font-size:1.3rem; font-weight:900; color:var(--navy); letter-spacing:-.5px; }
+    .rpt-logo-tagline { font-size:.7rem; color:var(--gray); margin-top:2px; }
+    .rpt-address { text-align:right; font-size:.72rem; color:var(--gray); line-height:1.6; }
+
+    /* ── REPORT TITLE ── */
+    .rpt-title-section { padding:24px 36px 0; }
+    .rpt-main-title { font-size:1.5rem; font-weight:900; color:var(--navy); }
+    .rpt-divider { height:2px; background:linear-gradient(90deg,var(--navy),var(--gold),transparent); margin:10px 0; border-radius:2px; }
+    .rpt-meta { display:flex; gap:32px; padding:0 0 16px; font-size:.85rem; }
+    .rpt-meta-item span { font-weight:700; color:var(--navy); }
+    .rpt-meta-item { color:var(--gray); }
+
+    /* ── CHART SECTION ── */
+    .rpt-chart-section { padding:20px 36px; }
+    .rpt-chart-title { font-size:.85rem; font-weight:800; color:var(--navy); text-align:center; margin-bottom:14px; letter-spacing:.3px; }
+    .chart-box { border:1.5px solid #e8e8f5; border-radius:12px; padding:16px; background:#fafafe; position:relative; height:200px; }
+
+    /* ── DATA TABLE SECTION ── */
+    .rpt-table-section { padding:0 36px 20px; }
+    .rpt-section-label { font-size:.72rem; font-weight:800; text-transform:uppercase; letter-spacing:1.2px; color:var(--indigo); margin-bottom:10px; }
+    .rpt-data-table { width:100%; border-collapse:collapse; font-size:.82rem; }
+    .rpt-data-table th { background:#f4f5fb; padding:8px 12px; text-align:left; font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.8px; color:var(--gray); }
+    .rpt-data-table td { padding:9px 12px; border-bottom:1px solid #f0f0f5; }
+    .rpt-data-table tr:last-child td { border-bottom:none; }
+    .rpt-data-table .td-label { color:var(--gray); }
+    .rpt-data-table .td-value { font-weight:600; color:var(--navy); text-align:right; }
+    .rpt-data-table .td-total { font-weight:900; color:var(--indigo); font-size:.9rem; text-align:right; }
+    .rpt-data-table .row-total td { background:#f4f5fb; }
+
+    /* ── INCOME SECTION ── */
+    .rpt-income-section { padding:0 36px 24px; }
+    .income-table { width:100%; border-collapse:collapse; font-size:.82rem; }
+    .income-table th { background:#f4f5fb; padding:8px 12px; text-align:left; font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.8px; color:var(--gray); }
+    .income-table td { padding:9px 12px; border-bottom:1px solid #f0f0f5; }
+    .income-table tr:last-child td { border-bottom:none; }
+    .income-grand { background:linear-gradient(135deg,#1e1b4b,#312e81) !important; }
+    .income-grand td { color:#fff !important; font-weight:900 !important; font-size:1rem !important; padding:12px 14px !important; border-bottom:none !important; }
+    .income-grand .td-grand-val { color:#fbbf24 !important; font-size:1.1rem !important; text-align:right; }
+
+    /* ── VOLUME ANNEX ── */
+    .rpt-annex-section { padding:0 36px 20px; }
+    .vol-table { width:100%; border-collapse:collapse; font-size:.82rem; }
+    .vol-table th { background:#f4f5fb; padding:8px 12px; font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.8px; color:var(--gray); text-align:left; }
+    .vol-table td { padding:9px 12px; border-bottom:1px solid #f0f0f5; }
+    .vol-table tr:last-child td { border-bottom:none; }
+    .vol-table .td-num { text-align:right; font-weight:600; color:var(--navy); }
+    .vol-table .td-no { color:var(--gray); font-size:.75rem; text-align:center; }
+
+    /* ── FOOTER ── */
+    .rpt-footer {
+      display:flex; justify-content:space-between; align-items:center;
+      padding:14px 36px; border-top:1px solid #f0f0f5;
+      font-size:.72rem; color:var(--gray);
+    }
+    .rpt-footer a { color:var(--indigo); text-decoration:none; }
+
+    /* ── SLIP INSENTIF ── */
+    .slip-card { border-top:3px solid var(--gold); }
+    .slip-title { font-size:1.4rem; font-weight:900; text-align:center; color:var(--navy); padding:22px 36px 10px; letter-spacing:1px; text-transform:uppercase; }
+    .slip-divider { height:1.5px; background:#e0e0ef; margin:0 36px 16px; }
+    .slip-meta { padding:0 36px 16px; font-size:.85rem; display:flex; flex-direction:column; gap:4px; color:var(--text); }
+    .slip-meta span { font-weight:700; color:var(--navy); }
+    .slip-section-label { font-size:.75rem; font-weight:900; text-transform:uppercase; letter-spacing:1px; color:var(--navy); padding:0 36px; margin-bottom:6px; text-decoration:underline; }
+    .slip-table { width:calc(100% - 72px); margin:0 36px; border-collapse:collapse; font-size:.85rem; margin-bottom:16px; }
+    .slip-table td { padding:8px 4px; border-bottom:1px solid #f5f5f5; }
+    .slip-table .td-cat { font-weight:700; color:var(--navy); }
+    .slip-table .td-period { color:var(--gray); font-size:.78rem; }
+    .slip-table .td-val { text-align:right; font-weight:600; color:var(--text); }
+    .slip-grand-row { background:linear-gradient(90deg,#fafafe,#fff); }
+    .slip-grand-row td { padding:12px 4px !important; font-weight:900 !important; font-size:1rem !important; border-bottom:none !important; }
+    .slip-grand-val { text-align:right; color:var(--navy); font-size:1.2rem !important; text-decoration:underline; }
+    .slip-nb { margin:0 36px 16px; font-size:.72rem; color:var(--gray); line-height:1.6; border:1px solid #f0f0f5; border-radius:8px; padding:10px 14px; background:#fafafe; }
+    .slip-bank { margin:0 36px 20px; border:1.5px solid #e0e0ef; border-radius:10px; padding:14px 18px; font-size:.82rem; line-height:1.8; background:#fff; }
+    .slip-bank-name { font-weight:700; color:var(--navy); }
+    .slip-bank-acc { color:var(--indigo); font-size:.9rem; font-weight:700; }
+    .slip-bank-note { font-size:.72rem; color:var(--gray); font-style:italic; }
+
+    @media (max-width:700px) { .rpt-header { flex-direction:column; gap:12px; } .rpt-address { text-align:left; } .rpt-meta { flex-direction:column; gap:6px; } }
+  </style>
+</head>
+<body>
+
+<div id="navbar-placeholder"></div>
+<script src="navbar.js"></script>
+
+<div class="page-container">
+  <!-- Screen Header -->
+  <div class="page-header">
+    <div>
+      <div class="page-title">Laporan Komisi Sales</div>
+      <div class="page-subtitle">Generate & export laporan pencapaian per bulan ukuran A4</div>
+      <div class="title-underline"></div>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;" id="printControls">
+      <button class="btn btn-gold btn-sm" onclick="exportPDF()">⬇ Export PDF</button>
+      <button class="btn btn-outline btn-sm" onclick="window.print()">🖨 Print</button>
+    </div>
+  </div>
+
+  <!-- Toolbar / Filter -->
+  <div class="toolbar">
+    <label>Sales:</label>
+    <select class="filter-select" id="filterSales" style="min-width:200px;" onchange="onFilterChange()">
+      <option value="">— Pilih Sales —</option>
+    </select>
+    <label>Bulan:</label>
+    <select class="filter-select" id="filterMonth" onchange="onFilterChange()"></select>
+    <label>Tahun:</label>
+    <select class="filter-select" id="filterYear" onchange="onFilterChange()"></select>
+    <button class="btn btn-primary btn-sm" onclick="generateReport()">Generate Laporan</button>
+  </div>
+
+  <!-- Loading -->
+  <div class="loading-wrap" id="loadingWrap">
+    <div class="spinner"></div>
+    <div style="font-size:.85rem;">Memuat data sales…</div>
+  </div>
+
+  <!-- Empty -->
+  <div class="empty-state" id="emptyState" style="display:none;">
+    <div class="empty-icon">📋</div>
+    <div style="font-size:.95rem;color:#999;">Pilih sales & periode lalu klik <strong>Generate Laporan</strong></div>
+  </div>
+
+  <!-- Report Output -->
+  <div class="report-wrapper" id="reportWrapper" style="display:none;"></div>
+</div>
+
+</body>
+<script>
+let allSales = [];
+let chartYearForAnnotation = null;
+
+async function boot() {
+  const raw = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember');
+  if (!raw) { window.location.replace('login.html'); return; }
+  const _u = JSON.parse(raw);
+  if (!['head_account','admin','head_sales'].includes(_u.role)) { window.location.replace('dashboard.html'); return; }
+
+  await loadSalesList();
+  populateYearMonthFilters();
+  document.getElementById('loadingWrap').style.display = 'none';
+  document.getElementById('emptyState').style.display = 'block';
+}
+
+async function loadSalesList() {
+  try {
+    const { data, error } = await window._supabase
+      .from('users')
+      .select('id, nama, name, sales_code, jabatan, role')
+      .order('nama');
+    if (!error && data) {
+      // Filter: role atau jabatan = sales / head_sales
+      const salesOnly = data.filter(s => {
+        const r = (s.role || s.jabatan || '').toLowerCase();
+        return r === 'sales' || r === 'head_sales';
+      });
+      allSales = salesOnly;
+      const sel = document.getElementById('filterSales');
+      salesOnly.forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s.id;
+        const displayName = s.nama || s.name || s.id;
+        opt.textContent = `${displayName}${s.sales_code ? ' (' + s.sales_code + ')' : ''}`;
+        sel.appendChild(opt);
+      });
+    }
+  } catch(e) { console.error('Load sales:', e); }
+}
+
+function populateYearMonthFilters() {
+  const now = new Date();
+  const selM = document.getElementById('filterMonth');
+  const selY = document.getElementById('filterYear');
+  const months = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+  months.forEach((m,i) => {
+    const opt = document.createElement('option');
+    opt.value = String(i+1).padStart(2,'0');
+    opt.textContent = m;
+    selM.appendChild(opt);
+  });
+  for (let y = now.getFullYear(); y >= 2020; y--) {
+    const opt = document.createElement('option');
+    opt.value = y;
+    opt.textContent = y;
+    selY.appendChild(opt);
+  }
+  selM.value = String(now.getMonth()+1).padStart(2,'0');
+  selY.value = now.getFullYear();
+}
+
+function onFilterChange() { /* noop – user presses Generate */ }
+
+async function generateReport() {
+  const salesId = document.getElementById('filterSales').value;
+  const month   = document.getElementById('filterMonth').value;
+  const year    = document.getElementById('filterYear').value;
+  if (!salesId) { alert('Pilih sales terlebih dahulu'); return; }
+
+  const salesObj = allSales.find(s => s.id === salesId) || {};
+  salesObj.nama = salesObj.nama || salesObj.name || '—';
+  const periodStr = `${year}-${month}`;
+  const months = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+  const monthName = months[parseInt(month,10)-1];
+
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('reportWrapper').style.display = 'none';
+  document.getElementById('loadingWrap').style.display = 'flex';
+
+  try {
+    const [sahamData, oblData, slipInfo, yearSaham, yearObl] = await Promise.all([
+      fetchSahamData(salesId, periodStr),
+      fetchObligasiData(salesId, periodStr),
+      fetchSlipInfo(salesId, periodStr),
+      fetchYearlyFee(salesId, year, 'saham'),
+      fetchYearlyFee(salesId, year, 'obligasi'),
+    ]);
+
+    document.getElementById('loadingWrap').style.display = 'none';
+    document.getElementById('reportWrapper').style.display = 'flex';
+
+    buildReportHTML(salesObj, monthName, month, year, periodStr, sahamData, oblData, slipInfo, yearSaham, yearObl);
+  } catch(e) {
+    console.error(e);
+    document.getElementById('loadingWrap').style.display = 'none';
+    document.getElementById('emptyState').style.display = 'block';
+    alert('Gagal memuat data: ' + e.message);
+  }
+}
+
+async function fetchSahamData(salesId, period) {
+  const [y, m] = period.split('-');
+  const start = `${y}-${m}-01`;
+  const end   = `${y}-${m}-31`;
+  const salesObj2 = allSales.find(s => s.id === salesId) || {};
+  const salesName = salesObj2.nama || salesObj2.name || '';
+  try {
+    // Try sales_id first, fallback to sales_name
+    let rows = [];
+    const { data: d1, error: e1 } = await window._supabase
+      .from('saham_transactions')
+      .select('client_id, client_name, volume, fee, tanggal')
+      .eq('sales_id', salesId)
+      .gte('tanggal', start)
+      .lte('tanggal', end);
+    if (!e1 && d1 && d1.length > 0) {
+      rows = d1;
+    } else if (salesName) {
+      const { data: d2, error: e2 } = await window._supabase
+        .from('saham_transactions')
+        .select('client_id, client_name, volume, fee, tanggal')
+        .eq('sales_name', salesName)
+        .gte('tanggal', start)
+        .lte('tanggal', end);
+      if (!e2 && d2) rows = d2;
+    }
+    const clientMap = {};
+    rows.forEach(r => {
+      if (!clientMap[r.client_id]) clientMap[r.client_id] = { name: r.client_name || r.client_id, volume:0, fee:0 };
+      clientMap[r.client_id].volume += Number(r.volume)||0;
+      clientMap[r.client_id].fee    += Number(r.fee)||0;
+    });
+    const clients = Object.entries(clientMap).map(([id,v]) => ({ id, ...v }));
+    const totalFee    = clients.reduce((s,c) => s + c.fee, 0);
+    const totalVolume = clients.reduce((s,c) => s + c.volume, 0);
+    const tradingCount = clients.filter(c => c.fee > 0).length;
+    return { clients, totalFee, totalVolume, tradingCount, totalCustomer: clients.length };
+  } catch(e) {
+    console.warn('saham_transactions:', e.message);
+    return { clients:[], totalFee:0, totalVolume:0, tradingCount:0, totalCustomer:0 };
+  }
+}
+
+async function fetchObligasiData(salesId, period) {
+  const [y, m] = period.split('-');
+  const start = `${y}-${m}-01T00:00:00`;
+  const end   = `${y}-${m}-31T23:59:59`;
+  let clients = {}, totalFee = 0, totalAmount = 0;
+
+  for (const tbl of ['bb_orders', 'pasar_sekunder_orders']) {
+    try {
+      const qb = window._supabase
+        .from(tbl)
+        .select('client_id, customer_name, client_name, nominal, revenue')
+        .eq('sales_id', salesId)
+        .eq('status', 'verified')
+        .gte('created_at', start)
+        .lte('created_at', end);
+      const { data, error } = await qb;
+      if (!error && data) {
+        data.forEach(o => {
+          const cid  = o.client_id || 'unknown';
+          const name = o.customer_name || o.client_name || cid;
+          const nom  = Number(o.nominal)||0;
+          const rev  = Number(o.revenue)||0;
+          if (!clients[cid]) clients[cid] = { name, volume:0, fee:0 };
+          clients[cid].volume += nom;
+          clients[cid].fee    += rev;
+          totalFee    += rev;
+          totalAmount += nom;
+        });
+      }
+    } catch(e) { console.warn(tbl, e.message); }
+  }
+  const arr = Object.entries(clients).map(([id,v]) => ({ id, ...v }));
+  return { clients: arr, totalFee, totalAmount, tradingCount: arr.filter(c=>c.fee>0).length, totalCustomer: arr.length };
+}
+
+async function fetchSlipInfo(salesId, period) {
+  try {
+    const { data, error } = await window._supabase
+      .from('users')
+      .select('nama, bank_name, bank_account, bank_holder')
+      .eq('id', salesId)
+      .single();
+    if (!error && data) return data;
+  } catch(e) { console.warn('slip info:', e.message); }
+  return {};
+}
+
+async function fetchYearlyFee(salesId, year, type) {
+  const months = Array(12).fill(0);
+  try {
+    if (type === 'saham') {
+      const salesObj3 = allSales.find(s => s.id === salesId) || {};
+      const sName = salesObj3.nama || salesObj3.name || '';
+      // Try sales_id first, then sales_name
+      let fetchedRows = null;
+      const { data: dr1, error: er1 } = await window._supabase
+        .from('saham_transactions')
+        .select('tanggal, fee')
+        .eq('sales_id', salesId)
+        .gte('tanggal', `${year}-01-01`)
+        .lte('tanggal', `${year}-12-31`);
+      if (!er1 && dr1 && dr1.length > 0) {
+        fetchedRows = dr1;
+      } else if (sName) {
+        const { data: dr2, error: er2 } = await window._supabase
+          .from('saham_transactions')
+          .select('tanggal, fee')
+          .eq('sales_name', sName)
+          .gte('tanggal', `${year}-01-01`)
+          .lte('tanggal', `${year}-12-31`);
+        if (!er2 && dr2) fetchedRows = dr2;
+      }
+      if (fetchedRows) {
+        fetchedRows.forEach(r => {
+          const mo = parseInt((r.tanggal||'').split('-')[1],10);
+          if (mo >= 1 && mo <= 12) months[mo-1] += Number(r.fee)||0;
+        });
+      }
+    } else {
+      for (const tbl of ['bb_orders','pasar_sekunder_orders']) {
+        try {
+          const { data, error } = await window._supabase
+            .from(tbl)
+            .select('created_at, revenue')
+            .eq('sales_id', salesId)
+            .eq('status','verified')
+            .gte('created_at', `${year}-01-01T00:00:00`)
+            .lte('created_at', `${year}-12-31T23:59:59`);
+          if (!error && data) {
+            data.forEach(r => {
+              const m = parseInt((r.created_at||'').slice(5,7),10);
+              if (m >= 1 && m <= 12) months[m-1] += Number(r.revenue)||0;
+            });
+          }
+        } catch(e) { console.warn(tbl, e.message); }
+      }
+    }
+  } catch(e) { console.warn('yearly fee:', e.message); }
+  return months;
+}
+
+function fmtRp(n) { return 'Rp ' + Math.round(n||0).toLocaleString('id-ID') + ',-'; }
+function fmtNum(n) { return Math.round(n||0).toLocaleString('id-ID'); }
+
+function buildReportHTML(salesObj, monthName, month, year, period, saham, obl, slip, yearSaham, yearObl) {
+  // Komisi calculation (60% x 10% rule from the PDF)
+  const COMMISSION_SAHAM_RATE  = 0.06; // 60% x 10% = 6%
+  const COMMISSION_OBL_RATE    = 0.06;
+  const COMMISSION_MIN         = 100000;
+
+  const komisiSaham = saham.totalFee * COMMISSION_SAHAM_RATE;
+  const komisiObl   = obl.totalFee   * COMMISSION_OBL_RATE;
+  const grandTotal  = komisiSaham + komisiObl;
+  const willBePaid  = grandTotal >= COMMISSION_MIN;
+
+  const today = new Date();
+  const tanggalSlip = today.toLocaleDateString('id-ID', { day:'numeric', month:'long', year:'numeric' });
+
+  const monthLabels = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Ags','Sept','Okt','Nov','Des'];
+  const currentMonthIdx = parseInt(month,10)-1;
+
+  const wrapper = document.getElementById('reportWrapper');
+  wrapper.innerHTML = '';
+
+  /* ====== PAGE 1 : LAPORAN PENCAPAIAN ====== */
+  const page1 = document.createElement('div');
+  page1.className = 'report-card a4-page';
+  page1.innerHTML = reportHeaderHTML(year) + `
+    <div class="rpt-title-section">
+      <div class="rpt-main-title">Laporan Pencapaian Sales FAWZ</div>
+      <div class="rpt-divider"></div>
+      <div class="rpt-meta">
+        <div class="rpt-meta-item">Nama Sales : <span>${salesObj.nama || '—'}</span></div>
+        ${salesObj.sales_code ? `<div class="rpt-meta-item">Sales Code : <span>${salesObj.sales_code}</span></div>` : ''}
+        <div class="rpt-meta-item">Periode : <span>${monthName} ${year}</span></div>
+      </div>
+    </div>`;
+
+  /* Chart Saham */
+  page1.innerHTML += `
+    <div class="rpt-chart-section">
+      <div class="rpt-chart-title">Pencapaian Fee Saham ${year}</div>
+      <div class="chart-box"><canvas id="chartSaham"></canvas></div>
+    </div>`;
+
+  /* Table Saham */
+  page1.innerHTML += `
+    <div class="rpt-table-section">
+      <div class="rpt-section-label">Keterangan Saham</div>
+      <table class="rpt-data-table">
+        <thead><tr><th style="width:60%">Keterangan</th><th>Total</th></tr></thead>
+        <tbody>
+          <tr><td class="td-label">Trade Fee</td><td class="td-value">${fmtRp(saham.totalFee)}</td></tr>
+          <tr><td class="td-label">Trade Amount</td><td class="td-value">${fmtRp(saham.totalVolume)}</td></tr>
+          <tr><td class="td-label">Total Customer</td><td class="td-value">${saham.totalCustomer} Customer</td></tr>
+          <tr><td class="td-label">Total Customer Baru</td><td class="td-value">—</td></tr>
+          <tr><td class="td-label">Total Customer Trading</td><td class="td-value">${saham.tradingCount}/${saham.totalCustomer} (${saham.totalCustomer ? Math.round(saham.tradingCount/saham.totalCustomer*100) : 0}%)</td></tr>
+        </tbody>
+      </table>
+    </div>`;
+
+  /* Chart Obligasi (only if there is data) */
+  if (obl.totalFee > 0) {
+    page1.innerHTML += `
+      <div class="rpt-chart-section">
+        <div class="rpt-chart-title">Pencapaian Revenue Obligasi ${year}</div>
+        <div class="chart-box"><canvas id="chartObl"></canvas></div>
+      </div>
+      <div class="rpt-table-section">
+        <div class="rpt-section-label">Keterangan Obligasi</div>
+        <table class="rpt-data-table">
+          <thead><tr><th style="width:60%">Keterangan</th><th>Total</th></tr></thead>
+          <tbody>
+            <tr><td class="td-label">Trade Fee</td><td class="td-value">${fmtRp(obl.totalFee)}</td></tr>
+            <tr><td class="td-label">Trade Amount</td><td class="td-value">${fmtRp(obl.totalAmount)}</td></tr>
+            <tr><td class="td-label">Total Customer</td><td class="td-value">${obl.totalCustomer} Customer</td></tr>
+            <tr><td class="td-label">Total Customer Baru</td><td class="td-value">—</td></tr>
+            <tr><td class="td-label">Total Customer Trading</td><td class="td-value">${obl.tradingCount}/${obl.totalCustomer} (${obl.totalCustomer ? Math.round(obl.tradingCount/obl.totalCustomer*100) : 0}%)</td></tr>
+          </tbody>
+        </table>
+      </div>`;
+  }
+
+  /* Penghasilan */
+  page1.innerHTML += `
+    <div class="rpt-income-section">
+      <table class="income-table">
+        <thead><tr><th style="width:50%">Penghasilan</th><th></th><th>Total</th></tr></thead>
+        <tbody>
+          ${saham.totalFee > 0 ? `<tr><td>Komisi Saham</td><td style="font-size:.78rem;color:var(--gray);">(${fmtRp(saham.totalFee)} × 60%) × 10%</td><td style="text-align:right;font-weight:600;">= ${fmtRp(komisiSaham)}</td></tr>` : ''}
+          ${obl.totalFee   > 0 ? `<tr><td>Komisi Obligasi</td><td style="font-size:.78rem;color:var(--gray);">(${fmtRp(obl.totalFee)} × 60%) × 10%</td><td style="text-align:right;font-weight:600;">= ${fmtRp(komisiObl)}</td></tr>` : ''}
+        </tbody>
+        <tfoot>
+          <tr class="income-grand">
+            <td colspan="2"><strong>Total</strong></td>
+            <td class="td-grand-val">${fmtRp(grandTotal)}</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>`;
+
+  page1.innerHTML += reportFooterHTML();
+  wrapper.appendChild(page1);
+
+  /* ====== PAGE 2 : SLIP INSENTIF ====== */
+  const page2 = document.createElement('div');
+  page2.className = 'report-card a4-page slip-card';
+  page2.innerHTML = reportHeaderHTML(year);
+  page2.innerHTML += `<div class="slip-title">Slip Insentif</div><div class="slip-divider"></div>`;
+  page2.innerHTML += `
+    <div class="slip-meta">
+      <div>Tanggal : <span>${tanggalSlip}</span></div>
+      <div>Nama Sales : <span>${salesObj.nama}</span></div>
+      ${salesObj.sales_code ? `<div>Sales Code : <span>${salesObj.sales_code}</span></div>` : ''}
+      <div>Periode : <span>${monthName} ${year}</span></div>
+    </div>`;
+
+  page2.innerHTML += `<div class="slip-section-label">IN</div>`;
+  let slipRows = '';
+  if (saham.totalFee > 0) slipRows += `<tr><td class="td-cat">SAHAM</td><td></td></tr><tr><td class="td-period">${monthName} ${year}</td><td class="td-val">${fmtRp(komisiSaham)}</td></tr>`;
+  if (obl.totalFee > 0)   slipRows += `<tr><td class="td-cat">OBLIGASI</td><td></td></tr><tr><td class="td-period">${monthName} ${year}</td><td class="td-val">${fmtRp(komisiObl)}</td></tr>`;
+  page2.innerHTML += `<table class="slip-table"><tbody>${slipRows}</tbody></table>`;
+
+  page2.innerHTML += `<div class="slip-section-label">OUT</div>`;
+  page2.innerHTML += `<table class="slip-table"><tbody>
+    <tr><td>POTONGAN</td><td class="td-val">Rp. 0</td></tr>
+    <tr><td>PAJAK</td><td class="td-val">Rp. 0</td></tr>
+    <tr class="slip-grand-row"><td class="td-cat"><strong>GRAND TOTAL</strong></td><td class="slip-grand-val"><strong>${fmtRp(grandTotal)}</strong></td></tr>
+  </tbody></table>`;
+
+  if (slip.bank_name) {
+    page2.innerHTML += `
+      <div class="slip-bank">
+        <div>Transfer To A/C <span class="slip-bank-name">${slip.bank_holder || salesObj.nama}</span></div>
+        <div><span class="slip-bank-name">${slip.bank_name}</span> An. <span class="slip-bank-acc">${slip.bank_account || '—'}</span></div>
+        <div class="slip-bank-note">(Pembayaran setiap tgl 25)</div>
+      </div>`;
+  }
+
+  page2.innerHTML += `
+    <div class="slip-nb">
+      Nb : Pembayaran Komisi akan dilakukan hanya untuk yang jumlahnya mencapai atau melebihi
+      Rp100.000. Komisi dengan jumlah kurang dari Rp100.000 tidak akan diproses atau dibayarkan.
+      ${!willBePaid ? '<br><strong style="color:#e74c3c;">⚠ Komisi bulan ini belum mencapai Rp100.000 — tidak akan diproses.</strong>' : ''}
+    </div>`;
+
+  page2.innerHTML += reportFooterHTML();
+  wrapper.appendChild(page2);
+
+  /* ====== PAGE 3 : LAMPIRAN RINCIAN BY VOLUME ====== */
+  if (saham.clients.length > 0) {
+    const page3 = document.createElement('div');
+    page3.className = 'report-card a4-page';
+    page3.innerHTML = reportHeaderHTML(year);
+    page3.innerHTML += `
+      <div class="rpt-title-section">
+        <div class="rpt-main-title" style="text-decoration:underline;">Lampiran Rincian By Volume</div>
+        <div class="rpt-divider"></div>
+      </div>`;
+    let volRows = '';
+    saham.clients.forEach((c,i) => {
+      volRows += `<tr><td class="td-no">${i+1}</td><td>${(c.name||'').toUpperCase()}</td><td class="td-num">${fmtNum(c.volume)}</td></tr>`;
+    });
+    page3.innerHTML += `
+      <div class="rpt-annex-section">
+        <table class="vol-table">
+          <thead><tr><th style="text-align:center;width:40px;">No</th><th>Nama Customer</th><th style="text-align:right;">${monthName} ${year}</th></tr></thead>
+          <tbody>${volRows}</tbody>
+        </table>
+      </div>`;
+    page3.innerHTML += reportFooterHTML(tanggalSlip);
+    wrapper.appendChild(page3);
+  }
+
+  /* Draw Charts after DOM insert */
+  setTimeout(() => {
+    drawBarChart('chartSaham', yearSaham, `Fee Saham ${year}`, currentMonthIdx);
+    if (obl.totalFee > 0) drawBarChart('chartObl', yearObl, `Revenue Obligasi ${year}`, currentMonthIdx);
+  }, 80);
+}
+
+function reportHeaderHTML(year) {
+  return `
+    <div class="rpt-header">
+      <div class="rpt-logo">
+        <img src="assets/logo/fawz.png" alt="FAWZ" onerror="this.style.display='none'"/>
+        <div>
+          <div class="rpt-logo-name">FAWZ</div>
+          <div class="rpt-logo-tagline">PT. Fawz Finansial Indonesia</div>
+        </div>
+      </div>
+      <div class="rpt-address">
+        Komplek Mentari Greenwich no B7-B8,<br>
+        Jl Letda Sujono, Kec. Medan Tembung<br>
+        Sumatera Utara 20223
+      </div>
+    </div>`;
+}
+
+function reportFooterHTML(tanggal) {
+  const dateStr = tanggal || new Date().toLocaleDateString('id-ID', { day:'numeric', month:'long', year:'numeric' });
+  return `
+    <div class="rpt-footer">
+      <span>corporate@goldenfawz.com &nbsp;|&nbsp; +62 81-6361-598 &nbsp;|&nbsp; www.goldenfawz.com</span>
+      <span>Medan, ${dateStr}</span>
+    </div>`;
+}
+
+const MONTH_LABELS = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Ags','Sept','Okt','Nov','Des'];
+const chartInstances = {};
+
+function drawBarChart(canvasId, data, label, highlightIdx) {
+  const ctx = document.getElementById(canvasId);
+  if (!ctx) return;
+  if (chartInstances[canvasId]) { chartInstances[canvasId].destroy(); }
+
+  const colors = data.map((_, i) =>
+    i === highlightIdx ? '#f5a623' : (data[i] > 0 ? '#c7b8f0' : '#e8e8f5')
+  );
+
+  chartInstances[canvasId] = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: MONTH_LABELS,
+      datasets: [{
+        label: label,
+        data: data,
+        backgroundColor: colors,
+        borderRadius: 4,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => 'Rp ' + Math.round(ctx.raw).toLocaleString('id-ID')
+          }
+        },
+        datalabels: { display: false }
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: { font: { size: 10 }, color: '#888' }
+        },
+        y: {
+          display: false,
+          beginAtZero: true
+        }
+      },
+      animation: { duration: 400 }
+    },
+    plugins: [{
+      id: 'valueLabels',
+      afterDatasetsDraw(chart) {
+        const { ctx, data } = chart;
+        chart.getDatasetMeta(0).data.forEach((bar, i) => {
+          const v = data.datasets[0].data[i];
+          if (!v) return;
+          ctx.save();
+          ctx.font = 'bold 9px Inter, sans-serif';
+          ctx.fillStyle = '#333';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'bottom';
+          ctx.fillText('Rp' + Math.round(v).toLocaleString('id-ID'), bar.x, bar.y - 2);
+          ctx.restore();
+        });
+      }
+    }]
+  });
+}
+
+async function exportPDF() {
+  const el = document.getElementById('reportWrapper');
+  if (!el || el.style.display === 'none') { alert('Generate laporan terlebih dahulu'); return; }
+
+  const salesName = document.getElementById('filterSales').selectedOptions[0]?.textContent.split('(')[0].trim() || 'sales';
+  const month = document.getElementById('filterMonth').value;
+  const year  = document.getElementById('filterYear').value;
+  const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Ags','Sept','Okt','Nov','Des'];
+  const mLabel = months[parseInt(month,10)-1];
+
+  const opt = {
+    margin: [8, 8, 8, 8],
+    filename: `Laporan-Komisi-${salesName.replace(/\s+/g,'-')}-${mLabel}${year}.pdf`,
+    image: { type: 'jpeg', quality: 0.97 },
+    html2canvas: { scale: 2, useCORS: true, logging: false },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+    pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+  };
+  await html2pdf().set(opt).from(el).save();
+}
+</script>
+</html>
