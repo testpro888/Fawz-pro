@@ -228,27 +228,42 @@ async function boot() {
 
 async function loadSalesList() {
   try {
+    // Tabel utama: 'sales' (id, nama, kode)
     const { data, error } = await window._supabase
-      .from('users')
-      .select('id, nama, name, sales_code, jabatan, role')
+      .from('sales')
+      .select('id, nama, kode')
       .order('nama');
-    if (!error && data) {
-      // Filter: role atau jabatan = sales / head_sales
-      const salesOnly = data.filter(s => {
-        const r = (s.role || s.jabatan || '').toLowerCase();
-        return r === 'sales' || r === 'head_sales';
-      });
-      allSales = salesOnly;
+    if (!error && data && data.length > 0) {
+      allSales = data.map(s => ({ ...s, sales_code: s.kode, name: s.nama }));
       const sel = document.getElementById('filterSales');
-      salesOnly.forEach(s => {
+      allSales.forEach(s => {
         const opt = document.createElement('option');
         opt.value = s.id;
-        const displayName = s.nama || s.name || s.id;
-        opt.textContent = `${displayName}${s.sales_code ? ' (' + s.sales_code + ')' : ''}`;
+        opt.textContent = `${s.nama}${s.kode ? ' (' + s.kode + ')' : ''}`;
+        sel.appendChild(opt);
+      });
+      return;
+    }
+  } catch(e) { console.warn('sales table:', e.message); }
+
+  // Fallback: tabel 'accounts' dengan role sales/head_sales
+  try {
+    const { data, error } = await window._supabase
+      .from('accounts')
+      .select('id, name, username, role')
+      .in('role', ['sales', 'head_sales'])
+      .order('name');
+    if (!error && data) {
+      allSales = data.map(s => ({ ...s, nama: s.name, sales_code: s.username, kode: s.username }));
+      const sel = document.getElementById('filterSales');
+      allSales.forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s.id;
+        opt.textContent = `${s.name}${s.username ? ' (' + s.username + ')' : ''}`;
         sel.appendChild(opt);
       });
     }
-  } catch(e) { console.error('Load sales:', e); }
+  } catch(e) { console.warn('accounts table:', e.message); }
 }
 
 function populateYearMonthFilters() {
@@ -358,17 +373,19 @@ async function fetchObligasiData(salesId, period) {
   const [y, m] = period.split('-');
   const start = `${y}-${m}-01T00:00:00`;
   const end   = `${y}-${m}-31T23:59:59`;
+  const salesObj2 = allSales.find(s => s.id === salesId) || {};
+  const salesPic = salesObj2.nama || salesObj2.name || '';
   let clients = {}, totalFee = 0, totalAmount = 0;
 
   for (const tbl of ['bb_orders', 'pasar_sekunder_orders']) {
     try {
-      const qb = window._supabase
+      let qb = window._supabase
         .from(tbl)
-        .select('client_id, customer_name, client_name, nominal, revenue')
-        .eq('sales_id', salesId)
+        .select('client_id, customer_name, client_name, nominal, revenue, sales_pic')
         .eq('status', 'verified')
         .gte('created_at', start)
         .lte('created_at', end);
+      if (salesPic) qb = qb.eq('sales_pic', salesPic);
       const { data, error } = await qb;
       if (!error && data) {
         data.forEach(o => {
@@ -390,15 +407,18 @@ async function fetchObligasiData(salesId, period) {
 }
 
 async function fetchSlipInfo(salesId, period) {
+  // Coba dari tabel accounts (ada bank info)
   try {
     const { data, error } = await window._supabase
-      .from('users')
-      .select('nama, bank_name, bank_account, bank_holder')
+      .from('accounts')
+      .select('name, bank_name, bank_account, bank_holder')
       .eq('id', salesId)
       .single();
-    if (!error && data) return data;
-  } catch(e) { console.warn('slip info:', e.message); }
-  return {};
+    if (!error && data) return { ...data, nama: data.name };
+  } catch(e) { console.warn('accounts slip info:', e.message); }
+  // Fallback dari allSales local
+  const s = allSales.find(x => x.id === salesId) || {};
+  return { nama: s.nama || s.name || '', bank_name: '', bank_account: '', bank_holder: '' };
 }
 
 async function fetchYearlyFee(salesId, year, type) {
@@ -433,19 +453,22 @@ async function fetchYearlyFee(salesId, year, type) {
         });
       }
     } else {
+      const salesObj4 = allSales.find(s => s.id === salesId) || {};
+      const sPic = salesObj4.nama || salesObj4.name || '';
       for (const tbl of ['bb_orders','pasar_sekunder_orders']) {
         try {
-          const { data, error } = await window._supabase
+          let qObl = window._supabase
             .from(tbl)
             .select('created_at, revenue')
-            .eq('sales_id', salesId)
             .eq('status','verified')
             .gte('created_at', `${year}-01-01T00:00:00`)
             .lte('created_at', `${year}-12-31T23:59:59`);
+          if (sPic) qObl = qObl.eq('sales_pic', sPic);
+          const { data, error } = await qObl;
           if (!error && data) {
             data.forEach(r => {
-              const m = parseInt((r.created_at||'').slice(5,7),10);
-              if (m >= 1 && m <= 12) months[m-1] += Number(r.revenue)||0;
+              const mo = parseInt((r.created_at||'').slice(5,7),10);
+              if (mo >= 1 && mo <= 12) months[mo-1] += Number(r.revenue)||0;
             });
           }
         } catch(e) { console.warn(tbl, e.message); }
