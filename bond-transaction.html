@@ -192,18 +192,28 @@
           <tr>
             <th>#</th>
             <th>Tanggal</th>
-            <th>Seri Obligasi</th>
+            <th>Seri</th>
             <th>Jenis</th>
-            <th>Sales</th>
-            <th>Nasabah</th>
             <th>Sekuritas</th>
+            <th>Nasabah / Client ID</th>
             <th style="text-align:right;">Nominal</th>
+            <th style="text-align:right;">Unit</th>
+            <th style="text-align:right;">Modal</th>
+            <th style="text-align:right;">Harga Cust</th>
+            <th style="text-align:right;">Rev. Fawz</th>
+            <th style="text-align:right;">Payout Sek.</th>
+            <th style="text-align:right;">Komisi Sales</th>
+            <th>TLA</th>
+            <th style="text-align:right;">Komisi TLA</th>
+            <th style="text-align:right;">Total Exp.</th>
+            <th style="text-align:right;">Profit</th>
+            <th>Sales</th>
             <th>Status</th>
             <th id="thAction" style="text-align:center;">Aksi</th>
           </tr>
         </thead>
         <tbody id="tableBody">
-          <tr><td colspan="10"><div class="loading-wrap"><div class="spinner"></div><div style="font-size:.85rem;">Memuat data...</div></div></td></tr>
+          <tr><td colspan="20"><div class="loading-wrap"><div class="spinner"></div><div style="font-size:.85rem;">Memuat data...</div></div></td></tr>
         </tbody>
       </table>
     </div>
@@ -398,28 +408,42 @@
       if (error) throw error;
 
       allRows = (data || []).map(r => ({
-        id:           r.id,
-        tanggal:      r.tanggal_order || (r.created_at ? r.created_at.slice(0,10) : ''),
-        seri:         r.seri || '—',
-        jenis:        r.jenis_transaksi || 'Beli',
-        category:     r.category || '',
-        salesNama:    r.sales_pic || '—',
-        salesKode:    r.sales_code || '',
-        nasabah:      r.customer_name || '—',
-        clientId:     r.client_id || '',
-        sekuritas:    r.sekuritas_dipakai || '—',
-        nominal:      Number(r.nominal) || 0,
-        unit:         Number(r.unit_amount) || 0,
-        settlement:   r.settlement || '',
-        kupon:        r.kupon,
-        ytm:          r.ytm,
-        jatuhTempo:   r.jatuh_tempo || '',
-        status:       r.status || 'pending',
-        approvedBy:   r.approved_by || '',
-        approvedAt:   r.approved_at || '',
-        rejectedBy:   r.rejected_by || '',
-        rejectedAt:   r.rejected_at || '',
-        catatan:      r.catatan || '',
+        id:             r.id,
+        tanggal:        r.tanggal_order || (r.created_at ? r.created_at.slice(0,10) : ''),
+        seri:           r.seri || '—',
+        jenis:          r.jenis_transaksi || 'Beli',
+        category:       r.category || '',
+        salesNama:      r.sales_pic || '—',
+        salesKode:      r.sales_code || '',
+        nasabah:        r.customer_name || '—',
+        clientId:       r.client_id || '',
+        sekuritas:      r.sekuritas_dipakai || '—',
+        nominal:        Number(r.nominal) || 0,
+        unit:           Number(r.unit_amount) || 0,
+        modalPerUnit:   Number(r.modal_per_unit) || 0,
+        modalTotal:     Number(r.modal_total) || 0,
+        modalSales:     Number(r.modal_to_sales) || 0,
+        hargaCust:      Number(r.harga_to_customer) || 0,
+        revFawz:        Number(r.revenue_fawz) || 0,
+        payoutSek:      Number(r.payout_sekuritas) || 0,
+        revSales:       Number(r.revenue_sales) || 0,
+        commSales:      Number(r.commission_sales) || 0,
+        tlaName:        r.tla_name || '',
+        tlaCode:        Number(r.tla_code) || 0,
+        commTla:        Number(r.commission_tla) || 0,
+        totalExp:       Number(r.total_expenses) || 0,
+        profit:         Number(r.profit) || 0,
+        settlement:     r.settlement || '',
+        kupon:          r.kupon,
+        ytm:            r.ytm,
+        jatuhTempo:     r.jatuh_tempo || '',
+        status:         r.status || 'pending',
+        approvedBy:     r.approved_by || '',
+        approvedAt:     r.approved_at || '',
+        rejectedBy:     r.rejected_by || '',
+        rejectedAt:     r.rejected_at || '',
+        catatan:        r.catatan || '',
+        createdBy:      r.created_by || '',
       }));
 
       applyFilter();
@@ -488,7 +512,7 @@
     const canAct = isBondsDealer || isAdmin;
 
     if (!filtered.length) {
-      tbody.innerHTML = `<tr><td colspan="10"><div class="empty-state">Tidak ada data transaksi</div></td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="20"><div class="empty-state">Tidak ada data transaksi</div></td></tr>`;
       document.getElementById('tableInfo').textContent = '';
       document.getElementById('pagination').innerHTML = '';
       return;
@@ -523,12 +547,22 @@
         <td style="font-size:.8rem;color:var(--gray);white-space:nowrap;">${fmtDate(r.tanggal)}</td>
         <td class="seri-cell">${esc(r.seri)}</td>
         <td>${jenisBadge}</td>
-        <td class="sales-cell">${esc(r.salesNama)}</td>
-        <td class="client-cell">${esc(r.nasabah)}<br><span style="font-size:.72rem;color:#bbb;">${esc(r.clientId)}</span></td>
         <td style="font-size:.8rem;">${esc(r.sekuritas)}</td>
+        <td class="client-cell">${esc(r.nasabah)}<br><span style="font-size:.72rem;color:#bbb;">${esc(r.clientId)}</span></td>
         <td class="nominal-cell">Rp ${r.nominal.toLocaleString('id-ID')}</td>
+        <td style="text-align:right;font-size:.8rem;">${r.unit ? r.unit.toLocaleString('id-ID') : '—'}</td>
+        <td style="text-align:right;font-size:.8rem;">${r.modalTotal ? 'Rp '+Math.round(r.modalTotal).toLocaleString('id-ID') : '—'}</td>
+        <td style="text-align:right;font-size:.8rem;">${r.hargaCust ? 'Rp '+Math.round(r.hargaCust).toLocaleString('id-ID') : '—'}</td>
+        <td style="text-align:right;font-size:.8rem;color:var(--green);font-weight:600;">${r.revFawz ? 'Rp '+Math.round(r.revFawz).toLocaleString('id-ID') : '—'}</td>
+        <td style="text-align:right;font-size:.8rem;">${r.payoutSek ? 'Rp '+Math.round(r.payoutSek).toLocaleString('id-ID') : '—'}</td>
+        <td style="text-align:right;font-size:.8rem;color:var(--red);">${r.commSales ? 'Rp '+Math.round(r.commSales).toLocaleString('id-ID') : '—'}</td>
+        <td style="font-size:.8rem;">${r.tlaName ? esc(r.tlaName) : '—'}</td>
+        <td style="text-align:right;font-size:.8rem;color:var(--red);">${r.commTla ? 'Rp '+Math.round(r.commTla).toLocaleString('id-ID') : '—'}</td>
+        <td style="text-align:right;font-size:.8rem;color:var(--red);font-weight:600;">${r.totalExp ? 'Rp '+Math.round(r.totalExp).toLocaleString('id-ID') : '—'}</td>
+        <td style="text-align:right;font-size:.8rem;color:var(--gold);font-weight:700;">${r.profit ? 'Rp '+Math.round(r.profit).toLocaleString('id-ID') : '—'}</td>
+        <td class="sales-cell" style="font-size:.8rem;">${esc(r.salesNama)}</td>
         <td>${statusBadge}</td>
-        ${canAct ? `<td onclick="event.stopPropagation()">${actionCell}</td>` : ''}
+        ${canAct ? `<td onclick="event.stopPropagation()">${actionCell}</td>` : (canDelete ? `<td onclick="event.stopPropagation()">${actionCell}</td>` : '')}
       </tr>`;
     }).join('');
 
@@ -555,23 +589,33 @@
       <div class="detail-grid">
         <div class="detail-item"><label>Seri</label><div class="val" style="font-family:'Courier New',monospace;">${esc(r.seri)}</div></div>
         <div class="detail-item"><label>Jenis Transaksi</label><div class="val">${esc(r.jenis)}</div></div>
-        <div class="detail-item"><label>Kategori</label><div class="val">${esc(r.category)}</div></div>
+        <div class="detail-item"><label>Sekuritas</label><div class="val">${esc(r.sekuritas)}</div></div>
         <div class="detail-item"><label>Tanggal Order</label><div class="val">${fmtDate(r.tanggal)}</div></div>
         <div class="detail-item"><label>Kupon</label><div class="val">${r.kupon != null ? Number(r.kupon).toFixed(3)+'%' : '—'}</div></div>
         <div class="detail-item"><label>YTM</label><div class="val">${r.ytm != null ? Number(r.ytm).toFixed(4)+'%' : '—'}</div></div>
-        <div class="detail-item"><label>Jatuh Tempo</label><div class="val">${fmtDate(r.jatuhTempo)}</div></div>
-        <div class="detail-item"><label>Settlement</label><div class="val">${fmtDate(r.settlement)}</div></div>
       </div>
-      <div class="detail-section-title">Informasi Transaksi</div>
+      <div class="detail-section-title">Nasabah & Sales</div>
       <div class="detail-grid">
-        <div class="detail-item"><label>Sales</label><div class="val">${esc(r.salesNama)}</div></div>
-        <div class="detail-item"><label>Sales Code</label><div class="val">${esc(r.salesKode||'—')}</div></div>
         <div class="detail-item"><label>Nasabah</label><div class="val">${esc(r.nasabah)}</div></div>
         <div class="detail-item"><label>Client ID</label><div class="val">${esc(r.clientId)}</div></div>
+        <div class="detail-item"><label>Sales</label><div class="val">${esc(r.salesNama)}</div></div>
+        <div class="detail-item"><label>TLA</label><div class="val">${esc(r.tlaName||'—')} ${r.tlaCode ? '<span style="font-size:.7rem;color:var(--gold);">(Code '+r.tlaCode+')</span>' : ''}</div></div>
+      </div>
+      <div class="detail-section-title">Nilai & Kalkulasi</div>
+      <div class="detail-grid">
         <div class="detail-item"><label>Nominal</label><div class="val" style="color:var(--green);">Rp ${r.nominal.toLocaleString('id-ID')}</div></div>
-        <div class="detail-item"><label>Unit</label><div class="val">${r.unit.toLocaleString('id-ID')}</div></div>
-        <div class="detail-item"><label>Sekuritas</label><div class="val">${esc(r.sekuritas)}</div></div>
-        <div class="detail-item"><label>Status</label><div class="val">${r.status}</div></div>
+        <div class="detail-item"><label>Unit Count</label><div class="val">${r.unit ? r.unit.toLocaleString('id-ID') : '—'}</div></div>
+        <div class="detail-item"><label>Modal / Unit</label><div class="val">${r.modalPerUnit ? 'Rp '+Math.round(r.modalPerUnit).toLocaleString('id-ID') : '—'}</div></div>
+        <div class="detail-item"><label>Modal Total</label><div class="val">${r.modalTotal ? 'Rp '+Math.round(r.modalTotal).toLocaleString('id-ID') : '—'}</div></div>
+        <div class="detail-item"><label>Modal to Sales</label><div class="val">${r.modalSales ? 'Rp '+Math.round(r.modalSales).toLocaleString('id-ID') : '—'}</div></div>
+        <div class="detail-item"><label>Harga to Customer</label><div class="val">${r.hargaCust ? 'Rp '+Math.round(r.hargaCust).toLocaleString('id-ID') : '—'}</div></div>
+        <div class="detail-item"><label>Revenue Fawz</label><div class="val" style="color:var(--green);font-weight:700;">${r.revFawz ? 'Rp '+Math.round(r.revFawz).toLocaleString('id-ID') : '—'}</div></div>
+        <div class="detail-item"><label>Payout Sekuritas (30%)</label><div class="val">${r.payoutSek ? 'Rp '+Math.round(r.payoutSek).toLocaleString('id-ID') : '—'}</div></div>
+        <div class="detail-item"><label>Revenue Sales</label><div class="val">${r.revSales ? 'Rp '+Math.round(r.revSales).toLocaleString('id-ID') : '—'}</div></div>
+        <div class="detail-item"><label>Komisi Sales</label><div class="val" style="color:var(--red);">${r.commSales ? 'Rp '+Math.round(r.commSales).toLocaleString('id-ID') : '—'}</div></div>
+        <div class="detail-item"><label>Komisi TLA</label><div class="val" style="color:var(--red);">${r.commTla ? 'Rp '+Math.round(r.commTla).toLocaleString('id-ID') : '—'}</div></div>
+        <div class="detail-item"><label>Total Expenses</label><div class="val" style="color:var(--red);font-weight:700;">${r.totalExp ? 'Rp '+Math.round(r.totalExp).toLocaleString('id-ID') : '—'}</div></div>
+        <div class="detail-item full"><label>Profit Fawz</label><div class="val" style="color:var(--gold);font-size:1.1rem;font-weight:700;">${r.profit ? 'Rp '+Math.round(r.profit).toLocaleString('id-ID') : '—'}</div></div>
         ${r.approvedBy ? `<div class="detail-item full"><label>Disetujui Oleh</label><div class="val">${esc(r.approvedBy)} — ${fmtDate(r.approvedAt)}</div></div>` : ''}
         ${r.rejectedBy ? `<div class="detail-item full"><label>Ditolak Oleh</label><div class="val" style="color:var(--red);">${esc(r.rejectedBy)} — ${fmtDate(r.rejectedAt)}</div></div>` : ''}
       </div>`;
