@@ -192,6 +192,13 @@
     <select class="filter-select" id="filterYear" onchange="onFilterChange()"></select>
     <button class="btn btn-primary btn-sm" onclick="generateReport()">Generate Laporan</button>
   </div>
+  <!-- Bank Info Row -->
+  <div class="toolbar" style="margin-top:-14px;">
+    <label>Nama Bank:</label>
+    <input type="text" id="inputBankName" class="filter-select" placeholder="contoh: BCA" style="min-width:120px;"/>
+    <label>No. Rekening:</label>
+    <input type="text" id="inputBankAccount" class="filter-select" placeholder="contoh: 022 1551 795" style="min-width:180px;"/>
+  </div>
 
   <!-- Loading -->
   <div class="loading-wrap" id="loadingWrap">
@@ -293,6 +300,8 @@ async function generateReport() {
   const salesId = document.getElementById('filterSales').value;
   const month   = document.getElementById('filterMonth').value;
   const year    = document.getElementById('filterYear').value;
+  const bankName    = document.getElementById('inputBankName').value.trim();
+  const bankAccount = document.getElementById('inputBankAccount').value.trim();
   if (!salesId) { alert('Pilih sales terlebih dahulu'); return; }
 
   const salesObj = allSales.find(s => s.id === salesId) || {};
@@ -317,7 +326,7 @@ async function generateReport() {
     document.getElementById('loadingWrap').style.display = 'none';
     document.getElementById('reportWrapper').style.display = 'flex';
 
-    buildReportHTML(salesObj, monthName, month, year, periodStr, sahamData, oblData, slipInfo, yearSaham, yearObl);
+    buildReportHTML(salesObj, monthName, month, year, periodStr, sahamData, oblData, slipInfo, yearSaham, yearObl, bankName, bankAccount);
   } catch(e) {
     console.error(e);
     document.getElementById('loadingWrap').style.display = 'none';
@@ -519,7 +528,7 @@ async function fetchYearlyFee(salesId, year, type) {
 function fmtRp(n) { return 'Rp ' + Math.round(n||0).toLocaleString('id-ID') + ',-'; }
 function fmtNum(n) { return Math.round(n||0).toLocaleString('id-ID'); }
 
-function buildReportHTML(salesObj, monthName, month, year, period, saham, obl, slip, yearSaham, yearObl) {
+function buildReportHTML(salesObj, monthName, month, year, period, saham, obl, slip, yearSaham, yearObl, bankName, bankAccount) {
   const COMMISSION_SAHAM_RATE = 0.06; // (60%) x 10% = 6%
   const COMMISSION_OBL_RATE   = 0.06;
   const COMMISSION_MIN        = 100000;
@@ -640,13 +649,12 @@ function buildReportHTML(salesObj, monthName, month, year, period, saham, obl, s
   </tbody></table>`;
 
   /* Bank info box */
-  const bankName = slip.bank_name || '—';
-  const bankAcc  = slip.bank_account || '—';
-  const bankHolder = slip.bank_holder || salesObj.nama || '—';
+  const finalBankName = bankName || slip.bank_name || '—';
+  const finalBankAcc  = bankAccount || slip.bank_account || '—';
   page2.innerHTML += `
     <div class="slip-bank">
       <div>Transfer To A/C <span class="slip-bank-name">${salesObj.nama}</span></div>
-      <div><span class="slip-bank-name">${bankName}</span> An. <span class="slip-bank-acc">${bankAcc}</span></div>
+      <div><span class="slip-bank-name">${finalBankName}</span> An. <span class="slip-bank-acc">${finalBankAcc}</span></div>
       <div class="slip-bank-note">(Pembayaran setiap tgl 25)</div>
     </div>`;
 
