@@ -234,43 +234,89 @@ async function boot() {
 }
 
 async function loadSalesList() {
+  // Ambil unique sales_name dari saham_transaksi — sama persis dengan sales-commission.html
+  // Ini memastikan nama yang dipakai selalu cocok dengan data transaksi
+  const namesFromTx = new Set();
   try {
-    // Tabel utama: 'sales' (id, nama, kode)
+    let offset = 0, pageSize = 1000, hasMore = true;
+    while (hasMore) {
+      const { data, error } = await window._supabase
+        .from('saham_transaksi')
+        .select('sales_name')
+        .not('sales_name', 'is', null)
+        .not('fee', 'is', null)
+        .gt('fee', 0)
+        .range(offset, offset + pageSize - 1);
+      if (error || !data) break;
+      data.forEach(r => { if (r.sales_name) namesFromTx.add(r.sales_name.trim()); });
+      if (data.length < pageSize) hasMore = false;
+      else offset += pageSize;
+    }
+  } catch(e) { console.warn('saham_transaksi names:', e.message); }
+
+  // Juga tambahkan dari bb_orders (sales_pic)
+  try {
+    const { data, error } = await window._supabase
+      .from('bb_orders')
+      .select('sales_pic')
+      .not('sales_pic', 'is', null)
+      .eq('status', 'verified');
+    if (!error && data) data.forEach(r => { if (r.sales_pic) namesFromTx.add(r.sales_pic.trim()); });
+  } catch(e) { /* skip */ }
+
+  // Merge dengan tabel sales untuk ambil kode
+  let salesTableMap = {};
+  try {
     const { data, error } = await window._supabase
       .from('sales')
       .select('id, nama, kode')
       .order('nama');
-    if (!error && data && data.length > 0) {
-      allSales = data.map(s => ({ ...s, sales_code: s.kode, name: s.nama }));
-      const sel = document.getElementById('filterSales');
-      allSales.forEach(s => {
-        const opt = document.createElement('option');
-        opt.value = s.id;
-        opt.textContent = `${s.nama}${s.kode ? ' (' + s.kode + ')' : ''}`;
-        sel.appendChild(opt);
-      });
-      return;
-    }
-  } catch(e) { console.warn('sales table:', e.message); }
-
-  // Fallback: tabel 'accounts' dengan role sales/head_sales
-  try {
-    const { data, error } = await window._supabase
-      .from('accounts')
-      .select('id, name, username, role')
-      .in('role', ['sales', 'head_sales'])
-      .order('name');
     if (!error && data) {
-      allSales = data.map(s => ({ ...s, nama: s.name, sales_code: s.username, kode: s.username }));
-      const sel = document.getElementById('filterSales');
-      allSales.forEach(s => {
-        const opt = document.createElement('option');
-        opt.value = s.id;
-        opt.textContent = `${s.name}${s.username ? ' (' + s.username + ')' : ''}`;
-        sel.appendChild(opt);
+      data.forEach(s => {
+        salesTableMap[(s.nama||'').toLowerCase().trim()] = s;
       });
     }
-  } catch(e) { console.warn('accounts table:', e.message); }
+  } catch(e) { /* skip */ }
+
+  // Build allSales dari nama transaksi, enriched dengan data tabel sales jika ada
+  const sel = document.getElementById('filterSales');
+  const sortedNames = [...namesFromTx].sort((a,b) => a.localeCompare(b));
+
+  // Fallback: jika tidak ada data transaksi, ambil dari tabel sales
+  if (sortedNames.length === 0) {
+    try {
+      const { data, error } = await window._supabase
+        .from('sales').select('id, nama, kode').order('nama');
+      if (!error && data) {
+        allSales = data.map(s => ({ ...s, sales_code: s.kode, name: s.nama }));
+        allSales.forEach(s => {
+          const opt = document.createElement('option');
+          opt.value = s.id;
+          opt.textContent = `${s.nama}${s.kode ? ' (' + s.kode + ')' : ''}`;
+          sel.appendChild(opt);
+        });
+      }
+    } catch(e) { console.warn('sales fallback:', e.message); }
+    return;
+  }
+
+  allSales = sortedNames.map((nama, i) => {
+    const match = salesTableMap[nama.toLowerCase().trim()];
+    return {
+      id: match ? match.id : `tx_${i}`,
+      nama: nama,
+      name: nama,
+      kode: match ? match.kode : '',
+      sales_code: match ? match.kode : '',
+    };
+  });
+
+  allSales.forEach(s => {
+    const opt = document.createElement('option');
+    opt.value = s.id;
+    opt.textContent = `${s.nama}${s.kode ? ' (' + s.kode + ')' : ''}`;
+    sel.appendChild(opt);
+  });
 }
 
 function populateYearMonthFilters() {
