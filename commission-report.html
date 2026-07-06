@@ -303,17 +303,18 @@ async function loadSalesList() {
   allSales = sortedNames.map((nama, i) => {
     const match = salesTableMap[nama.toLowerCase().trim()];
     return {
-      id: match ? match.id : `tx_${i}`,
+      id: nama,   // gunakan nama langsung sebagai id — eliminasi ambiguitas lookup
       nama: nama,
       name: nama,
       kode: match ? match.kode : '',
       sales_code: match ? match.kode : '',
+      dbId: match ? match.id : null,
     };
   });
 
   allSales.forEach(s => {
     const opt = document.createElement('option');
-    opt.value = s.id;
+    opt.value = s.id;   // value = nama sales itu sendiri
     opt.textContent = `${s.nama}${s.kode ? ' (' + s.kode + ')' : ''}`;
     sel.appendChild(opt);
   });
@@ -350,9 +351,9 @@ async function generateReport() {
   const bankAccount = document.getElementById('inputBankAccount').value.trim();
   if (!salesId) { alert('Pilih sales terlebih dahulu'); return; }
 
-  const salesObj = allSales.find(s => s.id === salesId) || {};
-  salesObj.nama = salesObj.nama || salesObj.name || '—';
-  console.log('[commission-report] generateReport salesId:', salesId, '→ salesObj:', salesObj);
+  const salesObj = allSales.find(s => s.id === salesId) || { nama: salesId, name: salesId };
+  salesObj.nama = salesObj.nama || salesObj.name || salesId;
+  console.log('[commission-report] generateReport salesId(=nama):', salesId, '→ salesObj:', salesObj);
   const periodStr = `${year}-${month}`;
   const months = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
   const monthName = months[parseInt(month,10)-1];
@@ -385,12 +386,11 @@ async function generateReport() {
 async function fetchSahamData(salesId, period) {
   const [y, m] = period.split('-');
   const start = `${y}-${m}-01`;
-  // Hitung hari terakhir bulan yang benar (hindari 31 untuk bulan 30 hari)
   const lastDay = new Date(parseInt(y), parseInt(m), 0).getDate();
   const end = `${y}-${m}-${String(lastDay).padStart(2,'0')}`;
-  const salesObj2 = allSales.find(s => s.id === salesId) || {};
-  const salesName = (salesObj2.nama || salesObj2.name || '').trim();
-  console.log('[commission-report] fetchSahamData salesId:', salesId, '→ salesName:', salesName, '| period:', period, start, '→', end);
+  // salesId IS nama sales (value dari dropdown = nama langsung)
+  const salesName = salesId.trim();
+  console.log('[commission-report] fetchSahamData salesName:', salesName, '| range:', start, '→', end);
 
   // Total Customer dari tabel customers (case-insensitive)
   let totalAllCustomers = 0;
@@ -449,8 +449,7 @@ async function fetchObligasiData(salesId, period) {
   const start = `${y}-${m}-01T00:00:00`;
   const lastDay = new Date(parseInt(y), parseInt(m), 0).getDate();
   const end = `${y}-${m}-${String(lastDay).padStart(2,'0')}T23:59:59`;
-  const salesObj2 = allSales.find(s => s.id === salesId) || {};
-  const salesPic  = salesObj2.nama || salesObj2.name || '';
+  const salesPic = salesId.trim(); // salesId IS nama sales
   let clients = {}, totalFee = 0, totalAmount = 0;
 
   const RATE_OBL = 0.001; // fallback rate jika tidak ada field komisi
@@ -507,24 +506,21 @@ async function fetchObligasiData(salesId, period) {
 }
 
 async function fetchSlipInfo(salesId, period) {
-  // Ambil info bank dari tabel sales (field bank_name, bank_account, bank_holder jika ada)
+  const salesName = salesId.trim(); // salesId IS nama sales
   try {
     const { data, error } = await window._supabase
       .from('sales')
       .select('nama, bank_name, bank_account, bank_holder')
-      .eq('id', salesId)
-      .single();
-    if (!error && data) return { ...data, nama: data.nama };
-  } catch(e) { /* field mungkin tidak ada, fallback */ }
-  // Fallback dari allSales local
-  const s = allSales.find(x => x.id === salesId) || {};
-  return { nama: s.nama || s.name || '', bank_name: '', bank_account: '', bank_holder: '' };
+      .ilike('nama', salesName)
+      .maybeSingle();
+    if (!error && data) return { ...data };
+  } catch(e) { /* skip */ }
+  return { nama: salesName, bank_name: '', bank_account: '', bank_holder: '' };
 }
 
 async function fetchYearlyFee(salesId, year, type) {
   const months = Array(12).fill(0);
-  const salesObj3 = allSales.find(s => s.id === salesId) || {};
-  const sName = (salesObj3.nama || salesObj3.name || '').trim();
+  const sName = salesId.trim(); // salesId IS nama sales
   if (!sName) return months;
 
   try {
