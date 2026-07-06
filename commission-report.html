@@ -532,10 +532,10 @@ function buildReportHTML(salesObj, monthName, month, year, period, saham, obl, s
   const tanggalHariIni = today.toLocaleDateString('id-ID', { day:'numeric', month:'long', year:'numeric' });
 
   const currentMonthIdx = parseInt(month,10) - 1;
-  // Chart hanya tampilkan Jan s/d bulan yg dipilih
-  const chartSahamData = yearSaham.slice(0, currentMonthIdx + 1);
-  const chartOblData   = yearObl.slice(0, currentMonthIdx + 1);
-  const chartLabels    = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Ags','Sept','Okt','Nov','Des'].slice(0, currentMonthIdx + 1);
+  // Chart 12 bulan penuh — bulan setelah yang dipilih = 0
+  const chartSahamData = yearSaham.map((v, i) => i <= currentMonthIdx ? v : 0);
+  const chartOblData   = yearObl.map((v, i)   => i <= currentMonthIdx ? v : 0);
+  const chartLabels    = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Ags','Sept','Okt','Nov','Des'];
 
   // Total Customer Trading: customer yg punya fee > 0 di bulan ini
   const tradingCustomers = saham.tradingCustomers || 0;
