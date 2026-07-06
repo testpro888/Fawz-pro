@@ -352,6 +352,7 @@ async function generateReport() {
 
   const salesObj = allSales.find(s => s.id === salesId) || {};
   salesObj.nama = salesObj.nama || salesObj.name || '—';
+  console.log('[commission-report] generateReport salesId:', salesId, '→ salesObj:', salesObj);
   const periodStr = `${year}-${month}`;
   const months = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
   const monthName = months[parseInt(month,10)-1];
@@ -389,6 +390,7 @@ async function fetchSahamData(salesId, period) {
   const end = `${y}-${m}-${String(lastDay).padStart(2,'0')}`;
   const salesObj2 = allSales.find(s => s.id === salesId) || {};
   const salesName = (salesObj2.nama || salesObj2.name || '').trim();
+  console.log('[commission-report] fetchSahamData salesId:', salesId, '→ salesName:', salesName, '| period:', period, start, '→', end);
 
   // Total Customer dari tabel customers (case-insensitive)
   let totalAllCustomers = 0;
