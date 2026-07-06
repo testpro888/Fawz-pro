@@ -451,7 +451,10 @@
         console.log(`bb_orders offset=${offset}: ${data.length} rows`);
         data.forEach(o => {
           const nominal = Number(o.nominal) || 0;
-          const revenue = o.revenue != null ? Number(o.revenue) : nominal * FEE_OBLIGASI;
+          // Prioritas: revenue_fawz > revenue > fallback nominal * fee
+          const revenue = o.revenue_fawz != null ? Number(o.revenue_fawz)
+                        : o.revenue      != null ? Number(o.revenue)
+                        : nominal * FEE_OBLIGASI;
           allRows.push({
             id:          o.id,
             sumber:      'obligasi',
