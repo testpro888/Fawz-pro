@@ -384,7 +384,9 @@ async function generateReport() {
 async function fetchSahamData(salesId, period) {
   const [y, m] = period.split('-');
   const start = `${y}-${m}-01`;
-  const end   = `${y}-${m}-31`;
+  // Hitung hari terakhir bulan yang benar (hindari 31 untuk bulan 30 hari)
+  const lastDay = new Date(parseInt(y), parseInt(m), 0).getDate();
+  const end = `${y}-${m}-${String(lastDay).padStart(2,'0')}`;
   const salesObj2 = allSales.find(s => s.id === salesId) || {};
   const salesName = (salesObj2.nama || salesObj2.name || '').trim();
 
@@ -443,7 +445,8 @@ async function fetchSahamData(salesId, period) {
 async function fetchObligasiData(salesId, period) {
   const [y, m] = period.split('-');
   const start = `${y}-${m}-01T00:00:00`;
-  const end   = `${y}-${m}-31T23:59:59`;
+  const lastDay = new Date(parseInt(y), parseInt(m), 0).getDate();
+  const end = `${y}-${m}-${String(lastDay).padStart(2,'0')}T23:59:59`;
   const salesObj2 = allSales.find(s => s.id === salesId) || {};
   const salesPic  = salesObj2.nama || salesObj2.name || '';
   let clients = {}, totalFee = 0, totalAmount = 0;
