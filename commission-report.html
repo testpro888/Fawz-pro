@@ -62,8 +62,9 @@
     @media print {
       body { background:#fff !important; padding-top:0 !important; }
       #navbar-placeholder, .toolbar, .page-header, #printControls { display:none !important; }
-      .report-card { break-inside:avoid; page-break-inside:avoid; box-shadow:none !important; border-radius:0 !important; margin:0 !important; }
+      .report-card { break-inside:avoid; page-break-inside:avoid; page-break-after:always; box-shadow:none !important; border-radius:0 !important; margin:0 !important; min-height:100vh; }
       .report-wrapper { gap:0; }
+      .a4-page { min-height:100vh; }
     }
 
     /* A4 proportions for the printable area */
@@ -97,7 +98,7 @@
     /* ── CHART SECTION ── */
     .rpt-chart-section { padding:20px 36px 28px; }
     .rpt-chart-title { font-size:.85rem; font-weight:600; color:var(--navy); text-align:center; margin-bottom:14px; letter-spacing:.3px; }
-    .chart-box { border:1.5px solid #e8e8f5; border-radius:12px; padding:16px 16px 32px; background:#fafafe; position:relative; height:270px; }
+    .chart-box { border:1.5px solid #e8e8f5; border-radius:12px; padding:12px 12px 8px; background:#fafafe; position:relative; height:200px; }
 
     /* ── DATA TABLE SECTION ── */
     .rpt-table-section { padding:0 36px 20px; }
@@ -138,6 +139,9 @@
       font-size:.72rem; color:var(--gray); text-align:center;
     }
     .rpt-footer a { color:var(--indigo); text-decoration:none; }
+
+    /* Push footer ke bawah — wrapper konten sebelum footer grow */
+    .rpt-body-content { flex:1; }
 
     /* ── SLIP INSENTIF ── */
     .slip-card { border-top: none; }
@@ -822,11 +826,13 @@ function reportHeaderHTML() {
         Jl Letda Sujono, Kec. Medan Tembung<br>
         Sumatera Utara 20223
       </div>
-    </div>`;
+    </div>
+    <div class="rpt-body-content">`;
 }
 
 function reportFooterHTML(tanggal) {
   return `
+    </div>
     <div class="rpt-footer">
       <span>corporate@goldenfawz.com &nbsp;|&nbsp; +62 81-6361-598 &nbsp;|&nbsp; www.goldenfawz.com</span>
     </div>`;
@@ -860,7 +866,7 @@ function drawBarChart(canvasId, data, labels, label, highlightIdx) {
       responsive: true,
       maintainAspectRatio: false,
       layout: {
-        padding: { top: 20, bottom: 5, left: 5, right: 5 }
+        padding: { top: 18, bottom: 0, left: 0, right: 0 }
       },
       plugins: {
         legend: { display: false },
@@ -874,7 +880,7 @@ function drawBarChart(canvasId, data, labels, label, highlightIdx) {
       scales: {
         x: {
           grid: { display: false },
-          ticks: { font: { size: 10 }, color: '#888', maxRotation: 0, minRotation: 0 }
+          ticks: { font: { size: 9 }, color: '#888', maxRotation: 0, minRotation: 0 }
         },
         y: {
           display: false,
