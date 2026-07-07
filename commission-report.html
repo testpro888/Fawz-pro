@@ -192,9 +192,9 @@
   <!-- Bank Info Row -->
   <div class="toolbar" style="margin-top:-14px;">
     <label>Nama Bank:</label>
-    <input type="text" id="inputBankName" class="filter-select" placeholder="contoh: BCA" style="min-width:120px;"/>
+    <input type="text" id="inputBankName" class="filter-select" placeholder="contoh: BCA" style="min-width:120px;" oninput="this.dataset.manual='1'"/>
     <label>No. Rekening:</label>
-    <input type="text" id="inputBankAccount" class="filter-select" placeholder="contoh: 022 1551 795" style="min-width:180px;"/>
+    <input type="text" id="inputBankAccount" class="filter-select" placeholder="contoh: 022 1551 795" style="min-width:180px;" oninput="this.dataset.manual='1'"/>
   </div>
 
   <!-- Loading -->
@@ -261,12 +261,12 @@ async function loadSalesList() {
     if (!error && data) data.forEach(r => { if (r.sales_pic) namesFromTx.add(r.sales_pic.trim()); });
   } catch(e) { /* skip */ }
 
-  // Merge dengan tabel sales untuk ambil kode
+  // Merge dengan tabel sales untuk ambil kode + bank info
   let salesTableMap = {};
   try {
     const { data, error } = await window._supabase
       .from('sales')
-      .select('id, nama, kode')
+      .select('id, nama, kode, bank, rekening, nama_rekening')
       .order('nama');
     if (!error && data) {
       data.forEach(s => {
@@ -300,12 +300,15 @@ async function loadSalesList() {
   allSales = sortedNames.map((nama, i) => {
     const match = salesTableMap[nama.toLowerCase().trim()];
     return {
-      id: nama,   // gunakan nama langsung sebagai id — eliminasi ambiguitas lookup
-      nama: nama,
-      name: nama,
-      kode: match ? match.kode : '',
-      sales_code: match ? match.kode : '',
-      dbId: match ? match.id : null,
+      id:          nama,
+      nama:        nama,
+      name:        nama,
+      kode:        match ? match.kode          : '',
+      sales_code:  match ? match.kode          : '',
+      dbId:        match ? match.id            : null,
+      bank:        match ? (match.bank         || '') : '',
+      rekening:    match ? (match.rekening     || '') : '',
+      nama_rekening: match ? (match.nama_rekening || '') : '',
     };
   });
 
@@ -338,7 +341,20 @@ function populateYearMonthFilters() {
   selY.value = now.getFullYear();
 }
 
-function onFilterChange() { /* noop – user presses Generate */ }
+function onFilterChange() {
+  // Auto-fill bank & rekening dari data sales saat dropdown berubah
+  const salesId = document.getElementById('filterSales').value;
+  if (!salesId) return;
+  const salesObj = allSales.find(s => s.id === salesId);
+  if (!salesObj) return;
+  const bankInput = document.getElementById('inputBankName');
+  const rekInput  = document.getElementById('inputBankAccount');
+  // Reset manual flag dan isi ulang dari data sales
+  delete bankInput.dataset.manual;
+  delete rekInput.dataset.manual;
+  bankInput.value = salesObj.bank     || '';
+  rekInput.value  = salesObj.rekening || '';
+}
 
 async function generateReport() {
   const salesId = document.getElementById('filterSales').value;
@@ -503,14 +519,19 @@ async function fetchObligasiData(salesId, period) {
 }
 
 async function fetchSlipInfo(salesId, period) {
-  const salesName = salesId.trim(); // salesId IS nama sales
+  const salesName = salesId.trim();
   try {
     const { data, error } = await window._supabase
       .from('sales')
-      .select('nama, bank_name, bank_account, bank_holder')
+      .select('nama, bank, rekening, nama_rekening')
       .ilike('nama', salesName)
       .maybeSingle();
-    if (!error && data) return { ...data };
+    if (!error && data) return {
+      nama:          data.nama         || salesName,
+      bank_name:     data.bank         || '',
+      bank_account:  data.rekening     || '',
+      bank_holder:   data.nama_rekening || data.nama || salesName,
+    };
   } catch(e) { /* skip */ }
   return { nama: salesName, bank_name: '', bank_account: '', bank_holder: '' };
 }
