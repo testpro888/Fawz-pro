@@ -871,7 +871,7 @@ function drawBarChart(canvasId, data, labels, label, highlightIdx) {
       responsive: true,
       maintainAspectRatio: false,
       layout: {
-        padding: { top: 22, bottom: 0, left: 4, right: 4 }
+        padding: { top: 22, bottom: 0, left: 8, right: 8 }
       },
       plugins: {
         legend: { display: false },
@@ -885,7 +885,15 @@ function drawBarChart(canvasId, data, labels, label, highlightIdx) {
       scales: {
         x: {
           grid: { display: false },
-          ticks: { font: { size: 8.5 }, color: '#888', maxRotation: 0, minRotation: 0 },
+          offset: true,
+          bounds: 'ticks',
+          ticks: { 
+            font: { size: 8.5 }, 
+            color: '#888', 
+            maxRotation: 0, 
+            minRotation: 0,
+            padding: 4,
+          },
           border: { display: false }
         },
         y: {
