@@ -920,44 +920,119 @@ async function exportPDF() {
   const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Ags','Sept','Okt','Nov','Des'];
   const mLabel = months[parseInt(month,10)-1];
 
-  // Simpan style asli
-  const origWidth        = el.style.width;
-  const origMaxWidth     = el.style.maxWidth;
-  const origPosition     = el.style.position;
-  const origPadding      = el.style.padding;
+  // Buat hidden container A4 di luar viewport
+  const A4_PX = 794; // A4 @96dpi portrait
+  const pdfContainer = document.createElement('div');
+  pdfContainer.style.cssText = `
+    position:fixed; left:-9999px; top:0;
+    width:${A4_PX}px; background:#fff;
+    font-family:'Poppins',sans-serif;
+  `;
 
-  // A4 portrait inner width = 210mm - 16mm margin = 194mm ≈ 732px @96dpi
-  const A4_PX = 732;
+  // Clone konten laporan
+  const clone = el.cloneNode(true);
+  clone.style.cssText = `width:${A4_PX}px; display:flex; flex-direction:column; gap:0;`;
 
-  // Set lebar fixed A4 agar html2canvas render proporsional
-  el.style.width      = A4_PX + 'px';
-  el.style.maxWidth   = A4_PX + 'px';
-  el.style.padding    = '0';
+  // Set min-height setiap page untuk dorong footer ke bawah
+  clone.querySelectorAll('.a4-page').forEach(p => {
+    p.style.minHeight = '1050px';
+    p.style.display = 'flex';
+    p.style.flexDirection = 'column';
+  });
 
-  // Min-height untuk setiap page agar footer ke bawah
-  const pages = el.querySelectorAll('.a4-page');
-  const origMinHeights = [];
-  pages.forEach(p => { origMinHeights.push(p.style.minHeight); p.style.minHeight = '1050px'; });
+  // Hapus canvas lama (tidak bisa di-clone)
+  clone.querySelectorAll('canvas').forEach(c => {
+    const box = c.closest('.chart-box');
+    if (box) box.innerHTML = '<canvas class="pdf-chart"></canvas>';
+  });
 
-  // Tunggu chart re-render di lebar baru
-  await new Promise(r => setTimeout(r, 200));
+  pdfContainer.appendChild(clone);
+  document.body.appendChild(pdfContainer);
+
+  // Render chart baru di dalam clone
+  const pdfCharts = clone.querySelectorAll('.pdf-chart');
+  const currentChartData = [];
+  Object.entries(chartInstances).forEach(([id, instance]) => {
+    currentChartData.push({
+      data: instance.data.datasets[0].data.slice(),
+      labels: instance.data.labels.slice(),
+      label: instance.data.datasets[0].label,
+    });
+  });
+
+  const tempCharts = [];
+  pdfCharts.forEach((canvas, i) => {
+    const cd = currentChartData[i];
+    if (!cd) return;
+    const highlightIdx = parseInt(month,10) - 1;
+    const colors = cd.data.map((_, j) =>
+      j === highlightIdx ? '#f5a623' : (cd.data[j] > 0 ? '#0d0d2b' : '#e8e8f5')
+    );
+    const tc = new Chart(canvas, {
+      type: 'bar',
+      data: {
+        labels: cd.labels,
+        datasets: [{ label: cd.label, data: cd.data, backgroundColor: colors, borderRadius: 4, borderSkipped: false }]
+      },
+      options: {
+        responsive: false,
+        animation: false,
+        layout: { padding: { top: 20, bottom: 5, left: 5, right: 5 } },
+        plugins: {
+          legend: { display: false },
+          datalabels: { display: false }
+        },
+        scales: {
+          x: { grid: { display: false }, ticks: { font: { size: 9 }, color: '#888' } },
+          y: { display: false, beginAtZero: true }
+        }
+      },
+      plugins: [{
+        id: 'valueLabels',
+        afterDatasetsDraw(chart) {
+          const { ctx, data } = chart;
+          chart.getDatasetMeta(0).data.forEach((bar, i) => {
+            const v = data.datasets[0].data[i];
+            if (!v) return;
+            const formatted = 'Rp' + Math.round(v).toLocaleString('id-ID');
+            ctx.save();
+            ctx.font = 'bold 8px Poppins, sans-serif';
+            ctx.fillStyle = '#444';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'bottom';
+            const maxW = bar.width + 10;
+            ctx.save(); ctx.beginPath(); ctx.rect(bar.x - maxW/2, 0, maxW, bar.y - 2); ctx.clip();
+            ctx.fillText(formatted, bar.x, bar.y - 3);
+            ctx.restore(); ctx.restore();
+          });
+        }
+      }]
+    });
+    // Set ukuran canvas eksplisit
+    canvas.width  = A4_PX - 96;
+    canvas.height = 220;
+    tc.resize();
+    tc.update();
+    tempCharts.push(tc);
+  });
+
+  // Tunggu render selesai
+  await new Promise(r => setTimeout(r, 400));
 
   const opt = {
-    margin: [8, 8, 8, 8],
+    margin: [0, 0, 0, 0],
     filename: `Laporan-Komisi-${salesName.replace(/\s+/g,'-')}-${mLabel}${year}.pdf`,
     image: { type: 'jpeg', quality: 0.97 },
     html2canvas: { scale: 2, useCORS: true, logging: false, width: A4_PX, windowWidth: A4_PX },
-    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-    pagebreak: { mode: ['css', 'legacy'] }
+    jsPDF: { unit: 'px', format: [A4_PX, 1122], orientation: 'portrait' },
+    pagebreak: { mode: ['css', 'legacy'], after: '.a4-page' }
   };
-  await html2pdf().set(opt).from(el).save();
 
-  // Kembalikan style semula
-  el.style.width      = origWidth;
-  el.style.maxWidth   = origMaxWidth;
-  el.style.position   = origPosition;
-  el.style.padding    = origPadding;
-  pages.forEach((p, i) => { p.style.minHeight = origMinHeights[i]; });
+  await html2pdf().set(opt).from(pdfContainer).save();
+
+  // Cleanup
+  tempCharts.forEach(c => c.destroy());
+  document.body.removeChild(pdfContainer);
 }
 </script>
 </html>
