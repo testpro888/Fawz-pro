@@ -5,7 +5,7 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Fawz Pro | Laporan Komisi Sales</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -24,13 +24,13 @@
       --bg:#f4f5fb; --white:#fff; --border:#e0e0ef; --text:#1a1a3a;
       --gray:#888; --green:#27ae60; --indigo:#4f46e5; --nav-h:68px;
     }
-    body { font-family:'Inter',sans-serif; background:var(--bg); min-height:100vh; padding-top:var(--nav-h); color:var(--text); }
+    body { font-family:'Poppins',sans-serif; background:var(--bg); min-height:100vh; padding-top:var(--nav-h); color:var(--text); }
     .page-container { max-width:1100px; margin:0 auto; padding:36px 28px; }
     .page-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:28px; flex-wrap:wrap; gap:16px; }
-    .page-title { font-size:2rem; font-weight:900; color:var(--navy); }
+    .page-title { font-size:2rem; font-weight:700; color:var(--navy); }
     .page-subtitle { font-size:.88rem; color:var(--gray); margin-top:4px; }
     .title-underline { width:48px; height:3px; background:linear-gradient(90deg,var(--indigo),#818cf8); border-radius:2px; margin-top:8px; }
-    .btn { display:inline-flex; align-items:center; gap:7px; padding:11px 20px; border-radius:10px; font-family:'Inter',sans-serif; font-size:.875rem; font-weight:600; cursor:pointer; transition:all .2s; border:none; white-space:nowrap; }
+    .btn { display:inline-flex; align-items:center; gap:7px; padding:11px 20px; border-radius:10px; font-family:'Poppins',sans-serif; font-size:.875rem; font-weight:600; cursor:pointer; transition:all .2s; border:none; white-space:nowrap; }
     .btn-primary { background:var(--indigo); color:#fff; }
     .btn-primary:hover { background:#3730a3; }
     .btn-gold { background:var(--gold); color:#fff; }
@@ -40,7 +40,7 @@
     .btn-sm { padding:8px 16px; font-size:.82rem; }
     .toolbar { background:#fff; border-radius:14px; padding:16px 20px; display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:24px; box-shadow:0 2px 10px rgba(0,0,0,.05); }
     .toolbar label { font-size:.82rem; font-weight:600; color:var(--navy); white-space:nowrap; }
-    .filter-select, .date-input { padding:9px 13px; border:1.5px solid var(--border); border-radius:10px; font-family:'Inter',sans-serif; font-size:.85rem; color:var(--text); outline:none; background:#fff; cursor:pointer; }
+    .filter-select, .date-input { padding:9px 13px; border:1.5px solid var(--border); border-radius:10px; font-family:'Poppins',sans-serif; font-size:.85rem; color:var(--text); outline:none; background:#fff; cursor:pointer; }
     .filter-select:focus, .date-input:focus { border-color:var(--indigo); }
     .loading-wrap { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:80px; gap:16px; color:#aaa; }
     .spinner { width:36px; height:36px; border:3px solid #f0f0f5; border-top-color:var(--indigo); border-radius:50%; animation:spin .7s linear infinite; }
@@ -71,6 +71,9 @@
       min-height:auto;
       padding:0;
       font-size:13px;
+      font-family:'Poppins',sans-serif;
+      display:flex;
+      flex-direction:column;
     }
 
     /* ── REPORT HEADER ── */
@@ -84,43 +87,43 @@
 
     /* ── REPORT TITLE ── */
     .rpt-title-section { padding:24px 36px 0; }
-    .rpt-main-title { font-size:1.5rem; font-weight:900; color:var(--navy); }
+    .rpt-main-title { font-size:1.5rem; font-weight:700; color:var(--navy); }
     .rpt-divider { height:2px; background:linear-gradient(90deg,var(--navy),var(--gold),transparent); margin:10px 0; border-radius:2px; }
     .rpt-meta { display:flex; gap:32px; padding:0 0 16px; font-size:.85rem; }
-    .rpt-meta-item span { font-weight:700; color:var(--navy); }
+    .rpt-meta-item span { font-weight:600; color:var(--navy); }
     .rpt-meta-item { color:var(--gray); }
 
     /* ── CHART SECTION ── */
     .rpt-chart-section { padding:20px 36px; }
-    .rpt-chart-title { font-size:.85rem; font-weight:800; color:var(--navy); text-align:center; margin-bottom:14px; letter-spacing:.3px; }
+    .rpt-chart-title { font-size:.85rem; font-weight:600; color:var(--navy); text-align:center; margin-bottom:14px; letter-spacing:.3px; }
     .chart-box { border:1.5px solid #e8e8f5; border-radius:12px; padding:16px; background:#fafafe; position:relative; height:240px; }
 
     /* ── DATA TABLE SECTION ── */
     .rpt-table-section { padding:0 36px 20px; }
-    .rpt-section-label { font-size:.72rem; font-weight:800; text-transform:uppercase; letter-spacing:1.2px; color:var(--indigo); margin-bottom:10px; }
+    .rpt-section-label { font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:1.2px; color:var(--indigo); margin-bottom:10px; }
     .rpt-data-table { width:100%; border-collapse:collapse; font-size:.82rem; }
-    .rpt-data-table th { background:#f4f5fb; padding:8px 12px; text-align:left; font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.8px; color:var(--gray); }
+    .rpt-data-table th { background:#f4f5fb; padding:8px 12px; text-align:left; font-size:.68rem; font-weight:600; text-transform:uppercase; letter-spacing:.8px; color:var(--gray); }
     .rpt-data-table td { padding:9px 12px; border-bottom:1px solid #f0f0f5; }
     .rpt-data-table tr:last-child td { border-bottom:none; }
     .rpt-data-table .td-label { color:var(--gray); }
     .rpt-data-table .td-value { font-weight:600; color:var(--navy); text-align:right; }
-    .rpt-data-table .td-total { font-weight:900; color:var(--indigo); font-size:.9rem; text-align:right; }
+    .rpt-data-table .td-total { font-weight:700; color:var(--indigo); font-size:.9rem; text-align:right; }
     .rpt-data-table .row-total td { background:#f4f5fb; }
 
     /* ── INCOME SECTION ── */
     .rpt-income-section { padding:0 36px 24px; }
     .income-table { width:100%; border-collapse:collapse; font-size:.82rem; }
-    .income-table th { background:#f4f5fb; padding:8px 12px; text-align:left; font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.8px; color:var(--gray); }
+    .income-table th { background:#f4f5fb; padding:8px 12px; text-align:left; font-size:.68rem; font-weight:600; text-transform:uppercase; letter-spacing:.8px; color:var(--gray); }
     .income-table td { padding:9px 12px; border-bottom:1px solid #f0f0f5; }
     .income-table tr:last-child td { border-bottom:none; }
     .income-grand { background:linear-gradient(135deg,#1e1b4b,#312e81) !important; }
-    .income-grand td { color:#fff !important; font-weight:900 !important; font-size:1rem !important; padding:12px 14px !important; border-bottom:none !important; }
-    .income-grand .td-grand-val { color:#fbbf24 !important; font-size:1.1rem !important; text-align:right; }
+    .income-grand td { color:#fff !important; font-weight:600 !important; font-size:1rem !important; padding:12px 14px !important; border-bottom:none !important; }
+    .income-grand .td-grand-val { color:#fbbf24 !important; font-size:1.05rem !important; text-align:right; }
 
     /* ── VOLUME ANNEX ── */
     .rpt-annex-section { padding:0 36px 20px; }
     .vol-table { width:100%; border-collapse:collapse; font-size:.82rem; }
-    .vol-table th { background:#f4f5fb; padding:8px 12px; font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.8px; color:var(--gray); text-align:left; }
+    .vol-table th { background:#f4f5fb; padding:8px 12px; font-size:.68rem; font-weight:600; text-transform:uppercase; letter-spacing:.8px; color:var(--gray); text-align:left; }
     .vol-table td { padding:9px 12px; border-bottom:1px solid #f0f0f5; }
     .vol-table tr:last-child td { border-bottom:none; }
     .vol-table .td-num { text-align:right; font-weight:600; color:var(--navy); }
@@ -128,6 +131,7 @@
 
     /* ── FOOTER ── */
     .rpt-footer {
+      margin-top:auto;
       display:flex; justify-content:center; align-items:center;
       padding:14px 36px; border-top:1px solid #f0f0f5;
       font-size:.72rem; color:var(--gray); text-align:center;
@@ -136,19 +140,19 @@
 
     /* ── SLIP INSENTIF ── */
     .slip-card { border-top: none; }
-    .slip-title { font-size:1.4rem; font-weight:900; text-align:center; color:var(--navy); padding:22px 36px 10px; letter-spacing:1px; text-transform:uppercase; }
+    .slip-title { font-size:1.4rem; font-weight:700; text-align:center; color:var(--navy); padding:22px 36px 10px; letter-spacing:1px; text-transform:uppercase; }
     .slip-divider { height:1.5px; background:#e0e0ef; margin:0 36px 16px; }
     .slip-meta { padding:0 36px 16px; font-size:.85rem; display:flex; flex-direction:column; gap:4px; color:var(--text); }
-    .slip-meta span { font-weight:700; color:var(--navy); }
-    .slip-section-label { font-size:.75rem; font-weight:900; text-transform:uppercase; letter-spacing:1px; color:var(--navy); padding:0 36px; margin-bottom:6px; text-decoration:underline; }
+    .slip-meta span { font-weight:600; color:var(--navy); }
+    .slip-section-label { font-size:.75rem; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:var(--navy); padding:0 36px; margin-bottom:6px; text-decoration:underline; }
     .slip-table { width:calc(100% - 72px); margin:0 36px; border-collapse:collapse; font-size:.85rem; margin-bottom:16px; }
     .slip-table td { padding:8px 4px; border-bottom:1px solid #f5f5f5; }
-    .slip-table .td-cat { font-weight:700; color:var(--navy); }
+    .slip-table .td-cat { font-weight:600; color:var(--navy); }
     .slip-table .td-period { color:var(--gray); font-size:.78rem; }
     .slip-table .td-val { text-align:right; font-weight:600; color:var(--text); }
     .slip-grand-row { background:linear-gradient(90deg,#fafafe,#fff); }
-    .slip-grand-row td { padding:12px 4px !important; font-weight:900 !important; font-size:1rem !important; border-bottom:none !important; }
-    .slip-grand-val { text-align:right; color:var(--navy); font-size:1.2rem !important; text-decoration:underline; }
+    .slip-grand-row td { padding:12px 4px !important; font-weight:700 !important; font-size:1rem !important; border-bottom:none !important; }
+    .slip-grand-val { text-align:right; color:var(--navy); font-size:1.1rem !important; text-decoration:underline; }
     .slip-nb { margin:0 36px 16px; font-size:.72rem; color:var(--gray); line-height:1.6; border:1px solid #f0f0f5; border-radius:8px; padding:10px 14px; background:#fafafe; }
     .slip-bank { margin:0 36px 20px; border:1.5px solid #e0e0ef; border-radius:10px; padding:14px 18px; font-size:.82rem; line-height:1.8; background:#fff; }
     .slip-bank-name { font-weight:700; color:var(--navy); }
@@ -425,7 +429,7 @@ async function fetchSahamData(salesId, period) {
     } catch(e) { /* skip */ }
   }
 
-  // Total Customer Baru: aktif dari awal bulan yang dipilih ke depan (inklusif)
+  // Total Customer Baru: aktif di bulan yang dipilih (inklusif start dan end)
   let newCustomers = 0;
   if (salesName) {
     try {
@@ -433,9 +437,10 @@ async function fetchSahamData(salesId, period) {
         .from('customers')
         .select('*', { count: 'exact', head: true })
         .ilike('sales_person_name', salesName)
-        .gte('active_date', start);
+        .gte('active_date', start)
+        .lte('active_date', end);
       if (!error && count != null) newCustomers = count;
-      console.log('[fetchSahamData] newCustomers (active_date >=', start, '):', newCustomers, error);
+      console.log('[fetchSahamData] newCustomers (active_date', start, '~', end, '):', newCustomers, error);
     } catch(e) { console.warn('newCustomers error:', e.message); }
   }
 
@@ -690,7 +695,7 @@ function buildReportHTML(salesObj, monthName, month, year, period, saham, obl, s
           <tr><td class="td-label">Trade Fee</td><td class="td-value">${fmtRp(saham.totalFee)}</td></tr>
           <tr><td class="td-label">Trade Amount</td><td class="td-value">${fmtRp(saham.totalVolume)}</td></tr>
           <tr><td class="td-label">Total Customer</td><td class="td-value">${totalCustomer} Customer</td></tr>
-          <tr><td class="td-label">Total Customer Baru</td><td class="td-value">${newCustomers > 0 ? newCustomers + ' Customer' : (window._manualNewCustomer > 0 ? window._manualNewCustomer + ' Customer' : '—')}</td></tr>
+          <tr><td class="td-label">Total Customer Baru</td><td class="td-value">${(window._manualNewCustomer > 0 ? window._manualNewCustomer : newCustomers) + ' Customer'}</td></tr>
           <tr><td class="td-label">Total Customer Trading</td><td class="td-value">${tradingCustomers}/${totalCustomer} (${tradingPct}%)</td></tr>
         </tbody>
       </table>
@@ -915,6 +920,10 @@ async function exportPDF() {
   const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Ags','Sept','Okt','Nov','Des'];
   const mLabel = months[parseInt(month,10)-1];
 
+  // Set min-height untuk setiap page agar footer ke bawah saat PDF
+  const pages = el.querySelectorAll('.a4-page');
+  pages.forEach(p => { p.style.minHeight = '277mm'; });
+
   const opt = {
     margin: [8, 8, 8, 8],
     filename: `Laporan-Komisi-${salesName.replace(/\s+/g,'-')}-${mLabel}${year}.pdf`,
@@ -924,6 +933,9 @@ async function exportPDF() {
     pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
   };
   await html2pdf().set(opt).from(el).save();
+
+  // Reset min-height setelah export
+  pages.forEach(p => { p.style.minHeight = ''; });
 }
 </script>
 </html>
