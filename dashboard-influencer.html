@@ -99,9 +99,30 @@
     .history-status { font-size:11px; font-weight:600; padding:3px 10px; border-radius:9999px; }
     .history-paid { background:#d9f3e1; color:#1aae39; }
     .history-pending { background:var(--tint-yellow); color:#856400; }
+    /* BANK INFO */
+    .bank-card { background:var(--canvas); border:1px solid var(--hairline); border-radius:14px; padding:22px 24px; display:flex; align-items:center; justify-content:space-between; gap:20px; flex-wrap:wrap; margin-bottom:24px; animation:fadeUp .4s .3s ease both; }
+    .bank-info-left { display:flex; align-items:center; gap:16px; }
+    .bank-icon-wrap { width:48px; height:48px; border-radius:12px; background:linear-gradient(135deg,var(--navy),#1a0e4a); display:flex; align-items:center; justify-content:center; font-size:1.4rem; flex-shrink:0; }
+    .bank-detail-label { font-size:11px; font-weight:700; color:var(--stone); text-transform:uppercase; letter-spacing:.8px; margin-bottom:3px; }
+    .bank-detail-name { font-size:15px; font-weight:700; color:#0a0a22; margin-bottom:2px; }
+    .bank-detail-rekening { font-size:22px; font-weight:700; color:var(--navy); letter-spacing:2px; }
+    .bank-detail-atas-nama { font-size:12px; color:var(--stone); font-weight:500; margin-top:4px; }
+    .bank-empty { font-size:13px; color:var(--stone); font-style:italic; }
+    .bank-edit-btn { background:var(--navy); color:#fff; border:none; padding:10px 20px; border-radius:10px; font-weight:600; font-size:.83rem; cursor:pointer; transition:background .2s,transform .15s; font-family:'Inter',sans-serif; white-space:nowrap; }
+    .bank-edit-btn:hover { background:#1a0e4a; transform:scale(1.03); }
+    /* MODAL BANK */
+    .bank-modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:200; align-items:center; justify-content:center; }
+    .bank-modal-box { background:#fff; border-radius:16px; padding:28px; width:420px; max-width:92vw; }
+    .bank-modal-title { font-size:15px; font-weight:700; color:#0a0a22; margin-bottom:18px; }
+    .bank-field-label { font-size:11px; font-weight:700; color:#888; text-transform:uppercase; letter-spacing:.8px; display:block; margin-bottom:6px; }
+    .bank-field-input { width:100%; padding:11px 14px; border:1.5px solid #e0e0ef; border-radius:10px; font-size:14px; outline:none; font-family:Inter,sans-serif; margin-bottom:14px; transition:border-color .2s; }
+    .bank-field-input:focus { border-color:var(--navy); }
+    .bank-field-select { width:100%; padding:11px 14px; border:1.5px solid #e0e0ef; border-radius:10px; font-size:14px; outline:none; font-family:Inter,sans-serif; margin-bottom:14px; background:#fff; cursor:pointer; transition:border-color .2s; }
+    .bank-field-select:focus { border-color:var(--navy); }
+    .bank-modal-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:6px; }
     /* RESPONSIVE */
     @media(max-width:900px) { .kpi-grid{grid-template-columns:repeat(2,1fr)} .socmed-grid{grid-template-columns:repeat(3,1fr)} .two-col{grid-template-columns:1fr} }
-    @media(max-width:600px) { .socmed-grid{grid-template-columns:repeat(2,1fr)} .page{padding:20px 14px 40px} }
+    @media(max-width:600px) { .socmed-grid{grid-template-columns:repeat(2,1fr)} .page{padding:20px 14px 40px} .bank-card{flex-direction:column;align-items:flex-start} }
   </style>
 </head>
 <body>
@@ -202,6 +223,18 @@
     </div>
   </div>
 
+  <!-- BANK & REKENING -->
+  <div class="section-title">🏦 Informasi Bank & Rekening</div>
+  <div class="bank-card" id="bankCard">
+    <div class="bank-info-left">
+      <div class="bank-icon-wrap">🏦</div>
+      <div id="bankInfoDisplay">
+        <div class="bank-empty">Belum ada informasi rekening. Klik <strong>Edit</strong> untuk mengisi.</div>
+      </div>
+    </div>
+    <button class="bank-edit-btn" onclick="openBankModal()">✏️ Edit Rekening</button>
+  </div>
+
   <!-- CHARTS -->
   <div class="two-col">
     <div class="chart-card"><div class="chart-card-title">📈 Pertumbuhan Referral</div><div class="chart-card-sub">6 bulan terakhir</div><div class="chart-wrap"><canvas id="chartReferral"></canvas></div></div>
@@ -212,6 +245,48 @@
   <div class="section-title">📅 Riwayat Komisi</div>
   <div class="history-list" id="historyList">
     <div style="padding:20px;text-align:center;color:var(--stone);font-size:13px;">Memuat data...</div>
+  </div>
+</div>
+
+<!-- BANK MODAL -->
+<div class="bank-modal-overlay" id="bankModal">
+  <div class="bank-modal-box">
+    <div class="bank-modal-title">🏦 Edit Informasi Bank & Rekening</div>
+    <label class="bank-field-label">Nama Bank</label>
+    <select id="bankNama" class="bank-field-select">
+      <option value="">— Pilih Bank —</option>
+      <optgroup label="Bank Umum">
+        <option value="BCA">BCA – Bank Central Asia</option>
+        <option value="BNI">BNI – Bank Negara Indonesia</option>
+        <option value="BRI">BRI – Bank Rakyat Indonesia</option>
+        <option value="Mandiri">Bank Mandiri</option>
+        <option value="CIMB Niaga">CIMB Niaga</option>
+        <option value="Danamon">Bank Danamon</option>
+        <option value="Maybank">Maybank Indonesia</option>
+        <option value="Permata">Bank Permata</option>
+        <option value="OCBC NISP">OCBC NISP</option>
+        <option value="Panin">Bank Panin</option>
+        <option value="BTN">BTN – Bank Tabungan Negara</option>
+        <option value="BSI">BSI – Bank Syariah Indonesia</option>
+        <option value="RHB">RHB Bank</option>
+        <option value="Sinarmas">Bank Sinarmas</option>
+        <option value="Mega">Bank Mega</option>
+        <option value="Bukopin">Bank Bukopin</option>
+        <option value="Jago">Bank Jago</option>
+        <option value="Jenius / BTPN">Jenius / BTPN</option>
+        <option value="Sea Bank">Sea Bank</option>
+        <option value="Blu BCA">Blu BCA</option>
+        <option value="Lainnya">Lainnya</option>
+      </optgroup>
+    </select>
+    <label class="bank-field-label">Nomor Rekening</label>
+    <input id="bankNoRek" class="bank-field-input" type="text" placeholder="Contoh: 1234567890" inputmode="numeric"/>
+    <label class="bank-field-label">Nama Pemilik Rekening</label>
+    <input id="bankAtasNama" class="bank-field-input" type="text" placeholder="Sesuai buku rekening"/>
+    <div class="bank-modal-actions">
+      <button onclick="closeBankModal()" style="padding:9px 18px;border:1px solid #e0e0ef;border-radius:9px;background:#fff;font-size:13px;cursor:pointer;font-family:Inter,sans-serif;">Batal</button>
+      <button onclick="saveBankModal()" style="padding:9px 18px;background:var(--navy);color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;">💾 Simpan</button>
+    </div>
   </div>
 </div>
 
@@ -326,7 +401,72 @@
     new Chart(document.getElementById('chartKomisi'),{type:'bar',data:{labels:m6,datasets:[{label:'Komisi',data:[500000,1200000,2100000,1800000,3200000,2700000],backgroundColor:'rgba(245,166,35,.75)',borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:'#f0ede9'},ticks:{font:{size:11},callback:v=>v>=1000000?(v/1000000).toFixed(1)+'Jt':v>=1000?(v/1000)+'K':v}},x:{grid:{display:false},ticks:{font:{size:11}}}}}});
   }
 
-  document.addEventListener('DOMContentLoaded',()=>{loadData();initCharts();});
+  // BANK & REKENING
+  let bankData = { nama: '', noRek: '', atasNama: '' };
+
+  function renderBankInfo() {
+    const el = document.getElementById('bankInfoDisplay');
+    const iconEl = document.querySelector('.bank-icon-wrap');
+    if (!bankData.nama && !bankData.noRek) {
+      el.innerHTML = '<div class="bank-empty">Belum ada informasi rekening. Klik <strong>Edit</strong> untuk mengisi.</div>';
+      iconEl.textContent = '🏦';
+      return;
+    }
+    // Pilih emoji berdasarkan nama bank
+    const bankIcons = { BCA: '🔵', BNI: '🟠', BRI: '🟠', Mandiri: '🟡', Maybank: '🟡', RHB: '🔴', BSI: '🟢' };
+    const ico = bankIcons[bankData.nama] || '🏦';
+    iconEl.textContent = ico;
+    el.innerHTML = `
+      <div class="bank-detail-label">Informasi Rekening</div>
+      <div class="bank-detail-name">${bankData.nama || '—'}</div>
+      <div class="bank-detail-rekening">${formatNoRek(bankData.noRek)}</div>
+      <div class="bank-detail-atas-nama">a.n. ${bankData.atasNama || '—'}</div>
+    `;
+  }
+
+  function formatNoRek(v) {
+    // Tampilkan 4 digit pertama, bintangkan tengah, 4 digit terakhir
+    if (!v || v.length <= 4) return v || '—';
+    const first = v.slice(0, 4);
+    const last = v.slice(-4);
+    const mid = '*'.repeat(Math.max(0, v.length - 8));
+    return first + mid + last;
+  }
+
+  function openBankModal() {
+    document.getElementById('bankNama').value = bankData.nama || '';
+    document.getElementById('bankNoRek').value = bankData.noRek || '';
+    document.getElementById('bankAtasNama').value = bankData.atasNama || '';
+    document.getElementById('bankModal').style.display = 'flex';
+  }
+
+  function closeBankModal() {
+    document.getElementById('bankModal').style.display = 'none';
+  }
+
+  function saveBankModal() {
+    const nama = document.getElementById('bankNama').value;
+    const noRek = document.getElementById('bankNoRek').value.trim().replace(/\D/g, '');
+    const atasNama = document.getElementById('bankAtasNama').value.trim();
+    if (!nama) { alert('Pilih nama bank terlebih dahulu.'); return; }
+    if (!noRek) { alert('Nomor rekening tidak boleh kosong.'); return; }
+    if (!atasNama) { alert('Nama pemilik rekening tidak boleh kosong.'); return; }
+    bankData = { nama, noRek, atasNama };
+    renderBankInfo();
+    closeBankModal();
+    // Simpan ke localStorage agar tetap ada saat refresh
+    try { localStorage.setItem('fawz_influencer_bank', JSON.stringify(bankData)); } catch(e) {}
+  }
+
+  // Load bank data dari localStorage saat halaman dibuka
+  (function loadBankData() {
+    try {
+      const saved = localStorage.getItem('fawz_influencer_bank');
+      if (saved) { bankData = JSON.parse(saved); renderBankInfo(); }
+    } catch(e) {}
+  })();
+
+  document.addEventListener('DOMContentLoaded',()=>{loadData();initCharts();renderBankInfo();});
 </script>
 </body>
 </html>
