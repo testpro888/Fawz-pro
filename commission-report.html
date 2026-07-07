@@ -26,6 +26,7 @@
     }
     body { font-family:'Poppins',sans-serif; background:var(--bg); min-height:100vh; padding-top:var(--nav-h); color:var(--text); }
     .page-container { max-width:1100px; margin:0 auto; padding:36px 28px; }
+    .page-container > .report-wrapper { width:100%; }
     .page-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:28px; flex-wrap:wrap; gap:16px; }
     .page-title { font-size:2rem; font-weight:700; color:var(--navy); }
     .page-subtitle { font-size:.88rem; color:var(--gray); margin-top:4px; }
@@ -49,13 +50,15 @@
     .empty-icon { font-size:3rem; margin-bottom:12px; }
 
     /* ── A4 REPORT CARD ── */
-    .report-wrapper { display:flex; flex-direction:column; gap:28px; }
+    .report-wrapper { display:flex; flex-direction:column; gap:28px; align-items:center; }
 
     .report-card {
-      background:#fff; border-radius:20px;
-      box-shadow:0 4px 24px rgba(0,0,0,.09);
+      background:#fff; border-radius:4px;
+      box-shadow:0 4px 24px rgba(0,0,0,.18);
       position:relative;
       page-break-after: always;
+      width:794px;
+      min-height:1123px;
     }
 
     /* ── PRINT / PDF ── */
@@ -63,7 +66,7 @@
       body { background:#fff !important; padding-top:0 !important; }
       #navbar-placeholder, .toolbar, .page-header, #printControls { display:none !important; }
       .report-card { break-inside:avoid; page-break-inside:avoid; page-break-after:always; box-shadow:none !important; border-radius:0 !important; margin:0 !important; min-height:100vh; }
-      .report-wrapper { gap:0; }
+      .report-wrapper { gap:0; align-items:stretch; }
       .a4-page { min-height:100vh; }
     }
 
