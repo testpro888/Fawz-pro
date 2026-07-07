@@ -98,7 +98,7 @@
     /* ── CHART SECTION ── */
     .rpt-chart-section { padding:16px 36px 8px; }
     .rpt-chart-title { font-size:.85rem; font-weight:600; color:var(--navy); text-align:center; margin-bottom:14px; letter-spacing:.3px; }
-    .chart-box { border:1.5px solid #e8e8f5; border-radius:12px; padding:12px 12px 8px; background:#fafafe; position:relative; height:200px; }
+    .chart-box { border:1.5px solid #e8e8f5; border-radius:12px; padding:14px; background:#fafafe; position:relative; height:230px; }
 
     /* ── DATA TABLE SECTION ── */
     .rpt-table-section { padding:0 36px 20px; }
@@ -140,10 +140,9 @@
     }
     .rpt-footer a { color:var(--indigo); text-decoration:none; }
 
-    /* Push footer ke bawah — wrapper konten sebelum footer grow */
+    /* Push footer ke bawah */
     .rpt-body-content { flex:1; display:flex; flex-direction:column; }
-
-    /* Slip card juga perlu flex untuk footer */
+    .rpt-spacer { flex:1; }
     .slip-card .rpt-body-content { flex:1; display:flex; flex-direction:column; }
 
     /* ── SLIP INSENTIF ── */
@@ -835,6 +834,7 @@ function reportHeaderHTML() {
 
 function reportFooterHTML(tanggal) {
   return `
+    <div class="rpt-spacer"></div>
     </div>
     <div class="rpt-footer">
       <span>corporate@goldenfawz.com &nbsp;|&nbsp; +62 81-6361-598 &nbsp;|&nbsp; www.goldenfawz.com</span>
@@ -863,15 +863,13 @@ function drawBarChart(canvasId, data, labels, label, highlightIdx) {
         backgroundColor: colors,
         borderRadius: 3,
         borderSkipped: false,
-        barThickness: 18,
-        maxBarThickness: 22,
       }]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
       layout: {
-        padding: { top: 18, bottom: 0, left: 0, right: 0 }
+        padding: { top: 22, bottom: 0, left: 4, right: 4 }
       },
       plugins: {
         legend: { display: false },
@@ -885,7 +883,8 @@ function drawBarChart(canvasId, data, labels, label, highlightIdx) {
       scales: {
         x: {
           grid: { display: false },
-          ticks: { font: { size: 9 }, color: '#888', maxRotation: 0, minRotation: 0 }
+          ticks: { font: { size: 8.5 }, color: '#888', maxRotation: 0, minRotation: 0 },
+          border: { display: false }
         },
         y: {
           display: false,
@@ -903,18 +902,11 @@ function drawBarChart(canvasId, data, labels, label, highlightIdx) {
           if (!v) return;
           const formatted = 'Rp' + Math.round(v).toLocaleString('id-ID');
           ctx.save();
-          ctx.font = 'bold 8.5px Inter, sans-serif';
-          ctx.fillStyle = '#444';
+          ctx.font = '700 8px Poppins, sans-serif';
+          ctx.fillStyle = '#333';
           ctx.textAlign = 'center';
           ctx.textBaseline = 'bottom';
-          // Potong teks jika terlalu panjang
-          const maxW = bar.width + 10;
-          ctx.save();
-          ctx.beginPath();
-          ctx.rect(bar.x - maxW/2, 0, maxW, bar.y - 2);
-          ctx.clip();
-          ctx.fillText(formatted, bar.x, bar.y - 3);
-          ctx.restore();
+          ctx.fillText(formatted, bar.x, bar.y - 2);
           ctx.restore();
         });
       }
