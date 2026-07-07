@@ -405,11 +405,10 @@ async function fetchSahamData(salesId, period) {
   const start = `${y}-${m}-01`;
   const lastDay = new Date(parseInt(y), parseInt(m), 0).getDate();
   const end = `${y}-${m}-${String(lastDay).padStart(2,'0')}`;
-  // salesId IS nama sales (value dari dropdown = nama langsung)
   const salesName = salesId.trim();
   console.log('[commission-report] fetchSahamData salesName:', salesName, '| range:', start, '→', end);
 
-  // Total Customer dari tabel customers (case-insensitive)
+  // Total Customer (semua, tidak filter bulan)
   let totalAllCustomers = 0;
   if (salesName) {
     try {
@@ -418,6 +417,20 @@ async function fetchSahamData(salesId, period) {
         .select('*', { count: 'exact', head: true })
         .ilike('sales_person_name', salesName);
       if (!error && count != null) totalAllCustomers = count;
+    } catch(e) { /* skip */ }
+  }
+
+  // Total Customer Baru: aktif di bulan yang dipilih
+  let newCustomers = 0;
+  if (salesName) {
+    try {
+      const { count, error } = await window._supabase
+        .from('customers')
+        .select('*', { count: 'exact', head: true })
+        .ilike('sales_person_name', salesName)
+        .gte('tgl_aktif', start)
+        .lte('tgl_aktif', end);
+      if (!error && count != null) newCustomers = count;
     } catch(e) { /* skip */ }
   }
 
@@ -454,10 +467,10 @@ async function fetchSahamData(salesId, period) {
     const totalFee         = clients.reduce((s,c) => s + c.fee, 0);
     const totalVolume      = clients.reduce((s,c) => s + c.volume, 0);
     const tradingCustomers = clients.filter(c => c.fee > 0).length;
-    return { clients, totalFee, totalVolume, tradingCustomers, totalCustomer: totalAllCustomers };
+    return { clients, totalFee, totalVolume, tradingCustomers, totalCustomer: totalAllCustomers, newCustomers };
   } catch(e) {
     console.warn('saham_transaksi catch:', e.message);
-    return { clients:[], totalFee:0, totalVolume:0, tradingCustomers:0, totalCustomer:totalAllCustomers };
+    return { clients:[], totalFee:0, totalVolume:0, tradingCustomers:0, totalCustomer:totalAllCustomers, newCustomers };
   }
 }
 
@@ -635,6 +648,7 @@ function buildReportHTML(salesObj, monthName, month, year, period, saham, obl, s
   // Total Customer Trading: customer yg punya fee > 0 di bulan ini
   const tradingCustomers = saham.tradingCustomers || 0;
   const totalCustomer    = saham.totalCustomer || 0;
+  const newCustomers     = saham.newCustomers || 0;
   const tradingPct       = totalCustomer > 0 ? Math.round(tradingCustomers / totalCustomer * 100) : 0;
 
   const wrapper = document.getElementById('reportWrapper');
@@ -671,7 +685,7 @@ function buildReportHTML(salesObj, monthName, month, year, period, saham, obl, s
           <tr><td class="td-label">Trade Fee</td><td class="td-value">${fmtRp(saham.totalFee)}</td></tr>
           <tr><td class="td-label">Trade Amount</td><td class="td-value">${fmtRp(saham.totalVolume)}</td></tr>
           <tr><td class="td-label">Total Customer</td><td class="td-value">${totalCustomer} Customer</td></tr>
-          <tr><td class="td-label">Total Customer Baru</td><td class="td-value">—</td></tr>
+          <tr><td class="td-label">Total Customer Baru</td><td class="td-value">${newCustomers > 0 ? newCustomers + ' Customer' : '—'}</td></tr>
           <tr><td class="td-label">Total Customer Trading</td><td class="td-value">${tradingCustomers}/${totalCustomer} (${tradingPct}%)</td></tr>
         </tbody>
       </table>
@@ -790,7 +804,7 @@ function reportHeaderHTML() {
   return `
     <div class="rpt-header">
       <div class="rpt-logo">
-        <img src="assets/logo/logofawz-black.png" alt="FAWZ" style="height:70px;object-fit:contain;display:block;"/>
+        <img src="assets/logo/logofawz-black.png" alt="FAWZ" style="height:49px;object-fit:contain;display:block;"/>
       </div>
       <div class="rpt-address">
         Komplek Mentari Greenwich no B7-B8,<br>
