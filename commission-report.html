@@ -420,7 +420,7 @@ async function fetchSahamData(salesId, period) {
     } catch(e) { /* skip */ }
   }
 
-  // Total Customer Baru: aktif di bulan yang dipilih
+  // Total Customer Baru: aktif dari awal bulan yang dipilih ke depan (inklusif)
   let newCustomers = 0;
   if (salesName) {
     try {
@@ -428,10 +428,10 @@ async function fetchSahamData(salesId, period) {
         .from('customers')
         .select('*', { count: 'exact', head: true })
         .ilike('sales_person_name', salesName)
-        .gte('tgl_aktif', start)
-        .lte('tgl_aktif', end);
+        .gte('active_date', start);
       if (!error && count != null) newCustomers = count;
-    } catch(e) { /* skip */ }
+      console.log('[fetchSahamData] newCustomers (active_date >=', start, '):', newCustomers, error);
+    } catch(e) { console.warn('newCustomers error:', e.message); }
   }
 
   try {
