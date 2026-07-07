@@ -622,11 +622,40 @@
       </div>
       <div class="form-group">
         <label class="form-label">No Rekening</label>
-        <input type="text" class="form-control" id="fRek" placeholder="Nomor rekening bank"/>
+        <input type="text" class="form-control" id="fRek" placeholder="Nomor rekening bank" inputmode="numeric"/>
       </div>
       <div class="form-group">
         <label class="form-label">Nama Bank</label>
-        <input type="text" class="form-control" id="fBank" placeholder="BCA / BRI / Mandiri..."/>
+        <select class="form-control" id="fBank">
+          <option value="">— Pilih Bank —</option>
+          <optgroup label="Bank Umum">
+            <option value="BCA">BCA – Bank Central Asia</option>
+            <option value="BNI">BNI – Bank Negara Indonesia</option>
+            <option value="BRI">BRI – Bank Rakyat Indonesia</option>
+            <option value="Mandiri">Bank Mandiri</option>
+            <option value="CIMB Niaga">CIMB Niaga</option>
+            <option value="Danamon">Bank Danamon</option>
+            <option value="Maybank">Maybank Indonesia</option>
+            <option value="Permata">Bank Permata</option>
+            <option value="OCBC NISP">OCBC NISP</option>
+            <option value="Panin">Bank Panin</option>
+            <option value="BTN">BTN – Bank Tabungan Negara</option>
+            <option value="BSI">BSI – Bank Syariah Indonesia</option>
+            <option value="RHB">RHB Bank</option>
+            <option value="Sinarmas">Bank Sinarmas</option>
+            <option value="Mega">Bank Mega</option>
+            <option value="Bukopin">Bank Bukopin</option>
+            <option value="Jago">Bank Jago</option>
+            <option value="Jenius / BTPN">Jenius / BTPN</option>
+            <option value="Sea Bank">Sea Bank</option>
+            <option value="Blu BCA">Blu BCA</option>
+            <option value="Lainnya">Lainnya</option>
+          </optgroup>
+        </select>
+      </div>
+      <div class="form-group full">
+        <label class="form-label">Nama Pemilik Rekening</label>
+        <input type="text" class="form-control" id="fNamaRek" placeholder="Sesuai buku rekening"/>
       </div>
     </div>
 
@@ -770,10 +799,10 @@
     tbody.innerHTML = slice.map(r => {
       const initials = (r.nama||'?').split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase();
       
-      const hasDiri  = r.fotoDiri     ? 'has' : '';
-      const hasKTP   = r.fotoKTP      ? 'has' : '';
-      const hasSelfie= r.fotoSelfie   ? 'has' : '';
-      const hasTab   = r.fotoTabungan ? 'has' : '';
+      const hasDiri  = r.foto_diri     ? 'has' : '';
+      const hasKTP   = r.foto_ktp      ? 'has' : '';
+      const hasSelfie= r.foto_selfie   ? 'has' : '';
+      const hasTab   = r.foto_tabungan ? 'has' : '';
 
       const commCell = canWriteComm ? `<td class="commission-badge-cell" style="white-space:nowrap;font-size:0.75rem;">
         <button style="height:26px;padding:0 10px;border-radius:6px;border:1px solid var(--gold);background:#fff;color:#333;font-size:0.72rem;cursor:pointer;margin-bottom:4px;" onclick="openCommissionModal('${r.id}','${(r.nama||'').replace(/'/g,"\\'")}')">⚙ Komisi</button>
@@ -783,8 +812,8 @@
       return `<tr data-sales-id="${r.id}">
         <td>
           <div class="name-cell">
-            <div class="sales-avatar" onclick="${r.fotoDiri ? `openLightbox('${r.fotoDiri}')` : ''}">
-              ${r.fotoDiri ? `<img src="${r.fotoDiri}" alt=""/>` : initials}
+            <div class="sales-avatar" onclick="${r.foto_diri ? `openLightbox('${r.foto_diri}')` : ''}">
+              ${r.foto_diri ? `<img src="${r.foto_diri}" alt=""/>` : initials}
             </div>
             <div>
               <div class="name-text">${r.nama||'—'}</div>
@@ -798,10 +827,10 @@
         <td>${r.kota||'—'}</td>
         <td>
           <div class="doc-icons">
-            <div class="doc-icon ${hasDiri}" title="Foto Diri" onclick="${r.fotoDiri?`openLightbox('${r.fotoDiri}')`:''}" style="${r.fotoDiri?'cursor:pointer;':'cursor:default;'}">👤</div>
-            <div class="doc-icon ${hasKTP}"   title="Foto KTP"  onclick="${r.fotoKTP?`openLightbox('${r.fotoKTP}')`:''}"   style="${r.fotoKTP?'cursor:pointer;':'cursor:default;'}">🪪</div>
-            <div class="doc-icon ${hasSelfie}" title="Selfie+KTP" onclick="${r.fotoSelfie?`openLightbox('${r.fotoSelfie}')`:''}" style="${r.fotoSelfie?'cursor:pointer;':'cursor:default;'}">🤳</div>
-            <div class="doc-icon ${hasTab}"   title="Buku Tabungan" onclick="${r.fotoTabungan?`openLightbox('${r.fotoTabungan}')`:''}" style="${r.fotoTabungan?'cursor:pointer;':'cursor:default;'}">📒</div>
+            <div class="doc-icon ${hasDiri}"   title="Foto Diri"     onclick="${r.foto_diri?`openLightbox('${r.foto_diri}')`:''}"         style="${r.foto_diri?'cursor:pointer;':'cursor:default;'}">👤</div>
+            <div class="doc-icon ${hasKTP}"     title="Foto KTP"      onclick="${r.foto_ktp?`openLightbox('${r.foto_ktp}')`:''}"             style="${r.foto_ktp?'cursor:pointer;':'cursor:default;'}">🪪</div>
+            <div class="doc-icon ${hasSelfie}"  title="Selfie+KTP"    onclick="${r.foto_selfie?`openLightbox('${r.foto_selfie}')`:''}"       style="${r.foto_selfie?'cursor:pointer;':'cursor:default;'}">🤳</div>
+            <div class="doc-icon ${hasTab}"     title="Buku Tabungan" onclick="${r.foto_tabungan?`openLightbox('${r.foto_tabungan}')`:''}"   style="${r.foto_tabungan?'cursor:pointer;':'cursor:default;'}">📒</div>
           </div>
         </td>
         <td>
@@ -817,7 +846,7 @@
   }
 
   function renderStats(rows) {
-    const doc = rows.filter(r => r.fotoDiri && r.fotoKTP && r.fotoSelfie && r.fotoTabungan).length;
+    const doc = rows.filter(r => r.foto_diri && r.foto_ktp && r.foto_selfie && r.foto_tabungan).length;
     document.getElementById('statTotal').textContent = rows.length;
     document.getElementById('statDoc').textContent   = doc;
   }
@@ -899,7 +928,7 @@
     editId = null;
     document.getElementById('modalTitle').textContent = 'Tambah Sales Baru';
     document.getElementById('btnSaveText').textContent = 'Simpan Sales';
-    ['fKode','fNama','fNPWP','fNIK','fHp','fEmail','fKota','fRek','fBank'].forEach(id =>
+    ['fKode','fNama','fNPWP','fNIK','fHp','fEmail','fKota','fRek','fBank','fNamaRek'].forEach(id =>
       document.getElementById(id).value = '');
     
     resetPhotos();
@@ -919,12 +948,13 @@
     document.getElementById('fHp').value    = r.hp    || '';
     document.getElementById('fEmail').value = r.email || '';
     document.getElementById('fKota').value  = r.kota  || '';
-    document.getElementById('fRek').value   = r.rekening || '';
-    document.getElementById('fBank').value  = r.bank  || '';
+    document.getElementById('fRek').value   = r.rekening   || '';
+    document.getElementById('fBank').value  = r.bank       || '';
+    document.getElementById('fNamaRek').value = r.nama_rekening || '';
     resetPhotos();
     // Show existing photos
     ['diri','ktp','selfie','tabungan'].forEach(key => {
-      const urlKey = { diri:'fotoDiri', ktp:'fotoKTP', selfie:'fotoSelfie', tabungan:'fotoTabungan' }[key];
+      const urlKey = { diri:'foto_diri', ktp:'foto_ktp', selfie:'foto_selfie', tabungan:'foto_tabungan' }[key];
       if (r[urlKey]) {
         photoData[key] = r[urlKey];
         const imgId = { diri:'prevDiri', ktp:'prevKTP', selfie:'prevSelfie', tabungan:'prevTabungan' }[key];
@@ -983,15 +1013,19 @@
 
     const data = {
       kode, nama,
-      npwp:     document.getElementById('fNPWP').value.trim(),
-      nik:      document.getElementById('fNIK').value.trim(),
+      npwp:           document.getElementById('fNPWP').value.trim(),
+      nik:            document.getElementById('fNIK').value.trim(),
       hp,
-      email:    document.getElementById('fEmail').value.trim(),
-      kota:     document.getElementById('fKota').value.trim(),
-      rekening: document.getElementById('fRek').value.trim(),
-      bank:     document.getElementById('fBank').value.trim(),
-      fotoDiri, fotoKTP, fotoSelfie, fotoTabungan,
-      updatedAt: new Date().toISOString(),
+      email:          document.getElementById('fEmail').value.trim(),
+      kota:           document.getElementById('fKota').value.trim(),
+      rekening:       document.getElementById('fRek').value.trim(),
+      bank:           document.getElementById('fBank').value.trim(),
+      nama_rekening:  document.getElementById('fNamaRek').value.trim(),
+      foto_diri:      fotoDiri     || null,
+      foto_ktp:       fotoKTP      || null,
+      foto_selfie:    fotoSelfie   || null,
+      foto_tabungan:  fotoTabungan || null,
+      updated_at:     new Date().toISOString(),
     };
 
     try {
@@ -1002,7 +1036,7 @@
           const idx = window._allSales.findIndex(s => s.id === editId);
           if (idx > -1) window._allSales[idx] = { id: editId, ...data };
         } else {
-          data.createdAt = new Date().toISOString();
+          data.created_at = new Date().toISOString();
           const { data: inserted, error } = await window._supabase.from('sales').insert(data).select().single();
           if (error) throw error;
           window._allSales = window._allSales || [];
@@ -1046,10 +1080,10 @@
   function exportCSV() {
     const rows = filteredRows.length ? filteredRows : (window._allSales||[]);
     if (!rows.length) { alert('Tidak ada data.'); return; }
-    const header = ['Kode','Nama','NPWP','NIK','HP','Email','Kota','Rekening','Bank','Tipe','Foto Diri','Foto KTP','Selfie KTP','Buku Tabungan'];
+    const header = ['Kode','Nama','NPWP','NIK','HP','Email','Kota','Rekening','Nama Rekening','Bank','Tipe','Foto Diri','Foto KTP','Selfie KTP','Buku Tabungan'];
     const csv = [header.join(','), ...rows.map(r =>
-      [r.kode,r.nama,r.npwp,r.nik,r.hp,r.email,r.kota,r.rekening,r.bank,r.tipe,
-       r.fotoDiri?'Ada':'',r.fotoKTP?'Ada':'',r.fotoSelfie?'Ada':'',r.fotoTabungan?'Ada':''].join(',')
+      [r.kode,r.nama,r.npwp,r.nik,r.hp,r.email,r.kota,r.rekening,r.nama_rekening,r.bank,r.tipe,
+       r.foto_diri?'Ada':'',r.foto_ktp?'Ada':'',r.foto_selfie?'Ada':'',r.foto_tabungan?'Ada':''].join(',')
     )].join('\n');
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'}));
