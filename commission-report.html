@@ -128,9 +128,9 @@
 
     /* ── FOOTER ── */
     .rpt-footer {
-      display:flex; justify-content:space-between; align-items:center;
+      display:flex; justify-content:center; align-items:center;
       padding:14px 36px; border-top:1px solid #f0f0f5;
-      font-size:.72rem; color:var(--gray);
+      font-size:.72rem; color:var(--gray); text-align:center;
     }
     .rpt-footer a { color:var(--indigo); text-decoration:none; }
 
@@ -815,11 +815,9 @@ function reportHeaderHTML() {
 }
 
 function reportFooterHTML(tanggal) {
-  const dateStr = tanggal || new Date().toLocaleDateString('id-ID', { day:'numeric', month:'long', year:'numeric' });
   return `
     <div class="rpt-footer">
       <span>corporate@goldenfawz.com &nbsp;|&nbsp; +62 81-6361-598 &nbsp;|&nbsp; www.goldenfawz.com</span>
-      <span>Medan, ${dateStr}</span>
     </div>`;
 }
 
@@ -832,7 +830,7 @@ function drawBarChart(canvasId, data, labels, label, highlightIdx) {
   if (chartInstances[canvasId]) { chartInstances[canvasId].destroy(); }
 
   const colors = data.map((_, i) =>
-    i === highlightIdx ? '#f5a623' : (data[i] > 0 ? '#c7b8f0' : '#e8e8f5')
+    i === highlightIdx ? '#f5a623' : (data[i] > 0 ? '#0d0d2b' : '#e8e8f5')
   );
 
   chartInstances[canvasId] = new Chart(ctx, {
