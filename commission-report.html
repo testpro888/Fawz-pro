@@ -266,7 +266,7 @@ async function loadSalesList() {
   try {
     const { data, error } = await window._supabase
       .from('sales')
-      .select('id, nama, kode, bank, rekening, nama_rekening')
+      .select('*')
       .order('nama');
     if (!error && data) {
       data.forEach(s => {
@@ -299,16 +299,20 @@ async function loadSalesList() {
 
   allSales = sortedNames.map((nama, i) => {
     const match = salesTableMap[nama.toLowerCase().trim()];
+    // Support berbagai kemungkinan nama kolom rekening
+    const bank    = match ? (match.bank         || match.bank_name   || match.namaBank  || '') : '';
+    const rek     = match ? (match.rekening     || match.no_rekening || match.noRekening || match.bank_account || '') : '';
+    const namaRek = match ? (match.nama_rekening || match.bank_holder || '') : '';
     return {
-      id:          nama,
-      nama:        nama,
-      name:        nama,
-      kode:        match ? match.kode          : '',
-      sales_code:  match ? match.kode          : '',
-      dbId:        match ? match.id            : null,
-      bank:        match ? (match.bank         || '') : '',
-      rekening:    match ? (match.rekening     || '') : '',
-      nama_rekening: match ? (match.nama_rekening || '') : '',
+      id:            nama,
+      nama:          nama,
+      name:          nama,
+      kode:          match ? (match.kode || '') : '',
+      sales_code:    match ? (match.kode || '') : '',
+      dbId:          match ? match.id : null,
+      bank,
+      rekening:      rek,
+      nama_rekening: namaRek,
     };
   });
 
@@ -523,16 +527,19 @@ async function fetchSlipInfo(salesId, period) {
   try {
     const { data, error } = await window._supabase
       .from('sales')
-      .select('nama, bank, rekening, nama_rekening')
+      .select('*')
       .ilike('nama', salesName)
       .maybeSingle();
-    if (!error && data) return {
-      nama:          data.nama         || salesName,
-      bank_name:     data.bank         || '',
-      bank_account:  data.rekening     || '',
-      bank_holder:   data.nama_rekening || data.nama || salesName,
-    };
-  } catch(e) { /* skip */ }
+    console.log('[fetchSlipInfo] raw data:', data, 'error:', error);
+    if (!error && data) {
+      // Support berbagai kemungkinan nama kolom (lama vs baru)
+      const bank    = data.bank         || data.bank_name   || data.namaBank  || '';
+      const rek     = data.rekening     || data.no_rekening || data.noRekening || data.bank_account || '';
+      const holder  = data.nama_rekening || data.bank_holder || data.nama || salesName;
+      console.log('[fetchSlipInfo] bank:', bank, '| rekening:', rek);
+      return { nama: data.nama || salesName, bank_name: bank, bank_account: rek, bank_holder: holder };
+    }
+  } catch(e) { console.warn('[fetchSlipInfo] error:', e.message); }
   return { nama: salesName, bank_name: '', bank_account: '', bank_holder: '' };
 }
 
