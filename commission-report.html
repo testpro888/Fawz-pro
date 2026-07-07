@@ -920,22 +920,44 @@ async function exportPDF() {
   const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Ags','Sept','Okt','Nov','Des'];
   const mLabel = months[parseInt(month,10)-1];
 
-  // Set min-height untuk setiap page agar footer ke bawah saat PDF
+  // Simpan style asli
+  const origWidth        = el.style.width;
+  const origMaxWidth     = el.style.maxWidth;
+  const origPosition     = el.style.position;
+  const origPadding      = el.style.padding;
+
+  // A4 portrait inner width = 210mm - 16mm margin = 194mm ≈ 732px @96dpi
+  const A4_PX = 732;
+
+  // Set lebar fixed A4 agar html2canvas render proporsional
+  el.style.width      = A4_PX + 'px';
+  el.style.maxWidth   = A4_PX + 'px';
+  el.style.padding    = '0';
+
+  // Min-height untuk setiap page agar footer ke bawah
   const pages = el.querySelectorAll('.a4-page');
-  pages.forEach(p => { p.style.minHeight = '277mm'; });
+  const origMinHeights = [];
+  pages.forEach(p => { origMinHeights.push(p.style.minHeight); p.style.minHeight = '1050px'; });
+
+  // Tunggu chart re-render di lebar baru
+  await new Promise(r => setTimeout(r, 200));
 
   const opt = {
     margin: [8, 8, 8, 8],
     filename: `Laporan-Komisi-${salesName.replace(/\s+/g,'-')}-${mLabel}${year}.pdf`,
     image: { type: 'jpeg', quality: 0.97 },
-    html2canvas: { scale: 2, useCORS: true, logging: false, windowWidth: 1200 },
+    html2canvas: { scale: 2, useCORS: true, logging: false, width: A4_PX, windowWidth: A4_PX },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-    pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+    pagebreak: { mode: ['css', 'legacy'] }
   };
   await html2pdf().set(opt).from(el).save();
 
-  // Reset min-height setelah export
-  pages.forEach(p => { p.style.minHeight = ''; });
+  // Kembalikan style semula
+  el.style.width      = origWidth;
+  el.style.maxWidth   = origMaxWidth;
+  el.style.position   = origPosition;
+  el.style.padding    = origPadding;
+  pages.forEach((p, i) => { p.style.minHeight = origMinHeights[i]; });
 }
 </script>
 </html>
