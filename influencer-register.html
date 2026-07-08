@@ -249,6 +249,15 @@
         </div>
       </div>
 
+      <!-- No. WhatsApp -->
+      <div class="form-group">
+        <label>No. WhatsApp</label>
+        <div class="input-wrap">
+          <span class="input-icon">📱</span>
+          <input type="tel" id="fieldPhone" placeholder="08xx xxxx xxxx" autocomplete="tel"/>
+        </div>
+      </div>
+
       <!-- Sekuritas -->
       <div class="form-group">
         <label>Sekuritas yang Digunakan</label>
@@ -354,6 +363,7 @@
 
     const nama       = document.getElementById('fieldNama').value.trim();
     const email      = document.getElementById('fieldEmail').value.trim().toLowerCase();
+    const phone      = document.getElementById('fieldPhone').value.trim();
     const clientCode = document.getElementById('fieldClientCode').value.trim().toUpperCase();
     const sekRadio   = document.querySelector('input[name="sekuritas"]:checked');
 
@@ -361,6 +371,7 @@
     if (!nama)        { showError('⚠️ Nama lengkap wajib diisi.'); return; }
     if (!email)       { showError('⚠️ Email wajib diisi.'); return; }
     if (!validateEmail(email)) { showError('⚠️ Format email tidak valid.'); return; }
+    if (!phone)       { showError('⚠️ No. WhatsApp wajib diisi.'); return; }
     if (!sekRadio)    { showError('⚠️ Pilih sekuritas yang Anda gunakan.'); return; }
     if (!clientCode)  { showError('⚠️ Client code wajib diisi.'); return; }
 
@@ -372,6 +383,7 @@
         .insert({
           nama,
           email,
+          phone,
           sekuritas: sekRadio.value,
           client_code: clientCode,
           status: 'pending',
