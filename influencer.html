@@ -118,6 +118,24 @@
     .toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(16px); background: var(--navy); color: #fff; padding: 12px 24px; border-radius: 50px; font-size: 0.84rem; font-weight: 600; box-shadow: var(--shadow-lg); opacity: 0; transition: all 0.3s; pointer-events: none; white-space: nowrap; z-index: 9999; }
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
+    /* Tabs */
+    .tabs { display: flex; gap: 8px; margin-bottom: 24px; animation: fadeUp 0.4s 0.06s ease both; }
+    .tab-btn { padding: 11px 24px; border: none; background: var(--white); color: var(--gray); font-family: 'Inter', sans-serif; font-size: 0.875rem; font-weight: 700; border-radius: 10px; cursor: pointer; transition: all 0.2s; border: 1.5px solid var(--border); }
+    .tab-btn:hover { border-color: var(--gold); color: var(--gold); }
+    .tab-btn.active { background: linear-gradient(135deg, var(--navy), #2a2a6a); color: #fff; border-color: var(--navy); }
+
+    /* Tab Content */
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* Status Badge */
+    .badge-req-sales { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
+    .badge-lengkap { background: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; }
+    .badge-open { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+    .badge-pending { background: #fef3e2; color: #92610a; border: 1px solid #ffd88d; }
+    .badge-approved { background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7; }
+    .badge-rejected { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+
     @media (max-width: 900px) { .stats-row { grid-template-columns: 1fr 1fr; } }
     @media (max-width: 600px) { .stats-row { grid-template-columns: 1fr; } .page-container { padding: 20px 16px; } }
   </style>
@@ -130,62 +148,112 @@
   <div class="page-header">
     <div>
       <div class="page-title">Influencer</div>
-      <div class="page-subtitle">Daftar Client yang menjadi Influencer Fawz Pro</div>
+      <div class="page-subtitle">Daftar Request dan Influencer Fawz Pro</div>
       <div class="title-underline"></div>
     </div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
       <div id="lastUpdated" style="font-size:0.78rem;color:var(--gray);"></div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('request')">Request</button>
+    <button class="tab-btn" onclick="switchTab('influencer')">Influencer List</button>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="stat-box"><div class="stat-box-label">Total Request</div><div class="stat-box-val" id="statRequest" style="color:var(--gold);">—</div></div>
+    <div class="stat-box"><div class="stat-box-label">Total Influencer</div><div class="stat-box-val" id="statTotal">—</div></div>
+    <div class="stat-box"><div class="stat-box-label">Total Fans</div><div class="stat-box-val" id="statFans" style="color:var(--purple);">—</div></div>
+    <div class="stat-box"><div class="stat-box-label">Total Client</div><div class="stat-box-val" id="statClients" style="color:var(--green);">—</div></div>
+  </div>
+
+  <!-- REQUEST TAB -->
+  <div id="requestTab" class="tab-content active">
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <div class="search-wrap">
+        <span class="search-icon">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </span>
+        <input type="text" id="searchRequest" placeholder="Cari nama, email, atau Client ID..." oninput="applyRequestFilter()"/>
+      </div>
+      <div class="total-badge" id="totalRequestBadge">0 request</div>
+    </div>
+
+    <!-- Table -->
+    <div class="table-card">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Date</th>
+              <th>Email</th>
+              <th>Nama</th>
+              <th>No. WA</th>
+              <th>Client ID</th>
+              <th>Sekuritas</th>
+              <th>Status</th>
+              <th style="text-align:center;">Action</th>
+            </tr>
+          </thead>
+          <tbody id="requestTableBody">
+            <tr><td colspan="9"><div class="empty-state"><div class="empty-icon">⏳</div><p>Memuat data...</p></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="table-footer">
+        <div id="requestTableInfo">Menampilkan 0 data</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- INFLUENCER LIST TAB -->
+  <div id="influencerTab" class="tab-content">
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <div class="search-wrap">
+        <span class="search-icon">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </span>
+        <input type="text" id="searchInput" placeholder="Cari nama, email, atau Client ID..." oninput="applyFilter()"/>
+      </div>
+      <div class="total-badge" id="totalBadge">0 influencer</div>
       <button class="btn btn-primary" onclick="openAddModal()">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         Tambah Influencer
       </button>
     </div>
-  </div>
 
-  <!-- Stats -->
-  <div class="stats-row">
-    <div class="stat-box"><div class="stat-box-label">Total Influencer</div><div class="stat-box-val" id="statTotal">—</div></div>
-    <div class="stat-box"><div class="stat-box-label">Bulan Ini</div><div class="stat-box-val" id="statBulan" style="color:var(--green);">—</div></div>
-    <div class="stat-box"><div class="stat-box-label">Total Fans</div><div class="stat-box-val" id="statFans" style="color:var(--purple);">—</div></div>
-    <div class="stat-box"><div class="stat-box-label">Total Client</div><div class="stat-box-val" id="statClients" style="color:var(--gold);">—</div></div>
-  </div>
-
-  <!-- Toolbar -->
-  <div class="toolbar">
-    <div class="search-wrap">
-      <span class="search-icon">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      </span>
-      <input type="text" id="searchInput" placeholder="Cari nama, email, atau Client ID..." oninput="applyFilter()"/>
-    </div>
-    <div class="total-badge" id="totalBadge">0 influencer</div>
-  </div>
-
-  <!-- Table -->
-  <div class="table-card">
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Influencer</th>
-            <th>Client ID</th>
-            <th>Email</th>
-            <th>No. HP</th>
-            <th>Revenue</th>
-            <th>Fans</th>
-            <th>Jumlah Client</th>
-            <th>Tgl. Tambah</th>
-            <th style="text-align:center;">Aksi</th>
-          </tr>
-        </thead>
-        <tbody id="infTableBody">
-          <tr><td colspan="10"><div class="empty-state"><div class="empty-icon">⏳</div><p>Memuat data...</p></div></td></tr>
-        </tbody>
-      </table>
-    </div>
-    <div class="table-footer">
-      <div id="tableInfo">Menampilkan 0 data</div>
+    <!-- Table -->
+    <div class="table-card">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Influencer</th>
+              <th>Client ID</th>
+              <th>Email</th>
+              <th>No. HP</th>
+              <th>Revenue</th>
+              <th>Fans</th>
+              <th>Jumlah Client</th>
+              <th>Tgl. Tambah</th>
+              <th style="text-align:center;">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="infTableBody">
+            <tr><td colspan="10"><div class="empty-state"><div class="empty-icon">⏳</div><p>Memuat data...</p></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="table-footer">
+        <div id="tableInfo">Menampilkan 0 data</div>
+      </div>
     </div>
   </div>
 </div>
@@ -256,8 +324,10 @@
 
 <script>
   let _all = [], _filtered = [];
+  let _requests = [], _filteredRequests = [];
   let _selCustomer = null;
   let _searchTimer = null;
+  let _currentTab = 'request';
 
   function _esc(s) {
     return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -280,8 +350,48 @@
     return '<span class="badge badge-rev">Rp ' + Number(n).toLocaleString('id-ID') + '</span>';
   }
 
+  // ── TAB SWITCHING ──
+  function switchTab(tab) {
+    _currentTab = tab;
+    const tabs = document.querySelectorAll('.tab-btn');
+    tabs.forEach(t => t.classList.remove('active'));
+    
+    if (tab === 'request') {
+      tabs[0].classList.add('active');
+      document.getElementById('requestTab').classList.add('active');
+      document.getElementById('influencerTab').classList.remove('active');
+    } else {
+      tabs[1].classList.add('active');
+      document.getElementById('influencerTab').classList.add('active');
+      document.getElementById('requestTab').classList.remove('active');
+    }
+  }
+
   // ── LOAD DATA ──
   async function loadData() {
+    await Promise.all([loadRequests(), loadInfluencers()]);
+    updateStats();
+  }
+
+  async function loadRequests() {
+    try {
+      const { data, error } = await window._supabase
+        .from('influencer_registrations')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      _requests = data || [];
+    } catch(e) {
+      console.error('loadRequests error:', e);
+      _requests = [];
+      document.getElementById('requestTableBody').innerHTML =
+        '<tr><td colspan="9"><div class="empty-state"><div class="empty-icon">⚠️</div><p>Gagal memuat data: ' + _esc(e.message || String(e)) + '</p></div></td></tr>';
+      return;
+    }
+    applyRequestFilter();
+  }
+
+  async function loadInfluencers() {
     try {
       const { data, error } = await window._supabase
         .from('influencers')
@@ -297,25 +407,129 @@
       return;
     }
     document.getElementById('lastUpdated').textContent = 'Diperbarui: ' + new Date().toLocaleTimeString('id-ID');
-    updateStats();
     applyFilter();
   }
 
   function updateStats() {
-    const now = new Date();
-    const bulan = _all.filter(r => {
-      if (!r.created_at) return false;
-      const d = new Date(r.created_at);
-      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-    }).length;
     const totalFans    = _all.reduce((s, r) => s + (parseInt(r.fans) || 0), 0);
     const totalClients = _all.reduce((s, r) => s + (parseInt(r.client_count) || 0), 0);
+    document.getElementById('statRequest').textContent = _requests.length;
     document.getElementById('statTotal').textContent   = _all.length;
-    document.getElementById('statBulan').textContent   = bulan;
     document.getElementById('statFans').textContent    = fmtFans(totalFans);
     document.getElementById('statClients').textContent = totalClients || '—';
   }
 
+  // ── REQUEST TAB FUNCTIONS ──
+  function applyRequestFilter() {
+    const q = (document.getElementById('searchRequest').value || '').toLowerCase();
+    _filteredRequests = _requests.filter(r => {
+      if (!q) return true;
+      return (r.nama||'').toLowerCase().includes(q) ||
+             (r.email||'').toLowerCase().includes(q) ||
+             (r.client_code||'').toLowerCase().includes(q);
+    });
+    document.getElementById('totalRequestBadge').textContent = _filteredRequests.length + ' request';
+    document.getElementById('requestTableInfo').textContent = 'Menampilkan ' + _filteredRequests.length + ' dari ' + _requests.length + ' data';
+    renderRequestTable(_filteredRequests);
+  }
+
+  function renderRequestTable(list) {
+    const tbody = document.getElementById('requestTableBody');
+    if (!list.length) {
+      tbody.innerHTML = '<tr><td colspan="9"><div class="empty-state"><div class="empty-icon">📋</div><p>' +
+        (_requests.length === 0 ? 'Belum ada request influencer.' : 'Tidak ada hasil yang cocok') +
+        '</p></div></td></tr>';
+      return;
+    }
+    tbody.innerHTML = list.map((r, i) => {
+      const dateStr = r.created_at ? new Date(r.created_at).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}) : '—';
+      const safeId = _esc(String(r.id));
+      
+      let statusBadge = '';
+      let actionButtons = '';
+      
+      if (r.status === 'pending' || !r.status) {
+        statusBadge = '<span class="badge badge-pending">Pending</span>';
+        actionButtons = `
+          <button class="btn btn-primary btn-sm" onclick="approveRequest('${safeId}')" title="Accept">✓ Accept</button>
+          <button class="btn btn-danger btn-sm" onclick="rejectRequest('${safeId}')" title="Reject">✗ Reject</button>
+        `;
+      } else if (r.status === 'approved') {
+        statusBadge = '<span class="badge badge-approved">Approved</span>';
+        actionButtons = '<span style="font-size:0.75rem;color:var(--gray);">Disetujui</span>';
+      } else if (r.status === 'rejected') {
+        statusBadge = '<span class="badge badge-rejected">Rejected</span>';
+        actionButtons = '<span style="font-size:0.75rem;color:var(--gray);">Ditolak</span>';
+      }
+
+      let regStatusBadge = '<span class="badge badge-req-sales">Req Sales</span>';
+      if (r.client_code && r.sekuritas) {
+        regStatusBadge = '<span class="badge badge-lengkap">Lengkap</span>';
+      }
+
+      return `<tr>
+        <td style="color:#bbb;font-size:0.8rem;">${i + 1}</td>
+        <td style="font-size:0.78rem;color:#aaa;">${dateStr}</td>
+        <td style="font-size:0.82rem;color:var(--gray);">${_esc(r.email||'—')}</td>
+        <td style="font-weight:700;font-size:0.875rem;color:var(--navy);">${_esc(r.nama||'—')}</td>
+        <td style="font-size:0.82rem;">${_esc(r.phone||'—')}</td>
+        <td><span class="mono">${_esc(r.client_code||'—')}</span></td>
+        <td style="font-size:0.82rem;color:var(--gray);">${_esc(r.sekuritas||'—')}</td>
+        <td>
+          ${regStatusBadge}
+          <div style="margin-top:4px;">${statusBadge}</div>
+        </td>
+        <td>
+          <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;">
+            ${actionButtons}
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+
+  async function approveRequest(id) {
+    try {
+      const { error } = await window._supabase
+        .from('influencer_registrations')
+        .update({ status: 'approved', updated_at: new Date().toISOString() })
+        .eq('id', id);
+      if (error) throw error;
+      
+      const req = _requests.find(r => String(r.id) === String(id));
+      if (req) req.status = 'approved';
+      
+      showToast('Request berhasil disetujui');
+      applyRequestFilter();
+      updateStats();
+    } catch(e) {
+      console.error(e);
+      showToast('Gagal approve: ' + (e.message || e));
+    }
+  }
+
+  async function rejectRequest(id) {
+    if (!confirm('Tolak request ini?')) return;
+    try {
+      const { error } = await window._supabase
+        .from('influencer_registrations')
+        .update({ status: 'rejected', updated_at: new Date().toISOString() })
+        .eq('id', id);
+      if (error) throw error;
+      
+      const req = _requests.find(r => String(r.id) === String(id));
+      if (req) req.status = 'rejected';
+      
+      showToast('Request ditolak');
+      applyRequestFilter();
+      updateStats();
+    } catch(e) {
+      console.error(e);
+      showToast('Gagal reject: ' + (e.message || e));
+    }
+  }
+
+  // ── INFLUENCER TAB FUNCTIONS ──
   function applyFilter() {
     const q = (document.getElementById('searchInput').value || '').toLowerCase();
     _filtered = _all.filter(r => {
