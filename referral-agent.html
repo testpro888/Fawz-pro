@@ -582,18 +582,16 @@
 
   /**
    * Cek membership satu agent ke API Petik Profit.
-   * Return: 'premium' | 'free' | null (null = tidak bisa dicek / error)
-   *
-   * Kompatibel dengan dua format respons:
-   *   1. { status: 'OK', data: { is_premium: true/false } }
-   *   2. { success: true, data: { is_member: true/false } }
+   * Endpoint: POST /api/membership/check
+   * Response: { success: true, data: { email, is_member, membership_status } }
+   * Return: 'premium' | 'free' | null (null = error)
    */
   async function checkMembership(email) {
     if (!email) return null;
     const cfg = window.__FAWZ_CONFIG__ || {};
     const baseUrl = cfg.petikProfitUrl || 'https://pp.ikutin.id';
     try {
-      const res = await fetch(baseUrl + '/api/fawzpro/check-membership', {
+      const res = await fetch(baseUrl + '/api/membership/check', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
         body: JSON.stringify({ email })
@@ -603,27 +601,8 @@
         return null;
       }
       const json = await res.json();
-
-      // Validasi respons — support kedua format
-      if (!json.data) {
-        if (json.status !== 'OK' && json.success !== true) return null;
-        return null;
-      }
-
-      // Format 1: is_premium (boolean)
-      if (typeof json.data.is_premium === 'boolean') {
-        return json.data.is_premium ? 'premium' : 'free';
-      }
-      // Format 2: is_member (boolean) — dari MembershipCheckController
-      if (typeof json.data.is_member === 'boolean') {
-        return json.data.is_member ? 'premium' : 'free';
-      }
-      // Format 3: membership_status string
-      if (json.data.membership_status) {
-        return json.data.membership_status === 'member' ? 'premium' : 'free';
-      }
-
-      return null;
+      if (!json.success || !json.data) return null;
+      return json.data.is_member === true ? 'premium' : 'free';
     } catch(e) {
       console.warn('[Membership] Gagal cek', email, e.message || e);
       return null;
