@@ -227,7 +227,7 @@
     <label>No. Rekening:</label>
     <input type="text" id="inputBankAccount" class="filter-select" placeholder="contoh: 022 1551 795" style="min-width:180px;" oninput="this.dataset.manual='1'"/>
     <label>Cust. Baru:</label>
-    <input type="number" id="inputNewCustomer" class="filter-select" placeholder="0" min="0" style="width:70px;" oninput="window._manualNewCustomer=parseInt(this.value)||0"/>
+    <input type="number" id="inputNewCustomer" class="filter-select" placeholder="0" min="0" style="width:70px;" oninput="window._manualNewCustomer=parseInt(this.value)||0; window._manualNewCustomerSet=true;"/>
   </div>
 
   <!-- Loading -->
@@ -393,7 +393,7 @@ function onFilterChange() {
   rekInput.value  = salesObj.rekening || '';
   // Reset customer baru manual
   const custInput = document.getElementById('inputNewCustomer');
-  if (custInput) { custInput.value = ''; window._manualNewCustomer = 0; }
+  if (custInput) { custInput.value = ''; window._manualNewCustomer = 0; window._manualNewCustomerSet = false; }
 }
 
 async function generateReport() {
@@ -721,7 +721,7 @@ function buildReportHTML(salesObj, monthName, month, year, period, saham, obl, s
           <tr><td class="td-label">Trade Fee</td><td class="td-value">${fmtRp(saham.totalFee)}</td></tr>
           <tr><td class="td-label">Trade Amount</td><td class="td-value">${fmtRp(saham.totalVolume)}</td></tr>
           <tr><td class="td-label">Total Customer</td><td class="td-value">${totalCustomer} Customer</td></tr>
-          <tr><td class="td-label">Total Customer Baru</td><td class="td-value">${(window._manualNewCustomer > 0 ? window._manualNewCustomer : newCustomers) + ' Customer'}</td></tr>
+          <tr><td class="td-label">Total Customer Baru</td><td class="td-value">${(window._manualNewCustomerSet ? window._manualNewCustomer : newCustomers) + ' Customer'}</td></tr>
           <tr><td class="td-label">Total Customer Trading</td><td class="td-value">${tradingCustomers}/${totalCustomer} (${tradingPct}%)</td></tr>
         </tbody>
       </table>
