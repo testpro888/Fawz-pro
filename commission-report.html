@@ -716,7 +716,7 @@ function buildReportHTML(salesObj, monthName, month, year, period, saham, obl, s
     <div class="rpt-table-section">
       <div class="rpt-section-label">Keterangan Saham</div>
       <table class="rpt-data-table">
-        <thead><tr><th style="width:60%">Keterangan</th><th>Total</th></tr></thead>
+        <thead><tr><th style="width:60%">Keterangan</th><th style="text-align:right">Total</th></tr></thead>
         <tbody>
           <tr><td class="td-label">Trade Fee</td><td class="td-value">${fmtRp(saham.totalFee)}</td></tr>
           <tr><td class="td-label">Trade Amount</td><td class="td-value">${fmtRp(saham.totalVolume)}</td></tr>
@@ -731,7 +731,7 @@ function buildReportHTML(salesObj, monthName, month, year, period, saham, obl, s
   page1.innerHTML += `
     <div class="rpt-income-section">
       <table class="income-table">
-        <thead><tr><th style="width:50%">Penghasilan</th><th></th><th>Total</th></tr></thead>
+        <thead><tr><th style="width:50%">Penghasilan</th><th></th><th style="text-align:right">Total</th></tr></thead>
         <tbody>
           <tr>
             <td>Total Komisi</td>
@@ -855,7 +855,7 @@ function reportFooterHTML(tanggal) {
     <div class="rpt-spacer"></div>
     </div>
     <div class="rpt-footer">
-      <span>corporate@goldenfawz.com &nbsp;|&nbsp; +62 81-6361-598 &nbsp;|&nbsp; www.goldenfawz.com</span>
+      <span>corporate@goldenfawz.com &nbsp;|&nbsp; +62 811-6361-598 &nbsp;|&nbsp; www.goldenfawz.com</span>
     </div>`;
 }
 
