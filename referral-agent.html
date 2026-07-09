@@ -583,6 +583,10 @@
   /**
    * Cek membership satu agent ke API Petik Profit.
    * Return: 'premium' | 'free' | null (null = tidak bisa dicek / error)
+   *
+   * Kompatibel dengan dua format respons:
+   *   1. { status: 'OK', data: { is_premium: true/false } }
+   *   2. { success: true, data: { is_member: true/false } }
    */
   async function checkMembership(email) {
     if (!email) return null;
@@ -591,7 +595,7 @@
     try {
       const res = await fetch(baseUrl + '/api/fawzpro/check-membership', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
         body: JSON.stringify({ email })
       });
       if (!res.ok) {
@@ -599,8 +603,27 @@
         return null;
       }
       const json = await res.json();
-      if (json.status !== 'OK' || !json.data) return null;
-      return json.data.is_premium === true ? 'premium' : 'free';
+
+      // Validasi respons — support kedua format
+      if (!json.data) {
+        if (json.status !== 'OK' && json.success !== true) return null;
+        return null;
+      }
+
+      // Format 1: is_premium (boolean)
+      if (typeof json.data.is_premium === 'boolean') {
+        return json.data.is_premium ? 'premium' : 'free';
+      }
+      // Format 2: is_member (boolean) — dari MembershipCheckController
+      if (typeof json.data.is_member === 'boolean') {
+        return json.data.is_member ? 'premium' : 'free';
+      }
+      // Format 3: membership_status string
+      if (json.data.membership_status) {
+        return json.data.membership_status === 'member' ? 'premium' : 'free';
+      }
+
+      return null;
     } catch(e) {
       console.warn('[Membership] Gagal cek', email, e.message || e);
       return null;
