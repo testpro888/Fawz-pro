@@ -105,6 +105,30 @@
     .detail-item.full { grid-column:1/-1; }
     .detail-section-title { font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:var(--gold); margin-bottom:10px; margin-top:16px; }
 
+    /* ── Add Transaction Modal ── */
+    .add-modal { width:860px; }
+    .form-section-title { font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:var(--gold); margin:18px 0 10px; padding-bottom:6px; border-bottom:1px solid #f0f0f5; }
+    .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .form-grid.col3 { grid-template-columns:1fr 1fr 1fr; }
+    .form-group { display:flex; flex-direction:column; gap:4px; }
+    .form-group.full { grid-column:1/-1; }
+    .form-label { font-size:.68rem; font-weight:600; color:#666; text-transform:uppercase; letter-spacing:.6px; }
+    .form-label .req { color:var(--red); }
+    .form-input { height:36px; padding:0 12px; border:1.5px solid var(--border); border-radius:8px; font-family:'Inter',sans-serif; font-size:.84rem; color:var(--text); outline:none; transition:border .2s; background:#fff; }
+    .form-input:focus { border-color:var(--gold); }
+    .form-input[readonly] { background:#f8f8fe; color:#888; }
+    .form-input.auto-calc { background:#fffbf0; color:var(--navy); font-weight:600; border-color:#ffd580; }
+    select.form-input { cursor:pointer; }
+
+    .calc-summary { background:linear-gradient(135deg,#f8f4ff,#fff8f0); border:1.5px solid #e8d5ff; border-radius:12px; padding:16px 20px; margin-top:16px; }
+    .calc-row { display:flex; justify-content:space-between; align-items:center; padding:4px 0; font-size:.82rem; border-bottom:1px solid rgba(0,0,0,.04); }
+    .calc-row:last-child { border-bottom:none; font-weight:700; font-size:.9rem; color:var(--navy); padding-top:8px; margin-top:4px; border-top:2px solid #e0d0ff; }
+    .calc-row .lbl { color:#666; }
+    .calc-row .val { font-weight:600; color:var(--navy); font-family:'Courier New',monospace; }
+    .calc-row .val.green { color:var(--green); }
+    .calc-row .val.red { color:var(--red); }
+    .calc-row .val.gold { color:var(--gold); }
+
     .toast-container { position:fixed; bottom:28px; right:28px; z-index:9999; display:flex; flex-direction:column; gap:10px; }
     .toast { padding:14px 20px; border-radius:12px; font-size:.875rem; font-weight:500; box-shadow:0 6px 24px rgba(0,0,0,.15); animation:toastIn .3s ease; max-width:320px; }
     @keyframes toastIn { from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)} }
@@ -112,8 +136,8 @@
     .toast-error{background:#fff0f0;border:1px solid #ffcccc;color:#c0392b;}
     .toast-info{background:#f0f4ff;border:1px solid #c5d3ff;color:#2d4abf;}
 
-    @media(max-width:900px){.stats-row{grid-template-columns:repeat(2,1fr);}}
-    @media(max-width:600px){.stats-row{grid-template-columns:1fr;}.page-container{padding:20px 14px;}}
+    @media(max-width:900px){.stats-row{grid-template-columns:repeat(2,1fr);}}.add-modal{width:96vw!important;}
+    @media(max-width:600px){.stats-row{grid-template-columns:1fr;}.page-container{padding:20px 14px;}.form-grid{grid-template-columns:1fr!important;}.form-grid.col3{grid-template-columns:1fr!important;}}
   </style>
 </head>
 <body>
@@ -129,6 +153,7 @@
     </div>
     <div style="display:flex;gap:10px;align-items:center;">
       <button class="btn btn-outline btn-sm" onclick="exportCSV()">Export CSV</button>
+      <button class="btn btn-sm" id="btnAddTx" onclick="openAddModal()" style="background:linear-gradient(135deg,var(--gold),var(--gold-light));color:#fff;display:none;">+ Tambah Transaksi</button>
     </div>
   </div>
 
@@ -167,18 +192,28 @@
           <tr>
             <th>#</th>
             <th>Tanggal</th>
-            <th>Seri Obligasi</th>
+            <th>Seri</th>
             <th>Jenis</th>
-            <th>Sales</th>
-            <th>Nasabah</th>
             <th>Sekuritas</th>
+            <th>Nasabah / Client ID</th>
             <th style="text-align:right;">Nominal</th>
+            <th style="text-align:right;">Unit</th>
+            <th style="text-align:right;">Modal</th>
+            <th style="text-align:right;">Harga Cust</th>
+            <th style="text-align:right;">Rev. Fawz</th>
+            <th style="text-align:right;">Payout Sek.</th>
+            <th style="text-align:right;">Komisi Sales</th>
+            <th>TLA</th>
+            <th style="text-align:right;">Komisi TLA</th>
+            <th style="text-align:right;">Total Exp.</th>
+            <th style="text-align:right;">Profit</th>
+            <th>Sales</th>
             <th>Status</th>
             <th id="thAction" style="text-align:center;">Aksi</th>
           </tr>
         </thead>
         <tbody id="tableBody">
-          <tr><td colspan="10"><div class="loading-wrap"><div class="spinner"></div><div style="font-size:.85rem;">Memuat data...</div></div></td></tr>
+          <tr><td colspan="20"><div class="loading-wrap"><div class="spinner"></div><div style="font-size:.85rem;">Memuat data...</div></div></td></tr>
         </tbody>
       </table>
     </div>
@@ -202,6 +237,119 @@
 </div>
 
 <div class="toast-container" id="toastContainer"></div>
+
+<!-- ===== ADD TRANSACTION MODAL ===== -->
+<div class="modal-overlay" id="addModal" onclick="if(event.target===this)closeAddModal()">
+  <div class="modal add-modal">
+    <div class="modal-header">
+      <div class="modal-title">Tambah Transaksi Obligasi</div>
+      <button class="modal-close" onclick="closeAddModal()">✕</button>
+    </div>
+
+    <div class="form-section-title">Informasi Dasar</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label">Tanggal <span class="req">*</span></label>
+        <input type="date" class="form-input" id="f-tanggal"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Client ID <span class="req">*</span></label>
+        <input type="text" class="form-input" id="f-client-id" placeholder="Contoh: MR028N" oninput="lookupCustomer(this.value)"/>
+      </div>
+      <div class="form-group full">
+        <label class="form-label">Nama Nasabah <span style="font-size:.65rem;color:#aaa;">(otomatis dari Client ID)</span></label>
+        <input type="text" class="form-input" id="f-nama" placeholder="Otomatis terisi jika Client ID ditemukan"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Buy / Sell <span class="req">*</span></label>
+        <select class="form-input" id="f-jenis">
+          <option value="Beli">Buy</option>
+          <option value="Jual">Sell</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Sekuritas <span class="req">*</span></label>
+        <select class="form-input" id="f-sekuritas">
+          <option value="">-- Pilih --</option>
+          <option value="Maybank">Maybank</option>
+          <option value="Trimegah">Trimegah</option>
+          <option value="RHB">RHB</option>
+          <option value="Lainnya">Lainnya</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Seri Obligasi <span class="req">*</span></label>
+        <input type="text" class="form-input" id="f-seri" placeholder="Contoh: FR0100"/>
+      </div>
+    </div>
+
+    <div class="form-section-title">Nilai & Kalkulasi</div>
+    <div class="form-grid col3">
+      <div class="form-group">
+        <label class="form-label">Nominal (Rp) <span class="req">*</span></label>
+        <input type="text" class="form-input" id="f-nominal" placeholder="0" oninput="fmtInput(this);recalc()"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Unit Count <span style="font-size:.65rem;color:#aaa;">(Nominal÷100)</span></label>
+        <input type="text" class="form-input auto-calc" id="f-unit" readonly/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Modal (Rp/unit)</label>
+        <input type="text" class="form-input" id="f-modal-per-unit" placeholder="99,00" oninput="fmtDecimalInput(this);recalc()"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Modal Total <span style="font-size:.65rem;color:#aaa;">(Unit×Modal/unit)</span></label>
+        <input type="text" class="form-input auto-calc" id="f-modal" readonly/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Modal to Sales (Rp/unit)</label>
+        <input type="text" class="form-input" id="f-modal-sales" placeholder="99,50" oninput="fmtDecimalInput(this);recalc()"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Harga to Customer (Rp/unit)</label>
+        <input type="text" class="form-input" id="f-harga-customer" placeholder="100,00" oninput="fmtDecimalInput(this);recalc()"/>
+      </div>
+    </div>
+
+    <div class="form-section-title">Distribusi & Komisi</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label">Sales <span style="font-size:.65rem;color:#aaa;">(otomatis dari customer)</span></label>
+        <input type="text" class="form-input" id="f-sales" placeholder="Nama sales"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">TLA (manual)</label>
+        <input type="text" class="form-input" id="f-tla" placeholder="Nama TLA" oninput="recalc()"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">TLA Code <span style="font-size:.65rem;color:#aaa;">(1 = ada komisi)</span></label>
+        <select class="form-input" id="f-tla-code" onchange="recalc()">
+          <option value="0">0 – Tidak ada TLA</option>
+          <option value="1">1 – Ada TLA</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Ringkasan Kalkulasi -->
+    <div class="calc-summary" id="calcSummary">
+      <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#888;margin-bottom:10px;">📊 Ringkasan Kalkulasi</div>
+      <div class="calc-row"><span class="lbl">Revenue Fawz</span><span class="val green" id="cs-rev-fawz">—</span></div>
+      <div class="calc-row"><span class="lbl">Payout Sekuritas (30%)</span><span class="val" id="cs-payout-sek">—</span></div>
+      <div class="calc-row"><span class="lbl">Revenue Sales</span><span class="val" id="cs-rev-sales">—</span></div>
+      <div class="calc-row"><span class="lbl">Komisi Sales (60% × 10%)</span><span class="val red" id="cs-comm-sales">—</span></div>
+      <div class="calc-row"><span class="lbl">Komisi TLA</span><span class="val red" id="cs-comm-tla">—</span></div>
+      <div class="calc-row"><span class="lbl">Total Expenses</span><span class="val red" id="cs-total-exp">—</span></div>
+      <div class="calc-row"><span class="lbl">Profit Fawz</span><span class="val gold" id="cs-profit">—</span></div>
+    </div>
+
+    <div id="addModalAlert" style="margin-top:12px;padding:10px 14px;border-radius:8px;font-size:.82rem;display:none;"></div>
+
+    <div class="modal-footer">
+      <button class="btn btn-outline btn-sm" onclick="closeAddModal()">Batal</button>
+      <button class="btn btn-sm" id="btnSaveTx" onclick="saveTx()" style="background:linear-gradient(135deg,var(--gold),var(--gold-light));color:#fff;">💾 Simpan Transaksi</button>
+    </div>
+  </div>
+</div>
 
 <script>
   const PAGE_SIZE = 20;
@@ -236,6 +384,11 @@
       document.getElementById('thAction').style.display = 'none';
     }
 
+    // Tampilkan tombol tambah transaksi untuk sales, admin, head_account, head_sales
+    if (['sales','head_sales','head_account','admin','treasury'].includes(curUser.role)) {
+      document.getElementById('btnAddTx').style.display = 'inline-flex';
+    }
+
     // Set default month filter
     await loadData();
     populateMonthFilter();
@@ -255,28 +408,42 @@
       if (error) throw error;
 
       allRows = (data || []).map(r => ({
-        id:           r.id,
-        tanggal:      r.tanggal_order || (r.created_at ? r.created_at.slice(0,10) : ''),
-        seri:         r.seri || '—',
-        jenis:        r.jenis_transaksi || 'Beli',
-        category:     r.category || '',
-        salesNama:    r.sales_pic || '—',
-        salesKode:    r.sales_code || '',
-        nasabah:      r.customer_name || '—',
-        clientId:     r.client_id || '',
-        sekuritas:    r.sekuritas_dipakai || '—',
-        nominal:      Number(r.nominal) || 0,
-        unit:         Number(r.unit_amount) || 0,
-        settlement:   r.settlement || '',
-        kupon:        r.kupon,
-        ytm:          r.ytm,
-        jatuhTempo:   r.jatuh_tempo || '',
-        status:       r.status || 'pending',
-        approvedBy:   r.approved_by || '',
-        approvedAt:   r.approved_at || '',
-        rejectedBy:   r.rejected_by || '',
-        rejectedAt:   r.rejected_at || '',
-        catatan:      r.catatan || '',
+        id:             r.id,
+        tanggal:        r.tanggal_order || (r.created_at ? r.created_at.slice(0,10) : ''),
+        seri:           r.seri || '—',
+        jenis:          r.jenis_transaksi || 'Beli',
+        category:       r.category || '',
+        salesNama:      r.sales_pic || '—',
+        salesKode:      r.sales_code || '',
+        nasabah:        r.customer_name || '—',
+        clientId:       r.client_id || '',
+        sekuritas:      r.sekuritas_dipakai || '—',
+        nominal:        Number(r.nominal) || 0,
+        unit:           Number(r.unit_amount) || 0,
+        modalPerUnit:   Number(r.modal_per_unit) || 0,
+        modalTotal:     Number(r.modal_total) || 0,
+        modalSales:     Number(r.modal_to_sales) || 0,
+        hargaCust:      Number(r.harga_to_customer) || 0,
+        revFawz:        Number(r.revenue_fawz) || 0,
+        payoutSek:      Number(r.payout_sekuritas) || 0,
+        revSales:       Number(r.revenue_sales) || 0,
+        commSales:      Number(r.commission_sales) || 0,
+        tlaName:        r.tla_name || '',
+        tlaCode:        Number(r.tla_code) || 0,
+        commTla:        Number(r.commission_tla) || 0,
+        totalExp:       Number(r.total_expenses) || 0,
+        profit:         Number(r.profit) || 0,
+        settlement:     r.settlement || '',
+        kupon:          r.kupon,
+        ytm:            r.ytm,
+        jatuhTempo:     r.jatuh_tempo || '',
+        status:         r.status || 'pending',
+        approvedBy:     r.approved_by || '',
+        approvedAt:     r.approved_at || '',
+        rejectedBy:     r.rejected_by || '',
+        rejectedAt:     r.rejected_at || '',
+        catatan:        r.catatan || '',
+        createdBy:      r.created_by || '',
       }));
 
       applyFilter();
@@ -345,7 +512,7 @@
     const canAct = isBondsDealer || isAdmin;
 
     if (!filtered.length) {
-      tbody.innerHTML = `<tr><td colspan="10"><div class="empty-state">Tidak ada data transaksi</div></td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="20"><div class="empty-state">Tidak ada data transaksi</div></td></tr>`;
       document.getElementById('tableInfo').textContent = '';
       document.getElementById('pagination').innerHTML = '';
       return;
@@ -380,12 +547,22 @@
         <td style="font-size:.8rem;color:var(--gray);white-space:nowrap;">${fmtDate(r.tanggal)}</td>
         <td class="seri-cell">${esc(r.seri)}</td>
         <td>${jenisBadge}</td>
-        <td class="sales-cell">${esc(r.salesNama)}</td>
-        <td class="client-cell">${esc(r.nasabah)}<br><span style="font-size:.72rem;color:#bbb;">${esc(r.clientId)}</span></td>
         <td style="font-size:.8rem;">${esc(r.sekuritas)}</td>
+        <td class="client-cell">${esc(r.nasabah)}<br><span style="font-size:.72rem;color:#bbb;">${esc(r.clientId)}</span></td>
         <td class="nominal-cell">Rp ${r.nominal.toLocaleString('id-ID')}</td>
+        <td style="text-align:right;font-size:.8rem;">${r.unit ? r.unit.toLocaleString('id-ID') : '—'}</td>
+        <td style="text-align:right;font-size:.8rem;">${r.modalTotal ? 'Rp '+Math.round(r.modalTotal).toLocaleString('id-ID') : '—'}</td>
+        <td style="text-align:right;font-size:.8rem;">${r.hargaCust ? 'Rp '+Math.round(r.hargaCust).toLocaleString('id-ID') : '—'}</td>
+        <td style="text-align:right;font-size:.8rem;color:var(--green);font-weight:600;">${r.revFawz ? 'Rp '+Math.round(r.revFawz).toLocaleString('id-ID') : '—'}</td>
+        <td style="text-align:right;font-size:.8rem;">${r.payoutSek ? 'Rp '+Math.round(r.payoutSek).toLocaleString('id-ID') : '—'}</td>
+        <td style="text-align:right;font-size:.8rem;color:var(--red);">${r.commSales ? 'Rp '+Math.round(r.commSales).toLocaleString('id-ID') : '—'}</td>
+        <td style="font-size:.8rem;">${r.tlaName ? esc(r.tlaName) : '—'}</td>
+        <td style="text-align:right;font-size:.8rem;color:var(--red);">${r.commTla ? 'Rp '+Math.round(r.commTla).toLocaleString('id-ID') : '—'}</td>
+        <td style="text-align:right;font-size:.8rem;color:var(--red);font-weight:600;">${r.totalExp ? 'Rp '+Math.round(r.totalExp).toLocaleString('id-ID') : '—'}</td>
+        <td style="text-align:right;font-size:.8rem;color:var(--gold);font-weight:700;">${r.profit ? 'Rp '+Math.round(r.profit).toLocaleString('id-ID') : '—'}</td>
+        <td class="sales-cell" style="font-size:.8rem;">${esc(r.salesNama)}</td>
         <td>${statusBadge}</td>
-        ${canAct ? `<td onclick="event.stopPropagation()">${actionCell}</td>` : ''}
+        ${canAct ? `<td onclick="event.stopPropagation()">${actionCell}</td>` : (canDelete ? `<td onclick="event.stopPropagation()">${actionCell}</td>` : '')}
       </tr>`;
     }).join('');
 
@@ -412,23 +589,33 @@
       <div class="detail-grid">
         <div class="detail-item"><label>Seri</label><div class="val" style="font-family:'Courier New',monospace;">${esc(r.seri)}</div></div>
         <div class="detail-item"><label>Jenis Transaksi</label><div class="val">${esc(r.jenis)}</div></div>
-        <div class="detail-item"><label>Kategori</label><div class="val">${esc(r.category)}</div></div>
+        <div class="detail-item"><label>Sekuritas</label><div class="val">${esc(r.sekuritas)}</div></div>
         <div class="detail-item"><label>Tanggal Order</label><div class="val">${fmtDate(r.tanggal)}</div></div>
         <div class="detail-item"><label>Kupon</label><div class="val">${r.kupon != null ? Number(r.kupon).toFixed(3)+'%' : '—'}</div></div>
         <div class="detail-item"><label>YTM</label><div class="val">${r.ytm != null ? Number(r.ytm).toFixed(4)+'%' : '—'}</div></div>
-        <div class="detail-item"><label>Jatuh Tempo</label><div class="val">${fmtDate(r.jatuhTempo)}</div></div>
-        <div class="detail-item"><label>Settlement</label><div class="val">${fmtDate(r.settlement)}</div></div>
       </div>
-      <div class="detail-section-title">Informasi Transaksi</div>
+      <div class="detail-section-title">Nasabah & Sales</div>
       <div class="detail-grid">
-        <div class="detail-item"><label>Sales</label><div class="val">${esc(r.salesNama)}</div></div>
-        <div class="detail-item"><label>Sales Code</label><div class="val">${esc(r.salesKode||'—')}</div></div>
         <div class="detail-item"><label>Nasabah</label><div class="val">${esc(r.nasabah)}</div></div>
         <div class="detail-item"><label>Client ID</label><div class="val">${esc(r.clientId)}</div></div>
+        <div class="detail-item"><label>Sales</label><div class="val">${esc(r.salesNama)}</div></div>
+        <div class="detail-item"><label>TLA</label><div class="val">${esc(r.tlaName||'—')} ${r.tlaCode ? '<span style="font-size:.7rem;color:var(--gold);">(Code '+r.tlaCode+')</span>' : ''}</div></div>
+      </div>
+      <div class="detail-section-title">Nilai & Kalkulasi</div>
+      <div class="detail-grid">
         <div class="detail-item"><label>Nominal</label><div class="val" style="color:var(--green);">Rp ${r.nominal.toLocaleString('id-ID')}</div></div>
-        <div class="detail-item"><label>Unit</label><div class="val">${r.unit.toLocaleString('id-ID')}</div></div>
-        <div class="detail-item"><label>Sekuritas</label><div class="val">${esc(r.sekuritas)}</div></div>
-        <div class="detail-item"><label>Status</label><div class="val">${r.status}</div></div>
+        <div class="detail-item"><label>Unit Count</label><div class="val">${r.unit ? r.unit.toLocaleString('id-ID') : '—'}</div></div>
+        <div class="detail-item"><label>Modal / Unit</label><div class="val">${r.modalPerUnit ? 'Rp '+Math.round(r.modalPerUnit).toLocaleString('id-ID') : '—'}</div></div>
+        <div class="detail-item"><label>Modal Total</label><div class="val">${r.modalTotal ? 'Rp '+Math.round(r.modalTotal).toLocaleString('id-ID') : '—'}</div></div>
+        <div class="detail-item"><label>Modal to Sales</label><div class="val">${r.modalSales ? 'Rp '+Math.round(r.modalSales).toLocaleString('id-ID') : '—'}</div></div>
+        <div class="detail-item"><label>Harga to Customer</label><div class="val">${r.hargaCust ? 'Rp '+Math.round(r.hargaCust).toLocaleString('id-ID') : '—'}</div></div>
+        <div class="detail-item"><label>Revenue Fawz</label><div class="val" style="color:var(--green);font-weight:700;">${r.revFawz ? 'Rp '+Math.round(r.revFawz).toLocaleString('id-ID') : '—'}</div></div>
+        <div class="detail-item"><label>Payout Sekuritas (30%)</label><div class="val">${r.payoutSek ? 'Rp '+Math.round(r.payoutSek).toLocaleString('id-ID') : '—'}</div></div>
+        <div class="detail-item"><label>Revenue Sales</label><div class="val">${r.revSales ? 'Rp '+Math.round(r.revSales).toLocaleString('id-ID') : '—'}</div></div>
+        <div class="detail-item"><label>Komisi Sales</label><div class="val" style="color:var(--red);">${r.commSales ? 'Rp '+Math.round(r.commSales).toLocaleString('id-ID') : '—'}</div></div>
+        <div class="detail-item"><label>Komisi TLA</label><div class="val" style="color:var(--red);">${r.commTla ? 'Rp '+Math.round(r.commTla).toLocaleString('id-ID') : '—'}</div></div>
+        <div class="detail-item"><label>Total Expenses</label><div class="val" style="color:var(--red);font-weight:700;">${r.totalExp ? 'Rp '+Math.round(r.totalExp).toLocaleString('id-ID') : '—'}</div></div>
+        <div class="detail-item full"><label>Profit Fawz</label><div class="val" style="color:var(--gold);font-size:1.1rem;font-weight:700;">${r.profit ? 'Rp '+Math.round(r.profit).toLocaleString('id-ID') : '—'}</div></div>
         ${r.approvedBy ? `<div class="detail-item full"><label>Disetujui Oleh</label><div class="val">${esc(r.approvedBy)} — ${fmtDate(r.approvedAt)}</div></div>` : ''}
         ${r.rejectedBy ? `<div class="detail-item full"><label>Ditolak Oleh</label><div class="val" style="color:var(--red);">${esc(r.rejectedBy)} — ${fmtDate(r.rejectedAt)}</div></div>` : ''}
       </div>`;
@@ -508,6 +695,234 @@
     document.getElementById('toastContainer').appendChild(t);
     setTimeout(() => t.remove(), 3500);
   }
+
+  // Helper: format ribuan saat ketik (integer only)
+  function fmtInput(el) {
+    const pos = el.selectionStart;
+    const raw = el.value.replace(/\D/g, '');
+    const formatted = raw ? parseInt(raw, 10).toLocaleString('id-ID') : '';
+    const prevLen = el.value.length;
+    el.value = formatted;
+    const diff = formatted.length - prevLen;
+    try { el.setSelectionRange(pos + diff, pos + diff); } catch(e) {}
+  }
+
+  // Helper: format ribuan dengan desimal (untuk harga/modal yang bisa pakai koma)
+  function fmtDecimalInput(el) {
+    // Izinkan: digit, titik (ribuan), koma (desimal)
+    // Normalize: ganti titik ribuan, pertahankan koma desimal
+    let val = el.value;
+    // Hanya izinkan digit dan satu koma
+    val = val.replace(/[^\d,]/g, '');
+    // Pastikan hanya satu koma
+    const parts = val.split(',');
+    if (parts.length > 2) val = parts[0] + ',' + parts.slice(1).join('');
+    el.value = val;
+  }
+
+  // Helper: ambil nilai numerik dari field integer (dengan pemisah ribuan)
+  function getNum(id) {
+    const val = document.getElementById(id).value.replace(/\./g, '').replace(/,/g, '').replace(/[^\d]/g, '');
+    return parseFloat(val) || 0;
+  }
+
+  // Helper: ambil nilai numerik dari field desimal (koma = separator desimal)
+  function getDecimal(id) {
+    const val = document.getElementById(id).value.replace(/\./g, '').replace(',', '.');
+    return parseFloat(val) || 0;
+  }
+  function openAddModal() {
+    // Reset form
+    ['f-tanggal','f-client-id','f-nama','f-seri','f-nominal','f-unit',
+     'f-modal-per-unit','f-modal','f-modal-sales','f-harga-customer','f-sales','f-tla']
+      .forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+    document.getElementById('f-jenis').value = 'Beli';
+    document.getElementById('f-sekuritas').value = '';
+    document.getElementById('f-tla-code').value = '0';
+    document.getElementById('f-tanggal').value = new Date().toISOString().slice(0,10);
+    resetCalcSummary();
+    hideAddAlert();
+    document.getElementById('btnSaveTx').disabled = false;
+    document.getElementById('btnSaveTx').textContent = '💾 Simpan Transaksi';
+    document.getElementById('addModal').classList.add('open');
+  }
+
+  function closeAddModal() { document.getElementById('addModal').classList.remove('open'); }
+
+  let _lookupTimer = null;
+  function lookupCustomer(clientId) {
+    clearTimeout(_lookupTimer);
+    if (!clientId || clientId.length < 3) { document.getElementById('f-nama').value = ''; document.getElementById('f-sales').value = ''; return; }
+    _lookupTimer = setTimeout(async () => {
+      try {
+        const { data } = await getDb().from('customers')
+          .select('client_name, sales_person_name')
+          .ilike('client_id', clientId.trim())
+          .limit(1);
+        if (data && data.length > 0) {
+          document.getElementById('f-nama').value  = data[0].client_name || '';
+          document.getElementById('f-sales').value = data[0].sales_person_name || '';
+        } else {
+          document.getElementById('f-nama').value  = '';
+          document.getElementById('f-sales').value = '';
+        }
+      } catch(e) { /* silent */ }
+    }, 400);
+  }
+
+  function rp(n) {
+    if (isNaN(n) || n === null) return '—';
+    return 'Rp ' + Math.round(n).toLocaleString('id-ID');
+  }
+
+  function resetCalcSummary() {
+    ['cs-rev-fawz','cs-payout-sek','cs-rev-sales','cs-comm-sales','cs-comm-tla','cs-total-exp','cs-profit']
+      .forEach(id => { const el = document.getElementById(id); if(el) el.textContent = '—'; });
+  }
+
+  function recalc() {
+    const nominal      = getNum('f-nominal');
+    const modalPerUnit = getDecimal('f-modal-per-unit');
+    const modalSales   = getDecimal('f-modal-sales');
+    const hargaCust    = getDecimal('f-harga-customer');
+    const tlaCode      = parseInt(document.getElementById('f-tla-code').value) || 0;
+
+    // Unit Count = Nominal / 100
+    const unit = nominal / 100;
+    document.getElementById('f-unit').value = unit ? unit.toLocaleString('id-ID') : '';
+
+    // Modal total = unit × modal per unit
+    const modalTotal = unit * modalPerUnit;
+    document.getElementById('f-modal').value = modalTotal ? Math.round(modalTotal).toLocaleString('id-ID') : '';
+
+    if (!unit || !hargaCust) { resetCalcSummary(); return; }
+
+    // Revenue Fawz = ((Unit×HargaCust) - (Unit×Modal)) × 90%
+    const grossRevFawz = (unit * hargaCust) - (unit * modalPerUnit);
+    const revFawz      = grossRevFawz * 0.9;
+
+    // Payout Sekuritas = RevFawz × 30%
+    const payoutSek = revFawz * 0.30;
+
+    // Revenue Sales = RevFawz (sama)
+    const revSales = revFawz;
+
+    // Komisi Sales = (RevSales × 60%) × 10%
+    const commSales = (revSales * 0.60) * 0.10;
+
+    // Komisi TLA = IF(tlaCode=1, commSales×50%, 0)
+    const commTla = tlaCode === 1 ? commSales * 0.50 : 0;
+
+    // Total Expenses = commSales + commTla
+    const totalExp = commSales + commTla;
+
+    // Profit = payoutSek - commSales - commTla
+    const profit = payoutSek - commSales - commTla;
+
+    document.getElementById('cs-rev-fawz').textContent   = rp(revFawz);
+    document.getElementById('cs-payout-sek').textContent = rp(payoutSek);
+    document.getElementById('cs-rev-sales').textContent  = rp(revSales);
+    document.getElementById('cs-comm-sales').textContent = rp(commSales);
+    document.getElementById('cs-comm-tla').textContent   = tlaCode === 1 ? rp(commTla) : '—';
+    document.getElementById('cs-total-exp').textContent  = rp(totalExp);
+    document.getElementById('cs-profit').textContent     = rp(profit);
+  }
+
+  function showAddAlert(msg, type='error') {
+    const el = document.getElementById('addModalAlert');
+    el.style.display = 'block';
+    el.style.background = type === 'error' ? '#fff0f0' : '#f0fff8';
+    el.style.border     = type === 'error' ? '1px solid #ffcccc' : '1px solid #a8e6c1';
+    el.style.color      = type === 'error' ? '#c0392b' : '#1e7e4e';
+    el.textContent = msg;
+  }
+  function hideAddAlert() {
+    const el = document.getElementById('addModalAlert');
+    el.style.display = 'none'; el.textContent = '';
+  }
+
+  async function saveTx() {
+    hideAddAlert();
+    const tanggal   = document.getElementById('f-tanggal').value;
+    const clientId  = document.getElementById('f-client-id').value.trim();
+    const nama      = document.getElementById('f-nama').value.trim();
+    const jenis     = document.getElementById('f-jenis').value;
+    const sekuritas = document.getElementById('f-sekuritas').value;
+    const seri      = document.getElementById('f-seri').value.trim().toUpperCase();
+    const nominal   = getNum('f-nominal');
+    const modalPerUnit  = getDecimal('f-modal-per-unit');
+    const modalSales    = getDecimal('f-modal-sales');
+    const hargaCust     = getDecimal('f-harga-customer');
+    const salesNama     = document.getElementById('f-sales').value.trim();
+    const tla           = document.getElementById('f-tla').value.trim();
+    const tlaCode       = parseInt(document.getElementById('f-tla-code').value) || 0;
+
+    if (!tanggal)   { showAddAlert('Tanggal wajib diisi.'); return; }
+    if (!clientId)  { showAddAlert('Client ID wajib diisi.'); return; }
+    if (!seri)      { showAddAlert('Seri obligasi wajib diisi.'); return; }
+    if (!sekuritas) { showAddAlert('Sekuritas wajib dipilih.'); return; }
+    if (!nominal)   { showAddAlert('Nominal wajib diisi.'); return; }
+
+    const unit      = nominal / 100;
+    const modalTotal = unit * modalPerUnit;
+    const grossRevFawz = (unit * hargaCust) - (unit * modalPerUnit);
+    const revFawz      = grossRevFawz * 0.9;
+    const payoutSek    = revFawz * 0.30;
+    const revSales     = revFawz;
+    const commSales    = (revSales * 0.60) * 0.10;
+    const commTla      = tlaCode === 1 ? commSales * 0.50 : 0;
+    const totalExp     = commSales + commTla;
+    const profit       = payoutSek - commSales - commTla;
+
+    const btn = document.getElementById('btnSaveTx');
+    btn.disabled = true; btn.textContent = '⏳ Menyimpan...';
+
+    try {
+      const payload = {
+        tanggal_order:      tanggal,
+        client_id:          clientId,
+        customer_name:      nama || clientId,
+        jenis_transaksi:    jenis,
+        sekuritas_dipakai:  sekuritas,
+        seri:               seri,
+        nominal:            nominal,
+        unit_amount:        unit,
+        modal_per_unit:     modalPerUnit || null,
+        modal_total:        modalTotal   || null,
+        modal_to_sales:     modalSales   || null,
+        harga_to_customer:  hargaCust    || null,
+        revenue_fawz:       revFawz      || null,
+        payout_sekuritas:   payoutSek    || null,
+        revenue_sales:      revSales     || null,
+        commission_sales:   commSales    || null,
+        tla_name:           tla          || null,
+        tla_code:           tlaCode,
+        commission_tla:     commTla      || null,
+        total_expenses:     totalExp     || null,
+        profit:             profit       || null,
+        sales_pic:          salesNama    || null,
+        status:             'pending',
+        created_by:         curUser?.name || null,
+        created_at:         new Date().toISOString(),
+      };
+
+      const { error } = await getDb().from('bb_orders').insert([payload]);
+      if (error) throw error;
+
+      showToast('Transaksi berhasil ditambahkan!', 'success');
+      closeAddModal();
+      await loadData();
+    } catch(e) {
+      showAddAlert('Gagal menyimpan: ' + (e.message || 'Unknown error'));
+      btn.disabled = false; btn.textContent = '💾 Simpan Transaksi';
+    }
+  }
+
+  window.openAddModal  = openAddModal;
+  window.closeAddModal = closeAddModal;
+  window.lookupCustomer = lookupCustomer;
+  window.recalc        = recalc;
+  window.saveTx        = saveTx;
 </script>
 </body>
 </html>
