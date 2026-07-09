@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>A4 Layout Bug Condition Test</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      padding: 20px;
+      background: #f4f4f4;
+    }
+    .test-container {
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      max-width: 900px;
+      margin: 0 auto;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #0d0d2b;
+      margin-bottom: 20px;
+    }
+    .test-section {
+      margin: 20px 0;
+      padding: 15px;
+      border-left: 4px solid #4f46e5;
+      background: #f9fafb;
+    }
+    .result {
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 5px;
+      font-family: 'Courier New', monospace;
+    }
+    .result.pass {
+      background: #d1fae5;
+      border: 1px solid #059669;
+      color: #065f46;
+    }
+    .result.fail {
+      background: #fee2e2;
+      border: 1px solid #dc2626;
+      color: #991b1b;
+    }
+    .measurement {
+      background: #fef3c7;
+      padding: 10px;
+      margin: 5px 0;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    .critical {
+      font-weight: bold;
+      color: #dc2626;
+      font-size: 18px;
+    }
+    button {
+      background: #4f46e5;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      font-size: 16px;
+      cursor: pointer;
+      margin: 10px 10px 10px 0;
+    }
+    button:hover {
+      background: #3730a3;
+    }
+    iframe {
+      border: 2px solid #e5e7eb;
+      margin: 20px 0;
+      display: none;
+    }
+    pre {
+      background: #1f2937;
+      color: #f3f4f6;
+      padding: 15px;
+      border-radius: 5px;
+      overflow-x: auto;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="test-container">
+    <h1>🔍 Bug Condition Exploration Test</h1>
+    <h2>Commission Report A4 Layout Overflow Detection</h2>
+    
+    <div class="test-section">
+      <h3>Test Purpose</h3>
+      <p><strong>CRITICAL:</strong> This test MUST FAIL on unfixed code - failure confirms the bug exists.</p>
+      <p>This test encodes the <strong>expected behavior</strong>:</p>
+      <ul>
+        <li>All content SHOULD fit within A4 vertical dimensions (1123px)</li>
+        <li>All 12 months SHOULD be visible in the chart</li>
+        <li>Footer SHOULD be within page bounds without overlap</li>
+      </ul>
+      <p><strong>When run on UNFIXED code</strong>, this test will FAIL with counterexamples showing:</p>
+      <ul>
+        <li>Actual measured height exceeding 1123px (likely ~1180-1200px)</li>
+        <li>Chart section causing overflow</li>
+        <li>Content being cut off during print/PDF export</li>
+      </ul>
+    </div>
+
+    <div class="test-section">
+      <h3>Instructions</h3>
+      <ol>
+        <li>Click "Run Bug Condition Test" to measure the current layout</li>
+        <li>Open commission-report.html in a new tab</li>
+        <li>Select any sales person, month=December, year=2024</li>
+        <li>Click "Generate Laporan"</li>
+        <li>Open browser print preview (Ctrl+P / Cmd+P)</li>
+        <li>Compare the print preview with the measurements below</li>
+      </ol>
+    </div>
+
+    <button onclick="runBugConditionTest()">▶️ Run Bug Condition Test</button>
+    <button onclick="openCommissionReport()">📄 Open Commission Report</button>
+
+    <div id="results"></div>
+
+    <iframe id="testFrame" src="commission-report.html" width="100%" height="600"></iframe>
+  </div>
+
+  <script>
+    function openCommissionReport() {
+      window.open('commission-report.html', '_blank');
+    }
+
+    async function runBugConditionTest() {
+      const resultsDiv = document.getElementById('results');
+      resultsDiv.innerHTML = '<p>⏳ Running measurements...</p>';
+
+      // Show iframe
+      const iframe = document.getElementById('testFrame');
+      iframe.style.display = 'block';
+
+      // Wait for iframe to load
+      await new Promise(resolve => {
+        if (iframe.contentDocument.readyState === 'complete') {
+          resolve();
+        } else {
+          iframe.onload = resolve;
+        }
+      });
+
+      // Wait a bit more for the page to fully initialize
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      // Try to measure the A4 page if it exists
+      const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+      
+      let html = '<div class="test-section"><h3>📊 Measurement Results</h3>';
+
+      // Check if report is generated
+      const a4Page = iframeDoc.querySelector('.a4-page');
+      
+      if (!a4Page) {
+        html += '<div class="result fail">';
+        html += '<p><strong>❌ No report generated</strong></p>';
+        html += '<p>Please follow these steps:</p>';
+        html += '<ol>';
+        html += '<li>Click "Open Commission Report" above</li>';
+        html += '<li>In the new tab, log in if needed (use role: admin)</li>';
+        html += '<li>Select any sales person from the dropdown</li>';
+        html += '<li>Select Month: December (12)</li>';
+        html += '<li>Select Year: 2024</li>';
+        html += '<li>Click "Generate Laporan"</li>';
+        html += '<li>Once generated, open Print Preview (Ctrl+P / Cmd+P)</li>';
+        html += '<li>Observe the layout in print preview mode</li>';
+        html += '</ol>';
+        html += '<p><strong>Expected observation on UNFIXED code:</strong></p>';
+        html += '<ul>';
+        html += '<li>Chart section appears cut off in print preview</li>';
+        html += '<li>Not all 12 months are fully visible</li>';
+        html += '<li>Footer may be pushed to page 2</li>';
+        html += '<li>Content overflows the A4 page boundary</li>';
+        html += '</ul>';
+        html += '</div>';
+      } else {
+        // Measure components
+        const measurements = measureA4Layout(iframeDoc);
+        
+        html += '<div class="measurement">';
+        html += `<strong>Header height:</strong> ${measurements.headerHeight.toFixed(2)}px<br>`;
+        html += `<strong>Title section height:</strong> ${measurements.titleSectionHeight.toFixed(2)}px<br>`;
+        html += `<strong>Chart section height:</strong> ${measurements.chartSectionHeight.toFixed(2)}px<br>`;
+        html += `  └─ Chart box height: ${measurements.chartBoxHeight.toFixed(2)}px<br>`;
+        html += `<strong>Table section height:</strong> ${measurements.tableSectionHeight.toFixed(2)}px<br>`;
+        html += `<strong>Income section height:</strong> ${measurements.incomeSectionHeight.toFixed(2)}px<br>`;
+        html += `<strong>Footer height:</strong> ${measurements.footerHeight.toFixed(2)}px<br>`;
+        html += `</div>`;
+
+        html += '<div class="measurement critical">';
+        html += `<strong>TOTAL HEIGHT:</strong> ${measurements.totalHeight.toFixed(2)}px<br>`;
+        html += `<strong>A4 LIMIT:</strong> 1123px<br>`;
+        html += `<strong>OVERFLOW:</strong> ${(measurements.totalHeight - 1123).toFixed(2)}px `;
+        html += measurements.totalHeight > 1123 ? '⚠️ EXCEEDS LIMIT' : '✅ WITHIN LIMIT';
+        html += '</div>';
+
+        // Test assertion
+        const testPassed = measurements.totalHeight <= 1123;
+        html += testPassed ? 
+          '<div class="result pass"><p><strong>✅ TEST PASSED (UNEXPECTED!)</strong></p><p>Content fits within A4 limits. The bug may already be fixed, or test needs adjustment.</p></div>' :
+          '<div class="result fail"><p><strong>❌ TEST FAILED (EXPECTED!)</strong></p><p>Content EXCEEDS A4 vertical limit by ' + (measurements.totalHeight - 1123).toFixed(2) + 'px.</p><p><strong>This confirms the bug exists in the unfixed code.</strong></p></div>';
+
+        // Counterexample documentation
+        html += '<div class="test-section"><h3>📋 Counterexample Documentation</h3>';
+        html += '<pre>' + JSON.stringify({
+          measuredHeight: measurements.totalHeight.toFixed(2) + 'px',
+          a4Limit: '1123px',
+          overflow: (measurements.totalHeight - 1123).toFixed(2) + 'px',
+          chartBoxHeight: measurements.chartBoxHeight.toFixed(2) + 'px',
+          sections: {
+            header: measurements.headerHeight.toFixed(2) + 'px',
+            titleSection: measurements.titleSectionHeight.toFixed(2) + 'px',
+            chartSection: measurements.chartSectionHeight.toFixed(2) + 'px',
+            tableSection: measurements.tableSectionHeight.toFixed(2) + 'px',
+            incomeSection: measurements.incomeSectionHeight.toFixed(2) + 'px',
+            footer: measurements.footerHeight.toFixed(2) + 'px'
+          }
+        }, null, 2) + '</pre></div>';
+      }
+
+      html += '<div class="test-section">';
+      html += '<h3>🧪 Manual Verification Steps</h3>';
+      html += '<ol>';
+      html += '<li>Open commission-report.html in a new tab (click button above)</li>';
+      html += '<li>Generate a report with 12 months of data</li>';
+      html += '<li>Open browser print preview (Ctrl+P / Cmd+P or File → Print)</li>';
+      html += '<li>Switch to print media mode to see actual print layout</li>';
+      html += '<li>Observe if the chart is cut off or if content flows to page 2</li>';
+      html += '<li>Try to export as PDF and check if all content is on one page</li>';
+      html += '</ol>';
+      html += '<p><strong>Expected observation on unfixed code:</strong></p>';
+      html += '<ul>';
+      html += '<li>Bottom of chart section is cut off in print preview</li>';
+      html += '<li>Some month labels (especially Nov/Dec) may not be visible</li>';
+      html += '<li>Footer may appear on page 2 instead of page 1</li>';
+      html += '<li>Total measured height exceeds 1123px</li>';
+      html += '</ul>';
+      html += '</div>';
+
+      html += '</div>';
+      resultsDiv.innerHTML = html;
+    }
+
+    function measureA4Layout(doc) {
+      const getHeight = (selector) => {
+        const el = doc.querySelector(selector);
+        if (!el) return 0;
+        const rect = el.getBoundingClientRect();
+        const style = window.getComputedStyle(el);
+        const marginTop = parseFloat(style.marginTop) || 0;
+        const marginBottom = parseFloat(style.marginBottom) || 0;
+        return rect.height + marginTop + marginBottom;
+      };
+
+      const headerHeight = getHeight('.rpt-header');
+      const titleSectionHeight = getHeight('.rpt-title-section');
+      const chartSectionHeight = getHeight('.rpt-chart-section');
+      const tableSectionHeight = getHeight('.rpt-table-section');
+      const incomeSectionHeight = getHeight('.rpt-income-section');
+      const footerHeight = getHeight('.rpt-footer');
+
+      const chartBox = doc.querySelector('.chart-box');
+      const chartBoxHeight = chartBox ? parseFloat(window.getComputedStyle(chartBox).height) : 0;
+
+      const totalHeight = headerHeight + titleSectionHeight + chartSectionHeight + 
+                         tableSectionHeight + incomeSectionHeight + footerHeight;
+
+      return {
+        headerHeight,
+        titleSectionHeight,
+        chartSectionHeight,
+        tableSectionHeight,
+        incomeSectionHeight,
+        footerHeight,
+        chartBoxHeight,
+        totalHeight
+      };
+    }
+  </script>
+</body>
+</html>
