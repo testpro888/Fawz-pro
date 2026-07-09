@@ -133,6 +133,99 @@
     }
     .btn-delete:hover { background: #e03e3e; color: #fff; border-color: #e03e3e; }
 
+    .btn-add-customer {
+      height: 28px; padding: 0 10px; border-radius: 6px;
+      border: 1px solid #86efac; background: #f0fdf4; color: #166534;
+      font-family: 'Inter', sans-serif; font-size: 0.72rem; font-weight: 600;
+      cursor: pointer; transition: all 0.15s; white-space: nowrap;
+    }
+    .btn-add-customer:hover { background: #166534; color: #fff; border-color: #166534; }
+
+    /* ── ADD CUSTOMER MODAL ── */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.5); z-index: 9999;
+      align-items: center; justify-content: center;
+      padding: 20px;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal-box {
+      background: #fff; border-radius: 16px;
+      width: 100%; max-width: 560px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+      overflow: hidden; animation: fadeUp 0.25s ease both;
+      max-height: 90vh; overflow-y: auto;
+    }
+    .modal-header {
+      background: var(--navy); color: #fff;
+      padding: 20px 24px; display: flex;
+      align-items: center; justify-content: space-between;
+    }
+    .modal-title { font-size: 1rem; font-weight: 700; }
+    .modal-subtitle { font-size: 0.75rem; color: rgba(255,255,255,0.6); margin-top: 2px; }
+    .modal-close {
+      width: 32px; height: 32px; border-radius: 8px;
+      border: none; background: rgba(255,255,255,0.15);
+      color: #fff; font-size: 1.1rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .modal-close:hover { background: rgba(255,255,255,0.25); }
+    .modal-body { padding: 24px; }
+    .modal-section-title {
+      font-size: 0.7rem; font-weight: 700; color: #999;
+      text-transform: uppercase; letter-spacing: 1px;
+      margin: 0 0 12px; padding-bottom: 8px;
+      border-bottom: 1px solid #f0f0f8;
+    }
+    .modal-prefilled {
+      background: #f8f9ff; border-radius: 10px;
+      padding: 14px 16px; margin-bottom: 20px;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px;
+    }
+    .prefill-item { display: flex; flex-direction: column; gap: 2px; }
+    .prefill-label { font-size: 0.68rem; color: #999; font-weight: 500; }
+    .prefill-value { font-size: 0.82rem; font-weight: 600; color: var(--navy); }
+    .modal-form { display: flex; flex-direction: column; gap: 14px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .form-group { display: flex; flex-direction: column; gap: 5px; }
+    .form-group label {
+      font-size: 0.72rem; font-weight: 600; color: #555;
+    }
+    .form-group label .req { color: #e03e3e; margin-left: 2px; }
+    .form-group input, .form-group select {
+      height: 38px; border: 1.5px solid #e0e0ee; border-radius: 8px;
+      padding: 0 12px; font-family: 'Inter', sans-serif;
+      font-size: 0.82rem; color: var(--navy); outline: none;
+      transition: border-color 0.2s;
+    }
+    .form-group input:focus, .form-group select:focus { border-color: var(--gold); }
+    .form-group input.readonly-field {
+      background: #f8f9ff; color: #888; cursor: default;
+    }
+    .modal-footer {
+      padding: 16px 24px; border-top: 1px solid #f0f0f8;
+      display: flex; gap: 10px; justify-content: flex-end;
+    }
+    .btn-modal-cancel {
+      height: 38px; padding: 0 18px; border-radius: 8px;
+      border: 1px solid #e0e0ee; background: #fff; color: #888;
+      font-family: 'Inter', sans-serif; font-size: 0.82rem; cursor: pointer;
+    }
+    .btn-modal-save {
+      height: 38px; padding: 0 22px; border-radius: 8px;
+      border: none; background: var(--navy); color: #fff;
+      font-family: 'Inter', sans-serif; font-size: 0.82rem;
+      font-weight: 600; cursor: pointer; transition: opacity 0.2s;
+    }
+    .btn-modal-save:hover { opacity: 0.85; }
+    .btn-modal-save:disabled { opacity: 0.5; cursor: not-allowed; }
+    .modal-alert {
+      padding: 10px 14px; border-radius: 8px; font-size: 0.8rem;
+      font-weight: 500; margin-top: 4px; display: none;
+    }
+    .modal-alert.error { background: #fef2f2; color: #991b1b; border: 1px solid #fca5a5; display: block; }
+    .modal-alert.success { background: #ecfdf5; color: #065f46; border: 1px solid #6ee7b7; display: block; }
+
     /* Table */
     .table-wrapper {
       background: #fff; border-radius: 16px;
@@ -228,6 +321,9 @@
     </button>
     <button class="tab-btn" id="tab-clicks" onclick="switchTab('clicks')">
       Akun Sekuritas <span class="tab-badge" id="badge-clicks">0</span>
+    </button>
+    <button class="tab-btn" id="tab-followup" onclick="switchTab('followup')">
+      Need to Follow Up <span class="tab-badge" id="badge-followup">0</span>
     </button>
   </div>
 
@@ -381,6 +477,55 @@
     </div>
   </div>
 
+  <!-- ===== TAB: NEED TO FOLLOW UP ===== -->
+  <div class="tab-panel" id="panel-followup">
+
+    <!-- Calendar Header -->
+    <div style="background:#fff;border-radius:14px;padding:16px 20px;margin-bottom:16px;box-shadow:0 2px 10px rgba(0,0,0,0.05);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <button onclick="fuCalPrev()" style="width:36px;height:36px;border-radius:8px;border:1px solid #e0e0ee;background:#fff;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;color:var(--navy);">‹</button>
+        <div style="font-size:1.1rem;font-weight:700;color:var(--navy);min-width:180px;text-align:center;" id="fuCalMonthTitle">—</div>
+        <button onclick="fuCalNext()" style="width:36px;height:36px;border-radius:8px;border:1px solid #e0e0ee;background:#fff;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;color:var(--navy);">›</button>
+        <button onclick="fuCalToday()" style="height:36px;padding:0 14px;border-radius:8px;border:1px solid var(--gold);background:#fffbeb;color:#92400e;font-family:Inter,sans-serif;font-size:0.78rem;font-weight:600;cursor:pointer;">Hari Ini</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:16px;font-size:0.75rem;">
+        <span style="display:flex;align-items:center;gap:5px;"><span style="width:12px;height:12px;border-radius:3px;background:#fee2e2;border:1px solid #fca5a5;display:inline-block;"></span>Terlambat</span>
+        <span style="display:flex;align-items:center;gap:5px;"><span style="width:12px;height:12px;border-radius:3px;background:#fef9c3;border:1px solid #fde047;display:inline-block;"></span>Hari ini</span>
+        <span style="display:flex;align-items:center;gap:5px;"><span style="width:12px;height:12px;border-radius:3px;background:#dbeafe;border:1px solid #93c5fd;display:inline-block;"></span>Akan datang</span>
+        <span style="display:flex;align-items:center;gap:5px;"><span style="width:12px;height:12px;border-radius:3px;background:#f3f4f6;border:1px solid #e5e7eb;display:inline-block;"></span>Libur/Weekend</span>
+      </div>
+    </div>
+
+    <!-- Calendar Grid -->
+    <div style="background:#fff;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.06);overflow:hidden;">
+      <!-- Day headers -->
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);border-bottom:2px solid #f0f0f8;">
+        <div style="padding:10px 0;text-align:center;font-size:0.72rem;font-weight:700;color:#dc2626;letter-spacing:.5px;">MIN</div>
+        <div style="padding:10px 0;text-align:center;font-size:0.72rem;font-weight:700;color:var(--navy);letter-spacing:.5px;">SEN</div>
+        <div style="padding:10px 0;text-align:center;font-size:0.72rem;font-weight:700;color:var(--navy);letter-spacing:.5px;">SEL</div>
+        <div style="padding:10px 0;text-align:center;font-size:0.72rem;font-weight:700;color:var(--navy);letter-spacing:.5px;">RAB</div>
+        <div style="padding:10px 0;text-align:center;font-size:0.72rem;font-weight:700;color:var(--navy);letter-spacing:.5px;">KAM</div>
+        <div style="padding:10px 0;text-align:center;font-size:0.72rem;font-weight:700;color:var(--navy);letter-spacing:.5px;">JUM</div>
+        <div style="padding:10px 0;text-align:center;font-size:0.72rem;font-weight:700;color:#dc2626;letter-spacing:.5px;">SAB</div>
+      </div>
+      <!-- Calendar cells -->
+      <div id="fuCalGrid" style="display:grid;grid-template-columns:repeat(7,1fr);"></div>
+    </div>
+
+    <!-- Detail panel: leads for selected date -->
+    <div id="fuDetailPanel" style="display:none;margin-top:16px;background:#fff;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.06);overflow:hidden;">
+      <div style="background:var(--navy);color:#fff;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div style="font-size:0.9rem;font-weight:700;" id="fuDetailTitle">Follow Up —</div>
+          <div style="font-size:0.72rem;color:rgba(255,255,255,.6);margin-top:2px;" id="fuDetailSub">Lead yang perlu di-follow up</div>
+        </div>
+        <button onclick="document.getElementById('fuDetailPanel').style.display='none'" style="width:30px;height:30px;border-radius:8px;border:none;background:rgba(255,255,255,.15);color:#fff;cursor:pointer;font-size:1rem;">✕</button>
+      </div>
+      <div id="fuDetailList" style="padding:16px 20px;display:flex;flex-direction:column;gap:10px;"></div>
+    </div>
+
+  </div>
+
 </div>
 
 <script>
@@ -390,6 +535,82 @@
   let currentClickPage = 1;
   let filteredClicks = [];
   let currentTab = 'leads';
+
+  // ===== HARI LIBUR NASIONAL INDONESIA (extend sesuai tahun) =====
+  const HOLIDAYS_ID = new Set([
+    // 2026
+    '2026-01-01','2026-01-27','2026-01-28','2026-01-29',
+    '2026-03-20','2026-03-21','2026-03-22','2026-03-23',
+    '2026-03-28','2026-03-29','2026-03-30','2026-03-31',
+    '2026-04-03','2026-04-05','2026-04-13',
+    '2026-05-01','2026-05-14','2026-05-25',
+    '2026-06-01','2026-06-04',
+    '2026-08-17',
+    '2026-09-21','2026-09-22',
+    '2026-12-25','2026-12-26',
+    // 2025
+    '2025-01-01','2025-01-29','2025-01-30',
+    '2025-03-29','2025-03-30','2025-03-31',
+    '2025-04-01','2025-04-07','2025-04-14','2025-04-18',
+    '2025-05-01','2025-05-12','2025-05-29',
+    '2025-06-01','2025-06-02',
+    '2025-06-06','2025-06-27',
+    '2025-07-07',
+    '2025-08-17',
+    '2025-09-05',
+    '2025-10-06',
+    '2025-12-25','2025-12-26',
+  ]);
+
+  function isWeekendOrHoliday(date) {
+    const day = date.getDay(); // 0=Sun, 6=Sat
+    if (day === 0 || day === 6) return true;
+    const iso = date.toISOString().slice(0, 10);
+    return HOLIDAYS_ID.has(iso);
+  }
+
+  // Hitung tanggal follow up: +n hari kerja dari tanggal registrasi
+  function addWorkingDays(date, n) {
+    const d = new Date(date);
+    d.setHours(0, 0, 0, 0);
+    let added = 0;
+    while (added < n) {
+      d.setDate(d.getDate() + 1);
+      if (!isWeekendOrHoliday(d)) added++;
+    }
+    return d;
+  }
+
+  // Hitung berapa hari kerja SETELAH tanggal registrasi sudah berlalu
+  function workingDaysPassed(fromDate) {
+    const from = new Date(fromDate);
+    from.setHours(0, 0, 0, 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (today <= from) return 0;
+    let count = 0;
+    const d = new Date(from);
+    while (true) {
+      d.setDate(d.getDate() + 1);
+      if (d > today) break;
+      if (!isWeekendOrHoliday(d)) count++;
+    }
+    return count;
+  }
+
+  function buildFollowUpRows(allRows) {
+    return allRows
+      .filter(r => (r.confirmed_status || 'pending') === 'pending')
+      .map(r => {
+        const regDate = toDate(r.createdAt);
+        if (!regDate) return null;
+        const followUpDate = addWorkingDays(regDate, 3);
+        const passed = workingDaysPassed(regDate);
+        return { ...r, _followUpDate: followUpDate, _workingDaysPassed: passed };
+      })
+      .filter(r => r !== null)
+      .sort((a, b) => a._followUpDate - b._followUpDate);
+  }
 
   // ===== TAB SWITCH =====
   function switchTab(tab) {
@@ -450,9 +671,12 @@
         : `<span style="color:#ccc;font-size:.75rem;">—</span>`;
       const statusVal = r.confirmed_status || 'pending';
       const statusClass = statusVal === 'registered' ? 's-registered' : statusVal === 'cancel' ? 's-cancel' : 's-pending';
+      const sourceBadge = r.source === 'register_landing'
+        ? `<span style="display:inline-block;margin-left:4px;padding:1px 6px;border-radius:4px;font-size:0.65rem;font-weight:600;background:#dbeafe;color:#1e40af;">from Referral Agent</span>`
+        : '';
       return `<tr>
         <td style="color:#bbb;font-size:.75rem;">${no}</td>
-        <td><strong>${r.nama||r.name||'—'}</strong></td>
+        <td><strong>${r.nama||r.name||'—'}</strong>${sourceBadge}</td>
         <td style="color:#555;">${r.email||'—'}</td>
         <td style="color:#555;">${r.phone||'—'}</td>
         <td><span class="referral-tag">${(r.referral||'—').toUpperCase()}</span></td>
@@ -466,7 +690,12 @@
             <option value="cancel"     ${statusVal==='cancel'     ? 'selected' : ''}>Cancel</option>
           </select>
         </td>
-        <td><button class="btn-delete" onclick="deleteRow('${r.id}')">Hapus</button></td>
+        <td>
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+            ${statusVal==='registered' ? `<button class="btn-add-customer" onclick="openAddCustomerModal('${r.id}')">+ Customer</button>` : ''}
+            <button class="btn-delete" onclick="deleteRow('${r.id}')">Hapus</button>
+          </div>
+        </td>
       </tr>`;
     }).join('');
   }
@@ -514,7 +743,7 @@
     const from     = document.getElementById('filterFrom').value;
     const to       = document.getElementById('filterTo').value;
     const result   = window._allRows.filter(r => {
-      const matchSearch  = !search   || (r.nama||'').toLowerCase().includes(search) || (r.email||'').toLowerCase().includes(search) || (r.referral||'').toLowerCase().includes(search) || (r.phone||'').includes(search);
+      const matchSearch  = !search   || (r.nama||'').toLowerCase().includes(search) || (r.name||'').toLowerCase().includes(search) || (r.email||'').toLowerCase().includes(search) || (r.referral||'').toLowerCase().includes(search) || (r.phone||'').includes(search);
       const matchRef     = !referral || (r.referral||'').toUpperCase()===referral;
       const matchStatus  = !status   || (r.confirmed_status||'pending')===status;
       const d = toDate(r.createdAt);
@@ -547,6 +776,174 @@
     a.download = `leads_${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
   }
+
+  // ===== NEED TO FOLLOW UP — CALENDAR =====
+  let fuCalYear  = new Date().getFullYear();
+  let fuCalMonth = new Date().getMonth(); // 0-indexed
+
+  const MONTHS_ID = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+
+  function populateFuReferralFilter(rows) {
+    // kept for compatibility, no-op in calendar view
+  }
+
+  function renderFuTable(rows) {
+    // Store all follow up rows and rebuild calendar
+    window._allFuRows = rows;
+    document.getElementById('badge-followup').textContent = rows.length;
+    renderFuCalendar();
+  }
+
+  function renderFuCalendar() {
+    const rows = window._allFuRows || [];
+    const today = new Date(); today.setHours(0,0,0,0);
+
+    // Build map: 'YYYY-MM-DD' -> [row, row, ...]
+    const dayMap = {};
+    rows.forEach(r => {
+      if (!r._followUpDate) return;
+      const key = r._followUpDate.toISOString().slice(0,10);
+      if (!dayMap[key]) dayMap[key] = [];
+      dayMap[key].push(r);
+    });
+
+    // Also include overdue (past months) if viewing current month
+    // For past dates show them too if they exist in current view
+
+    const title = `${MONTHS_ID[fuCalMonth]} ${fuCalYear}`;
+    document.getElementById('fuCalMonthTitle').textContent = title;
+
+    const firstDay = new Date(fuCalYear, fuCalMonth, 1).getDay(); // 0=Sun
+    const daysInMonth = new Date(fuCalYear, fuCalMonth + 1, 0).getDate();
+
+    const grid = document.getElementById('fuCalGrid');
+    let html = '';
+
+    // Empty cells before first day
+    for (let i = 0; i < firstDay; i++) {
+      html += `<div style="min-height:110px;border-right:1px solid #f0f0f8;border-bottom:1px solid #f0f0f8;background:#fafafa;"></div>`;
+    }
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      const cellDate = new Date(fuCalYear, fuCalMonth, d);
+      const key = cellDate.toISOString().slice(0,10);
+      const isToday = cellDate.getTime() === today.getTime();
+      const isPast  = cellDate < today;
+      const isWeekend = cellDate.getDay() === 0 || cellDate.getDay() === 6;
+      const isHoliday = HOLIDAYS_ID.has(key);
+      const leadsOnDay = dayMap[key] || [];
+      const colIdx = (firstDay + d - 1) % 7; // 0=Sun,6=Sat
+
+      let cellBg = '#fff';
+      let dateLabelColor = colIdx === 0 || colIdx === 6 ? '#dc2626' : 'var(--navy)';
+      if (isWeekend || isHoliday) { cellBg = '#f9fafb'; }
+      if (leadsOnDay.length > 0 && isPast && !isToday) cellBg = '#fff5f5';
+      if (leadsOnDay.length > 0 && isToday) cellBg = '#fefce8';
+      if (leadsOnDay.length > 0 && !isPast) cellBg = '#eff6ff';
+      if (isToday && leadsOnDay.length === 0) cellBg = '#fefce8';
+
+      const todayRing = isToday ? 'box-shadow:inset 0 0 0 2px var(--gold);' : '';
+      const borderR = colIdx === 6 ? '' : 'border-right:1px solid #f0f0f8;';
+
+      let leadChips = '';
+      const MAX_SHOW = 3;
+      leadsOnDay.slice(0, MAX_SHOW).forEach(r => {
+        const name = (r.nama || r.name || '—').split(' ')[0];
+        const chipColor = isPast && !isToday
+          ? 'background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;'
+          : isToday
+            ? 'background:#fef3c7;color:#92400e;border:1px solid #fde68a;'
+            : 'background:#dbeafe;color:#1e40af;border:1px solid #93c5fd;';
+        leadChips += `<div onclick="fuShowDetail('${key}')" style="cursor:pointer;padding:2px 7px;border-radius:5px;font-size:0.68rem;font-weight:600;${chipColor}white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;" title="${r.nama||r.name}">${name}</div>`;
+      });
+      if (leadsOnDay.length > MAX_SHOW) {
+        leadChips += `<div onclick="fuShowDetail('${key}')" style="cursor:pointer;padding:2px 7px;border-radius:5px;font-size:0.68rem;font-weight:600;background:#e5e7eb;color:#374151;border:1px solid #d1d5db;">+${leadsOnDay.length - MAX_SHOW} lagi</div>`;
+      }
+
+      html += `<div style="min-height:110px;padding:8px 6px;${cellBg?'background:'+cellBg+';':''}${borderR}border-bottom:1px solid #f0f0f8;${todayRing}display:flex;flex-direction:column;gap:4px;position:relative;">
+        <div style="font-size:0.78rem;font-weight:700;color:${dateLabelColor};margin-bottom:2px;">${isToday?`<span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:var(--gold);color:#fff;font-size:0.72rem;">${d}</span>`:d}${isHoliday&&!isWeekend?'<span style="font-size:0.6rem;color:#999;display:block;font-weight:400;">Libur</span>':''}</div>
+        ${leadChips}
+        ${leadsOnDay.length > 0 ? `<div style="margin-top:auto;font-size:0.62rem;color:#aaa;text-align:right;">${leadsOnDay.length} lead</div>` : ''}
+      </div>`;
+    }
+
+    // Fill remaining cells to complete the grid
+    const totalCells = firstDay + daysInMonth;
+    const remainder  = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
+    for (let i = 0; i < remainder; i++) {
+      html += `<div style="min-height:110px;border-right:1px solid #f0f0f8;border-bottom:1px solid #f0f0f8;background:#fafafa;"></div>`;
+    }
+
+    grid.innerHTML = html;
+  }
+
+  function fuShowDetail(dateKey) {
+    const rows = window._allFuRows || [];
+    const today = new Date(); today.setHours(0,0,0,0);
+    const cellDate = new Date(dateKey + 'T00:00:00');
+    const isPast = cellDate < today;
+    const isToday = cellDate.getTime() === today.getTime();
+
+    const leadsOnDay = rows.filter(r => r._followUpDate && r._followUpDate.toISOString().slice(0,10) === dateKey);
+    if (!leadsOnDay.length) return;
+
+    const [y,m,d] = dateKey.split('-');
+    const dateLabel = `${parseInt(d)} ${MONTHS_ID[parseInt(m)-1]} ${y}`;
+    document.getElementById('fuDetailTitle').textContent = `Follow Up — ${dateLabel}`;
+    document.getElementById('fuDetailSub').textContent   = `${leadsOnDay.length} lead perlu di-follow up`;
+
+    const list = document.getElementById('fuDetailList');
+    list.innerHTML = leadsOnDay.map(r => {
+      const statusStyle = isPast && !isToday
+        ? 'background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;'
+        : isToday
+          ? 'background:#fef3c7;color:#92400e;border:1px solid #fde68a;'
+          : 'background:#dbeafe;color:#1e40af;border:1px solid #93c5fd;';
+      const statusLabel = isPast && !isToday ? 'Terlambat' : isToday ? 'Hari Ini' : 'Akan Datang';
+      const sekBadge = r.sekuritas
+        ? `<span class="badge ${r.sekuritas.includes('Maybank')?'badge-maybank':'badge-trimegah'}" style="font-size:0.68rem;">${r.sekuritas}</span>`
+        : '';
+      const waNum = (r.phone||'').replace(/[^0-9]/g,'').replace(/^0/,'62');
+      return `<div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+        <div style="display:flex;flex-direction:column;gap:3px;flex:1;min-width:150px;">
+          <div style="font-weight:700;color:var(--navy);font-size:0.85rem;">${r.nama||r.name||'—'}</div>
+          <div style="font-size:0.75rem;color:#666;">${r.email||'—'} · ${r.phone||'—'}</div>
+          <div style="display:flex;align-items:center;gap:6px;margin-top:2px;flex-wrap:wrap;">
+            <span class="referral-tag" style="font-size:0.68rem;">${(r.referral||'—').toUpperCase()}</span>
+            ${sekBadge}
+            <span style="font-size:0.68rem;color:#888;">Reg: ${formatDate(r.createdAt)}</span>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+          <span style="padding:3px 10px;border-radius:20px;font-size:0.68rem;font-weight:700;${statusStyle}">${statusLabel}</span>
+          <a href="https://wa.me/${waNum}" target="_blank" style="height:30px;padding:0 12px;border-radius:6px;border:1px solid #86efac;background:#f0fdf4;color:#166534;font-family:Inter,sans-serif;font-size:0.72rem;font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:4px;">💬 WA</a>
+        </div>
+      </div>`;
+    }).join('');
+
+    document.getElementById('fuDetailPanel').style.display = 'block';
+    setTimeout(() => document.getElementById('fuDetailPanel').scrollIntoView({behavior:'smooth',block:'nearest'}), 50);
+  }
+
+  function fuCalPrev() {
+    fuCalMonth--;
+    if (fuCalMonth < 0) { fuCalMonth = 11; fuCalYear--; }
+    renderFuCalendar();
+  }
+  function fuCalNext() {
+    fuCalMonth++;
+    if (fuCalMonth > 11) { fuCalMonth = 0; fuCalYear++; }
+    renderFuCalendar();
+  }
+  function fuCalToday() {
+    const now = new Date();
+    fuCalYear  = now.getFullYear();
+    fuCalMonth = now.getMonth();
+    renderFuCalendar();
+  }
+
+  function applyFuFilter() { /* no-op, calendar view doesn't filter */ }
+  function resetFuFilter()  { /* no-op */ }
 
   // ===== LINK CLICKS =====
   function renderClickSummary(rows) {
@@ -653,19 +1050,57 @@
     if (!['head_account', 'admin', 'head_sales'].includes(_gu.role)) { window.location.replace('dashboard.html'); return; }
 
     try {
-      // ── Load semua registrasi referral ──
-      const { data: rows, error: leadsErr } = await window._supabase
+      // ── Load dari referral_registrations ──
+      const { data: refRows, error: refErr } = await window._supabase
         .from('referral_registrations')
         .select('id, nama, email, phone, referral_code, agent_name, sekuritas, status, confirmed_status, created_at')
         .order('created_at', { ascending: false });
-      if (leadsErr) throw leadsErr;
+      if (refErr) throw refErr;
 
-      // Normalise field names untuk kompatibilitas render functions
-      const allRows = (rows || []).map(r => ({
+      // ── Load dari register_landing ──
+      const { data: landingRows, error: landingErr } = await window._supabase
+        .from('register_landing')
+        .select('id, name, email, phone, sekuritas, referral_code, created_at')
+        .order('created_at', { ascending: false });
+      
+      console.log('📊 Sales Tracker Data Sources:');
+      console.log('  → referral_registrations:', (refRows || []).length, 'rows');
+      console.log('  → register_landing:', (landingRows || []).length, 'rows');
+      
+      if (landingErr) {
+        console.error('❌ register_landing fetch error:', landingErr);
+      }
+
+      // Normalise referral_registrations
+      const fromReferral = (refRows || []).map(r => ({
         ...r,
+        source: 'referral_registrations',
         referral:  r.referral_code || '',
         createdAt: r.created_at,
       }));
+
+      // Normalise register_landing (landingRows bisa null jika RLS block atau tabel error)
+      const fromLanding = (landingRows || []).map(r => ({
+        id: 'landing_' + r.id,
+        nama: r.name || '—',
+        email: r.email || '',
+        phone: r.phone || '',
+        referral: r.referral_code || '',
+        sekuritas: r.sekuritas || null,
+        confirmed_status: 'pending',
+        created_at: r.created_at,
+        createdAt: r.created_at,
+        source: 'register_landing'
+      }));
+      
+      console.log('  → fromLanding normalized:', fromLanding.length, 'rows', fromLanding.slice(0,2));
+
+      // Gabungkan kedua sumber data
+      const allRows = [...fromReferral, ...fromLanding].sort((a, b) => {
+        const dateA = toDate(a.createdAt);
+        const dateB = toDate(b.createdAt);
+        return dateB - dateA; // descending
+      });
 
       window._allRows = allRows;
       populateReferralFilter(window._allRows);
@@ -678,12 +1113,18 @@
         .map(r => ({
           ...r,
           link:      r.sekuritas,
-          clickedAt: r.created_at,
+          clickedAt: r.created_at || r.createdAt,
         }));
 
       window._allClicks = allClicks;
       renderClickTable(window._allClicks);
       renderClickSummary(window._allClicks);
+
+      // ── Tab "Need to Follow Up": pending + sudah >=3 hari kerja ──
+      const fuRows = buildFollowUpRows(allRows);
+      window._allFuRows = fuRows;
+      populateFuReferralFilter(window._allRows);
+      renderFuTable(window._allFuRows);
 
     } catch(e) {
       console.error('Supabase error:', e);
@@ -695,49 +1136,86 @@
   async function deleteRow(id) {
     if (!confirm('Hapus data ini?')) return;
     try {
-      await window._supabase.from('referral_registrations').delete().eq('id', id);
+      // Check apakah dari register_landing atau referral_registrations
+      if (id.startsWith('landing_')) {
+        const realId = id.replace('landing_', '');
+        const { error } = await window._supabase.from('register_landing').delete().eq('id', realId);
+        if (error) throw error;
+      } else {
+        const { error } = await window._supabase.from('referral_registrations').delete().eq('id', id);
+        if (error) throw error;
+      }
+      
       window._allRows = window._allRows.filter(r => r.id !== id);
       filteredRows    = filteredRows.filter(r => r.id !== id);
       // sync tab sekuritas juga
       window._allClicks = window._allClicks.filter(r => r.id !== id);
       filteredClicks    = filteredClicks.filter(r => r.id !== id);
+      // sync tab follow up juga
+      window._allFuRows = buildFollowUpRows(window._allRows);
       renderPage(); renderPagination(); renderSummary(window._allRows);
+      renderFuTable(window._allFuRows);
       document.getElementById('rowCount').textContent = filteredRows.length.toLocaleString('id-ID');
     } catch(e) { alert('Gagal menghapus: ' + e.message); }
   }
 
   async function updateStatus(id, selectEl) {
     const newStatus = selectEl.value;
-    // Update warna dropdown langsung
+    // Simpan status lama untuk revert jika gagal
+    const row = window._allRows.find(r => r.id === id);
+    const oldStatus = row ? (row.confirmed_status || 'pending') : 'pending';
+
+    // Update warna dropdown langsung (optimistic UI)
     selectEl.className = 'status-select ' + (
       newStatus === 'registered' ? 's-registered' :
       newStatus === 'cancel'     ? 's-cancel'     : 's-pending'
     );
     try {
-      const { error } = await window._supabase
-        .from('referral_registrations')
-        .update({ confirmed_status: newStatus, updated_at: new Date().toISOString() })
-        .eq('id', id);
-      if (error) throw error;
-      // Sync ke _allRows
-      const row = window._allRows.find(r => r.id === id);
+      // register_landing tidak punya kolom confirmed_status, hanya update referral_registrations
+      if (!id.startsWith('landing_')) {
+        const { error } = await window._supabase
+          .from('referral_registrations')
+          .update({ confirmed_status: newStatus, updated_at: new Date().toISOString() })
+          .eq('id', id);
+        if (error) throw error;
+      }
+      // Sync ke _allRows dan filteredRows
       if (row) row.confirmed_status = newStatus;
+      const filteredRow = filteredRows.find(r => r.id === id);
+      if (filteredRow) filteredRow.confirmed_status = newStatus;
+      // Re-render tabel supaya tombol + Customer muncul/hilang sesuai status
+      renderPage();
+      // Rebuild follow up list karena status berubah
+      window._allFuRows = buildFollowUpRows(window._allRows);
+      renderFuTable(window._allFuRows);
     } catch(e) {
       alert('Gagal update status: ' + e.message);
       // Revert ke nilai sebelumnya
-      const row = window._allRows.find(r => r.id === id);
-      if (row) { selectEl.value = row.confirmed_status || 'pending'; }
+      selectEl.value = oldStatus;
+      selectEl.className = 'status-select ' + (
+        oldStatus === 'registered' ? 's-registered' :
+        oldStatus === 'cancel'     ? 's-cancel'     : 's-pending'
+      );
     }
   }
 
   async function deleteClick(id) {
     if (!confirm('Hapus pilihan sekuritas ini?')) return;
     try {
-      // Hanya clear kolom sekuritas, lead-nya tetap ada
-      await window._supabase
-        .from('referral_registrations')
-        .update({ sekuritas: null, updated_at: new Date().toISOString() })
-        .eq('id', id);
+      // Check apakah dari register_landing atau referral_registrations
+      if (id.startsWith('landing_')) {
+        const realId = id.replace('landing_', '');
+        await window._supabase
+          .from('register_landing')
+          .update({ sekuritas: null })
+          .eq('id', realId);
+      } else {
+        await window._supabase
+          .from('referral_registrations')
+          .update({ sekuritas: null, updated_at: new Date().toISOString() })
+          .eq('id', id);
+      }
+      
       window._allClicks = window._allClicks.filter(r => r.id !== id);
       filteredClicks    = filteredClicks.filter(r => r.id !== id);
       // Update _allRows juga supaya sinkron
@@ -760,8 +1238,285 @@
   window.deleteRow         = deleteRow;
   window.deleteClick       = deleteClick;
   window.updateStatus      = updateStatus;
+  window.applyFuFilter     = applyFuFilter;
+  window.resetFuFilter     = resetFuFilter;
+  window.fuCalPrev         = fuCalPrev;
+  window.fuCalNext         = fuCalNext;
+  window.fuCalToday        = fuCalToday;
+  window.fuShowDetail      = fuShowDetail;
+  // ===== ADD TO CUSTOMER MODAL =====
+  let _activeLeadId = null;
+
+  async function openAddCustomerModal(id) {
+    const row = window._allRows.find(r => r.id === id);
+    if (!row) return;
+    _activeLeadId = id;
+
+    // Pre-fill data yang sudah ada
+    document.getElementById('pf-nama').textContent      = row.nama || row.name || '—';
+    document.getElementById('pf-email').textContent     = row.email || '—';
+    document.getElementById('pf-phone').textContent     = row.phone || '—';
+    document.getElementById('pf-sekuritas').textContent = row.sekuritas || '—';
+    document.getElementById('pf-referral').textContent  = (row.referral || '—').toUpperCase();
+    document.getElementById('pf-sales').textContent     = '⏳ Mencari...';
+
+    // Reset form
+    ['inp-client-id','inp-nik','inp-sid','inp-sre','inp-rdn','inp-bank-rdn','inp-notes']
+      .forEach(id => { document.getElementById(id).value = ''; });
+    const alertEl = document.getElementById('modalAlert');
+    alertEl.className = 'modal-alert';
+    alertEl.textContent = '';
+    document.getElementById('btnSaveCustomer').disabled = false;
+
+    // Buka modal
+    document.getElementById('addCustomerModal').classList.add('open');
+
+    // Gunakan agent_name dari data row sebagai nilai awal
+    if (row.agent_name) {
+      document.getElementById('pf-sales').textContent = row.agent_name;
+      window._modalSalesId   = null;
+      window._modalSalesName = row.agent_name;
+    } else {
+      document.getElementById('pf-sales').textContent = '—';
+      window._modalSalesId   = null;
+      window._modalSalesName = null;
+    }
+
+    // Lookup ID sales dari referral_agents untuk melengkapi
+    if (row.referral) {
+      try {
+        const { data: agents, error } = await window._supabase
+          .from('referral_agents')
+          .select('id, nama, agent_code')
+          .ilike('agent_code', row.referral)
+          .limit(1);
+
+        if (!error && agents && agents.length > 0) {
+          const agent = agents[0];
+          document.getElementById('pf-sales').textContent = agent.nama + ' (ID: ' + agent.id + ')';
+          window._modalSalesId   = agent.id;
+          window._modalSalesName = agent.nama;
+        } else if (!row.agent_name) {
+          // Coba dari tabel sales jika ada
+          const { data: salesData } = await window._supabase
+            .from('sales')
+            .select('id, name')
+            .ilike('referral_code', row.referral)
+            .limit(1);
+          if (salesData && salesData.length > 0) {
+            document.getElementById('pf-sales').textContent = salesData[0].name + ' (ID: ' + salesData[0].id + ')';
+            window._modalSalesId   = salesData[0].id;
+            window._modalSalesName = salesData[0].name;
+          }
+        }
+      } catch(e) {
+        console.warn('Sales lookup error:', e.message);
+      }
+    }
+  }
+
+  function closeAddCustomerModal() {
+    document.getElementById('addCustomerModal').classList.remove('open');
+    _activeLeadId = null;
+  }
+
+  // Tutup modal kalau klik overlay
+  document.getElementById('addCustomerModal').addEventListener('click', function(e) {
+    if (e.target === this) closeAddCustomerModal();
+  });
+
+  async function saveToCustomer() {
+    const alertEl = document.getElementById('modalAlert');
+    alertEl.className = 'modal-alert';
+    alertEl.textContent = '';
+
+    const clientId  = document.getElementById('inp-client-id').value.trim();
+    const nik       = document.getElementById('inp-nik').value.trim();
+    const sid       = document.getElementById('inp-sid').value.trim();
+    const sre       = document.getElementById('inp-sre').value.trim();
+    const rdn       = document.getElementById('inp-rdn').value.trim();
+    const bankRdn   = document.getElementById('inp-bank-rdn').value.trim();
+    const notes     = document.getElementById('inp-notes').value.trim();
+
+    // Validasi wajib
+    if (!clientId) { alertEl.className = 'modal-alert error'; alertEl.textContent = 'Client ID wajib diisi.'; return; }
+    if (!nik)      { alertEl.className = 'modal-alert error'; alertEl.textContent = 'NIK wajib diisi.'; return; }
+    if (nik.length !== 16) { alertEl.className = 'modal-alert error'; alertEl.textContent = 'NIK harus 16 digit.'; return; }
+
+    const row = window._allRows.find(r => r.id === _activeLeadId);
+    if (!row) { alertEl.className = 'modal-alert error'; alertEl.textContent = 'Data lead tidak ditemukan.'; return; }
+
+    const btn = document.getElementById('btnSaveCustomer');
+    btn.disabled = true;
+    btn.textContent = '⏳ Menyimpan...';
+
+    try {
+      const payload = {
+        client_id:              clientId,
+        ktp_number:             nik      || null,
+        client_name:            row.nama || row.name || '',
+        email:                  row.email    || null,
+        phone:                  row.phone    || null,
+        ksei_single_id:         sid      || null,
+        sales_person_id_legacy: (row.referral || '').toUpperCase() || null,
+        sales_person_name:      (row.referral || '').toUpperCase() || null,
+        referral_agents:        row.referral || null,
+        client_status:          'Aktif',
+        created_at:             new Date().toISOString()
+      };
+
+      const { data: inserted, error } = await window._supabase
+        .from('customers')
+        .insert([payload])
+        .select('id')
+        .single();
+
+      if (error) throw error;
+
+      // Insert data sekuritas (SRE / RDN) ke tabel customer_securities
+      if (inserted && inserted.id && (row.sekuritas || sre || rdn || bankRdn)) {
+        const secPayload = {
+          customer_id:      inserted.id,
+          sekuritas_name:   row.sekuritas   || null,
+          sid:              sid             || null,
+          sre:              sre             || null,
+          rdn_account_no:   rdn             || null,
+          rdn_bank_name:    bankRdn         || null,
+          created_at:       new Date().toISOString()
+        };
+        // Tidak throw jika gagal — data customer sudah tersimpan
+        const { error: secErr } = await window._supabase
+          .from('customer_securities')
+          .insert([secPayload]);
+        if (secErr) console.warn('customer_securities insert gagal:', secErr.message);
+      }
+
+      alertEl.className = 'modal-alert success';
+      alertEl.textContent = '✓ Berhasil ditambahkan ke Data Customer!';
+      btn.textContent = '✓ Tersimpan';
+
+      // Update status lead jadi registered
+      if (!_activeLeadId.startsWith('landing_')) {
+        await window._supabase
+          .from('referral_registrations')
+          .update({ confirmed_status: 'registered', updated_at: new Date().toISOString() })
+          .eq('id', _activeLeadId);
+      }
+      // Sync local state
+      const leadRow = window._allRows.find(r => r.id === _activeLeadId);
+      if (leadRow) leadRow.confirmed_status = 'registered';
+      const filteredLead = filteredRows.find(r => r.id === _activeLeadId);
+      if (filteredLead) filteredLead.confirmed_status = 'registered';
+      window._allFuRows = buildFollowUpRows(window._allRows);
+      renderPage();
+      renderFuTable(window._allFuRows);
+
+      setTimeout(() => closeAddCustomerModal(), 1800);
+
+    } catch(e) {
+      alertEl.className = 'modal-alert error';
+      alertEl.textContent = 'Gagal menyimpan: ' + (e.message || 'Unknown error');
+      btn.disabled = false;
+      btn.textContent = '💾 Simpan ke Customer';
+    }
+  }
+
+  window.openAddCustomerModal  = openAddCustomerModal;
+  window.closeAddCustomerModal = closeAddCustomerModal;
+  window.saveToCustomer        = saveToCustomer;
+
   window.boot           = boot;
 </script>
+
+<!-- ===== MODAL: ADD TO CUSTOMER DB ===== -->
+<div class="modal-overlay" id="addCustomerModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">Tambah ke Data Customer</div>
+        <div class="modal-subtitle" id="modalSubtitle">Lengkapi data untuk didaftarkan</div>
+      </div>
+      <button class="modal-close" onclick="closeAddCustomerModal()">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <!-- Pre-filled data -->
+      <div class="modal-section-title">Data dari Registrasi</div>
+      <div class="modal-prefilled">
+        <div class="prefill-item">
+          <span class="prefill-label">Nama Lengkap</span>
+          <span class="prefill-value" id="pf-nama">—</span>
+        </div>
+        <div class="prefill-item">
+          <span class="prefill-label">Email</span>
+          <span class="prefill-value" id="pf-email">—</span>
+        </div>
+        <div class="prefill-item">
+          <span class="prefill-label">No. HP</span>
+          <span class="prefill-value" id="pf-phone">—</span>
+        </div>
+        <div class="prefill-item">
+          <span class="prefill-label">Sekuritas</span>
+          <span class="prefill-value" id="pf-sekuritas">—</span>
+        </div>
+        <div class="prefill-item">
+          <span class="prefill-label">Sales Person</span>
+          <span class="prefill-value" id="pf-sales">—</span>
+        </div>
+        <div class="prefill-item">
+          <span class="prefill-label">Kode Referral</span>
+          <span class="prefill-value" id="pf-referral">—</span>
+        </div>
+      </div>
+
+      <!-- Form data tambahan -->
+      <div class="modal-section-title">Data Tambahan (Wajib Diisi)</div>
+      <div class="modal-form">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Client ID <span class="req">*</span></label>
+            <input type="text" id="inp-client-id" placeholder="Cth: MBK123456"/>
+          </div>
+          <div class="form-group">
+            <label>NIK <span class="req">*</span></label>
+            <input type="text" id="inp-nik" placeholder="16 digit NIK" maxlength="16"/>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>No. SID</label>
+            <input type="text" id="inp-sid" placeholder="Single Investor Identification"/>
+          </div>
+          <div class="form-group">
+            <label>No. SRE</label>
+            <input type="text" id="inp-sre" placeholder="Sub Rekening Efek"/>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>No. RDN</label>
+            <input type="text" id="inp-rdn" placeholder="Rekening Dana Nasabah"/>
+          </div>
+          <div class="form-group">
+            <label>Bank RDN</label>
+            <input type="text" id="inp-bank-rdn" placeholder="Cth: BCA, BRI, Mandiri"/>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Catatan</label>
+          <input type="text" id="inp-notes" placeholder="Catatan tambahan (opsional)"/>
+        </div>
+      </div>
+
+      <div class="modal-alert" id="modalAlert"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-modal-cancel" onclick="closeAddCustomerModal()">Batal</button>
+      <button class="btn-modal-save" id="btnSaveCustomer" onclick="saveToCustomer()">💾 Simpan ke Customer</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
 

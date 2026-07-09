@@ -639,7 +639,7 @@
       const row = {
         client_id: data.clientID || data.client_id || null,
         client_name: data.clientName || data.client_name || null,
-        birth_date: data.birthDate || data.birth_date || null,
+        birth_date: parseDateField(data.cifInvestorBirthDate || data.birthDate || data.birth_date || ''),
         ktp_number: data.ktpNumber || data.ktp_number || null,
         npwp: data.npwp || null,
         email: data.email || null,
@@ -660,8 +660,8 @@
         office_name: data.officeName || data.office_name || null,
         client_status: data.clientStatus || data.client_status || 'Aktif',
         client_status_description: data.clientStatusDescription || data.client_status_description || null,
-        active_date: data.activeDate || data.active_date || null,
-        closed_date: data.closedDate || data.closed_date || null,
+        active_date: parseDateField(data.activeDate || data.active_date || ''),
+        closed_date: parseDateField(data.closedDate || data.closed_date || ''),
       };
 
       if (docId) {
@@ -1327,18 +1327,32 @@
     document.getElementById('csvPreviewWrap').style.display = 'block';
   }
 
-  // Helper: parse date from CSV (supports M/D/YYYY, YYYY-MM-DD, etc)
+  // Helper: parse date from CSV/form (supports DD/MM/YYYY, MM/DD/YYYY, YYYY-MM-DD, DD-MM-YYYY)
   function parseDateField(val) {
     if (!val || val.trim() === '') return null;
     val = val.trim();
-    // Already ISO format
+    // Already ISO format YYYY-MM-DD
     if (/^\d{4}-\d{2}-\d{2}/.test(val)) return val.slice(0, 10);
-    // M/D/YYYY or MM/DD/YYYY format
+    // DD-MM-YYYY (with dashes)
+    if (/^\d{2}-\d{2}-\d{4}$/.test(val)) {
+      const [d, m, y] = val.split('-');
+      return `${y}-${m}-${d}`;
+    }
+    // slash-separated: DD/MM/YYYY (Indonesia) or MM/DD/YYYY (US)
     const parts = val.split('/');
     if (parts.length === 3) {
-      const [m, d, y] = parts;
-      const year = y.length === 2 ? '20' + y : y;
-      return `${year}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`;
+      const [a, b, c] = parts;
+      const year = c.length === 2 ? '20' + c : c;
+      // If first part > 12, it must be DD/MM/YYYY
+      if (parseInt(a, 10) > 12) {
+        return `${year}-${b.padStart(2,'0')}-${a.padStart(2,'0')}`;
+      }
+      // If second part > 12, it must be MM/DD/YYYY
+      if (parseInt(b, 10) > 12) {
+        return `${year}-${a.padStart(2,'0')}-${b.padStart(2,'0')}`;
+      }
+      // Ambiguous: default to DD/MM/YYYY (Indonesia convention)
+      return `${year}-${a.padStart(2,'0')}-${b.padStart(2,'0')}`;
     }
     return null;
   }

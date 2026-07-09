@@ -252,6 +252,10 @@
       <div class="stat-label">Revenue Obligasi</div>
       <div class="stat-value purple" id="sObligasi" style="font-size:1.1rem;">—</div>
       <div class="stat-sub" id="sObligasiCount">0 transaksi</div>
+      <div style="margin-top:8px;padding-top:8px;border-top:1px solid #f0f0f5;">
+        <div style="font-size:.65rem;color:var(--gray);margin-bottom:2px;">Volume Obligasi</div>
+        <div style="font-size:.88rem;font-weight:600;color:#8b5cf6;" id="sObligasiVolume">—</div>
+      </div>
     </div>
     <div class="stat-card reksadana">
       <div class="stat-label">Revenue Reksadana</div>
@@ -447,7 +451,10 @@
         console.log(`bb_orders offset=${offset}: ${data.length} rows`);
         data.forEach(o => {
           const nominal = Number(o.nominal) || 0;
-          const revenue = o.revenue != null ? Number(o.revenue) : nominal * FEE_OBLIGASI;
+          // Prioritas: revenue_fawz > revenue > fallback nominal * fee
+          const revenue = o.revenue_fawz != null ? Number(o.revenue_fawz)
+                        : o.revenue      != null ? Number(o.revenue)
+                        : nominal * FEE_OBLIGASI;
           allRows.push({
             id:          o.id,
             sumber:      'obligasi',
@@ -555,13 +562,16 @@
     allRows.forEach(r => {
       if (!r.tanggal) return;
       const ym = r.tanggal.slice(0,7); // YYYY-MM
-      if (!monthMap[ym]) monthMap[ym] = { count:0, volume:0, revenue:0, sahamVol:0, sahamFee:0 };
+      if (!monthMap[ym]) monthMap[ym] = { count:0, volume:0, revenue:0, sahamVol:0, sahamFee:0, obligasiVol:0 };
       monthMap[ym].count++;
       monthMap[ym].volume  += Number(r.totalAmount)||0;
       monthMap[ym].revenue += Number(r.revenue)||0;
       if (r.sumber === 'saham') {
         monthMap[ym].sahamVol += Number(r.totalAmount)||0;
         monthMap[ym].sahamFee += Number(r.revenue)||0;
+      }
+      if (r.sumber === 'obligasi') {
+        monthMap[ym].obligasiVol += Number(r.totalAmount)||0;
       }
     });
 
@@ -598,6 +608,10 @@
         ${m.sahamFee > 0 ? `<div class="month-row">
           <span class="month-row-label">Fee Saham</span>
           <span class="month-row-val" style="color:var(--orange);">${fmtRp(m.sahamFee)}</span>
+        </div>` : ''}
+        ${m.obligasiVol > 0 ? `<div class="month-row">
+          <span class="month-row-label">Volume Obligasi</span>
+          <span class="month-row-val" style="color:#8b5cf6;">${fmtRp(m.obligasiVol)}</span>
         </div>` : ''}
       </div>`;
     }).join('');
@@ -717,6 +731,7 @@
     const feeSaham     = sahamRows.reduce((s,r)    => s + (Number(r.revenue)||0), 0);
     const volSaham     = sahamRows.reduce((s,r)    => s + (Number(r.totalAmount)||0), 0);
     const revObligasi  = obligasiRows.reduce((s,r) => s + (Number(r.revenue)||0), 0);
+    const volObligasi  = obligasiRows.reduce((s,r) => s + (Number(r.totalAmount)||0), 0);
     const revReksa     = reksadRows.reduce((s,r)   => s + (Number(r.revenue)||0), 0);
     const totalVol     = filtered.reduce((s,r)     => s + (Number(r.totalAmount)||0), 0);
 
@@ -725,6 +740,7 @@
     document.getElementById('sSahamVolume').textContent  = fmtRp(volSaham);
     document.getElementById('sObligasi').textContent     = fmtRp(revObligasi);
     document.getElementById('sObligasiCount').textContent= `${obligasiRows.length} transaksi`;
+    document.getElementById('sObligasiVolume').textContent = fmtRp(volObligasi);
     document.getElementById('sReksadana').textContent    = fmtRp(revReksa);
     document.getElementById('sReksadanaCount').textContent=`${reksadRows.length} transaksi`;
     document.getElementById('sTotal').textContent        = filtered.length;
@@ -929,10 +945,7 @@
   }
   function fmtRp(val) {
     const n=Number(val)||0, abs=Math.abs(n), sign=n<0?'-':'';
-    if (abs>=1e12) return sign+'Rp '+(abs/1e12).toFixed(2)+' T';
-    if (abs>=1e9)  return sign+'Rp '+(abs/1e9).toFixed(2)+' M';
-    if (abs>=1e6)  return sign+'Rp '+(abs/1e6).toFixed(1)+' jt';
-    return sign+'Rp '+abs.toLocaleString('id-ID');
+    return sign+'Rp '+abs.toLocaleString('id-ID',{minimumFractionDigits:0,maximumFractionDigits:2});
   }
   function fmtRpFull(val) {
     const n=Number(val)||0;
