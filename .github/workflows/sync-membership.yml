@@ -45,13 +45,24 @@ jobs:
             try {
               const res = await fetch(`${PP_URL}/api/fawzpro/check-membership`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
                 body: JSON.stringify({ email })
               });
               if (!res.ok) return null;
               const json = await res.json();
-              if (json.status !== 'OK' || !json.data) return null;
-              return json.data.is_premium === true ? 'premium' : 'free';
+              if (!json.data) return null;
+
+              // Support multiple response formats
+              if (typeof json.data.is_premium === 'boolean') {
+                return json.data.is_premium ? 'premium' : 'free';
+              }
+              if (typeof json.data.is_member === 'boolean') {
+                return json.data.is_member ? 'premium' : 'free';
+              }
+              if (json.data.membership_status) {
+                return json.data.membership_status === 'member' ? 'premium' : 'free';
+              }
+              return null;
             } catch(e) {
               console.warn(`[Membership] Error checking ${email}:`, e.message);
               return null;
