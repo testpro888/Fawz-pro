@@ -186,10 +186,12 @@ console.log('[Fawz navbar.js] v2.5.0 loaded');
     const PERMISSIONS = {
       // format: { navItemId atau href : [roles yang BOLEH lihat] }
       // Nav menu utama
-      navSales   : ['head_account', 'admin', 'treasury', 'sales', 'head_sales'],
-      navCustomer: ['head_account', 'admin', 'treasury', 'sales', 'head_sales'],
-      navProduct : ['head_account', 'admin', 'treasury', 'sales', 'head_sales'],
-      navRevenue : ['head_account', 'admin', 'treasury', 'sales', 'head_sales'],
+      navSales      : ['head_account', 'admin', 'treasury', 'sales', 'head_sales'],
+      navCustomer   : ['head_account', 'admin', 'treasury', 'sales', 'head_sales'],
+      navProduct    : ['head_account', 'admin', 'treasury', 'sales', 'head_sales'],
+      navRevenue    : ['head_account', 'admin', 'treasury', 'sales', 'head_sales'],
+      navInfluencer : ['head_account', 'admin', 'treasury', 'sales', 'head_sales'],
+      navReferral   : ['head_account', 'admin', 'treasury', 'sales', 'head_sales'],
 
       // Dropdown items — by href
       // Sales dropdown
@@ -222,6 +224,12 @@ console.log('[Fawz navbar.js] v2.5.0 loaded');
       'revenue-data.html'      : ['head_account', 'admin', 'sales', 'head_sales'],
       'sales-commission.html'  : ['head_account', 'admin', 'sales', 'head_sales'],
 
+      // Influencer & Referral dropdown items
+      'influencer-register.html'    : ['head_account', 'admin', 'treasury', 'sales', 'head_sales'],
+      'dashboard-influencer.html'   : ['head_account', 'admin', 'treasury', 'sales', 'head_sales'],
+      'referral-agent-regist.html'  : ['head_account', 'admin', 'treasury', 'sales', 'head_sales'],
+      'dashboard-referral.html'     : ['head_account', 'admin', 'treasury', 'sales', 'head_sales'],
+
       // User dropdown
       'manageAccountsLink'     : ['head_account'],  // Kelola Akun di profile
     };
@@ -229,7 +237,7 @@ console.log('[Fawz navbar.js] v2.5.0 loaded');
     const role = user.role;
 
     // Sembunyikan nav menu utama
-    ['navSales','navCustomer','navProduct','navRevenue'].forEach(id => {
+    ['navSales','navCustomer','navProduct','navRevenue','navInfluencer','navReferral'].forEach(id => {
       const allowed = PERMISSIONS[id];
       const el = document.getElementById(id);
       if (el && allowed && !allowed.includes(role)) el.style.display = 'none';
