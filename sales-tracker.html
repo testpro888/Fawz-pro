@@ -883,7 +883,7 @@
       // ── Load dari register_landing ──
       const { data: landingRows, error: landingErr } = await window._supabase
         .from('register_landing')
-        .select('id, name, email, phone, sekuritas, referral_code, created_at')
+        .select('id, name, email, phone, sekuritas, referral_code, confirmed_status, created_at')
         .order('created_at', { ascending: false });
       
       console.log('📊 Sales Tracker Data Sources:');
@@ -910,11 +910,11 @@
         phone: r.phone || '',
         referral: r.referral_code || '',
         sekuritas: r.sekuritas || null,
-        confirmed_status: 'pending',
+        confirmed_status: r.confirmed_status || 'pending',
         created_at: r.created_at,
         createdAt: r.created_at,
         source: 'register_landing'
-      }));
+      })).filter(r => r.confirmed_status !== 'deleted');
       
       console.log('  → fromLanding normalized:', fromLanding.length, 'rows', fromLanding.slice(0,2));
 
@@ -1021,8 +1021,31 @@
       newStatus === 'cancel'     ? 's-cancel'     : 's-pending'
     );
     try {
-      // register_landing tidak punya kolom confirmed_status, hanya update referral_registrations
-      if (!id.startsWith('landing_')) {
+      if (id.startsWith('landing_')) {
+        // Update status di register_landing
+        const realId = id.replace('landing_', '');
+        // Coba dengan string id dulu
+        let error;
+        const res = await window._supabase
+          .from('register_landing')
+          .update({ confirmed_status: newStatus })
+          .eq('id', realId);
+        error = res.error;
+        // Jika gagal karena id type number, coba dengan number
+        if (error) {
+          const numId = Number(realId);
+          if (!isNaN(numId)) {
+            const res2 = await window._supabase
+              .from('register_landing')
+              .update({ confirmed_status: newStatus })
+              .eq('id', numId);
+            if (res2.error) throw res2.error;
+          } else {
+            throw error;
+          }
+        }
+      } else {
+        // Update status di referral_registrations
         const { error } = await window._supabase
           .from('referral_registrations')
           .update({ confirmed_status: newStatus, updated_at: new Date().toISOString() })
