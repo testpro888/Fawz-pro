@@ -186,10 +186,10 @@ console.log('[Fawz navbar.js] v2.5.0 loaded');
     const PERMISSIONS = {
       // format: { navItemId atau href : [roles yang BOLEH lihat] }
       // Nav menu utama
-      navSales   : ['head_account', 'admin', 'treasury', 'sales', 'head_sales'],
-      navCustomer: ['head_account', 'admin', 'treasury', 'sales', 'head_sales'],
-      navProduct : ['head_account', 'admin', 'treasury', 'sales', 'head_sales'],
-      navRevenue : ['head_account', 'admin', 'treasury', 'sales', 'head_sales'],
+      navSales      : ['head_account', 'admin', 'treasury', 'sales', 'head_sales'],
+      navCustomer   : ['head_account', 'admin', 'treasury', 'sales', 'head_sales'],
+      navProduct    : ['head_account', 'admin', 'treasury', 'sales', 'head_sales'],
+      navRevenue    : ['head_account', 'admin', 'treasury', 'sales', 'head_sales'],
 
       // Dropdown items — by href
       // Sales dropdown
@@ -654,6 +654,58 @@ console.log('[Fawz navbar.js] v2.5.0 loaded');
     }
   });
 
+  /* ── 4c. INFLUENCER & REFERRAL MEMBERSHIP CHECK ── */
+  function initMembershipCheck(user) {
+    waitForSupabase(() => {
+      checkInfluencerStatus(user);
+      checkReferralStatus(user);
+    });
+  }
+
+  async function checkInfluencerStatus(user) {
+    if (!window._supabase) return;
+    try {
+      const username = user.username || user.name || '';
+      if (!username) return;
+
+      const { data, error } = await window._supabase
+        .from('influencer_registrations')
+        .select('id')
+        .eq('username', username)
+        .limit(1);
+
+      if (!error && data && data.length > 0) {
+        // User is registered as influencer → show Dashboard
+        const link = document.getElementById('influencerMenuLink');
+        const mobLink = document.getElementById('mobInfluencerLink');
+        if (link) { link.href = 'dashboard-influencer.html'; link.innerHTML = '<span class="d-icon">📣</span> Dashboard'; }
+        if (mobLink) { mobLink.href = 'dashboard-influencer.html'; mobLink.textContent = 'Dashboard'; }
+      }
+    } catch(e) { /* silent */ }
+  }
+
+  async function checkReferralStatus(user) {
+    if (!window._supabase) return;
+    try {
+      const username = user.username || user.name || '';
+      if (!username) return;
+
+      const { data, error } = await window._supabase
+        .from('referral_agents')
+        .select('id')
+        .eq('username', username)
+        .limit(1);
+
+      if (!error && data && data.length > 0) {
+        // User is registered as referral agent → show Dashboard
+        const link = document.getElementById('referralMenuLink');
+        const mobLink = document.getElementById('mobReferralLink');
+        if (link) { link.href = 'dashboard-referral.html'; link.innerHTML = '<span class="d-icon">🤝</span> Dashboard'; }
+        if (mobLink) { mobLink.href = 'dashboard-referral.html'; mobLink.textContent = 'Dashboard'; }
+      }
+    } catch(e) { /* silent */ }
+  }
+
   /* ── 6. FETCH & INJECT NAVBAR HTML, LALU INIT ── */
   fetch('navbar.html?v=' + Date.now())
     .then(r => r.text())
@@ -686,6 +738,9 @@ console.log('[Fawz navbar.js] v2.5.0 loaded');
 
       // Init task pending indicator untuk semua role
       if (_rawUser) initTaskIndicator(JSON.parse(_rawUser));
+
+      // Check Influencer & Referral registration status
+      if (_rawUser) initMembershipCheck(JSON.parse(_rawUser));
 
       // Event delegation untuk drawer group accordion
       document.addEventListener('click', function(e) {

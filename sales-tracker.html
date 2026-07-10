@@ -85,15 +85,6 @@
     .sum-card-line-fill { height: 100%; border-radius: 2px; background: linear-gradient(90deg, var(--gold), var(--gold-light)); }
     .sum-card-value { font-size: 2rem; font-weight: 700; line-height: 1; position: relative; z-index: 1; }
 
-    /* Summary Klik */
-    .summary-grid-clicks {
-      display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
-      margin-bottom: 24px; animation: fadeUp 0.4s 0.05s ease both;
-    }
-    .sum-card-maybank { background: linear-gradient(135deg, #877300, #b3b000); }
-    .sum-card-trimegah { background: linear-gradient(135deg, #0c007a, #0c16a5); }
-    .sum-card-total-klik { background: linear-gradient(135deg, #1a1a5e, #0d0d2b); }
-
     /* Filter */
     .filter-bar {
       background: #fff; border-radius: 14px; padding: 14px 20px;
@@ -292,7 +283,7 @@
     .page-btn.active { background: var(--navy); color: #fff; border-color: var(--navy); font-weight: 600; }
     .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-    @media (max-width: 900px) { .summary-grid { grid-template-columns: repeat(2, 1fr); } .summary-grid-clicks { grid-template-columns: 1fr; } .page-container { padding: 24px 16px; } }
+    @media (max-width: 900px) { .summary-grid { grid-template-columns: repeat(2, 1fr); } .page-container { padding: 24px 16px; } }
     @media (max-width: 600px) { .summary-grid { grid-template-columns: 1fr 1fr; } }
   </style>
 </head>
@@ -311,16 +302,13 @@
       <div class="page-subtitle">Data pengunjung & klik link referral</div>
       <div class="title-underline"></div>
     </div>
-    <button class="btn-export" onclick="currentTab==='leads'?exportLeadsCSV():exportClicksCSV()">⬇ Export CSV</button>
+    <button class="btn-export" onclick="exportLeadsCSV()">⬇ Export CSV</button>
   </div>
 
   <!-- TABS -->
   <div class="tabs">
     <button class="tab-btn active" id="tab-leads" onclick="switchTab('leads')">
       Data Leads <span class="tab-badge" id="badge-leads">0</span>
-    </button>
-    <button class="tab-btn" id="tab-clicks" onclick="switchTab('clicks')">
-      Akun Sekuritas <span class="tab-badge" id="badge-clicks">0</span>
     </button>
     <button class="tab-btn" id="tab-followup" onclick="switchTab('followup')">
       Need to Follow Up <span class="tab-badge" id="badge-followup">0</span>
@@ -408,75 +396,6 @@
     </div>
   </div>
 
-  <!-- ===== TAB: KLIK LINK ===== -->
-  <div class="tab-panel" id="panel-clicks">
-    <div class="summary-grid-clicks">
-      <div class="sum-card sum-card-total-klik">
-        <div class="sum-card-label">Total Klik</div>
-        <div class="sum-card-line"><div class="sum-card-line-fill" style="width:100%"></div></div>
-        <div class="sum-card-value" id="statTotalKlik">—</div>
-      </div>
-      <div class="sum-card sum-card-maybank">
-        <div class="sum-card-label">Maybank Sekuritas</div>
-        <div class="sum-card-line"><div class="sum-card-line-fill" style="width:100%"></div></div>
-        <div class="sum-card-value" id="statMaybank">—</div>
-      </div>
-      <div class="sum-card sum-card-trimegah">
-        <div class="sum-card-label">Trimegah Sekuritas</div>
-        <div class="sum-card-line"><div class="sum-card-line-fill" style="width:100%"></div></div>
-        <div class="sum-card-value" id="statTrimegah">—</div>
-      </div>
-    </div>
-
-    <div class="filter-bar">
-      <span class="filter-label">Cari:</span>
-      <input type="text" id="filterClickSearch" placeholder="Nama / Email..." oninput="applyClickFilter()"/>
-      <span class="filter-label">Link:</span>
-      <select id="filterClickLink" onchange="applyClickFilter()">
-        <option value="">Semua</option>
-        <option value="Maybank Sekuritas">Maybank Sekuritas</option>
-        <option value="Trimegah Sekuritas">Trimegah Sekuritas</option>
-      </select>
-      <span class="filter-label">Dari:</span>
-      <input type="date" id="filterClickFrom" onchange="applyClickFilter()"/>
-      <span class="filter-label">s/d</span>
-      <input type="date" id="filterClickTo" onchange="applyClickFilter()"/>
-      <div class="filter-spacer"></div>
-      <button class="btn-reset" onclick="resetClickFilter()">Reset</button>
-    </div>
-
-    <div class="table-wrapper">
-      <div class="table-toolbar">
-        <div class="table-info">Menampilkan <span id="clickRowCount">0</span> klik</div>
-      </div>
-      <div style="overflow-x:auto;">
-        <table>
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Nama</th>
-              <th>Email</th>
-              <th>Referral</th>
-              <th>Sekuritas</th>
-              <th>Tanggal</th>
-              <th>Waktu</th>
-              <th>Aksi</th>
-            </tr>
-          </thead>
-          <tbody id="clickTableBody">
-            <tr><td colspan="8" style="padding:0;">
-              <div style="padding:14px 16px;display:flex;flex-direction:column;gap:10px;">
-                <div class="skeleton"></div><div class="skeleton" style="width:90%"></div>
-                <div class="skeleton" style="width:85%"></div>
-              </div>
-            </td></tr>
-          </tbody>
-        </table>
-      </div>
-      <div class="pagination" id="clickPagination"></div>
-    </div>
-  </div>
-
   <!-- ===== TAB: NEED TO FOLLOW UP ===== -->
   <div class="tab-panel" id="panel-followup">
 
@@ -532,8 +451,6 @@
   const ROWS_PER_PAGE = 15;
   let currentPage = 1;
   let filteredRows = [];
-  let currentClickPage = 1;
-  let filteredClicks = [];
   let currentTab = 'leads';
 
   // ===== HARI LIBUR NASIONAL INDONESIA (extend sesuai tahun) =====
@@ -673,7 +590,9 @@
       const statusClass = statusVal === 'registered' ? 's-registered' : statusVal === 'cancel' ? 's-cancel' : 's-pending';
       const sourceBadge = r.source === 'register_landing'
         ? `<span style="display:inline-block;margin-left:4px;padding:1px 6px;border-radius:4px;font-size:0.65rem;font-weight:600;background:#dbeafe;color:#1e40af;">from Referral Agent</span>`
-        : '';
+        : (r.source === 'referral_registrations' && r.referral)
+          ? `<span style="display:inline-block;margin-left:4px;padding:1px 6px;border-radius:4px;font-size:0.65rem;font-weight:600;background:#e0e7ff;color:#3730a3;">from Referral Agent</span>`
+          : '';
       return `<tr>
         <td style="color:#bbb;font-size:.75rem;">${no}</td>
         <td><strong>${r.nama||r.name||'—'}</strong>${sourceBadge}</td>
@@ -945,102 +864,6 @@
   function applyFuFilter() { /* no-op, calendar view doesn't filter */ }
   function resetFuFilter()  { /* no-op */ }
 
-  // ===== LINK CLICKS =====
-  function renderClickSummary(rows) {
-    const maybank  = rows.filter(r => (r.link||'').includes('Maybank')).length;
-    const trimegah = rows.filter(r => (r.link||'').includes('Trimegah')).length;
-    document.getElementById('statTotalKlik').textContent = rows.length.toLocaleString('id-ID');
-    document.getElementById('statMaybank').textContent   = maybank.toLocaleString('id-ID');
-    document.getElementById('statTrimegah').textContent  = trimegah.toLocaleString('id-ID');
-    document.getElementById('badge-clicks').textContent  = rows.length;
-  }
-
-  function renderClickTable(rows) {
-    filteredClicks = rows;
-    currentClickPage = 1;
-    renderClickPage();
-    renderClickPagination();
-    document.getElementById('clickRowCount').textContent = rows.length.toLocaleString('id-ID');
-  }
-
-  function renderClickPage() {
-    const start = (currentClickPage - 1) * ROWS_PER_PAGE;
-    const slice = filteredClicks.slice(start, start + ROWS_PER_PAGE);
-    const tbody = document.getElementById('clickTableBody');
-    if (!slice.length) {
-      tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="empty-icon"></div><div style="font-size:.9rem;color:#999;font-weight:600;">Belum ada klik tercatat</div></div></td></tr>`;
-      return;
-    }
-    tbody.innerHTML = slice.map((r, i) => {
-      const no = (currentClickPage - 1) * ROWS_PER_PAGE + i + 1;
-      const isMaybank = (r.link||'').includes('Maybank');
-      const badgeClass = isMaybank ? 'badge-maybank' : 'badge-trimegah';
-      return `<tr>
-        <td style="color:#bbb;font-size:.75rem;">${no}</td>
-        <td><strong>${r.nama||'—'}</strong></td>
-        <td style="color:#555;">${r.email||'—'}</td>
-        <td><span class="referral-tag">${(r.referral||'—').toUpperCase()}</span></td>
-        <td><span class="badge ${badgeClass}">${r.link||'—'}</span></td>
-        <td>${formatDate(r.clickedAt)}</td>
-        <td style="color:#888;">${formatTime(r.clickedAt)}</td>
-        <td><button class="btn-delete" onclick="deleteClick('${r.id}')">Hapus</button></td>
-      </tr>`;
-    }).join('');
-  }
-
-  function renderClickPagination() {
-    const total = Math.ceil(filteredClicks.length / ROWS_PER_PAGE);
-    const pag = document.getElementById('clickPagination');
-    if (total <= 1) { pag.innerHTML = ''; return; }
-    let html = `<button class="page-btn" ${currentClickPage===1?'disabled':''} onclick="goClickPage(${currentClickPage-1})">‹</button>`;
-    for (let i = 1; i <= total; i++) {
-      if (i===1||i===total||Math.abs(i-currentClickPage)<=1) html += `<button class="page-btn ${i===currentClickPage?'active':''}" onclick="goClickPage(${i})">${i}</button>`;
-      else if (Math.abs(i-currentClickPage)===2) html += `<button class="page-btn" disabled style="border:none">…</button>`;
-    }
-    html += `<button class="page-btn" ${currentClickPage===total?'disabled':''} onclick="goClickPage(${currentClickPage+1})">›</button>`;
-    pag.innerHTML = html;
-  }
-
-  function goClickPage(n) { currentClickPage = n; renderClickPage(); renderClickPagination(); }
-
-  function applyClickFilter() {
-    if (!window._allClicks) return;
-    const search = document.getElementById('filterClickSearch').value.toLowerCase();
-    const link   = document.getElementById('filterClickLink').value;
-    const from   = document.getElementById('filterClickFrom').value;
-    const to     = document.getElementById('filterClickTo').value;
-    const result = window._allClicks.filter(r => {
-      const matchSearch = !search || (r.nama||'').toLowerCase().includes(search) || (r.email||'').toLowerCase().includes(search);
-      const matchLink   = !link   || (r.link||'').includes(link);
-      const d = toDate(r.clickedAt);
-      const matchFrom   = !from || (d && d >= new Date(from));
-      const matchTo     = !to   || (d && d <= new Date(to+'T23:59:59'));
-      return matchSearch && matchLink && matchFrom && matchTo;
-    });
-    renderClickTable(result);
-    renderClickSummary(result);
-  }
-
-  function resetClickFilter() {
-    ['filterClickSearch','filterClickFrom','filterClickTo'].forEach(id => document.getElementById(id).value='');
-    document.getElementById('filterClickLink').value='';
-    if (window._allClicks) { renderClickTable(window._allClicks); renderClickSummary(window._allClicks); }
-  }
-
-  function exportClicksCSV() {
-    const rows = filteredClicks.length ? filteredClicks : (window._allClicks||[]);
-    if (!rows.length) { alert('Tidak ada data.'); return; }
-    const header = ['No','Nama','Email','Referral','Link Diklik','Tanggal','Waktu'];
-    const csv = [header.join(','), ...rows.map((r,i) => [
-      i+1, `"${(r.nama||'').replace(/"/g,'""')}"`, r.email||'', r.referral||'',
-      r.link||'', formatDate(r.clickedAt), formatTime(r.clickedAt)
-    ].join(','))].join('\n');
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
-    a.download = `link_clicks_${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-  }
-
   // ===== BOOT =====
   async function boot() {
     // ── AUTH + ROLE GUARD ──
@@ -1053,14 +876,14 @@
       // ── Load dari referral_registrations ──
       const { data: refRows, error: refErr } = await window._supabase
         .from('referral_registrations')
-        .select('id, nama, email, phone, referral_code, agent_name, sekuritas, status, confirmed_status, created_at')
+        .select('id, nama, nik, email, phone, referral_code, agent_name, sekuritas, status, confirmed_status, created_at, influencer_code')
         .order('created_at', { ascending: false });
       if (refErr) throw refErr;
 
       // ── Load dari register_landing ──
       const { data: landingRows, error: landingErr } = await window._supabase
         .from('register_landing')
-        .select('id, name, email, phone, sekuritas, referral_code, created_at')
+        .select('id, name, email, phone, sekuritas, referral_code, confirmed_status, created_at')
         .order('created_at', { ascending: false });
       
       console.log('📊 Sales Tracker Data Sources:');
@@ -1075,9 +898,9 @@
       const fromReferral = (refRows || []).map(r => ({
         ...r,
         source: 'referral_registrations',
-        referral:  r.referral_code || '',
+        referral:  r.referral_code || r.influencer_code || '',
         createdAt: r.created_at,
-      }));
+      })).filter(r => r.confirmed_status !== 'deleted');
 
       // Normalise register_landing (landingRows bisa null jika RLS block atau tabel error)
       const fromLanding = (landingRows || []).map(r => ({
@@ -1087,11 +910,11 @@
         phone: r.phone || '',
         referral: r.referral_code || '',
         sekuritas: r.sekuritas || null,
-        confirmed_status: 'pending',
+        confirmed_status: r.confirmed_status || 'pending',
         created_at: r.created_at,
         createdAt: r.created_at,
         source: 'register_landing'
-      }));
+      })).filter(r => r.confirmed_status !== 'deleted');
       
       console.log('  → fromLanding normalized:', fromLanding.length, 'rows', fromLanding.slice(0,2));
 
@@ -1106,19 +929,6 @@
       populateReferralFilter(window._allRows);
       renderTable(window._allRows);
       renderSummary(window._allRows);
-
-      // ── Tab "Akun Sekuritas": filter baris yang sudah ada pilihan sekuritas ──
-      const allClicks = allRows
-        .filter(r => r.sekuritas)
-        .map(r => ({
-          ...r,
-          link:      r.sekuritas,
-          clickedAt: r.created_at || r.createdAt,
-        }));
-
-      window._allClicks = allClicks;
-      renderClickTable(window._allClicks);
-      renderClickSummary(window._allClicks);
 
       // ── Tab "Need to Follow Up": pending + sudah >=3 hari kerja ──
       const fuRows = buildFollowUpRows(allRows);
@@ -1139,23 +949,63 @@
       // Check apakah dari register_landing atau referral_registrations
       if (id.startsWith('landing_')) {
         const realId = id.replace('landing_', '');
-        const { error } = await window._supabase.from('register_landing').delete().eq('id', realId);
+        // Coba delete langsung
+        const { data, error } = await window._supabase
+          .from('register_landing')
+          .delete()
+          .eq('id', realId)
+          .select();
         if (error) throw error;
+        // Jika tidak ada row yang terhapus, coba dengan number type
+        if (!data || data.length === 0) {
+          const numId = Number(realId);
+          if (!isNaN(numId)) {
+            const { data: d2, error: e2 } = await window._supabase
+              .from('register_landing')
+              .delete()
+              .eq('id', numId)
+              .select();
+            if (e2) throw e2;
+            if (!d2 || d2.length === 0) {
+              throw new Error('Tidak bisa menghapus data. Pastikan RLS policy mengizinkan DELETE.');
+            }
+          } else {
+            throw new Error('Tidak bisa menghapus data. Pastikan RLS policy mengizinkan DELETE.');
+          }
+        }
       } else {
-        const { error } = await window._supabase.from('referral_registrations').delete().eq('id', id);
-        if (error) throw error;
+        // Coba delete dari referral_registrations
+        const { data, error } = await window._supabase
+          .from('referral_registrations')
+          .delete()
+          .eq('id', id)
+          .select();
+        if (error) {
+          // Jika delete gagal (mungkin FK constraint atau RLS), coba soft-delete via update status
+          console.warn('Hard delete gagal, mencoba soft-delete:', error.message);
+          const { error: softErr } = await window._supabase
+            .from('referral_registrations')
+            .update({ confirmed_status: 'deleted', updated_at: new Date().toISOString() })
+            .eq('id', id);
+          if (softErr) throw new Error('Gagal menghapus: ' + error.message);
+        } else if (!data || data.length === 0) {
+          // Tidak ada row terhapus — coba soft-delete
+          const { error: softErr } = await window._supabase
+            .from('referral_registrations')
+            .update({ confirmed_status: 'deleted', updated_at: new Date().toISOString() })
+            .eq('id', id);
+          if (softErr) throw new Error('Tidak bisa menghapus data. Pastikan RLS policy mengizinkan DELETE atau UPDATE.');
+        }
       }
       
       window._allRows = window._allRows.filter(r => r.id !== id);
       filteredRows    = filteredRows.filter(r => r.id !== id);
-      // sync tab sekuritas juga
-      window._allClicks = window._allClicks.filter(r => r.id !== id);
-      filteredClicks    = filteredClicks.filter(r => r.id !== id);
-      // sync tab follow up juga
+      // sync tab follow up
       window._allFuRows = buildFollowUpRows(window._allRows);
       renderPage(); renderPagination(); renderSummary(window._allRows);
       renderFuTable(window._allFuRows);
       document.getElementById('rowCount').textContent = filteredRows.length.toLocaleString('id-ID');
+      document.getElementById('badge-leads').textContent = window._allRows.length;
     } catch(e) { alert('Gagal menghapus: ' + e.message); }
   }
 
@@ -1171,8 +1021,31 @@
       newStatus === 'cancel'     ? 's-cancel'     : 's-pending'
     );
     try {
-      // register_landing tidak punya kolom confirmed_status, hanya update referral_registrations
-      if (!id.startsWith('landing_')) {
+      if (id.startsWith('landing_')) {
+        // Update status di register_landing
+        const realId = id.replace('landing_', '');
+        // Coba dengan string id dulu
+        let error;
+        const res = await window._supabase
+          .from('register_landing')
+          .update({ confirmed_status: newStatus })
+          .eq('id', realId);
+        error = res.error;
+        // Jika gagal karena id type number, coba dengan number
+        if (error) {
+          const numId = Number(realId);
+          if (!isNaN(numId)) {
+            const res2 = await window._supabase
+              .from('register_landing')
+              .update({ confirmed_status: newStatus })
+              .eq('id', numId);
+            if (res2.error) throw res2.error;
+          } else {
+            throw error;
+          }
+        }
+      } else {
+        // Update status di referral_registrations
         const { error } = await window._supabase
           .from('referral_registrations')
           .update({ confirmed_status: newStatus, updated_at: new Date().toISOString() })
@@ -1199,44 +1072,11 @@
     }
   }
 
-  async function deleteClick(id) {
-    if (!confirm('Hapus pilihan sekuritas ini?')) return;
-    try {
-      // Check apakah dari register_landing atau referral_registrations
-      if (id.startsWith('landing_')) {
-        const realId = id.replace('landing_', '');
-        await window._supabase
-          .from('register_landing')
-          .update({ sekuritas: null })
-          .eq('id', realId);
-      } else {
-        await window._supabase
-          .from('referral_registrations')
-          .update({ sekuritas: null, updated_at: new Date().toISOString() })
-          .eq('id', id);
-      }
-      
-      window._allClicks = window._allClicks.filter(r => r.id !== id);
-      filteredClicks    = filteredClicks.filter(r => r.id !== id);
-      // Update _allRows juga supaya sinkron
-      const rowIdx = window._allRows.findIndex(r => r.id === id);
-      if (rowIdx > -1) window._allRows[rowIdx].sekuritas = null;
-      renderClickPage(); renderClickPagination(); renderClickSummary(window._allClicks);
-      document.getElementById('clickRowCount').textContent = filteredClicks.length.toLocaleString('id-ID');
-      document.getElementById('badge-clicks').textContent  = window._allClicks.length;
-    } catch(e) { alert('Gagal menghapus: ' + e.message); }
-  }
-
   window.goPage         = goPage;
-  window.goClickPage    = goClickPage;
   window.applyFilter    = applyFilter;
   window.resetFilter    = resetFilter;
-  window.applyClickFilter  = applyClickFilter;
-  window.resetClickFilter  = resetClickFilter;
   window.exportLeadsCSV    = exportLeadsCSV;
-  window.exportClicksCSV   = exportClicksCSV;
   window.deleteRow         = deleteRow;
-  window.deleteClick       = deleteClick;
   window.updateStatus      = updateStatus;
   window.applyFuFilter     = applyFuFilter;
   window.resetFuFilter     = resetFuFilter;
@@ -1321,9 +1161,22 @@
   }
 
   // Tutup modal kalau klik overlay
-  document.getElementById('addCustomerModal').addEventListener('click', function(e) {
-    if (e.target === this) closeAddCustomerModal();
-  });
+  const _addCustModal = document.getElementById('addCustomerModal');
+  if (_addCustModal) {
+    _addCustModal.addEventListener('click', function(e) {
+      if (e.target === this) closeAddCustomerModal();
+    });
+  } else {
+    // Modal belum ada di DOM, pasang listener setelah DOM ready
+    document.addEventListener('DOMContentLoaded', function() {
+      const modal = document.getElementById('addCustomerModal');
+      if (modal) {
+        modal.addEventListener('click', function(e) {
+          if (e.target === this) closeAddCustomerModal();
+        });
+      }
+    });
+  }
 
   async function saveToCustomer() {
     const alertEl = document.getElementById('modalAlert');
