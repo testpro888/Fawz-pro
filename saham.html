@@ -1032,7 +1032,16 @@
     const match = salesList.find(function(s) {
       return s.nama.toLowerCase() === customerSalesName.toLowerCase();
     });
-    sel.value = match ? match.nama : '';
+    if (match) {
+      sel.value = match.nama;
+    } else {
+      // Sales tidak ada di daftar, tambahkan sebagai option dan auto-select
+      const opt = document.createElement('option');
+      opt.value = customerSalesName;
+      opt.textContent = customerSalesName + ' (dari data customer)';
+      sel.appendChild(opt);
+      sel.value = customerSalesName;
+    }
   }
 
   function fallbackToSalesTextField(errorMessage) {
