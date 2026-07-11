@@ -453,13 +453,14 @@
         actionButtons = `
           <button class="btn btn-primary btn-sm" onclick="approveRequest('${safeId}')" title="Accept">✓ Accept</button>
           <button class="btn btn-danger btn-sm" onclick="rejectRequest('${safeId}')" title="Reject">✗ Reject</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteRequest('${safeId}','${_esc(r.nama||r.email||'?')}')" title="Hapus">🗑️</button>
         `;
       } else if (r.status === 'approved') {
         statusBadge = '<span class="badge badge-approved">Approved</span>';
-        actionButtons = '<span style="font-size:0.75rem;color:var(--gray);">Disetujui</span>';
+        actionButtons = `<button class="btn btn-danger btn-sm" onclick="deleteRequest('${safeId}','${_esc(r.nama||r.email||'?')}')" title="Hapus">🗑️</button>`;
       } else if (r.status === 'rejected') {
         statusBadge = '<span class="badge badge-rejected">Rejected</span>';
-        actionButtons = '<span style="font-size:0.75rem;color:var(--gray);">Ditolak</span>';
+        actionButtons = `<button class="btn btn-danger btn-sm" onclick="deleteRequest('${safeId}','${_esc(r.nama||r.email||'?')}')" title="Hapus">🗑️</button>`;
       }
 
       let regStatusBadge = '<span class="badge badge-req-sales">Req Sales</span>';
@@ -526,6 +527,25 @@
     } catch(e) {
       console.error(e);
       showToast('Gagal reject: ' + (e.message || e));
+    }
+  }
+
+  async function deleteRequest(id, nama) {
+    if (!confirm('Hapus request "' + nama + '"?\nData akan dihapus permanen dan tidak dapat dikembalikan.')) return;
+    try {
+      const { error } = await window._supabase
+        .from('influencer_registrations')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+      
+      _requests = _requests.filter(r => String(r.id) !== String(id));
+      showToast('Request berhasil dihapus');
+      applyRequestFilter();
+      updateStats();
+    } catch(e) {
+      console.error(e);
+      showToast('Gagal hapus: ' + (e.message || e));
     }
   }
 
