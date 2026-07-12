@@ -455,9 +455,29 @@
         statusBadge = '<span class="badge badge-pending">Open Account</span>';
       }
 
-      const actionButtons = `
-        <button class="btn btn-danger btn-sm" onclick="deleteRequest('${safeId}','${_esc(r.nama||r.email||'?')}')" title="Hapus">🗑️</button>
-      `;
+      // Action buttons berdasarkan confirmed_status
+      let actionButtons = '';
+      const cs = r.confirmed_status || 'pending';
+      
+      if (cs === 'pending') {
+        actionButtons = `
+          <button class="btn btn-primary btn-sm" onclick="setRequestStatus('${safeId}','accepted')" title="Accept">✓</button>
+          <button class="btn btn-danger btn-sm" onclick="setRequestStatus('${safeId}','cancel')" title="Cancel">✗</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteRequest('${safeId}','${_esc(r.nama||r.email||'?')}')" title="Hapus">🗑️</button>
+        `;
+      } else if (cs === 'accepted') {
+        actionButtons = `
+          <span class="badge badge-approved">Accepted</span>
+          <button class="btn btn-outline btn-sm" onclick="setRequestStatus('${safeId}','pending')" title="Kembali ke Pending" style="margin-left:4px;">↩</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteRequest('${safeId}','${_esc(r.nama||r.email||'?')}')" title="Hapus">🗑️</button>
+        `;
+      } else if (cs === 'cancel') {
+        actionButtons = `
+          <span class="badge badge-rejected">Cancel</span>
+          <button class="btn btn-outline btn-sm" onclick="setRequestStatus('${safeId}','pending')" title="Kembali ke Pending" style="margin-left:4px;">↩</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteRequest('${safeId}','${_esc(r.nama||r.email||'?')}')" title="Hapus">🗑️</button>
+        `;
+      }
 
       return `<tr>
         <td style="color:#bbb;font-size:0.8rem;">${i + 1}</td>
@@ -470,12 +490,32 @@
         <td><span class="mono">${_esc(r.influencer_code||'—')}</span></td>
         <td>${statusBadge}</td>
         <td>
-          <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;">
+          <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;align-items:center;">
             ${actionButtons}
           </div>
         </td>
       </tr>`;
     }).join('');
+  }
+
+  async function setRequestStatus(id, newStatus) {
+    try {
+      const { error } = await window._supabase
+        .from('influencer_registrations')
+        .update({ confirmed_status: newStatus, updated_at: new Date().toISOString() })
+        .eq('id', id);
+      if (error) throw error;
+      
+      const req = _requests.find(r => String(r.id) === String(id));
+      if (req) req.confirmed_status = newStatus;
+      
+      const labels = { pending: 'Pending', accepted: 'Accepted', cancel: 'Cancel' };
+      showToast('Status diubah ke ' + (labels[newStatus] || newStatus));
+      applyRequestFilter();
+    } catch(e) {
+      console.error(e);
+      showToast('Gagal update status: ' + (e.message || e));
+    }
   }
 
   async function deleteRequest(id, nama) {
