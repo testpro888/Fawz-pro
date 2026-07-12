@@ -509,9 +509,38 @@
       const req = _requests.find(r => String(r.id) === String(id));
       if (req) req.confirmed_status = newStatus;
       
+      // Jika accepted, tambahkan ke tabel influencers
+      if (newStatus === 'accepted' && req) {
+        const infRow = {
+          client_id : req.client_code || null,
+          nama      : req.nama || null,
+          email     : req.email || null,
+          phone     : req.phone || null,
+          influencer_code: req.influencer_code || null,
+          fans      : null,
+          client_count: null,
+          note      : null,
+          revenue   : null
+        };
+        const { data: newInf, error: infErr } = await window._supabase
+          .from('influencers')
+          .insert(infRow)
+          .select()
+          .single();
+        if (infErr) {
+          console.error('Gagal tambah ke influencers:', infErr);
+          showToast('Status accepted, tapi gagal masuk Influencer List: ' + (infErr.message || infErr));
+        } else {
+          _all.unshift(newInf);
+          updateStats();
+          applyFilter();
+        }
+      }
+      
       const labels = { pending: 'Pending', accepted: 'Accepted', cancel: 'Cancel' };
       showToast('Status diubah ke ' + (labels[newStatus] || newStatus));
       applyRequestFilter();
+      updateStats();
     } catch(e) {
       console.error(e);
       showToast('Gagal update status: ' + (e.message || e));
