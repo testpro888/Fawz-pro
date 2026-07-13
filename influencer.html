@@ -238,6 +238,7 @@
               <th>#</th>
               <th>Influencer</th>
               <th>Client ID</th>
+              <th>Influencer Code</th>
               <th>Email</th>
               <th>No. HP</th>
               <th>Revenue</th>
@@ -248,7 +249,7 @@
             </tr>
           </thead>
           <tbody id="infTableBody">
-            <tr><td colspan="10"><div class="empty-state"><div class="empty-icon">⏳</div><p>Memuat data...</p></div></td></tr>
+            <tr><td colspan="11"><div class="empty-state"><div class="empty-icon">⏳</div><p>Memuat data...</p></div></td></tr>
           </tbody>
         </table>
       </div>
@@ -404,7 +405,7 @@
       console.error('loadData error:', e);
       _all = [];
       document.getElementById('infTableBody').innerHTML =
-        '<tr><td colspan="10"><div class="empty-state"><div class="empty-icon">⚠️</div><p>Gagal memuat data: ' + _esc(e.message || String(e)) + '</p></div></td></tr>';
+        '<tr><td colspan="11"><div class="empty-state"><div class="empty-icon">⚠️</div><p>Gagal memuat data: ' + _esc(e.message || String(e)) + '</p></div></td></tr>';
       return;
     }
     document.getElementById('lastUpdated').textContent = 'Diperbarui: ' + new Date().toLocaleTimeString('id-ID');
@@ -573,7 +574,8 @@
       if (!q) return true;
       return (r.nama||'').toLowerCase().includes(q) ||
              (r.email||'').toLowerCase().includes(q) ||
-             (r.client_id||'').toLowerCase().includes(q);
+             (r.client_id||'').toLowerCase().includes(q) ||
+             (r.influencer_code||'').toLowerCase().includes(q);
     });
     document.getElementById('totalBadge').textContent = _filtered.length + ' influencer';
     document.getElementById('tableInfo').textContent = 'Menampilkan ' + _filtered.length + ' dari ' + _all.length + ' data';
@@ -583,7 +585,7 @@
   function renderTable(list) {
     const tbody = document.getElementById('infTableBody');
     if (!list.length) {
-      tbody.innerHTML = '<tr><td colspan="10"><div class="empty-state"><div class="empty-icon">🎯</div><p>' +
+      tbody.innerHTML = '<tr><td colspan="11"><div class="empty-state"><div class="empty-icon">🎯</div><p>' +
         (_all.length === 0 ? 'Belum ada influencer. Klik "+ Tambah Influencer" untuk memulai.' : 'Tidak ada hasil yang cocok') +
         '</p></div></td></tr>';
       return;
@@ -604,6 +606,7 @@
           </div>
         </td>
         <td><span class="mono">${_esc(r.client_id||'—')}</span></td>
+        <td><span class="mono">${_esc(r.influencer_code||'—')}</span></td>
         <td style="font-size:0.82rem;color:var(--gray);">${_esc(r.email||'—')}</td>
         <td style="font-size:0.82rem;">${_esc(r.phone||'—')}</td>
         <td>${fmtRev(r.revenue)}</td>
