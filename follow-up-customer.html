@@ -476,7 +476,25 @@
       const text = e.target.result;
       const lines = text.split(/\r?\n/).filter(l => l.trim());
       if (lines.length < 2) { showToast('CSV kosong atau tidak valid', 'error'); return; }
-      const headerRaw = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/[^a-z0-9_]/g,''));
+
+      // Auto-detect delimiter: comma or semicolon
+      const firstLine = lines[0];
+      const delim = firstLine.includes(';') ? ';' : ',';
+
+      // Smart split: handle quoted fields (e.g. "Jl. Sudirman, Jakarta")
+      function smartSplit(line, d) {
+        const result = []; let current = ''; let inQuotes = false;
+        for (let i = 0; i < line.length; i++) {
+          const ch = line[i];
+          if (ch === '"') { inQuotes = !inQuotes; continue; }
+          if (ch === d && !inQuotes) { result.push(current.trim()); current = ''; continue; }
+          current += ch;
+        }
+        result.push(current.trim());
+        return result;
+      }
+
+      const headerRaw = smartSplit(firstLine, delim).map(h => h.toLowerCase().replace(/[^a-z0-9_]/g,''));
       const MAP = { email:'email', nama:'name', name:'name', clientid:'client_id', client_id:'client_id',
         rdn:'rdn', amount:'amount', porto:'porto', total_nilai_porto:'total_nilai_porto',
         totalnilaiporto:'total_nilai_porto', totalporto:'total_nilai_porto',
@@ -486,7 +504,7 @@
       const headers = headerRaw.map(h => MAP[h] || h);
       csvRows = [];
       for (let i = 1; i < lines.length; i++) {
-        const cols = lines[i].split(',').map(c => c.trim());
+        const cols = smartSplit(lines[i], delim);
         const row = {};
         headers.forEach((h, idx) => { if (h && cols[idx]) row[h] = cols[idx]; });
         if (row.email || row.name) {
