@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS follow_up_customers (
   total_nilai_porto NUMERIC,
   phone TEXT,
   address TEXT,
-  status TEXT DEFAULT 'Process' CHECK (status IN ('Process', 'Success', 'Cancel')),
+  status TEXT DEFAULT 'Process' CHECK (status IN ('Process', 'Under Follow Up', 'Success', 'Cancel')),
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now()
 );

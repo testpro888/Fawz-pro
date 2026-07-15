@@ -39,7 +39,7 @@
     .btn-outline { background: #fff; color: var(--navy); border: 1.5px solid var(--border); }
     .btn-outline:hover { border-color: var(--gold); color: var(--gold); background: #fffbf3; }
     /* Stats */
-    .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+    .stats-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-bottom: 24px; }
     .stat-box { background: #fff; border-radius: 14px; padding: 18px 22px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
     .stat-box-label { font-size: 0.72rem; color: var(--gray); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
     .stat-box-val { font-size: 1.8rem; font-weight: 700; color: var(--navy); }
@@ -65,6 +65,7 @@
     tbody td { padding: 13px 16px; color: var(--text); vertical-align: middle; }
     .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 600; white-space: nowrap; }
     .badge-process { background: #fff3e0; color: #e8931a; }
+    .badge-followup { background: #e8f0ff; color: #2d4abf; }
     .badge-success { background: #e8f8f0; color: #27ae60; }
     .badge-cancel  { background: #ffeaea; color: #e74c3c; }
 
@@ -146,6 +147,7 @@
   <div class="stats-row">
     <div class="stat-box"><div class="stat-box-label">Total</div><div class="stat-box-val" id="statTotal">—</div></div>
     <div class="stat-box"><div class="stat-box-label">Process</div><div class="stat-box-val" id="statProcess" style="color:#e8931a">—</div></div>
+    <div class="stat-box"><div class="stat-box-label">Under Follow Up</div><div class="stat-box-val" id="statFollowUp" style="color:#2d4abf">—</div></div>
     <div class="stat-box"><div class="stat-box-label">Success</div><div class="stat-box-val" id="statSuccess" style="color:#27ae60">—</div></div>
     <div class="stat-box"><div class="stat-box-label">Cancel</div><div class="stat-box-val" id="statCancel" style="color:#e74c3c">—</div></div>
   </div>
@@ -158,6 +160,7 @@
     <select class="filter-select" id="filterStatus" onchange="applyFilters()">
       <option value="">Semua Status</option>
       <option value="Process">Process</option>
+      <option value="Under Follow Up">Under Follow Up</option>
       <option value="Success">Success</option>
       <option value="Cancel">Cancel</option>
     </select>
@@ -215,6 +218,7 @@
       <div class="form-group"><label class="form-label">Status <span class="req">*</span></label>
         <select class="form-select" id="fStatus">
           <option value="Process">Process</option>
+          <option value="Under Follow Up">Under Follow Up</option>
           <option value="Success">Success</option>
           <option value="Cancel">Cancel</option>
         </select>
@@ -326,6 +330,7 @@
   function updateStats() {
     document.getElementById('statTotal').textContent = allData.length;
     document.getElementById('statProcess').textContent = allData.filter(r => r.status === 'Process').length;
+    document.getElementById('statFollowUp').textContent = allData.filter(r => r.status === 'Under Follow Up').length;
     document.getElementById('statSuccess').textContent = allData.filter(r => r.status === 'Success').length;
     document.getElementById('statCancel').textContent = allData.filter(r => r.status === 'Cancel').length;
   }
@@ -346,7 +351,7 @@
       renderPagination(0, 0); return;
     }
     tbody.innerHTML = pageData.map((r, i) => {
-      const statusClass = r.status === 'Process' ? 'badge-process' : r.status === 'Success' ? 'badge-success' : 'badge-cancel';
+      const statusClass = r.status === 'Process' ? 'badge-process' : r.status === 'Under Follow Up' ? 'badge-followup' : r.status === 'Success' ? 'badge-success' : 'badge-cancel';
       return `<tr>
         <td style="color:#bbb;font-size:0.78rem;">${start+i+1}</td>
         <td>${esc(r.email||'—')}</td>
