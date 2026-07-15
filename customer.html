@@ -564,32 +564,38 @@
         .select('*, customer_securities(*)')
         .order('created_at', { ascending: false });
       // Sales hanya bisa lihat customer miliknya sendiri
+      // Exception: akun "Petik Profit" bisa lihat seluruh customer tanpa filter
       if (cu.role === 'sales') {
         const salesName = (cu.name || '').trim();
         const salesNameLower = salesName.toLowerCase();
-        const allData = await fetchAllCustomers(baseQuery());
-        if (false) throw null; // keep error flow consistent
-        const filtered = (allData || []).filter(r => {
-          const pic = (r.sales_person_name || '').toLowerCase();
-          const ref = (r.referral_agents || '').toLowerCase();
-          return pic === salesNameLower || ref.includes(salesNameLower);
-        });
-        allCustomers = filtered.map(r => {
-          const mapped = mapCustomerRow(r);
-          const sec = r.customer_securities && r.customer_securities[0];
-          if (sec) {
-            mapped.ksei_single_id = sec.ksei_single_id || mapped.ksei_single_id || '';
-            mapped.rdn_number     = sec.rdn_number     || mapped.rdn_number     || '';
-            mapped.sekuritas      = sec.sekuritas_name || mapped.sekuritas      || '';
-          }
-          return mapped;
-        });
-        allCustomers.sort((a,b) => (b.createdAt||'').localeCompare(a.createdAt||''));
-        filteredCustomers = [...allCustomers];
-        currentPage = 1;
-        renderTable(filteredCustomers);
-        updateStats();
-        return;
+        const isPetikProfit = salesNameLower === 'petik profit';
+
+        if (!isPetikProfit) {
+          const allData = await fetchAllCustomers(baseQuery());
+          if (false) throw null; // keep error flow consistent
+          const filtered = (allData || []).filter(r => {
+            const pic = (r.sales_person_name || '').toLowerCase();
+            const ref = (r.referral_agents || '').toLowerCase();
+            return pic === salesNameLower || ref.includes(salesNameLower);
+          });
+          allCustomers = filtered.map(r => {
+            const mapped = mapCustomerRow(r);
+            const sec = r.customer_securities && r.customer_securities[0];
+            if (sec) {
+              mapped.ksei_single_id = sec.ksei_single_id || mapped.ksei_single_id || '';
+              mapped.rdn_number     = sec.rdn_number     || mapped.rdn_number     || '';
+              mapped.sekuritas      = sec.sekuritas_name || mapped.sekuritas      || '';
+            }
+            return mapped;
+          });
+          allCustomers.sort((a,b) => (b.createdAt||'').localeCompare(a.createdAt||''));
+          filteredCustomers = [...allCustomers];
+          currentPage = 1;
+          renderTable(filteredCustomers);
+          updateStats();
+          return;
+        }
+        // Petik Profit: jatuh ke flow bawah (load semua customer tanpa filter)
       }
       const data = await fetchAllCustomers(baseQuery());
       const error = null;
