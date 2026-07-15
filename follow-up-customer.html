@@ -175,6 +175,8 @@
             <th>Client ID</th>
             <th>RDN</th>
             <th>Amount</th>
+            <th>Porto</th>
+            <th>Total Nilai Porto</th>
             <th>No HP</th>
             <th>Alamat</th>
             <th>Status</th>
@@ -182,7 +184,7 @@
           </tr>
         </thead>
         <tbody id="tableBody">
-          <tr><td colspan="10"><div class="empty-state"><div class="empty-icon">⏳</div><p>Memuat data...</p></div></td></tr>
+          <tr><td colspan="12"><div class="empty-state"><div class="empty-icon">⏳</div><p>Memuat data...</p></div></td></tr>
         </tbody>
       </table>
     </div>
@@ -206,6 +208,8 @@
       <div class="form-group"><label class="form-label">Client ID</label><input class="form-input mono" id="fClientID" placeholder="C001234"/></div>
       <div class="form-group"><label class="form-label">RDN</label><input class="form-input mono" id="fRDN" placeholder="No. RDN"/></div>
       <div class="form-group"><label class="form-label">Amount</label><input class="form-input mono" id="fAmount" type="number" placeholder="0"/></div>
+      <div class="form-group"><label class="form-label">Porto</label><input class="form-input" id="fPorto" placeholder="Nama portofolio"/></div>
+      <div class="form-group"><label class="form-label">Total Nilai Porto</label><input class="form-input mono" id="fTotalNilaiPorto" type="number" placeholder="0"/></div>
       <div class="form-group"><label class="form-label">No HP</label><input class="form-input" id="fPhone" placeholder="+62..."/></div>
       <div class="form-group full"><label class="form-label">Alamat</label><input class="form-input" id="fAddress" placeholder="Alamat lengkap"/></div>
       <div class="form-group"><label class="form-label">Status <span class="req">*</span></label>
@@ -234,7 +238,7 @@
       <div class="upload-icon">📂</div>
       <div style="font-weight:600; color:var(--navy);">Klik atau drag & drop file CSV</div>
       <div class="upload-hint">
-        Header yang didukung: <strong>email, nama, clientid, rdn, amount, phone, alamat, status</strong>
+        Header yang didukung: <strong>email, nama, clientid, rdn, amount, porto, total_nilai_porto, phone, alamat, status</strong>
       </div>
     </div>
     <input type="file" id="csvFileInput" accept=".csv" onchange="handleCSVFile(event)"/>
@@ -324,7 +328,7 @@
       `Menampilkan ${pageData.length > 0 ? start + 1 : 0}–${end} dari ${total} data`;
 
     if (pageData.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="10"><div class="empty-state"><div class="empty-icon">📋</div><p>Belum ada data follow up</p></div></td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="12"><div class="empty-state"><div class="empty-icon">📋</div><p>Belum ada data follow up</p></div></td></tr>`;
       renderPagination(0, 0); return;
     }
     tbody.innerHTML = pageData.map((r, i) => {
@@ -336,6 +340,8 @@
         <td><span class="mono">${esc(r.client_id||'—')}</span></td>
         <td><span class="mono">${esc(r.rdn||'—')}</span></td>
         <td style="font-weight:500;">${fmtAmount(r.amount)}</td>
+        <td>${esc(r.porto||'—')}</td>
+        <td style="font-weight:500;">${fmtAmount(r.total_nilai_porto)}</td>
         <td>${esc(r.phone||'—')}</td>
         <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(r.address||'')}">${esc(r.address||'—')}</td>
         <td><span class="badge ${statusClass}">${esc(r.status||'Process')}</span></td>
@@ -383,6 +389,8 @@
     document.getElementById('fClientID').value = r.client_id || '';
     document.getElementById('fRDN').value = r.rdn || '';
     document.getElementById('fAmount').value = r.amount || '';
+    document.getElementById('fPorto').value = r.porto || '';
+    document.getElementById('fTotalNilaiPorto').value = r.total_nilai_porto || '';
     document.getElementById('fPhone').value = r.phone || '';
     document.getElementById('fAddress').value = r.address || '';
     document.getElementById('fStatus').value = r.status || 'Process';
@@ -390,7 +398,7 @@
   }
 
   function clearForm() {
-    ['fEmail','fName','fClientID','fRDN','fAmount','fPhone','fAddress'].forEach(id => {
+    ['fEmail','fName','fClientID','fRDN','fAmount','fPorto','fTotalNilaiPorto','fPhone','fAddress'].forEach(id => {
       const el = document.getElementById(id); if(el) el.value = '';
     });
     document.getElementById('fStatus').value = 'Process';
@@ -410,6 +418,8 @@
       client_id: document.getElementById('fClientID').value.trim() || null,
       rdn: document.getElementById('fRDN').value.trim() || null,
       amount: parseFloat(document.getElementById('fAmount').value) || null,
+      porto: document.getElementById('fPorto').value.trim() || null,
+      total_nilai_porto: parseFloat(document.getElementById('fTotalNilaiPorto').value) || null,
       phone: document.getElementById('fPhone').value.trim() || null,
       address: document.getElementById('fAddress').value.trim() || null,
       status: document.getElementById('fStatus').value || 'Process',
@@ -468,7 +478,9 @@
       if (lines.length < 2) { showToast('CSV kosong atau tidak valid', 'error'); return; }
       const headerRaw = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/[^a-z0-9_]/g,''));
       const MAP = { email:'email', nama:'name', name:'name', clientid:'client_id', client_id:'client_id',
-        rdn:'rdn', amount:'amount', phone:'phone', nohp:'phone', no_hp:'phone', hp:'phone',
+        rdn:'rdn', amount:'amount', porto:'porto', total_nilai_porto:'total_nilai_porto',
+        totalnilaiporto:'total_nilai_porto', totalporto:'total_nilai_porto',
+        phone:'phone', nohp:'phone', no_hp:'phone', hp:'phone',
         alamat:'address', address:'address', status:'status' };
 
       const headers = headerRaw.map(h => MAP[h] || h);
@@ -480,14 +492,15 @@
         if (row.email || row.name) {
           row.status = row.status || 'Process';
           row.amount = row.amount ? parseFloat(row.amount.replace(/[^0-9.-]/g,'')) || null : null;
+          row.total_nilai_porto = row.total_nilai_porto ? parseFloat(row.total_nilai_porto.replace(/[^0-9.-]/g,'')) || null : null;
           csvRows.push(row);
         }
       }
       // Preview
       document.getElementById('csvPreviewInfo').textContent = `${csvRows.length} baris data ditemukan`;
-      const previewHtml = `<table><thead><tr><th>#</th><th>Email</th><th>Nama</th><th>Client ID</th><th>RDN</th><th>Amount</th><th>No HP</th><th>Status</th></tr></thead><tbody>` +
-        csvRows.slice(0, 10).map((r,i) => `<tr><td>${i+1}</td><td>${esc(r.email||'')}</td><td>${esc(r.name||'')}</td><td>${esc(r.client_id||'')}</td><td>${esc(r.rdn||'')}</td><td>${fmtAmount(r.amount)}</td><td>${esc(r.phone||'')}</td><td>${esc(r.status||'')}</td></tr>`).join('') +
-        (csvRows.length > 10 ? `<tr><td colspan="8" style="text-align:center;color:#aaa;">...dan ${csvRows.length-10} baris lainnya</td></tr>` : '') +
+      const previewHtml = `<table><thead><tr><th>#</th><th>Email</th><th>Nama</th><th>Client ID</th><th>RDN</th><th>Amount</th><th>Porto</th><th>Total Nilai Porto</th><th>No HP</th><th>Status</th></tr></thead><tbody>` +
+        csvRows.slice(0, 10).map((r,i) => `<tr><td>${i+1}</td><td>${esc(r.email||'')}</td><td>${esc(r.name||'')}</td><td>${esc(r.client_id||'')}</td><td>${esc(r.rdn||'')}</td><td>${fmtAmount(r.amount)}</td><td>${esc(r.porto||'')}</td><td>${fmtAmount(r.total_nilai_porto)}</td><td>${esc(r.phone||'')}</td><td>${esc(r.status||'')}</td></tr>`).join('') +
+        (csvRows.length > 10 ? `<tr><td colspan="10" style="text-align:center;color:#aaa;">...dan ${csvRows.length-10} baris lainnya</td></tr>` : '') +
         `</tbody></table>`;
       document.getElementById('csvPreview').innerHTML = previewHtml;
       document.getElementById('csvPreviewWrap').style.display = 'block';
@@ -513,7 +526,7 @@
   }
 
   function downloadTemplate() {
-    const csv = 'email,nama,clientid,rdn,amount,phone,alamat,status\njohn@email.com,John Doe,C001234,1234567890,10000000,+6281234567890,Jl. Sudirman No.1,Process\n';
+    const csv = 'email,nama,clientid,rdn,amount,porto,total_nilai_porto,phone,alamat,status\njohn@email.com,John Doe,C001234,1234567890,10000000,Saham BBCA,50000000,+6281234567890,Jl. Sudirman No.1,Process\n';
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a'); a.href = url; a.download = 'template_follow_up_customer.csv'; a.click();
@@ -522,9 +535,9 @@
   // ===== EXPORT CSV =====
   function exportCSV() {
     if (!filteredData.length) { showToast('Tidak ada data untuk diexport', 'error'); return; }
-    const headers = ['email','nama','client_id','rdn','amount','phone','alamat','status'];
+    const headers = ['email','nama','client_id','rdn','amount','porto','total_nilai_porto','phone','alamat','status'];
     const rows = filteredData.map(r => [
-      r.email||'', r.name||'', r.client_id||'', r.rdn||'', r.amount||'', r.phone||'', r.address||'', r.status||''
+      r.email||'', r.name||'', r.client_id||'', r.rdn||'', r.amount||'', r.porto||'', r.total_nilai_porto||'', r.phone||'', r.address||'', r.status||''
     ].map(v => `"${String(v).replace(/"/g,'""')}"`).join(','));
     const csv = [headers.join(','), ...rows].join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
