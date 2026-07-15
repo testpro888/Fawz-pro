@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <script src="config.js"></script>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Fawz Pro | Follow Up Customer</title>
+  <link rel="icon" type="image/png" href="assets/logo/fawz.png"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script>
+    const SUPABASE_URL = (window.__FAWZ_CONFIG__ || {}).supabaseUrl || '';
+    const SUPABASE_KEY = (window.__FAWZ_CONFIG__ || {}).supabaseKey || '';
+    const _sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    window._supabase = _sb;
+    window.addEventListener('DOMContentLoaded', () => {
+      const _raw = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember');
+      if (_raw) { try { window._curUser = JSON.parse(_raw); } catch(e) {} }
+      loadFollowUps();
+    });
+  </script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --navy: #0d0d2b; --purple: #1e1252; --gold: #f5a623; --gold-light: #ffc857;
+      --bg: #f4f5fb; --white: #ffffff; --nav-h: 68px; --border: #e0e0ef;
+      --text: #1a1a3a; --gray: #888;
+    }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); min-height: 100vh; padding-top: var(--nav-h); color: var(--text); }
+    .page-container { max-width: 1400px; margin: 0 auto; padding: 36px 28px; }
+    .page-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 28px; flex-wrap: wrap; gap: 16px; }
+    .page-title { font-size: 2rem; font-weight: 900; color: var(--navy); line-height: 1.1; }
+    .page-subtitle { font-size: 0.88rem; color: var(--gray); margin-top: 4px; }
+    .title-underline { width: 48px; height: 3px; background: linear-gradient(90deg, var(--gold), var(--gold-light)); border-radius: 2px; margin-top: 8px; }
+    .header-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .btn { display: inline-flex; align-items: center; gap: 7px; padding: 11px 20px; border-radius: 10px; font-family: 'Inter', sans-serif; font-size: 0.875rem; font-weight: 600; cursor: pointer; transition: all 0.2s; border: none; white-space: nowrap; }
+    .btn-primary { background: linear-gradient(135deg, var(--gold), #e8931a); color: #fff; box-shadow: 0 4px 14px rgba(245,166,35,0.35); }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(245,166,35,0.45); }
+    .btn-outline { background: #fff; color: var(--navy); border: 1.5px solid var(--border); }
+    .btn-outline:hover { border-color: var(--gold); color: var(--gold); background: #fffbf3; }
+    /* Stats */
+    .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+    .stat-box { background: #fff; border-radius: 14px; padding: 18px 22px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+    .stat-box-label { font-size: 0.72rem; color: var(--gray); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+    .stat-box-val { font-size: 1.8rem; font-weight: 700; color: var(--navy); }
+
+    /* Toolbar */
+    .toolbar { background: #fff; border-radius: 14px; padding: 16px 20px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+    .search-wrap { position: relative; flex: 1; min-width: 220px; }
+    .search-wrap input { width: 100%; padding: 10px 16px 10px 40px; border: 1.5px solid var(--border); border-radius: 10px; font-family: 'Inter', sans-serif; font-size: 0.9rem; color: var(--text); outline: none; transition: border 0.2s; }
+    .search-wrap input:focus { border-color: var(--gold); }
+    .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #aaa; font-size: 1rem; }
+    .filter-select { padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 10px; font-family: 'Inter', sans-serif; font-size: 0.875rem; color: var(--text); outline: none; background: #fff; cursor: pointer; }
+    .filter-select:focus { border-color: var(--gold); }
+
+    /* Table */
+    .table-card { background: #fff; border-radius: 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); overflow: hidden; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+    thead { background: #fafafa; border-bottom: 2px solid #f0f0f5; }
+    thead th { padding: 14px 16px; text-align: left; font-size: 0.72rem; font-weight: 700; color: #aaa; text-transform: uppercase; letter-spacing: 1px; white-space: nowrap; }
+    tbody tr { border-bottom: 1px solid #f5f5fa; transition: background 0.15s; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: #fffbf3; }
+    tbody td { padding: 13px 16px; color: var(--text); vertical-align: middle; }
+    .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 600; white-space: nowrap; }
+    .badge-process { background: #fff3e0; color: #e8931a; }
+    .badge-success { background: #e8f8f0; color: #27ae60; }
+    .badge-cancel  { background: #ffeaea; color: #e74c3c; }
+
+    .action-btns { display: flex; gap: 6px; }
+    .btn-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; cursor: pointer; border: 1.5px solid var(--border); background: #fff; transition: all 0.15s; }
+    .btn-icon:hover { border-color: var(--gold); background: #fffbf3; }
+    .btn-icon.del:hover { border-color: #ffcccc; background: #fff0f0; }
+
+    .empty-state { text-align: center; padding: 60px 20px; color: #bbb; }
+    .empty-state .empty-icon { font-size: 2.5rem; margin-bottom: 12px; }
+    .table-footer { padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; border-top: 1px solid #f0f0f5; font-size: 0.82rem; color: var(--gray); }
+    .pagination { display: flex; gap: 4px; }
+    .pg-btn { width: 30px; height: 30px; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; cursor: pointer; border: 1.5px solid var(--border); background: #fff; color: var(--text); transition: all 0.15s; }
+    .pg-btn.active { background: var(--gold); border-color: var(--gold); color: #fff; font-weight: 700; }
+    .pg-btn:hover:not(.active) { border-color: var(--gold); }
+    /* Modal */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(13,13,43,0.55); backdrop-filter: blur(4px); z-index: 2000; align-items: center; justify-content: center; }
+    .modal-overlay.open { display: flex; }
+    .modal { background: #fff; border-radius: 20px; padding: 32px; width: 600px; max-width: 96vw; max-height: 92vh; overflow-y: auto; box-shadow: 0 24px 80px rgba(0,0,0,0.2); animation: slideUp 0.25s ease; }
+    @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+    .modal-title { font-size: 1.4rem; font-weight: 700; color: var(--navy); }
+    .modal-close { width: 32px; height: 32px; border-radius: 8px; border: 1.5px solid var(--border); background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1rem; color: var(--gray); transition: all 0.15s; }
+    .modal-close:hover { border-color: #ffcccc; color: #e74c3c; background: #fff0f0; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .form-group { display: flex; flex-direction: column; gap: 5px; }
+    .form-group.full { grid-column: 1 / -1; }
+    .form-label { font-size: 0.72rem; font-weight: 700; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
+    .req { color: #e74c3c; margin-left: 2px; }
+    .form-input, .form-select { padding: 10px 13px; border: 1.5px solid var(--border); border-radius: 10px; font-family: 'Inter', sans-serif; font-size: 0.88rem; color: var(--text); outline: none; transition: border 0.2s, box-shadow 0.2s; background: #fff; }
+    .form-input:focus, .form-select:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(245,166,35,0.1); }
+    .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px; padding-top: 20px; border-top: 1px solid #f0f0f5; }
+    .mono { font-family: 'Courier New', monospace !important; font-size: 0.82rem !important; }
+    /* Upload */
+    .upload-zone { border: 2px dashed var(--border); border-radius: 14px; padding: 36px; text-align: center; cursor: pointer; transition: all 0.2s; background: #fafafa; }
+    .upload-zone:hover, .upload-zone.dragover { border-color: var(--gold); background: #fffbf3; }
+    .upload-icon { font-size: 2.5rem; margin-bottom: 10px; }
+    .upload-hint { font-size: 0.8rem; color: var(--gray); margin-top: 6px; line-height: 1.6; }
+    .upload-hint strong { color: var(--gold); }
+    #csvFileInput { display: none; }
+    .csv-preview { margin-top: 16px; border: 1.5px solid var(--border); border-radius: 10px; overflow: hidden; max-height: 200px; overflow-y: auto; }
+    .csv-preview table { font-size: 0.78rem; }
+    .csv-preview thead th { padding: 8px 12px; }
+    .csv-preview tbody td { padding: 7px 12px; }
+
+    /* Toast */
+    .toast-container { position: fixed; bottom: 28px; right: 28px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+    .toast { padding: 14px 20px; border-radius: 12px; font-size: 0.875rem; font-weight: 500; box-shadow: 0 6px 24px rgba(0,0,0,0.15); animation: toastIn 0.3s ease; max-width: 320px; }
+    @keyframes toastIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+    .toast-success { background: #f0fff8; border: 1px solid #a8e6c1; color: #1e7e4e; }
+    .toast-error { background: #fff0f0; border: 1px solid #ffcccc; color: #c0392b; }
+    .toast-info { background: #f0f4ff; border: 1px solid #c5d3ff; color: #2d4abf; }
+
+    @media (max-width: 900px) { .stats-row { grid-template-columns: 1fr 1fr; } .form-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 480px) { .stats-row { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+<!-- NAVBAR -->
+<div id="navbar-placeholder"></div>
+<script src="navbar.js"></script>
+
+<!-- PAGE -->
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <div class="page-title">Follow Up Customer</div>
+      <div class="page-subtitle">Kelola data follow up nasabah — upload CSV atau tambah manual</div>
+      <div class="title-underline"></div>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-outline" onclick="openUploadModal()">⬆️ Upload CSV</button>
+      <button class="btn btn-outline" onclick="exportCSV()">⬇️ Export CSV</button>
+      <button class="btn btn-primary" onclick="openAddModal()">+ Tambah Data</button>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="stat-box"><div class="stat-box-label">Total</div><div class="stat-box-val" id="statTotal">—</div></div>
+    <div class="stat-box"><div class="stat-box-label">Process</div><div class="stat-box-val" id="statProcess" style="color:#e8931a">—</div></div>
+    <div class="stat-box"><div class="stat-box-label">Success</div><div class="stat-box-val" id="statSuccess" style="color:#27ae60">—</div></div>
+    <div class="stat-box"><div class="stat-box-label">Cancel</div><div class="stat-box-val" id="statCancel" style="color:#e74c3c">—</div></div>
+  </div>
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="searchInput" placeholder="Cari email, nama, client ID, no HP..." oninput="applyFilters()"/>
+    </div>
+    <select class="filter-select" id="filterStatus" onchange="applyFilters()">
+      <option value="">Semua Status</option>
+      <option value="Process">Process</option>
+      <option value="Success">Success</option>
+      <option value="Cancel">Cancel</option>
+    </select>
+  </div>
+
+  <!-- Table -->
+  <div class="table-card">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Email</th>
+            <th>Nama</th>
+            <th>Client ID</th>
+            <th>RDN</th>
+            <th>Amount</th>
+            <th>Porto</th>
+            <th>Total Nilai Porto</th>
+            <th>No HP</th>
+            <th>Alamat</th>
+            <th>Status</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          <tr><td colspan="12"><div class="empty-state"><div class="empty-icon">⏳</div><p>Memuat data...</p></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="table-footer">
+      <div id="tableInfo">Menampilkan 0 data</div>
+      <div class="pagination" id="pagination"></div>
+    </div>
+  </div>
+</div>
+<!-- MODAL: ADD / EDIT -->
+<div class="modal-overlay" id="formModal" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="formModalTitle">Tambah Follow Up</div>
+      <button class="modal-close" onclick="document.getElementById('formModal').classList.remove('open')">✕</button>
+    </div>
+    <input type="hidden" id="editDocId"/>
+    <div class="form-grid">
+      <div class="form-group"><label class="form-label">Email <span class="req">*</span></label><input class="form-input" id="fEmail" type="email" placeholder="email@example.com"/></div>
+      <div class="form-group"><label class="form-label">Nama <span class="req">*</span></label><input class="form-input" id="fName" placeholder="Nama lengkap"/></div>
+      <div class="form-group"><label class="form-label">Client ID</label><input class="form-input mono" id="fClientID" placeholder="C001234"/></div>
+      <div class="form-group"><label class="form-label">RDN</label><input class="form-input mono" id="fRDN" placeholder="No. RDN"/></div>
+      <div class="form-group"><label class="form-label">Amount</label><input class="form-input mono" id="fAmount" type="number" placeholder="0"/></div>
+      <div class="form-group"><label class="form-label">Porto</label><input class="form-input" id="fPorto" placeholder="Nama portofolio"/></div>
+      <div class="form-group"><label class="form-label">Total Nilai Porto</label><input class="form-input mono" id="fTotalNilaiPorto" type="number" placeholder="0"/></div>
+      <div class="form-group"><label class="form-label">No HP</label><input class="form-input" id="fPhone" placeholder="+62..."/></div>
+      <div class="form-group full"><label class="form-label">Alamat</label><input class="form-input" id="fAddress" placeholder="Alamat lengkap"/></div>
+      <div class="form-group"><label class="form-label">Status <span class="req">*</span></label>
+        <select class="form-select" id="fStatus">
+          <option value="Process">Process</option>
+          <option value="Success">Success</option>
+          <option value="Cancel">Cancel</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="document.getElementById('formModal').classList.remove('open')">Batal</button>
+      <button class="btn btn-primary" id="formSaveBtn" onclick="saveData()">Simpan</button>
+    </div>
+  </div>
+</div>
+<!-- MODAL: UPLOAD CSV -->
+<div class="modal-overlay" id="uploadModal" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Upload CSV Follow Up</div>
+      <button class="modal-close" onclick="document.getElementById('uploadModal').classList.remove('open')">✕</button>
+    </div>
+    <div class="upload-zone" id="uploadZone" onclick="document.getElementById('csvFileInput').click()"
+      ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
+      <div class="upload-icon">📂</div>
+      <div style="font-weight:600; color:var(--navy);">Klik atau drag & drop file CSV</div>
+      <div class="upload-hint">
+        Header yang didukung: <strong>email, nama, clientid, rdn, amount, porto, total_nilai_porto, phone, alamat, status</strong>
+      </div>
+    </div>
+    <input type="file" id="csvFileInput" accept=".csv" onchange="handleCSVFile(event)"/>
+    <div id="csvPreviewWrap" style="display:none; margin-top:14px;">
+      <div style="font-size:0.82rem; color:var(--gray); margin-bottom:8px;" id="csvPreviewInfo"></div>
+      <div class="csv-preview" id="csvPreview"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="downloadTemplate()">⬇️ Download Template</button>
+      <button class="btn btn-outline" onclick="document.getElementById('uploadModal').classList.remove('open')">Batal</button>
+      <button class="btn btn-primary" id="uploadSaveBtn" onclick="importCSV()" disabled>Import Data</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+<script>
+  let allData = [], filteredData = [], csvRows = [];
+  const PAGE_SIZE = 15;
+  let currentPage = 1;
+
+  // ===== HELPERS =====
+  function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function fmtAmount(n) { return n ? Number(n).toLocaleString('id-ID') : '—'; }
+
+  function showToast(msg, type='info') {
+    const c = document.getElementById('toastContainer');
+    const t = document.createElement('div');
+    t.className = 'toast toast-' + type;
+    t.textContent = msg;
+    c.appendChild(t);
+    setTimeout(() => t.remove(), 3500);
+  }
+
+  // ===== LOAD DATA =====
+  // Fetch semua rows dengan pagination (bypass Supabase limit 1000)
+  async function fetchAll(baseQuery) {
+    const PAGE = 1000;
+    let all = [], from = 0;
+    while (true) {
+      const { data, error } = await baseQuery().range(from, from + PAGE - 1);
+      if (error) throw error;
+      if (!data || data.length === 0) break;
+      all = all.concat(data);
+      if (data.length < PAGE) break;
+      from += PAGE;
+    }
+    return all;
+  }
+
+  async function loadFollowUps() {
+    try {
+      const data = await fetchAll(() => window._supabase
+        .from('follow_up_customers')
+        .select('*')
+        .order('created_at', { ascending: false }));
+      allData = data || [];
+      applyFilters();
+      updateStats();
+      showToast(`${allData.length} data berhasil dimuat`, 'success');
+    } catch(e) {
+      console.error(e);
+      showToast('Gagal memuat data', 'error');
+      renderTable([]);
+    }
+  }
+  // ===== FILTERS =====
+  function applyFilters() {
+    const search = (document.getElementById('searchInput').value || '').toLowerCase();
+    const status = document.getElementById('filterStatus').value;
+    filteredData = allData.filter(r => {
+      const matchSearch = !search ||
+        (r.email||'').toLowerCase().includes(search) ||
+        (r.name||'').toLowerCase().includes(search) ||
+        (r.client_id||'').toLowerCase().includes(search) ||
+        (r.phone||'').includes(search) ||
+        (r.rdn||'').toLowerCase().includes(search);
+      const matchStatus = !status || r.status === status;
+      return matchSearch && matchStatus;
+    });
+    currentPage = 1;
+    renderTable(filteredData);
+  }
+
+  function updateStats() {
+    document.getElementById('statTotal').textContent = allData.length;
+    document.getElementById('statProcess').textContent = allData.filter(r => r.status === 'Process').length;
+    document.getElementById('statSuccess').textContent = allData.filter(r => r.status === 'Success').length;
+    document.getElementById('statCancel').textContent = allData.filter(r => r.status === 'Cancel').length;
+  }
+
+  // ===== TABLE =====
+  function renderTable(data) {
+    const tbody = document.getElementById('tableBody');
+    const total = data.length;
+    const start = (currentPage - 1) * PAGE_SIZE;
+    const end = Math.min(start + PAGE_SIZE, total);
+    const pageData = data.slice(start, end);
+
+    document.getElementById('tableInfo').textContent =
+      `Menampilkan ${pageData.length > 0 ? start + 1 : 0}–${end} dari ${total} data`;
+
+    if (pageData.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="12"><div class="empty-state"><div class="empty-icon">📋</div><p>Belum ada data follow up</p></div></td></tr>`;
+      renderPagination(0, 0); return;
+    }
+    tbody.innerHTML = pageData.map((r, i) => {
+      const statusClass = r.status === 'Process' ? 'badge-process' : r.status === 'Success' ? 'badge-success' : 'badge-cancel';
+      return `<tr>
+        <td style="color:#bbb;font-size:0.78rem;">${start+i+1}</td>
+        <td>${esc(r.email||'—')}</td>
+        <td style="font-weight:600;">${esc(r.name||'—')}</td>
+        <td><span class="mono">${esc(r.client_id||'—')}</span></td>
+        <td><span class="mono">${esc(r.rdn||'—')}</span></td>
+        <td style="font-weight:500;">${fmtAmount(r.amount)}</td>
+        <td>${esc(r.porto||'—')}</td>
+        <td style="font-weight:500;">${fmtAmount(r.total_nilai_porto)}</td>
+        <td>${esc(r.phone||'—')}</td>
+        <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(r.address||'')}">${esc(r.address||'—')}</td>
+        <td><span class="badge ${statusClass}">${esc(r.status||'Process')}</span></td>
+        <td>
+          <div class="action-btns">
+            <button class="btn-icon" title="Edit" onclick="openEditModal('${r.id}')">✏️</button>
+            <button class="btn-icon del" title="Hapus" onclick="deleteRow('${r.id}','${esc(r.name)}')">🗑️</button>
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+    renderPagination(total, currentPage);
+  }
+
+  function renderPagination(total, page) {
+    const totalPages = Math.ceil(total / PAGE_SIZE);
+    const pg = document.getElementById('pagination');
+    if (totalPages <= 1) { pg.innerHTML = ''; return; }
+    let html = '';
+    const maxShow = 7;
+    let startP = Math.max(1, page - 3);
+    let endP = Math.min(totalPages, startP + maxShow - 1);
+    if (endP - startP < maxShow - 1) startP = Math.max(1, endP - maxShow + 1);
+    if (startP > 1) html += `<div class="pg-btn" onclick="goPage(1)">1</div><div class="pg-btn" style="border:none;cursor:default;">…</div>`;
+    for (let i = startP; i <= endP; i++) html += `<div class="pg-btn ${i===page?'active':''}" onclick="goPage(${i})">${i}</div>`;
+    if (endP < totalPages) html += `<div class="pg-btn" style="border:none;cursor:default;">…</div><div class="pg-btn" onclick="goPage(${totalPages})">${totalPages}</div>`;
+    pg.innerHTML = html;
+  }
+
+  function goPage(p) { currentPage = p; renderTable(filteredData); }
+  // ===== CRUD =====
+  function openAddModal() {
+    clearForm();
+    document.getElementById('formModalTitle').textContent = 'Tambah Follow Up';
+    document.getElementById('formModal').classList.add('open');
+  }
+
+  function openEditModal(id) {
+    const r = allData.find(x => x.id === id);
+    if (!r) return;
+    document.getElementById('formModalTitle').textContent = 'Edit Follow Up';
+    document.getElementById('editDocId').value = id;
+    document.getElementById('fEmail').value = r.email || '';
+    document.getElementById('fName').value = r.name || '';
+    document.getElementById('fClientID').value = r.client_id || '';
+    document.getElementById('fRDN').value = r.rdn || '';
+    document.getElementById('fAmount').value = r.amount || '';
+    document.getElementById('fPorto').value = r.porto || '';
+    document.getElementById('fTotalNilaiPorto').value = r.total_nilai_porto || '';
+    document.getElementById('fPhone').value = r.phone || '';
+    document.getElementById('fAddress').value = r.address || '';
+    document.getElementById('fStatus').value = r.status || 'Process';
+    document.getElementById('formModal').classList.add('open');
+  }
+
+  function clearForm() {
+    ['fEmail','fName','fClientID','fRDN','fAmount','fPorto','fTotalNilaiPorto','fPhone','fAddress'].forEach(id => {
+      const el = document.getElementById(id); if(el) el.value = '';
+    });
+    document.getElementById('fStatus').value = 'Process';
+    document.getElementById('editDocId').value = '';
+  }
+
+  async function saveData() {
+    const email = document.getElementById('fEmail').value.trim();
+    const name = document.getElementById('fName').value.trim();
+    if (!email || !name) { showToast('Email dan Nama wajib diisi!', 'error'); return; }
+    const btn = document.getElementById('formSaveBtn');
+    btn.textContent = 'Menyimpan...'; btn.disabled = true;
+    const docId = document.getElementById('editDocId').value;
+    const row = {
+      email,
+      name,
+      client_id: document.getElementById('fClientID').value.trim() || null,
+      rdn: document.getElementById('fRDN').value.trim() || null,
+      amount: parseFloat(document.getElementById('fAmount').value) || null,
+      porto: document.getElementById('fPorto').value.trim() || null,
+      total_nilai_porto: parseFloat(document.getElementById('fTotalNilaiPorto').value) || null,
+      phone: document.getElementById('fPhone').value.trim() || null,
+      address: document.getElementById('fAddress').value.trim() || null,
+      status: document.getElementById('fStatus').value || 'Process',
+    };
+    try {
+      if (docId) {
+        const { error } = await window._supabase.from('follow_up_customers').update(row).eq('id', docId);
+        if (error) throw error;
+        const idx = allData.findIndex(x => x.id === docId);
+        if (idx !== -1) allData[idx] = { ...allData[idx], ...row };
+        showToast('Data berhasil diperbarui', 'success');
+      } else {
+        const { data: inserted, error } = await window._supabase.from('follow_up_customers').insert(row).select().single();
+        if (error) throw error;
+        allData.unshift(inserted);
+        showToast('Data berhasil ditambahkan', 'success');
+      }
+      document.getElementById('formModal').classList.remove('open');
+      applyFilters(); updateStats();
+    } catch(e) { console.error(e); showToast('Gagal menyimpan data', 'error'); }
+    finally { btn.textContent = 'Simpan'; btn.disabled = false; }
+  }
+
+  async function deleteRow(id, name) {
+    if (!confirm(`Hapus data "${name}"? Tindakan ini tidak dapat dibatalkan.`)) return;
+    try {
+      const { error } = await window._supabase.from('follow_up_customers').delete().eq('id', id);
+      if (error) throw error;
+      allData = allData.filter(x => x.id !== id);
+      applyFilters(); updateStats();
+      showToast(`Data "${name}" dihapus`, 'success');
+    } catch(e) { showToast('Gagal menghapus data', 'error'); }
+  }
+  // ===== CSV UPLOAD =====
+  function openUploadModal() {
+    document.getElementById('csvPreviewWrap').style.display = 'none';
+    document.getElementById('uploadSaveBtn').disabled = true;
+    csvRows = [];
+    document.getElementById('uploadModal').classList.add('open');
+  }
+
+  function handleDragOver(e) { e.preventDefault(); e.currentTarget.classList.add('dragover'); }
+  function handleDragLeave(e) { e.currentTarget.classList.remove('dragover'); }
+  function handleDrop(e) {
+    e.preventDefault(); e.currentTarget.classList.remove('dragover');
+    const file = e.dataTransfer.files[0];
+    if (file) processCSVFile(file);
+  }
+  function handleCSVFile(e) { const file = e.target.files[0]; if (file) processCSVFile(file); }
+
+  function processCSVFile(file) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const text = e.target.result;
+      const lines = text.split(/\r?\n/).filter(l => l.trim());
+      if (lines.length < 2) { showToast('CSV kosong atau tidak valid', 'error'); return; }
+
+      // Auto-detect delimiter: comma or semicolon
+      const firstLine = lines[0];
+      const delim = firstLine.includes(';') ? ';' : ',';
+
+      // Smart split: handle quoted fields (e.g. "Jl. Sudirman, Jakarta")
+      function smartSplit(line, d) {
+        const result = []; let current = ''; let inQuotes = false;
+        for (let i = 0; i < line.length; i++) {
+          const ch = line[i];
+          if (ch === '"') { inQuotes = !inQuotes; continue; }
+          if (ch === d && !inQuotes) { result.push(current.trim()); current = ''; continue; }
+          current += ch;
+        }
+        result.push(current.trim());
+        return result;
+      }
+
+      const headerRaw = smartSplit(firstLine, delim).map(h => h.toLowerCase().replace(/[^a-z0-9_]/g,''));
+      const MAP = { email:'email', nama:'name', name:'name', clientid:'client_id', client_id:'client_id',
+        rdn:'rdn', amount:'amount', porto:'porto', total_nilai_porto:'total_nilai_porto',
+        totalnilaiporto:'total_nilai_porto', totalporto:'total_nilai_porto',
+        phone:'phone', nohp:'phone', no_hp:'phone', hp:'phone',
+        alamat:'address', address:'address', status:'status' };
+
+      const headers = headerRaw.map(h => MAP[h] || h);
+      csvRows = [];
+      for (let i = 1; i < lines.length; i++) {
+        const cols = smartSplit(lines[i], delim);
+        const row = {};
+        headers.forEach((h, idx) => { if (h && cols[idx]) row[h] = cols[idx]; });
+        if (row.email || row.name) {
+          row.status = row.status || 'Process';
+          row.amount = row.amount ? parseFloat(row.amount.replace(/[^0-9.-]/g,'')) || null : null;
+          row.total_nilai_porto = row.total_nilai_porto ? parseFloat(row.total_nilai_porto.replace(/[^0-9.-]/g,'')) || null : null;
+          csvRows.push(row);
+        }
+      }
+      // Preview
+      document.getElementById('csvPreviewInfo').textContent = `${csvRows.length} baris data ditemukan`;
+      const previewHtml = `<table><thead><tr><th>#</th><th>Email</th><th>Nama</th><th>Client ID</th><th>RDN</th><th>Amount</th><th>Porto</th><th>Total Nilai Porto</th><th>No HP</th><th>Status</th></tr></thead><tbody>` +
+        csvRows.slice(0, 10).map((r,i) => `<tr><td>${i+1}</td><td>${esc(r.email||'')}</td><td>${esc(r.name||'')}</td><td>${esc(r.client_id||'')}</td><td>${esc(r.rdn||'')}</td><td>${fmtAmount(r.amount)}</td><td>${esc(r.porto||'')}</td><td>${fmtAmount(r.total_nilai_porto)}</td><td>${esc(r.phone||'')}</td><td>${esc(r.status||'')}</td></tr>`).join('') +
+        (csvRows.length > 10 ? `<tr><td colspan="10" style="text-align:center;color:#aaa;">...dan ${csvRows.length-10} baris lainnya</td></tr>` : '') +
+        `</tbody></table>`;
+      document.getElementById('csvPreview').innerHTML = previewHtml;
+      document.getElementById('csvPreviewWrap').style.display = 'block';
+      document.getElementById('uploadSaveBtn').disabled = false;
+    };
+    reader.readAsText(file);
+  }
+
+  async function importCSV() {
+    if (!csvRows.length) return;
+    const btn = document.getElementById('uploadSaveBtn');
+    btn.textContent = 'Importing...'; btn.disabled = true;
+    try {
+      // Batch insert (max 500 per request to avoid payload limit)
+      const BATCH = 500;
+      let imported = [];
+      for (let i = 0; i < csvRows.length; i += BATCH) {
+        const chunk = csvRows.slice(i, i + BATCH);
+        const { data, error } = await window._supabase.from('follow_up_customers').insert(chunk).select();
+        if (error) throw error;
+        imported = imported.concat(data || []);
+        btn.textContent = `Importing... ${Math.min(i + BATCH, csvRows.length)}/${csvRows.length}`;
+      }
+      allData = [...imported, ...allData];
+      document.getElementById('uploadModal').classList.remove('open');
+      applyFilters(); updateStats();
+      showToast(`${imported.length} data berhasil diimport`, 'success');
+      csvRows = [];
+    } catch(e) { console.error(e); showToast('Gagal import CSV: ' + (e.message||''), 'error'); }
+    finally { btn.textContent = 'Import Data'; btn.disabled = false; }
+  }
+
+  function downloadTemplate() {
+    const csv = 'email,nama,clientid,rdn,amount,porto,total_nilai_porto,phone,alamat,status\njohn@email.com,John Doe,C001234,1234567890,10000000,Saham BBCA,50000000,+6281234567890,Jl. Sudirman No.1,Process\n';
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'template_follow_up_customer.csv'; a.click();
+    URL.revokeObjectURL(url);
+  }
+  // ===== EXPORT CSV =====
+  function exportCSV() {
+    if (!filteredData.length) { showToast('Tidak ada data untuk diexport', 'error'); return; }
+    const headers = ['email','nama','client_id','rdn','amount','porto','total_nilai_porto','phone','alamat','status'];
+    const rows = filteredData.map(r => [
+      r.email||'', r.name||'', r.client_id||'', r.rdn||'', r.amount||'', r.porto||'', r.total_nilai_porto||'', r.phone||'', r.address||'', r.status||''
+    ].map(v => `"${String(v).replace(/"/g,'""')}"`).join(','));
+    const csv = [headers.join(','), ...rows].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'follow_up_customer_export.csv'; a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  // ===== ROLE GUARD =====
+  (function() {
+    const raw = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember');
+    if (!raw) { window.location.replace('login.html'); return; }
+    const _gu = JSON.parse(raw);
+    window._curUser = _gu;
+    const allowedRoles = ['head_account','admin','treasury','sales','head_sales'];
+    if (!allowedRoles.includes(_gu.role)) { window.location.replace('dashboard.html'); return; }
+  })();
+</script>
+</body>
+</html>
