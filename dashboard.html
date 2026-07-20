@@ -612,7 +612,7 @@
     }
     .wa-title { font-size: 13px; font-weight: 600; color: var(--ink); }
     .wa-num   { font-size: 12px; color: var(--steel); }
-    .wa-icon  { width: 36px; height: 36px; background: #25D366; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; transition: border-radius 0.25s; }
+    .wa-icon  { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; transition: border-radius 0.25s; overflow: hidden; }
     .wa-float:hover .wa-icon { border-radius: 8px; }
 
     /* ── VERSION BAR ── */
@@ -1031,7 +1031,7 @@
     <div class="wa-title">Contact Person (Admin)</div>
     <div class="wa-num">+62 811-6361-598</div>
   </div>
-  <div class="wa-icon"><img src="assets/logo/wa.png" alt="WhatsApp" style="width:22px;height:22px;object-fit:contain;"></div>
+  <div class="wa-icon"><img src="assets/logo/wa.png" alt="WhatsApp" style="width:36px;height:36px;object-fit:cover;border-radius:50%;display:block;"></div>
 </a>
 
 <script>
