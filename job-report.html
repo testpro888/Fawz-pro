@@ -114,6 +114,32 @@
 
     .done-note { font-size:.76rem; color:#059669; background:rgba(16,185,129,.08); padding:6px 10px; border-radius:8px; margin-top:8px; font-style:italic; }
 
+    /* Attachment & Link */
+    .task-attachment { margin-top:10px; display:flex; flex-wrap:wrap; gap:8px; }
+    .attach-link { display:inline-flex; align-items:center; gap:6px; font-size:.78rem; color:#2563eb; background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; padding:5px 10px; text-decoration:none; max-width:100%; overflow:hidden; }
+    .attach-link:hover { background:#dbeafe; }
+    .attach-link span { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:200px; }
+    .attach-img-wrap { position:relative; display:inline-block; }
+    .attach-img { width:72px; height:72px; object-fit:cover; border-radius:8px; border:1px solid #e0e0ef; cursor:pointer; transition:opacity .15s; }
+    .attach-img:hover { opacity:.85; }
+    .attach-file { display:inline-flex; align-items:center; gap:6px; font-size:.78rem; color:#7c3aed; background:#f5f3ff; border:1px solid #ddd6fe; border-radius:8px; padding:5px 10px; text-decoration:none; max-width:100%; }
+    .attach-file span { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:200px; }
+
+    /* File upload area */
+    .upload-area { border:2px dashed #d1d5db; border-radius:10px; padding:16px; text-align:center; cursor:pointer; transition:border-color .2s,background .2s; background:#fafafa; }
+    .upload-area:hover, .upload-area.drag-over { border-color:var(--gold); background:#fffbf0; }
+    .upload-area input[type=file] { display:none; }
+    .upload-area-label { font-size:.82rem; color:#888; pointer-events:none; }
+    .upload-area-label strong { color:var(--navy); }
+    .upload-preview { display:flex; align-items:center; gap:10px; margin-top:10px; padding:8px 12px; background:#f4f5fb; border-radius:8px; font-size:.8rem; color:#444; }
+    .upload-preview-img { width:40px; height:40px; object-fit:cover; border-radius:6px; border:1px solid #e0e0ef; }
+    .upload-preview-name { flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .upload-preview-del { background:none; border:none; cursor:pointer; color:#e74c3c; font-size:1rem; padding:0 4px; flex-shrink:0; }
+
+    /* Lightbox */
+    .lightbox-overlay { position:fixed; inset:0; background:rgba(0,0,0,.85); z-index:9999; display:flex; align-items:center; justify-content:center; cursor:zoom-out; }
+    .lightbox-overlay img { max-width:90vw; max-height:90vh; border-radius:8px; box-shadow:0 8px 40px rgba(0,0,0,.5); }
+
     /* Reply thread */
     .reply-thread { margin-top:12px; border-top:1px solid #f0f0f5; padding-top:10px; display:flex; flex-direction:column; gap:8px; }
     .reply-item { background:#f8f9fe; border-radius:10px; padding:10px 12px; border-left:3px solid #c7d2fe; }
@@ -273,6 +299,27 @@
         <option value="high">High</option>
         <option value="urgent">Urgent</option>
       </select>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Link Referensi (Opsional)</label>
+      <input class="form-input" id="inputTaskLink" placeholder="https://..." type="url" style="width:100%;"/>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Lampiran File / Gambar (Opsional)</label>
+      <div class="upload-area" id="uploadArea" onclick="document.getElementById('inputTaskFile').click()" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
+        <input type="file" id="inputTaskFile" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt" onchange="handleFileSelect(event)"/>
+        <div class="upload-area-label">
+          <strong>Klik untuk pilih file</strong> atau drag &amp; drop<br>
+          <span style="font-size:.74rem;color:#bbb;">Gambar, PDF, Word, Excel — maks. 5MB</span>
+        </div>
+      </div>
+      <div class="upload-preview" id="uploadPreview" style="display:none;">
+        <img id="uploadPreviewImg" class="upload-preview-img" src="" alt="" style="display:none;"/>
+        <span class="upload-preview-name" id="uploadPreviewName"></span>
+        <button class="upload-preview-del" onclick="clearFile()" title="Hapus file">✕</button>
+      </div>
     </div>
 
     <div class="form-feedback" id="taskFeedback"></div>
@@ -551,6 +598,34 @@ function buildTaskCard(t) {
   const doneBlock = isDone && t.notes
     ? '<div class="done-note">"' + esc(t.notes) + '"</div>' : '';
 
+  // Link & Attachment
+  let attachmentBlock = '';
+  if (t.link_ref || t.attachment_url) {
+    attachmentBlock = '<div class="task-attachment">';
+    if (t.link_ref) {
+      let hostname = t.link_ref;
+      try { hostname = new URL(t.link_ref).hostname; } catch(e) { /* pakai raw text */ }
+      attachmentBlock += '<a class="attach-link" href="' + esc(t.link_ref) + '" target="_blank" rel="noopener noreferrer">' +
+        '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>' +
+        '<span>' + esc(hostname) + '</span>' +
+      '</a>';
+    }
+    if (t.attachment_url) {
+      const isImg = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(t.attachment_url);
+      if (isImg) {
+        attachmentBlock += '<div class="attach-img-wrap">' +
+          '<img class="attach-img" src="' + esc(t.attachment_url) + '" alt="' + esc(t.attachment_name || 'Lampiran') + '" onclick="openLightbox(\'' + esc(t.attachment_url) + '\')" title="Klik untuk perbesar"/>' +
+        '</div>';
+      } else {
+        attachmentBlock += '<a class="attach-file" href="' + esc(t.attachment_url) + '" target="_blank" rel="noopener noreferrer">' +
+          '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>' +
+          '<span>' + esc(t.attachment_name || 'File terlampir') + '</span>' +
+        '</a>';
+      }
+    }
+    attachmentBlock += '</div>';
+  }
+
   let timestamps = '<span>Dibuat: ' + fmtDateTime(t.created_at) + '</span>';
   if (t.assigned_at && t.assigned_at !== t.created_at) {
     timestamps += '<span>Dikirim: ' + fmtDateTime(t.assigned_at) + '</span>';
@@ -580,6 +655,7 @@ function buildTaskCard(t) {
       '<span class="meta-chip role">Untuk: ' + esc(assigneeTxt) + '</span>' +
       '<span class="meta-chip from">Dari: '  + esc(creatorName) + ' (' + esc(fromLabel) + ')</span>' +
     '</div>' +
+    attachmentBlock +
     doneBlock +
     '<div class="task-timestamps">' + timestamps + '</div>' +
     '<div class="task-footer">' +
@@ -629,6 +705,8 @@ function openAddTaskModal() {
   document.getElementById('inputAssignedRole').value    = '';
   document.getElementById('inputAssignedTo').innerHTML  = '<option value="">Semua di role ini</option>';
   document.getElementById('inputPriority').value        = 'normal';
+  document.getElementById('inputTaskLink').value        = '';
+  clearFile();
   hideFb('taskFeedback');
   document.getElementById('btnSaveTask').textContent    = 'Kirim Task';
   openModal('modalTask');
@@ -644,6 +722,13 @@ async function openEditTaskModal(taskId) {
   document.getElementById('inputTaskDesc').value         = t.description || '';
   document.getElementById('inputAssignedRole').value     = t.assigned_role || '';
   document.getElementById('inputPriority').value         = t.priority    || 'normal';
+  document.getElementById('inputTaskLink').value         = t.link_ref    || '';
+  // Tampilkan attachment lama jika ada
+  if (t.attachment_url) {
+    showExistingAttachment(t.attachment_url, t.attachment_name || 'File terlampir');
+  } else {
+    clearFile();
+  }
   hideFb('taskFeedback');
   document.getElementById('btnSaveTask').textContent     = 'Simpan Perubahan';
   await loadRoleUsers();
@@ -658,6 +743,9 @@ async function saveTask() {
   const assignRole = document.getElementById('inputAssignedRole').value;
   const assignTo   = document.getElementById('inputAssignedTo').value;
   const priority   = document.getElementById('inputPriority').value;
+  const linkRef    = document.getElementById('inputTaskLink').value.trim();
+  const fileInput  = document.getElementById('inputTaskFile');
+  const file       = fileInput.files[0];
 
   if (!title)      { showFb('taskFeedback', 'Judul task wajib diisi.', 'error');     return; }
   if (!assignRole) { showFb('taskFeedback', 'Pilih role tujuan task.', 'error');     return; }
@@ -668,16 +756,49 @@ async function saveTask() {
   hideFb('taskFeedback');
 
   try {
+    let attachmentUrl  = null;
+    let attachmentName = null;
+
+    // Upload file ke Supabase Storage jika ada file baru
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        showFb('taskFeedback', 'File maksimal 5MB.', 'error');
+        btn.disabled = false; btn.textContent = editTaskId ? 'Simpan Perubahan' : 'Kirim Task';
+        return;
+      }
+      const fileName = Date.now() + '_' + file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const { data: uploadData, error: uploadError } = await window._supabase.storage
+        .from('job-attachments')
+        .upload(fileName, file);
+      if (uploadError) throw uploadError;
+      
+      const { data: urlData } = window._supabase.storage
+        .from('job-attachments')
+        .getPublicUrl(fileName);
+      attachmentUrl  = urlData.publicUrl;
+      attachmentName = file.name;
+    } else if (editTaskId) {
+      // Jika edit dan tidak ada file baru, pertahankan attachment lama
+      const t = allTasks.find(x => x.id === editTaskId);
+      if (t) {
+        attachmentUrl  = t.attachment_url  || null;
+        attachmentName = t.attachment_name || null;
+      }
+    }
+
     if (editTaskId) {
       const { error } = await window._supabase
         .from('job_tasks')
         .update({
           title,
-          description:   desc       || null,
-          assigned_role: assignRole,
-          assigned_to:   assignTo   || null,
+          description:    desc         || null,
+          assigned_role:  assignRole,
+          assigned_to:    assignTo     || null,
           priority,
-          updated_at:    new Date().toISOString()
+          link_ref:       linkRef      || null,
+          attachment_url: attachmentUrl,
+          attachment_name: attachmentName,
+          updated_at:     new Date().toISOString()
         })
         .eq('id', editTaskId);
       if (error) throw error;
@@ -685,16 +806,19 @@ async function saveTask() {
       const now = new Date().toISOString();
       const payload = {
         title,
-        description:   desc       || null,
-        assigned_role: assignRole,
-        assigned_to:   assignTo   || null,
-        created_by:    curUser.username,
-        created_role:  curUser.role,
-        priority:      priority   || 'normal',
-        status:        'pending',
-        assigned_at:   now,
-        created_at:    now,
-        updated_at:    now
+        description:     desc         || null,
+        assigned_role:   assignRole,
+        assigned_to:     assignTo     || null,
+        created_by:      curUser.username,
+        created_role:    curUser.role,
+        priority:        priority     || 'normal',
+        status:          'pending',
+        link_ref:        linkRef      || null,
+        attachment_url:  attachmentUrl,
+        attachment_name: attachmentName,
+        assigned_at:     now,
+        created_at:      now,
+        updated_at:      now
       };
       const { error } = await window._supabase
         .from('job_tasks')
@@ -879,6 +1003,94 @@ async function deleteReply(replyId) {
     await loadReplies(replyTaskId);
   } catch(e) { alert('Gagal hapus: ' + (e.message||'')); }
 }
+
+/* ── FILE UPLOAD HANDLERS ── */
+function handleFileSelect(event) {
+  const file = event.target.files[0];
+  if (file) showFilePreview(file);
+}
+
+function handleDragOver(event) {
+  event.preventDefault();
+  event.stopPropagation();
+  document.getElementById('uploadArea').classList.add('drag-over');
+}
+
+function handleDragLeave(event) {
+  event.preventDefault();
+  event.stopPropagation();
+  document.getElementById('uploadArea').classList.remove('drag-over');
+}
+
+function handleDrop(event) {
+  event.preventDefault();
+  event.stopPropagation();
+  document.getElementById('uploadArea').classList.remove('drag-over');
+  const file = event.dataTransfer.files[0];
+  if (file) {
+    const input = document.getElementById('inputTaskFile');
+    const dt = new DataTransfer();
+    dt.items.add(file);
+    input.files = dt.files;
+    showFilePreview(file);
+  }
+}
+
+function showFilePreview(file) {
+  const preview     = document.getElementById('uploadPreview');
+  const previewImg  = document.getElementById('uploadPreviewImg');
+  const previewName = document.getElementById('uploadPreviewName');
+  
+  previewName.textContent = file.name;
+  
+  if (file.type.startsWith('image/')) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      previewImg.src = e.target.result;
+      previewImg.style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+  } else {
+    previewImg.style.display = 'none';
+  }
+  
+  preview.style.display = 'flex';
+}
+
+function showExistingAttachment(url, name) {
+  const preview     = document.getElementById('uploadPreview');
+  const previewImg  = document.getElementById('uploadPreviewImg');
+  const previewName = document.getElementById('uploadPreviewName');
+  
+  previewName.textContent = name;
+  
+  if (/\.(jpg|jpeg|png|gif|webp|svg)$/i.test(url)) {
+    previewImg.src = url;
+    previewImg.style.display = 'block';
+  } else {
+    previewImg.style.display = 'none';
+  }
+  
+  preview.style.display = 'flex';
+}
+
+function clearFile() {
+  document.getElementById('inputTaskFile').value = '';
+  document.getElementById('uploadPreview').style.display = 'none';
+  document.getElementById('uploadPreviewImg').src = '';
+  document.getElementById('uploadPreviewName').textContent = '';
+}
+
+function openLightbox(url) {
+  const overlay = document.createElement('div');
+  overlay.className = 'lightbox-overlay';
+  overlay.onclick = () => overlay.remove();
+  const img = document.createElement('img');
+  img.src = url;
+  overlay.appendChild(img);
+  document.body.appendChild(overlay);
+}
+
 </script>
 </body>
 </html>
