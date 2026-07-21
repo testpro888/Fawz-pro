@@ -794,7 +794,7 @@ function logoCardHTML(r) {
       <span class="logo-format-badge ${fmtClass}">${fmtLabel}</span>
     </div>
     <div class="logo-actions">
-      <a class="btn-action btn-download" href="${escHtml(r.file_url)}" download="${escHtml(r.name)}.${r.format||'file'}">Download</a>
+      <a class="btn-action btn-download" href="javascript:void(0)" onclick="downloadFile('${escHtml(r.file_url)}','${escHtml(r.name)}.${r.format||'file'}')">Download</a>
       ${deleteBtn}
     </div>
     <div class="logo-uploader">Diupload oleh ${escHtml(r.uploaded_by || '—')}</div>
@@ -888,6 +888,21 @@ async function confirmDelete() {
 }
 
 /* ── HELPERS ── */
+function downloadFile(url, filename) {
+  fetch(url)
+    .then(res => res.blob())
+    .then(blob => {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(a.href);
+    })
+    .catch(e => showToast('Gagal download: ' + e.message, 'error'));
+}
+
 function copyCode(text) {
   navigator.clipboard.writeText(text).then(() => showToast('Kode warna disalin: ' + text, 'success'));
 }
