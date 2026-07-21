@@ -358,10 +358,33 @@
                   <span>%</span>
                 </div>
               </div>
-              <!-- Tanggal Jual — hanya tampil di mode Jual -->
-              <div class="form-group" id="grp-sell-date" style="display:none;">
-                <label class="form-label">Tanggal Jual <small>(Settlement)</small></label>
-                <input class="form-input" id="inp-sell-date" type="date" onchange="onSellPriceChange()"/>
+              <div class="form-group">
+                <label class="form-label">PPh Capital Gain</label>
+                <div class="input-suffix">
+                  <input class="form-input" id="inp-tax-capgain" type="number" step="1" value="10" oninput="onInputChange()"/>
+                  <span>%</span>
+                </div>
+              </div>
+            </div>
+            <!-- Tanggal Jual Custom — hanya tampil di mode Jual -->
+            <div id="grp-sell-custom-date" style="display:none;">
+              <div style="margin-bottom:10px;">
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.82rem;color:#666;">
+                  <input type="checkbox" id="chk-sell-custom-date" onchange="toggleSellCustomDate()" style="cursor:pointer;"/>
+                  <span>Gunakan tanggal jual yang berbeda (dengan perhitungan kupon)</span>
+                </label>
+              </div>
+              <div id="grp-sell-date-fields" style="display:none;">
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">Trade Date Jual</label>
+                    <input class="form-input" id="inp-sell-trade" type="date" onchange="onSellTradeChange()"/>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Settlement Date Jual <small>(+2)</small></label>
+                    <input class="form-input" id="inp-sell-date" type="date" onchange="onSellPriceChange()"/>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -829,7 +852,31 @@ function setCalcType(t) {
   // Tampilkan field harga jual & tanggal jual hanya di mode jual
   const showSell = t === 'jual';
   document.getElementById('row-sell-price').style.display = showSell ? '' : 'none';
-  document.getElementById('grp-sell-date').style.display  = showSell ? '' : 'none';
+  document.getElementById('grp-sell-custom-date').style.display = showSell ? '' : 'none';
+  // Reset checkbox saat ganti mode
+  if (!showSell) {
+    document.getElementById('chk-sell-custom-date').checked = false;
+    document.getElementById('grp-sell-date-fields').style.display = 'none';
+  }
+}
+
+function toggleSellCustomDate() {
+  const checked = document.getElementById('chk-sell-custom-date').checked;
+  document.getElementById('grp-sell-date-fields').style.display = checked ? '' : 'none';
+  if (checked) {
+    // Default: set sell trade = today, settle = +2
+    const today = new Date();
+    if (!document.getElementById('inp-sell-trade').value) {
+      document.getElementById('inp-sell-trade').value = toISO(today);
+      document.getElementById('inp-sell-date').value  = toISO(addDays(today, 2));
+    }
+  }
+}
+
+function onSellTradeChange() {
+  const t = new Date(document.getElementById('inp-sell-trade').value);
+  if (!isNaN(t)) document.getElementById('inp-sell-date').value = toISO(addDays(t, 2));
+  onSellPriceChange();
 }
 
 function onPriceChange() {
@@ -864,8 +911,11 @@ function onSellPriceChange() {
   const coupon    = parseFloat(document.getElementById('inp-coupon').value) || 0;
   const freq      = parseInt(document.getElementById('inp-freq').value) || 2;
   const basis     = document.getElementById('inp-basis').value;
-  // Gunakan tanggal jual jika diisi, fallback ke settle beli
-  const sellDate  = document.getElementById('inp-sell-date').value || document.getElementById('inp-settle').value;
+  // Gunakan tanggal jual jika checkbox aktif, fallback ke settle beli
+  const useCustomDate = document.getElementById('chk-sell-custom-date')?.checked;
+  const sellDate = (useCustomDate && document.getElementById('inp-sell-date').value)
+    ? document.getElementById('inp-sell-date').value
+    : document.getElementById('inp-settle').value;
   if (!isNaN(sellPrice) && sellPrice > 0 && sellDate && maturity && coupon) {
     const ytm = yieldFromPrice(sellDate, maturity, coupon, sellPrice, freq, basis);
     setVal('inp-sell-yield', ytm.toFixed(4));
@@ -878,7 +928,10 @@ function onSellYieldChange() {
   const coupon   = parseFloat(document.getElementById('inp-coupon').value) || 0;
   const freq     = parseInt(document.getElementById('inp-freq').value) || 2;
   const basis    = document.getElementById('inp-basis').value;
-  const sellDate = document.getElementById('inp-sell-date').value || document.getElementById('inp-settle').value;
+  const useCustomDate = document.getElementById('chk-sell-custom-date')?.checked;
+  const sellDate = (useCustomDate && document.getElementById('inp-sell-date').value)
+    ? document.getElementById('inp-sell-date').value
+    : document.getElementById('inp-settle').value;
   if (!isNaN(ytm) && ytm > 0 && sellDate && maturity && coupon) {
     const price = priceFromYield(sellDate, maturity, coupon, ytm, freq, basis);
     if (price !== null) setVal('inp-sell-price', price.toFixed(4));
@@ -903,12 +956,18 @@ function calculate() {
   const price    = parseFloat(document.getElementById('inp-price').value)   || 100;
   const ytm      = parseFloat(document.getElementById('inp-yield').value)   || coupon;
   const taxPct   = parseFloat(document.getElementById('inp-tax').value)     || 10;
+  const taxCapGain = parseFloat(document.getElementById('inp-tax-capgain').value) ?? 10;
 
   // Sell mode fields
   const isJual      = calcMode === 'jual';
   const sellPrice   = isJual ? (parseFloat(document.getElementById('inp-sell-price').value) || null) : null;
   const sellYtm     = isJual ? (parseFloat(document.getElementById('inp-sell-yield').value) || null) : null;
-  const sellSettle  = isJual ? (document.getElementById('inp-sell-date').value || settle) : null;
+  const useCustomDate = isJual && document.getElementById('chk-sell-custom-date')?.checked;
+  const sellSettle  = isJual
+    ? (useCustomDate && document.getElementById('inp-sell-date').value
+        ? document.getElementById('inp-sell-date').value
+        : settle)
+    : null;
 
   if (!maturity || !settle) { alert('Harap isi Maturity Date dan Settlement Date.'); return; }
   if (coupon <= 0) { alert('Harap isi Coupon Rate.'); return; }
@@ -933,40 +992,58 @@ function calculate() {
   if (isJual && sellPrice !== null) {
     // Accrued pada tanggal jual
     const { last: sellLC, next: sellNC } = calcCouponDates(sellSettle, maturity, freq);
-    const sellAccruedAmt = sellLC && sellNC
+
+    // Saat JUAL: Pembeli wajib membayar AI kepada penjual
+    // Penjual MENERIMA: Clean Price + Accrued Interest (AI menambah penerimaan penjual)
+    // Namun AI yang diterima dikenakan PPh (tax on accrued interest)
+    const sellAccruedAmt = (sellLC && sellNC)
       ? calcAccruedInterest(sellSettle, toISO(sellLC), toISO(sellNC), coupon, freq, nominal, basis)
       : 0;
     const sellAccruedPct  = (sellAccruedAmt / nominal) * 100;
+
+    // Tax on accrued interest yang diterima saat jual
+    const taxOnSellAI     = sellAccruedAmt * (taxPct / 100);
+
+    // Proceeds jual: Clean Price proceeds DITAMBAH AI bersih (AI - tax AI)
+    // Catatan: AI yang diterima dari pembeli dikurangi pajak AI
+    const sellCleanProceeds = (sellPrice / 100) * nominal;
+    const sellProceeds      = sellCleanProceeds + sellAccruedAmt - taxOnSellAI;
+    // Dirty = clean + AI (ini yang dibayar pembeli), penjual nett = clean + AI - tax AI
     const sellDirtyPrice  = sellPrice + sellAccruedPct;
-    const sellProceeds    = (sellDirtyPrice / 100) * nominal;  // uang yang diterima saat jual
+
+    // Capital Gain = Harga jual clean - Harga beli clean (dalam Rp)
+    const capitalGainGross = sellCleanProceeds - cleanProceed;
+    const taxOnCapGain     = capitalGainGross > 0 ? capitalGainGross * (taxCapGain / 100) : 0;
+    const capitalGainNet   = capitalGainGross - taxOnCapGain;
 
     // Hari kepemilikan
-    const buyDate  = new Date(settle   + 'T00:00:00');
-    const sellDate2= new Date(sellSettle + 'T00:00:00');
-    const holdDays = Math.round((sellDate2 - buyDate) / 86400000);
+    const buyDate   = new Date(settle    + 'T00:00:00');
+    const sellDate2 = new Date(sellSettle + 'T00:00:00');
+    const holdDays  = Math.round((sellDate2 - buyDate) / 86400000);
 
-    // Kupon yang diterima selama kepemilikan (nett setelah PPh)
-    const couponsReceived = flows.filter(f => {
-      const fd = f.date;
-      return fd > buyDate && fd <= sellDate2;
-    });
+    // Kupon yang diterima selama kepemilikan (nett, hanya jika pakai custom date & berbeda)
+    const hasCouponCalc = useCustomDate && sellSettle !== settle;
+    const couponsReceived = hasCouponCalc
+      ? flows.filter(f => { const fd = f.date; return fd > buyDate && fd <= sellDate2; })
+      : [];
     const totalCouponNett = couponsReceived.reduce((s, f) => s + f.netCoupon, 0);
 
-    // Capital gain / loss
-    const capitalGain = sellProceeds - totalProceed;  // (harga jual dirty - harga beli dirty)
-
-    // Total profit
-    const totalProfit = capitalGain + totalCouponNett;
-
-    // Return on investment
+    // Total keuntungan bersih
+    const totalProfit = capitalGainNet + totalCouponNett + (sellAccruedAmt - taxOnSellAI) - accruedAmt;
+    // Alternatif sederhana: net proceeds jual - net proceeds beli + kupon diterima
+    // = (sellClean + sellAI - taxAI) - (buyClean + buyAI) + couponNett
     const roi = (totalProfit / totalProceed) * 100;
 
     profitData = {
-      buyDirtyPrice: dirtyPrice, buyProceeds: totalProceed,
-      sellPrice, sellDirtyPrice, sellProceeds, sellAccruedAmt, sellAccruedPct,
-      holdDays, couponsCount: couponsReceived.length, totalCouponNett,
-      capitalGain, totalProfit, roi,
-      sellSettle, sellYtm
+      buyDirtyPrice: dirtyPrice, buyProceeds: totalProceed, buyCleanProceeds: cleanProceed,
+      buyAccruedAmt: accruedAmt, buyAccruedPct: accruedPct,
+      sellPrice, sellDirtyPrice, sellProceeds, sellCleanProceeds,
+      sellAccruedAmt, sellAccruedPct, taxOnSellAI,
+      capitalGainGross, taxOnCapGain, capitalGainNet,
+      holdDays, hasCouponCalc,
+      couponsCount: couponsReceived.length, totalCouponNett,
+      totalProfit, roi,
+      sellSettle, sellYtm, taxCapGain
     };
   }
 
@@ -1033,51 +1110,86 @@ function renderOutput(r) {
   const profitHtml = (r.isJual && r.profitData) ? (() => {
     const p = r.profitData;
     const isProfit = p.totalProfit >= 0;
-    const capIsProfit = p.capitalGain >= 0;
+    const capIsProfit = p.capitalGainNet >= 0;
     return `
   <div style="background:linear-gradient(145deg,${isProfit ? '#f0fff8,#e6fff2' : '#fff5f5,#ffe8e8'});border:2px solid ${isProfit ? '#a8e6c1' : '#f5a8a8'};border-radius:16px;padding:18px 20px;margin-bottom:14px;">
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
       <div style="font-size:1.4rem;">${isProfit ? '📈' : '📉'}</div>
       <div>
         <div style="font-size:1rem;font-weight:800;color:${isProfit ? '#1a7a47' : '#b01a1a'};">
           ${isProfit ? 'Keuntungan' : 'Kerugian'} dari Transaksi Jual-Beli
         </div>
-        <div style="font-size:0.75rem;color:#888;">Beli: ${fmtDateShort(r.settle)} &nbsp;→&nbsp; Jual: ${fmtDateShort(p.sellSettle)} &nbsp;|&nbsp; Kepemilikan: ${p.holdDays} hari</div>
+        <div style="font-size:0.75rem;color:#888;">
+          Beli: ${fmtDateShort(r.settle)} &nbsp;→&nbsp; Jual: ${fmtDateShort(p.sellSettle)}
+          &nbsp;|&nbsp; Kepemilikan: ${p.holdDays} hari
+          ${!p.hasCouponCalc ? ' &nbsp;|&nbsp; <span style="background:#fff3cd;color:#856404;padding:1px 7px;border-radius:8px;font-size:0.72rem;">Tanpa perhitungan kupon</span>' : ''}
+        </div>
       </div>
       <div style="margin-left:auto;text-align:right;">
         <div style="font-size:1.6rem;font-weight:900;color:${isProfit ? '#1a7a47' : '#b01a1a'};">${fmtIDR(p.totalProfit)}</div>
         <div style="font-size:0.72rem;color:#888;">ROI: <strong style="color:${isProfit ? '#1a7a47' : '#b01a1a'};">${p.roi.toFixed(2)}%</strong></div>
       </div>
     </div>
-    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:10px;">
-      <div style="background:#fff;border-radius:10px;padding:10px 13px;border:1px solid #e8f0e8;">
-        <div style="font-size:0.63rem;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px;">Harga Beli (Dirty)</div>
+
+    <!-- Baris Harga Beli vs Jual -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+      <div style="background:#fff;border-radius:10px;padding:10px 13px;border:1px solid #f0e0e0;">
+        <div style="font-size:0.63rem;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px;">💸 Modal Beli (Dirty)</div>
         <div style="font-size:0.92rem;font-weight:700;color:#e74c3c;">${fmtIDR(p.buyProceeds)}</div>
-        <div style="font-size:0.7rem;color:#aaa;">Clean ${fmtNum(r.price,3)}% + AI ${fmtNum(r.accruedPct,3)}% = ${fmtNum(p.buyDirtyPrice,3)}%</div>
+        <div style="font-size:0.7rem;color:#aaa;">Clean ${fmtNum(r.price,3)}% + AI ${fmtNum(r.accruedPct,3)}% = Dirty ${fmtNum(p.buyDirtyPrice,3)}%</div>
+        <div style="font-size:0.7rem;color:#e74c3c;margin-top:2px;">AI dibayar ke penjual: ${fmtIDR(p.buyAccruedAmt)}</div>
       </div>
-      <div style="background:#fff;border-radius:10px;padding:10px 13px;border:1px solid #e8f0e8;">
-        <div style="font-size:0.63rem;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px;">Harga Jual (Dirty)</div>
+      <div style="background:#fff;border-radius:10px;padding:10px 13px;border:1px solid #e0f0e0;">
+        <div style="font-size:0.63rem;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px;">💰 Penerimaan Jual (Nett)</div>
         <div style="font-size:0.92rem;font-weight:700;color:#27ae60;">${fmtIDR(p.sellProceeds)}</div>
-        <div style="font-size:0.7rem;color:#aaa;">Clean ${fmtNum(p.sellPrice,3)}% + AI ${fmtNum(p.sellAccruedPct,3)}% = ${fmtNum(p.sellDirtyPrice,3)}%</div>
-      </div>
-      <div style="background:#fff;border-radius:10px;padding:10px 13px;border:1px solid #e8f0e8;">
-        <div style="font-size:0.63rem;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px;">Capital Gain / Loss</div>
-        <div style="font-size:0.92rem;font-weight:700;color:${capIsProfit ? '#27ae60' : '#e74c3c'};">${capIsProfit ? '+' : ''}${fmtIDR(p.capitalGain)}</div>
-        <div style="font-size:0.7rem;color:#aaa;">Selisih harga jual vs beli (dirty)</div>
-      </div>
-      <div style="background:#fff;border-radius:10px;padding:10px 13px;border:1px solid #e8f0e8;">
-        <div style="font-size:0.63rem;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px;">Kupon Diterima (Nett)</div>
-        <div style="font-size:0.92rem;font-weight:700;color:#27ae60;">${fmtIDR(p.totalCouponNett)}</div>
-        <div style="font-size:0.7rem;color:#aaa;">${p.couponsCount} kali pembayaran kupon (setelah PPh)</div>
+        <div style="font-size:0.7rem;color:#aaa;">Clean ${fmtNum(p.sellPrice,3)}% + AI ${fmtNum(p.sellAccruedPct,3)}% − PPh AI</div>
+        <div style="font-size:0.7rem;color:#27ae60;margin-top:2px;">AI diterima nett: ${fmtIDR(p.sellAccruedAmt - p.taxOnSellAI)}</div>
       </div>
     </div>
-    <div style="background:${isProfit ? 'rgba(39,174,96,0.08)' : 'rgba(231,76,60,0.08)'};border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-      <span style="font-size:0.8rem;color:#555;">
-        <strong style="color:${isProfit ? '#1a7a47' : '#b01a1a'};">Total ${isProfit ? 'Keuntungan' : 'Kerugian'}:</strong>
-        Capital Gain (${fmtIDR(p.capitalGain)}) + Kupon Nett (${fmtIDR(p.totalCouponNett)}) =
-        <strong style="font-size:0.95rem;color:${isProfit ? '#1a7a47' : '#b01a1a'};">${fmtIDR(p.totalProfit)}</strong>
-      </span>
-      ${p.sellYtm ? `<span style="margin-left:auto;font-size:0.78rem;color:#888;">YTM Jual: <strong>${fmtPct(p.sellYtm,4)}</strong></span>` : ''}
+
+    <!-- Rincian Pajak & Keuntungan -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+      <div style="background:#fff;border-radius:10px;padding:10px 13px;border:1px solid #e8e8f5;">
+        <div style="font-size:0.63rem;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px;">Capital Gain Kotor</div>
+        <div style="font-size:0.88rem;font-weight:700;color:${capIsProfit ? '#27ae60' : '#e74c3c'};">${capIsProfit ? '+' : ''}${fmtIDR(p.capitalGainGross)}</div>
+        <div style="font-size:0.7rem;color:#e74c3c;">PPh CG ${p.taxCapGain}%: −${fmtIDR(p.taxOnCapGain)}</div>
+        <div style="font-size:0.78rem;font-weight:700;color:${capIsProfit ? '#1a7a47' : '#b01a1a'};margin-top:2px;">Nett: ${fmtIDR(p.capitalGainNet)}</div>
+      </div>
+      <div style="background:#fff;border-radius:10px;padding:10px 13px;border:1px solid #e8e8f5;">
+        <div style="font-size:0.63rem;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px;">PPh Accrued Interest Jual</div>
+        <div style="font-size:0.88rem;font-weight:700;color:#e74c3c;">−${fmtIDR(p.taxOnSellAI)}</div>
+        <div style="font-size:0.7rem;color:#aaa;">AI Jual ${fmtIDR(p.sellAccruedAmt)} × ${r.taxPct}%</div>
+        <div style="font-size:0.78rem;font-weight:700;color:#27ae60;margin-top:2px;">AI Nett: +${fmtIDR(p.sellAccruedAmt - p.taxOnSellAI)}</div>
+      </div>
+      ${p.hasCouponCalc ? `
+      <div style="background:#fff;border-radius:10px;padding:10px 13px;border:1px solid #e8e8f5;">
+        <div style="font-size:0.63rem;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px;">Kupon Diterima (Nett)</div>
+        <div style="font-size:0.88rem;font-weight:700;color:#27ae60;">+${fmtIDR(p.totalCouponNett)}</div>
+        <div style="font-size:0.7rem;color:#aaa;">${p.couponsCount}× pembayaran setelah PPh ${r.taxPct}%</div>
+      </div>` : `
+      <div style="background:#fffbf0;border-radius:10px;padding:10px 13px;border:1px solid #f0e0a0;">
+        <div style="font-size:0.63rem;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px;">Kupon Diterima</div>
+        <div style="font-size:0.88rem;font-weight:700;color:#aaa;">—</div>
+        <div style="font-size:0.7rem;color:#aaa;">Aktifkan tanggal jual custom untuk hitung kupon</div>
+      </div>`}
+      <div style="background:#fff;border-radius:10px;padding:10px 13px;border:1px solid #e8e8f5;">
+        <div style="font-size:0.63rem;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px;">AI Beli (Dibayar ke Penjual)</div>
+        <div style="font-size:0.88rem;font-weight:700;color:#e74c3c;">−${fmtIDR(p.buyAccruedAmt)}</div>
+        <div style="font-size:0.7rem;color:#aaa;">Saat beli, AI ${fmtNum(r.accruedPct,3)}% mengurangi keuntungan</div>
+      </div>
+    </div>
+
+    <!-- Summary bar -->
+    <div style="background:${isProfit ? 'rgba(39,174,96,0.08)' : 'rgba(231,76,60,0.08)'};border-radius:10px;padding:10px 14px;font-size:0.78rem;color:#555;">
+      <div style="margin-bottom:4px;">
+        <strong>Rincian:</strong>
+        Capital Gain Nett <span style="color:${capIsProfit?'#27ae60':'#e74c3c'}">(${fmtIDR(p.capitalGainNet)})</span>
+        + AI Jual Nett <span style="color:#27ae60">(+${fmtIDR(p.sellAccruedAmt - p.taxOnSellAI)})</span>
+        − AI Beli <span style="color:#e74c3c">(−${fmtIDR(p.buyAccruedAmt)})</span>
+        ${p.hasCouponCalc ? `+ Kupon Nett <span style="color:#27ae60">(+${fmtIDR(p.totalCouponNett)})</span>` : ''}
+        = <strong style="font-size:0.9rem;color:${isProfit?'#1a7a47':'#b01a1a'};">${fmtIDR(p.totalProfit)}</strong>
+      </div>
+      ${p.sellYtm ? `<div style="color:#888;">YTM Jual: <strong>${fmtPct(p.sellYtm,4)}</strong></div>` : ''}
     </div>
   </div>`;
   })() : '';
