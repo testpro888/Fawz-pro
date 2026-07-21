@@ -285,9 +285,11 @@
           <!-- TRANSAKSI -->
           <div class="form-section">
             <div class="form-section-label">Informasi Transaksi</div>
+
+            <!-- Tanggal Beli — selalu tampil -->
             <div class="form-row">
               <div class="form-group">
-                <label class="form-label">Trade Date</label>
+                <label class="form-label">Trade Date <small id="lbl-trade-sub">Beli</small></label>
                 <input class="form-input" id="inp-trade" type="date" onchange="onTradeChange()"/>
               </div>
               <div class="form-group">
@@ -305,7 +307,29 @@
                 <input class="form-input readonly" id="inp-next-coupon" type="date" readonly/>
               </div>
             </div>
-            <div class="form-group">
+
+            <!-- Tanggal Jual (checkbox) — hanya tampil di mode Jual -->
+            <div id="grp-sell-custom-date" style="display:none;margin-top:10px;padding-top:10px;border-top:1px dashed #e8e8f0;">
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:8px;">
+                <input type="checkbox" id="chk-sell-custom-date" onchange="toggleSellCustomDate()" style="width:15px;height:15px;cursor:pointer;accent-color:var(--gold);"/>
+                <span style="font-size:0.72rem;font-weight:700;color:#666;text-transform:uppercase;letter-spacing:0.5px;">Sertakan Tanggal Jual</span>
+                <span style="font-size:0.7rem;color:#aaa;font-weight:400;text-transform:none;">(untuk hitung kupon & accrued)</span>
+              </label>
+              <div id="grp-sell-date-fields" style="display:none;">
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">Trade Date Jual</label>
+                    <input class="form-input" id="inp-sell-trade" type="date" onchange="onSellTradeChange()"/>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Settlement Date Jual <small>(+2)</small></label>
+                    <input class="form-input" id="inp-sell-date" type="date" onchange="onSellPriceChange()"/>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group" style="margin-top:10px;">
               <label class="form-label">Nominal Investasi</label>
               <div class="input-suffix">
                 <input class="form-input" id="inp-nominal" type="text" placeholder="100.000.000" oninput="formatNominal(this); onInputChange()"/>
@@ -363,27 +387,6 @@
                 <div class="input-suffix">
                   <input class="form-input" id="inp-tax-capgain" type="number" step="1" value="10" oninput="onInputChange()"/>
                   <span>%</span>
-                </div>
-              </div>
-            </div>
-            <!-- Tanggal Jual Custom — hanya tampil di mode Jual -->
-            <div id="grp-sell-custom-date" style="display:none;">
-              <div style="margin-bottom:10px;">
-                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.82rem;color:#666;">
-                  <input type="checkbox" id="chk-sell-custom-date" onchange="toggleSellCustomDate()" style="cursor:pointer;"/>
-                  <span>Gunakan tanggal jual yang berbeda (dengan perhitungan kupon)</span>
-                </label>
-              </div>
-              <div id="grp-sell-date-fields" style="display:none;">
-                <div class="form-row">
-                  <div class="form-group">
-                    <label class="form-label">Trade Date Jual</label>
-                    <input class="form-input" id="inp-sell-trade" type="date" onchange="onSellTradeChange()"/>
-                  </div>
-                  <div class="form-group">
-                    <label class="form-label">Settlement Date Jual <small>(+2)</small></label>
-                    <input class="form-input" id="inp-sell-date" type="date" onchange="onSellPriceChange()"/>
-                  </div>
                 </div>
               </div>
             </div>
@@ -849,13 +852,17 @@ function setCalcType(t) {
   calcMode = t;
   document.getElementById('tab-secondary').classList.toggle('active', t === 'beli');
   document.getElementById('tab-ipo').classList.toggle('active', t === 'jual');
-  // Tampilkan field harga jual & tanggal jual hanya di mode jual
+  // Tampilkan field harga jual hanya di mode jual
   const showSell = t === 'jual';
   document.getElementById('row-sell-price').style.display = showSell ? '' : 'none';
+  // Tampilkan checkbox tanggal jual di Informasi Transaksi hanya mode jual
   document.getElementById('grp-sell-custom-date').style.display = showSell ? '' : 'none';
+  // Label Trade Date
+  document.getElementById('lbl-trade-sub').textContent = showSell ? 'Beli' : '';
   // Reset checkbox saat ganti mode
   if (!showSell) {
-    document.getElementById('chk-sell-custom-date').checked = false;
+    const chk = document.getElementById('chk-sell-custom-date');
+    if (chk) chk.checked = false;
     document.getElementById('grp-sell-date-fields').style.display = 'none';
   }
 }
