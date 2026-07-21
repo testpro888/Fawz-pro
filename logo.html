@@ -406,14 +406,14 @@
 <div class="page-container">
   <!-- PAGE HEADER -->
   <div class="page-header">
-    <div class="page-title">🎨 Brand Logo</div>
+    <div class="page-title">Brand Logo</div>
     <div class="page-sub">Kelola aset visual brand Fawz Pro — logo, ikon, dan palet warna.</div>
   </div>
 
   <!-- UPLOAD FORM (head_account only) -->
   <div class="upload-card" id="uploadSection" style="display:none;">
     <div class="upload-card-title">
-      <span>➕</span> Upload Logo Baru
+      <span></span> Upload Logo Baru
     </div>
     <div class="upload-grid">
       <!-- File -->
@@ -422,7 +422,7 @@
         <div class="file-dropzone" id="fileDropzone">
           <input type="file" id="fileInput" accept=".png,.jpg,.jpeg,.svg,.pdf,.ai,.eps,.webp"
             onchange="onFileSelected(event)"/>
-          <div class="dz-icon">📁</div>
+          <div class="dz-icon"></div>
           <div class="dz-text" id="dzText">Klik atau drag file ke sini</div>
           <div class="dz-hint">PNG, JPG, SVG, PDF, AI, EPS, WebP</div>
         </div>
@@ -475,7 +475,7 @@
           Mengupload...
         </div>
         <button class="btn-upload" id="btnUpload" onclick="submitUpload()">
-          ☁️ Upload
+          Upload
         </button>
       </div>
     </div>
@@ -484,14 +484,14 @@
   <!-- PALETTE WARNA -->
   <div class="section-block" style="animation-delay:0.08s;">
     <div class="section-header">
-      <div class="section-title">🎨 Palet Warna</div>
+      <div class="section-title">Palet Warna</div>
       <button class="btn-add-palette" id="btnAddPalette" style="display:none;" onclick="openPaletteModal()">
         + Tambah Warna
       </button>
     </div>
     <div class="palette-grid" id="paletteGrid">
       <div class="empty-state" style="grid-column:1/-1;">
-        <div class="empty-state-icon">🎨</div>
+        <div class="empty-state-icon"></div>
         <div class="empty-state-text">Belum ada palet warna</div>
         <div class="empty-state-hint">Palet akan ditambahkan oleh Head Account</div>
       </div>
@@ -501,40 +501,40 @@
   <!-- PRIMARY LOGO -->
   <div class="section-block" style="animation-delay:0.12s;">
     <div class="section-header">
-      <div class="section-title">🏷️ Primary Logo <span class="section-count" id="countPrimary">0</span></div>
+      <div class="section-title">Primary Logo <span class="section-count" id="countPrimary">0</span></div>
     </div>
     <div class="logo-grid" id="gridPrimary">
-      <div class="empty-state"><div class="empty-state-icon">🏷️</div><div class="empty-state-text">Belum ada logo</div></div>
+      <div class="empty-state"><div class="empty-state-icon"></div><div class="empty-state-text">Belum ada logo</div></div>
     </div>
   </div>
 
   <!-- SECONDARY LOGO -->
   <div class="section-block" style="animation-delay:0.16s;">
     <div class="section-header">
-      <div class="section-title">🔖 Secondary Logo <span class="section-count" id="countSecondary">0</span></div>
+      <div class="section-title">Secondary Logo <span class="section-count" id="countSecondary">0</span></div>
     </div>
     <div class="logo-grid" id="gridSecondary">
-      <div class="empty-state"><div class="empty-state-icon">🔖</div><div class="empty-state-text">Belum ada logo</div></div>
+      <div class="empty-state"><div class="empty-state-icon"></div><div class="empty-state-text">Belum ada logo</div></div>
     </div>
   </div>
 
   <!-- ICON LOGO -->
   <div class="section-block" style="animation-delay:0.20s;">
     <div class="section-header">
-      <div class="section-title">⚡ Icon Logo <span class="section-count" id="countIcon">0</span></div>
+      <div class="section-title">Icon Logo <span class="section-count" id="countIcon">0</span></div>
     </div>
     <div class="logo-grid" id="gridIcon">
-      <div class="empty-state"><div class="empty-state-icon">⚡</div><div class="empty-state-text">Belum ada logo</div></div>
+      <div class="empty-state"><div class="empty-state-icon"></div><div class="empty-state-text">Belum ada logo</div></div>
     </div>
   </div>
 
   <!-- MONOCHROME LOGO -->
   <div class="section-block" style="animation-delay:0.24s;">
     <div class="section-header">
-      <div class="section-title">⬛ Monochrome Logo <span class="section-count" id="countMonochrome">0</span></div>
+      <div class="section-title">Monochrome Logo <span class="section-count" id="countMonochrome">0</span></div>
     </div>
     <div class="logo-grid" id="gridMonochrome">
-      <div class="empty-state"><div class="empty-state-icon">⬛</div><div class="empty-state-text">Belum ada logo</div></div>
+      <div class="empty-state"><div class="empty-state-icon"></div><div class="empty-state-text">Belum ada logo</div></div>
     </div>
   </div>
 </div>
@@ -707,7 +707,7 @@ async function submitUpload() {
     });
     if (dbErr) throw dbErr;
 
-    showToast('Logo berhasil diupload! ✓', 'success');
+    showToast('Logo berhasil diupload!', 'success');
     resetForm();
     loadLogos();
   } catch(e) {
@@ -738,10 +738,10 @@ async function loadLogos() {
   const cats = { primary: [], secondary: [], icon: [], monochrome: [] };
   rows.forEach(r => { if (cats[r.category]) cats[r.category].push(r); });
 
-  renderLogoSection('gridPrimary',    'countPrimary',    cats.primary,    'Belum ada Primary Logo', '🏷️');
-  renderLogoSection('gridSecondary',  'countSecondary',  cats.secondary,  'Belum ada Secondary Logo', '🔖');
-  renderLogoSection('gridIcon',       'countIcon',       cats.icon,       'Belum ada Icon Logo', '⚡');
-  renderLogoSection('gridMonochrome', 'countMonochrome', cats.monochrome, 'Belum ada Monochrome Logo', '⬛');
+  renderLogoSection('gridPrimary',    'countPrimary',    cats.primary,    'Belum ada Primary Logo', '');
+  renderLogoSection('gridSecondary',  'countSecondary',  cats.secondary,  'Belum ada Secondary Logo', '');
+  renderLogoSection('gridIcon',       'countIcon',       cats.icon,       'Belum ada Icon Logo', '');
+  renderLogoSection('gridMonochrome', 'countMonochrome', cats.monochrome, 'Belum ada Monochrome Logo', '');
 }
 
 function renderLogoSection(gridId, countId, items, emptyText, emptyIcon) {
@@ -770,7 +770,7 @@ function logoCardHTML(r) {
     : `background: ${bg};`;
 
   const deleteBtn = isHeadAccount
-    ? `<button class="btn-action btn-delete" onclick="openDeleteModal('${r.id}','${escHtml(r.name)}','${escHtml(r.file_path)}')">🗑 Hapus</button>`
+    ? `<button class="btn-action btn-delete" onclick="openDeleteModal('${r.id}','${escHtml(r.name)}','${escHtml(r.file_path)}')">Hapus</button>`
     : '';
 
   return `<div class="logo-card">
@@ -782,7 +782,7 @@ function logoCardHTML(r) {
       <span class="logo-format-badge ${fmtClass}">${fmtLabel}</span>
     </div>
     <div class="logo-actions">
-      <a class="btn-action btn-download" href="${escHtml(r.file_url)}" download="${escHtml(r.name)}.${r.format||'file'}">⬇ Download</a>
+      <a class="btn-action btn-download" href="${escHtml(r.file_url)}" download="${escHtml(r.name)}.${r.format||'file'}">Download</a>
       ${deleteBtn}
     </div>
     <div class="logo-uploader">Diupload oleh ${escHtml(r.uploaded_by || '—')}</div>
@@ -800,7 +800,7 @@ function renderPalette(items) {
   const grid = document.getElementById('paletteGrid');
   if (items.length === 0) {
     grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;">
-      <div class="empty-state-icon">🎨</div>
+      <div class="empty-state-icon"></div>
       <div class="empty-state-text">Belum ada palet warna</div>
       <div class="empty-state-hint">Palet akan ditambahkan oleh Head Account</div>
     </div>`;
@@ -845,7 +845,7 @@ async function savePalette() {
   }
 
   if (err) { showToast('Gagal simpan: ' + err.message, 'error'); return; }
-  showToast('Warna berhasil disimpan ✓', 'success');
+  showToast('Warna berhasil disimpan', 'success');
   closePaletteModal();
   loadPalette();
 }
