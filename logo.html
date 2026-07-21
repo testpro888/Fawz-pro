@@ -918,6 +918,16 @@ function renderPalette(items) {
     const copyVal = isGrad
       ? `linear-gradient(${c.grad_direction||'135deg'}, ${c.color_hex}, ${c.color_hex2||''})`
       : c.color_hex;
+    const deleteBtn = isHeadAccount
+      ? `<div style="padding:0 12px 10px;">
+           <button onclick="deletePalette('${escHtml(c.id)}','${escHtml(c.color_name)}')"
+             style="width:100%;padding:5px 8px;border-radius:7px;border:none;
+             background:#fee2e2;color:#991b1b;font-size:11px;font-weight:600;
+             font-family:inherit;cursor:pointer;transition:background 0.15s;"
+             onmouseover="this.style.background='#fca5a5'"
+             onmouseout="this.style.background='#fee2e2'">Hapus</button>
+         </div>`
+      : '';
     return `
     <div class="palette-card">
       <div class="palette-swatch-big" style="${swatchStyle}"></div>
@@ -925,6 +935,7 @@ function renderPalette(items) {
         <div class="palette-color-name">${escHtml(c.color_name)}</div>
         <div class="palette-code" onclick="copyCode('${escHtml(copyVal)}')" title="Klik untuk copy">${codeText}</div>
       </div>
+      ${deleteBtn}
     </div>`;
   }).join('');
 }
@@ -1021,7 +1032,16 @@ async function savePalette() {
   loadPalette();
 }
 
-/* ── DELETE ── */
+/* ── DELETE PALETTE ── */
+async function deletePalette(id, name) {
+  if (!confirm('Hapus warna "' + name + '"?')) return;
+  const { error } = await _sb.from('brand_palette').delete().eq('id', id);
+  if (error) { showToast('Gagal hapus: ' + error.message, 'error'); return; }
+  showToast('Warna berhasil dihapus', 'success');
+  loadPalette();
+}
+
+/* ── DELETE LOGO ── */
 function openDeleteModal(id, name, path) {
   deleteTargetId = id;
   deleteTargetPath = path;
