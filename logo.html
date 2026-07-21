@@ -356,6 +356,20 @@
     }
     .btn-danger-confirm:hover { background: #b91c1c; }
 
+    /* Type toggle */
+    .type-toggle {
+      padding: 7px 18px;
+      border-radius: 7px;
+      border: 1px solid var(--hairline-strong);
+      background: var(--surface);
+      color: var(--slate);
+      font-size: 13px; font-weight: 600; font-family: inherit;
+      cursor: pointer; transition: all 0.15s;
+    }
+    .type-toggle.active {
+      background: var(--primary); color: #fff; border-color: var(--primary);
+    }
+
     /* Toast */
     .toast {
       position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px);
@@ -591,16 +605,62 @@
         <label class="form-label">Nama Warna</label>
         <input type="text" id="paletteName" class="form-input" placeholder="cth. Primary Purple"/>
       </div>
+
+      <!-- Toggle solid / gradasi -->
       <div class="form-group">
+        <label class="form-label">Tipe</label>
+        <div style="display:flex;gap:8px;">
+          <button type="button" id="btnTypeSolid" class="type-toggle active" onclick="setColorType('solid')">Solid</button>
+          <button type="button" id="btnTypeGradient" class="type-toggle" onclick="setColorType('gradient')">Gradasi</button>
+        </div>
+      </div>
+
+      <!-- Solid -->
+      <div class="form-group" id="solidGroup">
         <label class="form-label">Kode Warna (HEX)</label>
         <div style="display:flex;gap:10px;align-items:center;">
           <input type="color" id="paletteColorPicker" value="#5645d4"
             style="width:44px;height:44px;border:none;border-radius:8px;cursor:pointer;padding:2px;"
-            oninput="document.getElementById('paletteHex').value=this.value"/>
+            oninput="document.getElementById('paletteHex').value=this.value; syncPreview()"/>
           <input type="text" id="paletteHex" class="form-input" placeholder="#5645d4" value="#5645d4"
-            oninput="syncColorPicker()"
+            oninput="syncColorPicker(); syncPreview()"
             style="font-family:monospace;flex:1;"/>
         </div>
+      </div>
+
+      <!-- Gradient -->
+      <div class="form-group" id="gradientGroup" style="display:none;">
+        <label class="form-label">Warna Awal</label>
+        <div style="display:flex;gap:10px;align-items:center;margin-bottom:10px;">
+          <input type="color" id="gradColor1Picker" value="#5645d4"
+            style="width:44px;height:44px;border:none;border-radius:8px;cursor:pointer;padding:2px;"
+            oninput="document.getElementById('gradColor1').value=this.value; syncPreview()"/>
+          <input type="text" id="gradColor1" class="form-input" placeholder="#5645d4" value="#5645d4"
+            oninput="document.getElementById('gradColor1Picker').value=this.value; syncPreview()"
+            style="font-family:monospace;flex:1;"/>
+        </div>
+        <label class="form-label">Warna Akhir</label>
+        <div style="display:flex;gap:10px;align-items:center;margin-bottom:10px;">
+          <input type="color" id="gradColor2Picker" value="#a78bfa"
+            style="width:44px;height:44px;border:none;border-radius:8px;cursor:pointer;padding:2px;"
+            oninput="document.getElementById('gradColor2').value=this.value; syncPreview()"/>
+          <input type="text" id="gradColor2" class="form-input" placeholder="#a78bfa" value="#a78bfa"
+            oninput="document.getElementById('gradColor2Picker').value=this.value; syncPreview()"
+            style="font-family:monospace;flex:1;"/>
+        </div>
+        <label class="form-label">Arah Gradasi</label>
+        <select id="gradDirection" class="form-select" onchange="syncPreview()">
+          <option value="135deg">↗ Diagonal (135°)</option>
+          <option value="90deg">↑ Vertikal (90°)</option>
+          <option value="180deg">→ Horizontal (180°)</option>
+          <option value="45deg">↗ Diagonal (45°)</option>
+        </select>
+      </div>
+
+      <!-- Preview -->
+      <div class="form-group">
+        <label class="form-label">Preview</label>
+        <div id="palettePreview" style="height:52px;border-radius:10px;border:1px solid var(--hairline);background:#5645d4;transition:background 0.2s;"></div>
       </div>
     </div>
     <div class="modal-footer">
@@ -847,42 +907,112 @@ function renderPalette(items) {
     </div>`;
     return;
   }
-  grid.innerHTML = items.map(c => `
+  grid.innerHTML = items.map(c => {
+    const isGrad = c.color_type === 'gradient';
+    const swatchStyle = isGrad
+      ? `background: linear-gradient(${escHtml(c.grad_direction||'135deg')}, ${escHtml(c.color_hex)}, ${escHtml(c.color_hex2||'#ffffff')});`
+      : `background: ${escHtml(c.color_hex)};`;
+    const codeText = isGrad
+      ? `${escHtml(c.color_hex)} → ${escHtml(c.color_hex2||'')}`
+      : escHtml(c.color_hex);
+    const copyVal = isGrad
+      ? `linear-gradient(${c.grad_direction||'135deg'}, ${c.color_hex}, ${c.color_hex2||''})`
+      : c.color_hex;
+    return `
     <div class="palette-card">
-      <div class="palette-swatch-big" style="background:${escHtml(c.color_hex)};"></div>
+      <div class="palette-swatch-big" style="${swatchStyle}"></div>
       <div class="palette-info">
         <div class="palette-color-name">${escHtml(c.color_name)}</div>
-        <div class="palette-code" onclick="copyCode('${escHtml(c.color_hex)}')" title="Klik untuk copy">${escHtml(c.color_hex)}</div>
+        <div class="palette-code" onclick="copyCode('${escHtml(copyVal)}')" title="Klik untuk copy">${codeText}</div>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
+let _colorType = 'solid';
 let _editPaletteId = null;
-function openPaletteModal(id, name, hex) {
+
+function setColorType(type) {
+  _colorType = type;
+  document.getElementById('btnTypeSolid').classList.toggle('active', type === 'solid');
+  document.getElementById('btnTypeGradient').classList.toggle('active', type === 'gradient');
+  document.getElementById('solidGroup').style.display = type === 'solid' ? '' : 'none';
+  document.getElementById('gradientGroup').style.display = type === 'gradient' ? '' : 'none';
+  syncPreview();
+}
+
+function syncPreview() {
+  const preview = document.getElementById('palettePreview');
+  if (!preview) return;
+  if (_colorType === 'gradient') {
+    const c1  = document.getElementById('gradColor1').value || '#5645d4';
+    const c2  = document.getElementById('gradColor2').value || '#a78bfa';
+    const dir = document.getElementById('gradDirection').value || '135deg';
+    preview.style.background = `linear-gradient(${dir}, ${c1}, ${c2})`;
+  } else {
+    const hex = document.getElementById('paletteHex').value || '#5645d4';
+    preview.style.background = hex;
+  }
+}
+
+function openPaletteModal(id, name, hex, type, hex2, dir) {
   _editPaletteId = id || null;
+  _colorType = type || 'solid';
   document.getElementById('paletteName').value = name || '';
+
+  // Reset solid
   document.getElementById('paletteHex').value = hex || '#5645d4';
   document.getElementById('paletteColorPicker').value = hex || '#5645d4';
+
+  // Reset gradient
+  document.getElementById('gradColor1').value = hex || '#5645d4';
+  document.getElementById('gradColor1Picker').value = hex || '#5645d4';
+  document.getElementById('gradColor2').value = hex2 || '#a78bfa';
+  document.getElementById('gradColor2Picker').value = hex2 || '#a78bfa';
+  document.getElementById('gradDirection').value = dir || '135deg';
+
+  setColorType(_colorType);
   document.getElementById('paletteModal').classList.add('open');
 }
 function closePaletteModal() { document.getElementById('paletteModal').classList.remove('open'); }
 
 function syncColorPicker() {
   const hex = document.getElementById('paletteHex').value;
-  if (/^#[0-9a-fA-F]{6}$/.test(hex)) document.getElementById('paletteColorPicker').value = hex;
+  if (/^#[0-9a-fA-F]{6}$/.test(hex)) {
+    document.getElementById('paletteColorPicker').value = hex;
+    syncPreview();
+  }
 }
 
 async function savePalette() {
   const name = document.getElementById('paletteName').value.trim();
-  const hex  = document.getElementById('paletteHex').value.trim();
-  if (!name || !hex) { showToast('Nama dan kode warna harus diisi', 'error'); return; }
-  if (!/^#[0-9a-fA-F]{3,8}$/.test(hex)) { showToast('Format HEX tidak valid', 'error'); return; }
+  if (!name) { showToast('Nama warna harus diisi', 'error'); return; }
+
+  let payload = { color_name: name, color_type: _colorType };
+
+  if (_colorType === 'gradient') {
+    const c1  = document.getElementById('gradColor1').value.trim();
+    const c2  = document.getElementById('gradColor2').value.trim();
+    const dir = document.getElementById('gradDirection').value;
+    if (!c1 || !c2) { showToast('Kedua warna gradasi harus diisi', 'error'); return; }
+    if (!/^#[0-9a-fA-F]{3,8}$/.test(c1) || !/^#[0-9a-fA-F]{3,8}$/.test(c2)) {
+      showToast('Format HEX tidak valid', 'error'); return;
+    }
+    payload.color_hex  = c1;
+    payload.color_hex2 = c2;
+    payload.grad_direction = dir;
+  } else {
+    const hex = document.getElementById('paletteHex').value.trim();
+    if (!hex) { showToast('Kode warna harus diisi', 'error'); return; }
+    if (!/^#[0-9a-fA-F]{3,8}$/.test(hex)) { showToast('Format HEX tidak valid', 'error'); return; }
+    payload.color_hex = hex;
+  }
 
   let err;
   if (_editPaletteId) {
-    ({ error: err } = await _sb.from('brand_palette').update({ color_name: name, color_hex: hex }).eq('id', _editPaletteId));
+    ({ error: err } = await _sb.from('brand_palette').update(payload).eq('id', _editPaletteId));
   } else {
-    ({ error: err } = await _sb.from('brand_palette').insert({ color_name: name, color_hex: hex }));
+    ({ error: err } = await _sb.from('brand_palette').insert(payload));
   }
 
   if (err) { showToast('Gagal simpan: ' + err.message, 'error'); return; }

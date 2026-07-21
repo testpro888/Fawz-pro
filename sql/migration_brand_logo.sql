@@ -24,10 +24,13 @@ CREATE INDEX IF NOT EXISTS idx_brand_logos_category ON brand_logos (category);
 
 -- ── 2. BRAND PALETTE ──
 CREATE TABLE IF NOT EXISTS brand_palette (
-  id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  color_name    text NOT NULL,
-  color_hex     text NOT NULL,
-  created_at    timestamptz NOT NULL DEFAULT now()
+  id             uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  color_name     text NOT NULL,
+  color_type     text NOT NULL DEFAULT 'solid' CHECK (color_type IN ('solid','gradient')),
+  color_hex      text NOT NULL,
+  color_hex2     text,           -- warna kedua untuk gradient
+  grad_direction text,           -- cth: '135deg'
+  created_at     timestamptz NOT NULL DEFAULT now()
 );
 
 -- ── 3. ROW LEVEL SECURITY — TABLE ──
