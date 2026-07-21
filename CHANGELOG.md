@@ -4,6 +4,17 @@ Semua perubahan signifikan pada project ini didokumentasikan di sini.
 
 ---
 
+## [v1.8] — 2026-07-21
+
+### ✨ New Features
+
+#### Brand Logo Page
+- Halaman **Brand Logo** baru di menu Tools
+- Upload dan kelola logo brand per kategori
+- Kelola warna brand dan dokumentasi font
+
+---
+
 ## [v1.7.1] — 2026-07-21
 
 ### 🐛 Bug Fixes & UI Polish
