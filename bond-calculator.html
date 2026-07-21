@@ -1168,91 +1168,103 @@ function renderOutput(r) {
   const profitHtml = (r.isJual && r.profitData) ? (() => {
     const p = r.profitData;
     const isProfit = p.totalProfit >= 0;
-    const capIsProfit = p.capitalGainNet >= 0;
+    const capIsProfit = p.capitalGainGross >= 0;
+
+    // Baris derivasi
+    const rows = [];
+
+    // 1. Harga Jual Clean
+    rows.push({ label: 'Harga Jual (Clean)', sign: '+', val: p.sellCleanProceeds, note: `${fmtNum(p.sellPrice,4)}% × Nominal`, color: '#1a7a47' });
+
+    // 2. Accrued Interest Jual (diterima dari pembeli)
+    if (p.sellAccruedAmt > 0) {
+      rows.push({ label: 'Accrued Interest Jual', sign: '+', val: p.sellAccruedAmt, note: `AI ${fmtNum(p.sellAccruedPct,4)}% diterima dari pembeli`, color: '#1a7a47' });
+      rows.push({ label: `PPh AI Jual (${r.taxPct}%)`, sign: '−', val: p.taxOnSellAI, note: `${fmtIDR(p.sellAccruedAmt)} × ${r.taxPct}%`, color: '#c0392b' });
+    }
+
+    // 3. Harga Beli Clean (modal keluar)
+    rows.push({ label: 'Harga Beli (Clean)', sign: '−', val: p.buyCleanProceeds, note: `${fmtNum(r.price,4)}% × Nominal`, color: '#c0392b' });
+
+    // 4. Accrued Interest Beli (dibayar ke penjual)
+    if (p.buyAccruedAmt > 0) {
+      rows.push({ label: 'Accrued Interest Beli', sign: '−', val: p.buyAccruedAmt, note: `AI ${fmtNum(r.accruedPct,4)}% dibayar ke penjual`, color: '#c0392b' });
+    }
+
+    // 5. Subtotal = Capital Gain Kotor (sebelum pajak CG)
+    rows.push({ label: 'Capital Gain Kotor', sign: '=', val: p.capitalGainGross, note: capIsProfit ? 'Untung dari selisih harga' : 'Rugi dari selisih harga', color: capIsProfit ? '#1a7a47' : '#c0392b', isSubtotal: true });
+
+    // 6. PPh Capital Gain (hanya jika untung)
+    if (capIsProfit && p.taxOnCapGain > 0) {
+      rows.push({ label: `PPh Capital Gain (${p.taxCapGain}%)`, sign: '−', val: p.taxOnCapGain, note: `${fmtIDR(p.capitalGainGross)} × ${p.taxCapGain}%`, color: '#c0392b' });
+    } else if (!capIsProfit) {
+      rows.push({ label: 'PPh Capital Gain', sign: '−', val: 0, note: 'Tidak dikenakan (Capital Loss)', color: '#aaa' });
+    }
+
+    // 7. Kupon (jika ada)
+    if (p.hasCouponCalc && p.totalCouponNett > 0) {
+      rows.push({ label: `Kupon Nett (${p.couponsCount}× periode)`, sign: '+', val: p.totalCouponNett, note: `Setelah PPh ${r.taxPct}%`, color: '#1a7a47' });
+    }
+
+    // Render baris tabel
+    const rowsHtml = rows.map(row => {
+      const isEq = row.sign === '=';
+      return `<tr style="${isEq ? 'border-top:2px solid #e0e0ea;' : ''}">
+        <td style="padding:7px 12px;font-size:0.78rem;color:#555;${isEq ? 'font-weight:700;' : ''}">${row.label}</td>
+        <td style="padding:7px 8px;text-align:center;font-size:0.9rem;font-weight:700;color:${row.sign==='+'?'#1a7a47':row.sign==='−'?'#c0392b':'#444'};width:24px;">${row.sign}</td>
+        <td style="padding:7px 12px;text-align:right;font-size:${isEq?'0.95rem':'0.82rem'};font-weight:${isEq?'800':'600'};color:${row.color};font-variant-numeric:tabular-nums;white-space:nowrap;">
+          ${row.val === 0 && !capIsProfit && row.sign === '−' ? '—' : fmtIDR(row.val)}
+        </td>
+        <td style="padding:7px 12px;font-size:0.7rem;color:#aaa;border-left:1px solid #f0f0f5;">${row.note}</td>
+      </tr>`;
+    }).join('');
+
+    // Total baris akhir
+    const totalRow = `<tr style="border-top:2px solid ${isProfit?'#a8e6c1':'#f5a8a8'};background:${isProfit?'#f4fff9':'#fff5f5'};">
+      <td style="padding:10px 12px;font-size:0.85rem;font-weight:800;color:${isProfit?'#1a7a47':'#b01a1a'};">Total ${isProfit?'Keuntungan':'Kerugian'}</td>
+      <td style="padding:10px 8px;text-align:center;font-size:1rem;font-weight:800;color:${isProfit?'#1a7a47':'#b01a1a'};">=</td>
+      <td style="padding:10px 12px;text-align:right;font-size:1.1rem;font-weight:900;color:${isProfit?'#1a7a47':'#b01a1a'};white-space:nowrap;">${fmtIDR(p.totalProfit)}</td>
+      <td style="padding:10px 12px;font-size:0.72rem;color:#888;border-left:1px solid #f0f0f5;">
+        ROI: <strong style="color:${isProfit?'#1a7a47':'#b01a1a'};">${p.roi.toFixed(2)}%</strong>
+        ${p.sellYtm ? ` &nbsp;|&nbsp; YTM Jual: <strong>${fmtPct(p.sellYtm,4)}</strong>` : ''}
+      </td>
+    </tr>`;
+
+    const meta = [
+      r.settle && p.holdDays != null ? `Beli: ${fmtDateShort(r.settle)}` : null,
+      p.sellSettle ? `Jual: ${fmtDateShort(p.sellSettle)}` : null,
+      p.holdDays != null ? `Kepemilikan: ${p.holdDays} hari` : null,
+      !p.hasCouponCalc ? 'Tanpa perhitungan kupon' : null,
+    ].filter(Boolean).join(' &nbsp;&middot;&nbsp; ');
+
     return `
-  <div style="background:linear-gradient(145deg,${isProfit ? '#f0fff8,#e6fff2' : '#fff5f5,#ffe8e8'});border:2px solid ${isProfit ? '#a8e6c1' : '#f5a8a8'};border-radius:16px;padding:18px 20px;margin-bottom:14px;">
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
-      <div style="font-size:1.4rem;">${isProfit ? '📈' : '📉'}</div>
+  <div style="background:#fff;border:1.5px solid ${isProfit?'#a8e6c1':'#f5a8a8'};border-radius:14px;margin-bottom:14px;overflow:hidden;">
+    <div style="background:${isProfit?'#f4fff9':'#fff5f5'};padding:12px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid ${isProfit?'#d0f0e0':'#f5d0d0'};">
       <div>
-        <div style="font-size:1rem;font-weight:800;color:${isProfit ? '#1a7a47' : '#b01a1a'};">
+        <div style="font-size:0.9rem;font-weight:800;color:${isProfit?'#1a7a47':'#b01a1a'};">
           ${isProfit ? 'Keuntungan' : 'Kerugian'} dari Transaksi Jual-Beli
         </div>
-        <div style="font-size:0.75rem;color:#888;">
-          Beli: ${fmtDateShort(r.settle)} &nbsp;→&nbsp; Jual: ${fmtDateShort(p.sellSettle)}
-          &nbsp;|&nbsp; Kepemilikan: ${p.holdDays} hari
-          ${!p.hasCouponCalc ? ' &nbsp;|&nbsp; <span style="background:#fff3cd;color:#856404;padding:1px 7px;border-radius:8px;font-size:0.72rem;">Tanpa perhitungan kupon</span>' : ''}
-        </div>
+        ${meta ? `<div style="font-size:0.72rem;color:#888;margin-top:2px;">${meta}</div>` : ''}
       </div>
-      <div style="margin-left:auto;text-align:right;">
-        <div style="font-size:1.6rem;font-weight:900;color:${isProfit ? '#1a7a47' : '#b01a1a'};">${fmtIDR(p.totalProfit)}</div>
-        <div style="font-size:0.72rem;color:#888;">ROI: <strong style="color:${isProfit ? '#1a7a47' : '#b01a1a'};">${p.roi.toFixed(2)}%</strong></div>
+      <div style="text-align:right;">
+        <div style="font-size:1.5rem;font-weight:900;color:${isProfit?'#1a7a47':'#b01a1a'};">${fmtIDR(p.totalProfit)}</div>
+        <div style="font-size:0.72rem;color:#888;">ROI ${p.roi.toFixed(2)}%</div>
       </div>
     </div>
-
-    <!-- Baris Harga Beli vs Jual -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
-      <div style="background:#fff;border-radius:10px;padding:10px 13px;border:1px solid #f0e0e0;">
-        <div style="font-size:0.63rem;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px;">💸 Modal Beli (Dirty)</div>
-        <div style="font-size:0.92rem;font-weight:700;color:#e74c3c;">${fmtIDR(p.buyProceeds)}</div>
-        <div style="font-size:0.7rem;color:#aaa;">Clean ${fmtNum(r.price,3)}% + AI ${fmtNum(r.accruedPct,3)}% = Dirty ${fmtNum(p.buyDirtyPrice,3)}%</div>
-        <div style="font-size:0.7rem;color:#e74c3c;margin-top:2px;">AI dibayar ke penjual: ${fmtIDR(p.buyAccruedAmt)}</div>
-      </div>
-      <div style="background:#fff;border-radius:10px;padding:10px 13px;border:1px solid #e0f0e0;">
-        <div style="font-size:0.63rem;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px;">💰 Penerimaan Jual (Nett)</div>
-        <div style="font-size:0.92rem;font-weight:700;color:#27ae60;">${fmtIDR(p.sellProceeds)}</div>
-        <div style="font-size:0.7rem;color:#aaa;">Clean ${fmtNum(p.sellPrice,3)}% + AI ${fmtNum(p.sellAccruedPct,3)}% − PPh AI</div>
-        <div style="font-size:0.7rem;color:#27ae60;margin-top:2px;">AI diterima nett: ${fmtIDR(p.sellAccruedAmt - p.taxOnSellAI)}</div>
-      </div>
-    </div>
-
-    <!-- Rincian Pajak & Keuntungan -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
-      <div style="background:#fff;border-radius:10px;padding:10px 13px;border:1px solid #e8e8f5;">
-        <div style="font-size:0.63rem;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px;">Capital Gain Kotor</div>
-        <div style="font-size:0.88rem;font-weight:700;color:${capIsProfit ? '#27ae60' : '#e74c3c'};">${capIsProfit ? '+' : ''}${fmtIDR(p.capitalGainGross)}</div>
-        ${capIsProfit
-          ? `<div style="font-size:0.7rem;color:#e74c3c;">PPh CG ${p.taxCapGain}%: −${fmtIDR(p.taxOnCapGain)}</div>
-             <div style="font-size:0.78rem;font-weight:700;color:#1a7a47;margin-top:2px;">Nett: ${fmtIDR(p.capitalGainNet)}</div>`
-          : `<div style="font-size:0.7rem;color:#aaa;">Rugi — tidak ada PPh Capital Gain</div>
-             <div style="font-size:0.78rem;font-weight:700;color:#b01a1a;margin-top:2px;">Capital Loss: ${fmtIDR(p.capitalGainNet)}</div>`
-        }
-      </div>
-      <div style="background:#fff;border-radius:10px;padding:10px 13px;border:1px solid #e8e8f5;">
-        <div style="font-size:0.63rem;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px;">PPh Accrued Interest Jual</div>
-        <div style="font-size:0.88rem;font-weight:700;color:#e74c3c;">−${fmtIDR(p.taxOnSellAI)}</div>
-        <div style="font-size:0.7rem;color:#aaa;">AI Jual ${fmtIDR(p.sellAccruedAmt)} × ${r.taxPct}%</div>
-        <div style="font-size:0.78rem;font-weight:700;color:#27ae60;margin-top:2px;">AI Nett: +${fmtIDR(p.sellAccruedAmt - p.taxOnSellAI)}</div>
-      </div>
-      ${p.hasCouponCalc ? `
-      <div style="background:#fff;border-radius:10px;padding:10px 13px;border:1px solid #e8e8f5;">
-        <div style="font-size:0.63rem;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px;">Kupon Diterima (Nett)</div>
-        <div style="font-size:0.88rem;font-weight:700;color:#27ae60;">+${fmtIDR(p.totalCouponNett)}</div>
-        <div style="font-size:0.7rem;color:#aaa;">${p.couponsCount}× pembayaran setelah PPh ${r.taxPct}%</div>
-      </div>` : `
-      <div style="background:#fffbf0;border-radius:10px;padding:10px 13px;border:1px solid #f0e0a0;">
-        <div style="font-size:0.63rem;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px;">Kupon Diterima</div>
-        <div style="font-size:0.88rem;font-weight:700;color:#aaa;">—</div>
-        <div style="font-size:0.7rem;color:#aaa;">Aktifkan tanggal jual custom untuk hitung kupon</div>
-      </div>`}
-      <div style="background:#fff;border-radius:10px;padding:10px 13px;border:1px solid #e8e8f5;">
-        <div style="font-size:0.63rem;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px;">AI Beli (Dibayar ke Penjual)</div>
-        <div style="font-size:0.88rem;font-weight:700;color:#e74c3c;">−${fmtIDR(p.buyAccruedAmt)}</div>
-        <div style="font-size:0.7rem;color:#aaa;">Saat beli, AI ${fmtNum(r.accruedPct,3)}% mengurangi keuntungan</div>
-      </div>
-    </div>
-
-    <!-- Summary bar -->
-    <div style="background:${isProfit ? 'rgba(39,174,96,0.08)' : 'rgba(231,76,60,0.08)'};border-radius:10px;padding:10px 14px;font-size:0.78rem;color:#555;">
-      <div style="margin-bottom:4px;">
-        <strong>Rincian:</strong>
-        Capital Gain Nett <span style="color:${capIsProfit?'#27ae60':'#e74c3c'}">(${fmtIDR(p.capitalGainNet)})</span>
-        ${capIsProfit ? `<span style="font-size:0.72rem;color:#aaa;">[kotor ${fmtIDR(p.capitalGainGross)} − PPh ${fmtIDR(p.taxOnCapGain)}]</span>` : `<span style="font-size:0.72rem;color:#aaa;">[Capital Loss, tanpa pajak]</span>`}
-        + AI Jual Nett <span style="color:#27ae60">(+${fmtIDR(p.sellAccruedAmt - p.taxOnSellAI)})</span>
-        − AI Beli <span style="color:#e74c3c">(−${fmtIDR(p.buyAccruedAmt)})</span>
-        ${p.hasCouponCalc ? `+ Kupon Nett <span style="color:#27ae60">(+${fmtIDR(p.totalCouponNett)})</span>` : ''}
-        = <strong style="font-size:0.9rem;color:${isProfit?'#1a7a47':'#b01a1a'};">${fmtIDR(p.totalProfit)}</strong>
-      </div>
-      ${p.sellYtm ? `<div style="color:#888;">YTM Jual: <strong>${fmtPct(p.sellYtm,4)}</strong></div>` : ''}
+    <div style="overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;">
+        <thead>
+          <tr style="background:#fafafa;border-bottom:1px solid #f0f0f5;">
+            <th style="padding:7px 12px;text-align:left;font-size:0.65rem;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:0.8px;">Komponen</th>
+            <th style="padding:7px 8px;text-align:center;font-size:0.65rem;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:0.8px;width:24px;"></th>
+            <th style="padding:7px 12px;text-align:right;font-size:0.65rem;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:0.8px;">Nilai</th>
+            <th style="padding:7px 12px;text-align:left;font-size:0.65rem;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:0.8px;border-left:1px solid #f0f0f5;">Keterangan</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rowsHtml}
+          ${totalRow}
+        </tbody>
+      </table>
     </div>
   </div>`;
   })() : '';
