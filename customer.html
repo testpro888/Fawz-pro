@@ -1406,7 +1406,7 @@
 
       const BATCH = 50;
 
-      // Batch rows dengan client_id: update per-row berdasarkan client_id
+      // Batch rows dengan client_id: update jika sudah ada, insert jika belum
       for (let i = 0; i < rowsWithId.length; i += BATCH) {
         const batch = rowsWithId.slice(i, i + BATCH);
         btn.textContent = `Mengimport... (${Math.min(i + BATCH, rowsWithId.length)}/${rowsWithId.length})`;
@@ -1414,49 +1414,84 @@
         for (const item of batch) {
           const rowData = { ...item.supaRow };
           const clientId = rowData.client_id;
-          delete rowData.client_id; // jangan update PK/unique key itu sendiri
+          delete rowData.client_id; // jangan update kolom client_id itu sendiri
 
-          // Coba update dulu berdasarkan client_id
-          const { data: updated, error: updErr } = await window._supabase
+          // Cek apakah client_id sudah ada di DB
+          const { data: existing } = await window._supabase
             .from('customers')
-            .update(rowData)
+            .select('id')
             .eq('client_id', clientId)
-            .select('id');
+            .maybeSingle();
 
-          if (updErr) {
-            // Update gagal, coba insert
-            const insertRow = { ...rowData, client_id: clientId };
-            const { error: insErr } = await window._supabase
+          if (existing) {
+            // Sudah ada → update saja, tidak buat duplikat
+            const { error: updErr } = await window._supabase
               .from('customers')
-              .insert(insertRow);
-            if (insErr) { errors.push(`${clientId}: ${insErr.message}`); console.error('Insert err:', insErr); }
+              .update(rowData)
+              .eq('client_id', clientId);
+            if (updErr) { errors.push(`Update ${clientId}: ${updErr.message}`); console.error('Update err:', updErr); }
             else { success++; }
-          } else if (updated && updated.length > 0) {
-            success++;
           } else {
-            // Tidak ada baris yang ter-update (belum ada), insert baru
+            // Belum ada → insert baru
             const insertRow = { ...rowData, client_id: clientId };
             const { error: insErr } = await window._supabase
               .from('customers')
               .insert(insertRow);
-            if (insErr) { errors.push(`${clientId}: ${insErr.message}`); console.error('Insert err:', insErr); }
-            else { success++; }
+            if (insErr) {
+              // 23505 = unique_violation, artinya race condition — record sudah ada, anggap sukses
+              if (insErr.code === '23505') { success++; }
+              else { errors.push(`Insert ${clientId}: ${insErr.message}`); console.error('Insert err:', insErr); }
+            } else { success++; }
           }
         }
       }
 
-      // Batch insert rows tanpa client_id — satu per satu agar error tidak blokir semua
+      // Rows tanpa client_id: cek berdasarkan ktp_number atau email agar tidak duplikat
       for (let i = 0; i < rowsWithoutId.length; i++) {
         const item = rowsWithoutId[i];
         if (i % BATCH === 0) btn.textContent = `Mengimport... (${i}/${rowsWithoutId.length})`;
-        const { error } = await window._supabase
-          .from('customers')
-          .insert(item.supaRow);
-        if (error) {
-          // Skip duplicate (23505 = unique_violation)
-          if (error.code === '23505') { success++; } // anggap sudah ada, skip
-          else { errors.push(`Insert: ${error.message}`); console.error('Insert error detail:', error); }
-        } else { success++; }
+
+        const supaRow = item.supaRow;
+        let existingRow = null;
+
+        // Cek berdasarkan ktp_number jika tersedia
+        if (supaRow.ktp_number) {
+          const { data } = await window._supabase
+            .from('customers')
+            .select('id')
+            .eq('ktp_number', supaRow.ktp_number)
+            .maybeSingle();
+          existingRow = data;
+        }
+
+        // Kalau tidak ada ktp_number, cek berdasarkan email
+        if (!existingRow && supaRow.email) {
+          const { data } = await window._supabase
+            .from('customers')
+            .select('id')
+            .eq('email', supaRow.email)
+            .maybeSingle();
+          existingRow = data;
+        }
+
+        if (existingRow) {
+          // Sudah ada → update saja berdasarkan id internal
+          const { error: updErr } = await window._supabase
+            .from('customers')
+            .update(supaRow)
+            .eq('id', existingRow.id);
+          if (updErr) { errors.push(`Update (no clientID): ${updErr.message}`); console.error('Update err:', updErr); }
+          else { success++; }
+        } else {
+          // Belum ada → insert baru
+          const { error: insErr } = await window._supabase
+            .from('customers')
+            .insert(supaRow);
+          if (insErr) {
+            if (insErr.code === '23505') { success++; } // sudah ada, skip
+            else { errors.push(`Insert: ${insErr.message}`); console.error('Insert error detail:', insErr); }
+          } else { success++; }
+        }
       }
 
       // Reload data dari server supaya tampilan up-to-date
