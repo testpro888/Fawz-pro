@@ -1210,8 +1210,12 @@ function renderOutput(r) {
       <div style="background:#fff;border-radius:10px;padding:10px 13px;border:1px solid #e8e8f5;">
         <div style="font-size:0.63rem;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px;">Capital Gain Kotor</div>
         <div style="font-size:0.88rem;font-weight:700;color:${capIsProfit ? '#27ae60' : '#e74c3c'};">${capIsProfit ? '+' : ''}${fmtIDR(p.capitalGainGross)}</div>
-        <div style="font-size:0.7rem;color:#e74c3c;">PPh CG ${p.taxCapGain}%: −${fmtIDR(p.taxOnCapGain)}</div>
-        <div style="font-size:0.78rem;font-weight:700;color:${capIsProfit ? '#1a7a47' : '#b01a1a'};margin-top:2px;">Nett: ${fmtIDR(p.capitalGainNet)}</div>
+        ${capIsProfit
+          ? `<div style="font-size:0.7rem;color:#e74c3c;">PPh CG ${p.taxCapGain}%: −${fmtIDR(p.taxOnCapGain)}</div>
+             <div style="font-size:0.78rem;font-weight:700;color:#1a7a47;margin-top:2px;">Nett: ${fmtIDR(p.capitalGainNet)}</div>`
+          : `<div style="font-size:0.7rem;color:#aaa;">Rugi — tidak ada PPh Capital Gain</div>
+             <div style="font-size:0.78rem;font-weight:700;color:#b01a1a;margin-top:2px;">Capital Loss: ${fmtIDR(p.capitalGainNet)}</div>`
+        }
       </div>
       <div style="background:#fff;border-radius:10px;padding:10px 13px;border:1px solid #e8e8f5;">
         <div style="font-size:0.63rem;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px;">PPh Accrued Interest Jual</div>
@@ -1242,6 +1246,7 @@ function renderOutput(r) {
       <div style="margin-bottom:4px;">
         <strong>Rincian:</strong>
         Capital Gain Nett <span style="color:${capIsProfit?'#27ae60':'#e74c3c'}">(${fmtIDR(p.capitalGainNet)})</span>
+        ${capIsProfit ? `<span style="font-size:0.72rem;color:#aaa;">[kotor ${fmtIDR(p.capitalGainGross)} − PPh ${fmtIDR(p.taxOnCapGain)}]</span>` : `<span style="font-size:0.72rem;color:#aaa;">[Capital Loss, tanpa pajak]</span>`}
         + AI Jual Nett <span style="color:#27ae60">(+${fmtIDR(p.sellAccruedAmt - p.taxOnSellAI)})</span>
         − AI Beli <span style="color:#e74c3c">(−${fmtIDR(p.buyAccruedAmt)})</span>
         ${p.hasCouponCalc ? `+ Kupon Nett <span style="color:#27ae60">(+${fmtIDR(p.totalCouponNett)})</span>` : ''}
