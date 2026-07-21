@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <script src="config.js"></script>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Fawz Pro | Brand Logo</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --primary: #5645d4;
+      --primary-hover: #4534b3;
+      --brand-navy: #0a1530;
+      --ink: #1a1a1a;
+      --ink-deep: #000;
+      --charcoal: #37352f;
+      --slate: #5d5b54;
+      --steel: #787671;
+      --stone: #a4a097;
+      --muted: #bbb8b1;
+      --canvas: #ffffff;
+      --surface: #f6f5f4;
+      --surface-soft: #fafaf9;
+      --hairline: #e5e3df;
+      --hairline-soft: #ede9e4;
+      --hairline-strong: #c8c4be;
+      --tint-lavender: #e6e0f5;
+      --tint-mint: #d9f3e1;
+      --tint-peach: #ffe8d4;
+      --brand-green: #1aae39;
+      --brand-orange: #dd5b00;
+      --nav-h: 68px;
+    }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--surface);
+      min-height: 100vh;
+      padding-top: var(--nav-h);
+      color: var(--ink);
+    }
+    #navbar-placeholder { position: relative; z-index: 1000; }
+    .page-container { max-width: 1100px; margin: 0 auto; padding: 36px 28px 60px; }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+    /* ── PAGE HEADER ── */
+    .page-header {
+      margin-bottom: 28px;
+      animation: fadeUp 0.4s ease both;
+    }
+    .page-title { font-size: 26px; font-weight: 700; color: var(--ink-deep); letter-spacing: -0.4px; }
+    .page-sub { font-size: 14px; color: var(--stone); margin-top: 4px; }
+
+    /* ── UPLOAD CARD ── */
+    .upload-card {
+      background: var(--canvas);
+      border: 1px solid var(--hairline);
+      border-radius: 14px;
+      padding: 28px 28px 24px;
+      margin-bottom: 28px;
+      animation: fadeUp 0.4s 0.05s ease both;
+    }
+    .upload-card-title {
+      font-size: 15px; font-weight: 600; color: var(--ink-deep);
+      margin-bottom: 20px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .upload-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr 1fr;
+      gap: 16px;
+      align-items: end;
+    }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-label {
+      font-size: 12px; font-weight: 600; color: var(--slate);
+      text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .form-input, .form-select {
+      padding: 10px 14px;
+      border: 1px solid var(--hairline-strong);
+      border-radius: 8px;
+      font-size: 14px; font-family: inherit;
+      color: var(--ink);
+      background: var(--surface-soft);
+      transition: border-color 0.15s, box-shadow 0.15s;
+      outline: none;
+    }
+    .form-input:focus, .form-select:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(86,69,212,0.1);
+      background: var(--canvas);
+    }
+    .form-input[readonly] { background: var(--surface); color: var(--steel); cursor: default; }
+
+    /* File drop zone */
+    .file-dropzone {
+      border: 2px dashed var(--hairline-strong);
+      border-radius: 10px;
+      padding: 20px 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: var(--surface-soft);
+      position: relative;
+    }
+    .file-dropzone:hover, .file-dropzone.drag-over {
+      border-color: var(--primary);
+      background: var(--tint-lavender);
+    }
+    .file-dropzone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+    .dz-icon { font-size: 24px; margin-bottom: 6px; }
+    .dz-text { font-size: 13px; font-weight: 500; color: var(--slate); }
+    .dz-hint { font-size: 11px; color: var(--stone); margin-top: 3px; }
+
+    /* Color swatch picker */
+    .bg-picker { display: flex; flex-direction: column; gap: 6px; }
+    .bg-swatches {
+      display: flex; gap: 8px; flex-wrap: wrap;
+    }
+    .swatch {
+      width: 28px; height: 28px; border-radius: 6px;
+      cursor: pointer; border: 2px solid transparent;
+      transition: transform 0.15s, border-color 0.15s;
+      flex-shrink: 0;
+    }
+    .swatch:hover { transform: scale(1.15); }
+    .swatch.selected { border-color: var(--primary); transform: scale(1.15); }
+    .swatch-white { background: #ffffff; border: 2px solid var(--hairline-strong) !important; }
+    .swatch-black { background: #1a1a1a; }
+    .swatch-navy  { background: #0a1530; }
+    .swatch-gray  { background: #f6f5f4; border: 2px solid var(--hairline-strong) !important; }
+    .swatch-gold  { background: #f5a623; }
+    .swatch-custom { background: linear-gradient(135deg, #f06, #90f, #06f); position: relative; }
+    .swatch-custom input[type="color"] {
+      position: absolute; inset: 0; opacity: 0; cursor: pointer;
+      width: 100%; height: 100%; border: none; padding: 0;
+    }
+    .bg-label-row { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--stone); }
+
+    /* Submit btn */
+    .btn-upload {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      padding: 11px 24px;
+      background: var(--primary);
+      color: #fff;
+      border: none; border-radius: 8px;
+      font-size: 14px; font-weight: 600; font-family: inherit;
+      cursor: pointer; transition: background 0.15s, transform 0.1s;
+      white-space: nowrap;
+      align-self: flex-end;
+    }
+    .btn-upload:hover { background: var(--primary-hover); }
+    .btn-upload:active { transform: scale(0.97); }
+    .btn-upload:disabled { opacity: 0.6; cursor: not-allowed; }
+    /* ── SECTION ── */
+    .section-block {
+      margin-bottom: 28px;
+      animation: fadeUp 0.4s ease both;
+    }
+    .section-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .section-title {
+      font-size: 16px; font-weight: 700; color: var(--ink-deep);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .section-count {
+      font-size: 12px; font-weight: 500; color: var(--stone);
+      background: var(--surface);
+      padding: 2px 10px; border-radius: 20px;
+      border: 1px solid var(--hairline);
+    }
+
+    /* ── LOGO GRID ── */
+    .logo-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 16px;
+    }
+    .logo-card {
+      background: var(--canvas);
+      border: 1px solid var(--hairline);
+      border-radius: 12px;
+      overflow: hidden;
+      transition: box-shadow 0.2s, transform 0.2s;
+    }
+    .logo-card:hover { box-shadow: 0 6px 24px rgba(0,0,0,0.08); transform: translateY(-2px); }
+    .logo-preview {
+      width: 100%; aspect-ratio: 3/2;
+      display: flex; align-items: center; justify-content: center;
+      padding: 20px;
+      position: relative;
+    }
+    .logo-preview img {
+      max-width: 100%; max-height: 100%;
+      object-fit: contain;
+    }
+    .logo-meta {
+      padding: 12px 14px;
+      border-top: 1px solid var(--hairline-soft);
+    }
+    .logo-name {
+      font-size: 13px; font-weight: 600; color: var(--ink-deep);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .logo-format-badge {
+      display: inline-flex; align-items: center;
+      font-size: 10px; font-weight: 700;
+      padding: 2px 8px; border-radius: 20px;
+      text-transform: uppercase; letter-spacing: 0.5px;
+      margin-top: 4px;
+    }
+    .badge-png  { background: #dbeafe; color: #1d4ed8; }
+    .badge-jpg  { background: #fef9c3; color: #854d0e; }
+    .badge-jpeg { background: #fef9c3; color: #854d0e; }
+    .badge-svg  { background: #dcfce7; color: #166534; }
+    .badge-pdf  { background: #fee2e2; color: #991b1b; }
+    .badge-ai   { background: #ede9fe; color: #5b21b6; }
+    .badge-eps  { background: #fce7f3; color: #9d174d; }
+    .badge-webp { background: #e0f2fe; color: #0369a1; }
+    .badge-default { background: var(--surface); color: var(--steel); }
+
+    .logo-actions {
+      display: flex; gap: 6px;
+      padding: 8px 14px 12px;
+    }
+    .btn-action {
+      flex: 1; display: flex; align-items: center; justify-content: center; gap: 5px;
+      padding: 7px 10px;
+      font-size: 12px; font-weight: 600; font-family: inherit;
+      border-radius: 7px; border: none; cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn-download {
+      background: var(--tint-mint); color: #15803d;
+      border: 1px solid #bbf7d0;
+    }
+    .btn-download:hover { background: #bbf7d0; }
+    .btn-delete {
+      background: #fee2e2; color: #991b1b;
+      border: 1px solid #fca5a5;
+    }
+    .btn-delete:hover { background: #fca5a5; }
+
+    /* Uploaded by */
+    .logo-uploader { font-size: 11px; color: var(--stone); padding: 0 14px 10px; }
+
+    /* ── PALETTE SECTION ── */
+    .palette-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 12px;
+    }
+    .palette-card {
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid var(--hairline);
+      background: var(--canvas);
+    }
+    .palette-swatch-big {
+      height: 72px;
+      width: 100%;
+    }
+    .palette-info { padding: 10px 12px; }
+    .palette-color-name { font-size: 13px; font-weight: 600; color: var(--ink-deep); }
+    .palette-code {
+      font-size: 11px; color: var(--steel); font-family: monospace;
+      margin-top: 2px; cursor: pointer; letter-spacing: 0.3px;
+    }
+    .palette-code:hover { color: var(--primary); }
+
+    /* Add palette btn */
+    .btn-add-palette {
+      display: flex; align-items: center; gap: 6px;
+      padding: 8px 16px;
+      background: var(--surface);
+      border: 1px dashed var(--hairline-strong);
+      border-radius: 8px;
+      font-size: 13px; font-weight: 600; color: var(--slate);
+      cursor: pointer; transition: all 0.15s; font-family: inherit;
+    }
+    .btn-add-palette:hover { background: var(--tint-lavender); border-color: var(--primary); color: var(--primary); }
+
+    /* ── EMPTY STATE ── */
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      background: var(--canvas);
+      border: 1px solid var(--hairline);
+      border-radius: 12px;
+      color: var(--stone);
+    }
+    .empty-state-icon { font-size: 36px; margin-bottom: 10px; }
+    .empty-state-text { font-size: 14px; font-weight: 500; }
+    .empty-state-hint { font-size: 12px; margin-top: 4px; }
+
+    /* ── MODAL ── */
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(10,21,48,0.45);
+      backdrop-filter: blur(4px);
+      z-index: 1200;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none; transition: opacity 0.2s;
+      padding: 20px;
+    }
+    .modal-overlay.open { opacity: 1; pointer-events: all; }
+    .modal-box {
+      background: var(--canvas);
+      border-radius: 16px;
+      width: 100%; max-width: 420px;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.18);
+      transform: scale(0.95) translateY(8px);
+      transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1);
+      overflow: hidden;
+    }
+    .modal-overlay.open .modal-box { transform: scale(1) translateY(0); }
+    .modal-header {
+      padding: 20px 24px 14px;
+      border-bottom: 1px solid var(--hairline);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .modal-title { font-size: 16px; font-weight: 700; color: var(--ink-deep); }
+    .modal-close {
+      width: 30px; height: 30px; border-radius: 8px;
+      border: none; background: var(--surface);
+      color: var(--slate); font-size: 18px;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: background 0.15s;
+    }
+    .modal-close:hover { background: var(--hairline); }
+    .modal-body { padding: 20px 24px; display: flex; flex-direction: column; gap: 14px; }
+    .modal-footer {
+      padding: 12px 24px 20px;
+      display: flex; gap: 10px; justify-content: flex-end;
+    }
+    .btn-cancel {
+      padding: 9px 20px; border-radius: 8px;
+      border: 1px solid var(--hairline-strong);
+      background: var(--surface); color: var(--charcoal);
+      font-size: 13px; font-weight: 600; font-family: inherit;
+      cursor: pointer; transition: background 0.15s;
+    }
+    .btn-cancel:hover { background: var(--hairline); }
+    .btn-confirm {
+      padding: 9px 20px; border-radius: 8px;
+      border: none; background: var(--primary); color: #fff;
+      font-size: 13px; font-weight: 600; font-family: inherit;
+      cursor: pointer; transition: background 0.15s;
+    }
+    .btn-confirm:hover { background: var(--primary-hover); }
+    .btn-danger-confirm {
+      background: #dc2626; color: #fff;
+    }
+    .btn-danger-confirm:hover { background: #b91c1c; }
+
+    /* Toast */
+    .toast {
+      position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px);
+      background: var(--ink-deep); color: #fff;
+      padding: 10px 20px; border-radius: 8px;
+      font-size: 13px; font-weight: 500;
+      z-index: 9999; opacity: 0;
+      transition: all 0.3s ease; pointer-events: none;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .toast.success { background: #166534; }
+    .toast.error { background: #991b1b; }
+
+    /* Upload progress */
+    .upload-progress {
+      display: none; align-items: center; gap: 10px;
+      padding: 10px 14px; background: var(--tint-lavender);
+      border-radius: 8px; font-size: 13px; color: var(--primary);
+      font-weight: 500;
+    }
+    .upload-progress.show { display: flex; }
+    .progress-spinner {
+      width: 16px; height: 16px;
+      border: 2px solid rgba(86,69,212,0.2);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      flex-shrink: 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .upload-grid { grid-template-columns: 1fr 1fr; }
+      .logo-grid { grid-template-columns: 1fr 1fr; }
+      .palette-grid { grid-template-columns: repeat(3, 1fr); }
+      .page-container { padding: 20px 14px 48px; }
+    }
+    @media (max-width: 480px) {
+      .upload-grid { grid-template-columns: 1fr; }
+      .logo-grid { grid-template-columns: 1fr; }
+      .palette-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+<div id="navbar-placeholder"></div>
+<div class="page-container">
+  <!-- PAGE HEADER -->
+  <div class="page-header">
+    <div class="page-title">🎨 Brand Logo</div>
+    <div class="page-sub">Kelola aset visual brand Fawz Pro — logo, ikon, dan palet warna.</div>
+  </div>
+
+  <!-- UPLOAD FORM (head_account only) -->
+  <div class="upload-card" id="uploadSection" style="display:none;">
+    <div class="upload-card-title">
+      <span>➕</span> Upload Logo Baru
+    </div>
+    <div class="upload-grid">
+      <!-- File -->
+      <div class="form-group">
+        <label class="form-label">File Logo</label>
+        <div class="file-dropzone" id="fileDropzone">
+          <input type="file" id="fileInput" accept=".png,.jpg,.jpeg,.svg,.pdf,.ai,.eps,.webp"
+            onchange="onFileSelected(event)"/>
+          <div class="dz-icon">📁</div>
+          <div class="dz-text" id="dzText">Klik atau drag file ke sini</div>
+          <div class="dz-hint">PNG, JPG, SVG, PDF, AI, EPS, WebP</div>
+        </div>
+      </div>
+
+      <!-- Nama -->
+      <div class="form-group">
+        <label class="form-label">Nama Logo</label>
+        <input type="text" id="logoName" class="form-input" placeholder="cth. Primary Logo Dark"/>
+        <div style="margin-top:10px;">
+          <label class="form-label">Kategori</label>
+          <select id="logoCategory" class="form-select">
+            <option value="primary">Primary Logo</option>
+            <option value="secondary">Secondary Logo</option>
+            <option value="icon">Icon Logo</option>
+            <option value="monochrome">Monochrome Logo</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Latar & Format -->
+      <div class="form-group">
+        <div class="bg-picker">
+          <label class="form-label">Latar Belakang</label>
+          <div class="bg-swatches" id="bgSwatches">
+            <div class="swatch swatch-white selected" data-color="#ffffff" data-label="Putih" onclick="selectBg(this)" title="Putih"></div>
+            <div class="swatch swatch-black" data-color="#1a1a1a" data-label="Hitam" onclick="selectBg(this)" title="Hitam"></div>
+            <div class="swatch swatch-navy"  data-color="#0a1530" data-label="Navy"  onclick="selectBg(this)" title="Navy"></div>
+            <div class="swatch swatch-gray"  data-color="#f6f5f4" data-label="Abu"   onclick="selectBg(this)" title="Abu-abu"></div>
+            <div class="swatch swatch-gold"  data-color="#f5a623" data-label="Emas"  onclick="selectBg(this)" title="Emas"></div>
+            <div class="swatch swatch-custom" title="Warna Custom">
+              <input type="color" id="customBgColor" value="#ffffff" oninput="onCustomBgColor(this)"/>
+            </div>
+          </div>
+          <div class="bg-label-row">
+            <span id="bgSelectedLabel">Putih</span>
+            <span id="bgSelectedHex" style="font-family:monospace;font-size:11px;">#ffffff</span>
+          </div>
+        </div>
+        <div style="margin-top:12px;">
+          <label class="form-label">Format</label>
+          <input type="text" id="logoFormat" class="form-input" readonly placeholder="Otomatis dari file"/>
+        </div>
+      </div>
+
+      <!-- Submit -->
+      <div class="form-group" style="justify-content:flex-end;">
+        <div class="upload-progress" id="uploadProgress">
+          <div class="progress-spinner"></div>
+          Mengupload...
+        </div>
+        <button class="btn-upload" id="btnUpload" onclick="submitUpload()">
+          ☁️ Upload
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PALETTE WARNA -->
+  <div class="section-block" style="animation-delay:0.08s;">
+    <div class="section-header">
+      <div class="section-title">🎨 Palet Warna</div>
+      <button class="btn-add-palette" id="btnAddPalette" style="display:none;" onclick="openPaletteModal()">
+        + Tambah Warna
+      </button>
+    </div>
+    <div class="palette-grid" id="paletteGrid">
+      <div class="empty-state" style="grid-column:1/-1;">
+        <div class="empty-state-icon">🎨</div>
+        <div class="empty-state-text">Belum ada palet warna</div>
+        <div class="empty-state-hint">Palet akan ditambahkan oleh Head Account</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PRIMARY LOGO -->
+  <div class="section-block" style="animation-delay:0.12s;">
+    <div class="section-header">
+      <div class="section-title">🏷️ Primary Logo <span class="section-count" id="countPrimary">0</span></div>
+    </div>
+    <div class="logo-grid" id="gridPrimary">
+      <div class="empty-state"><div class="empty-state-icon">🏷️</div><div class="empty-state-text">Belum ada logo</div></div>
+    </div>
+  </div>
+
+  <!-- SECONDARY LOGO -->
+  <div class="section-block" style="animation-delay:0.16s;">
+    <div class="section-header">
+      <div class="section-title">🔖 Secondary Logo <span class="section-count" id="countSecondary">0</span></div>
+    </div>
+    <div class="logo-grid" id="gridSecondary">
+      <div class="empty-state"><div class="empty-state-icon">🔖</div><div class="empty-state-text">Belum ada logo</div></div>
+    </div>
+  </div>
+
+  <!-- ICON LOGO -->
+  <div class="section-block" style="animation-delay:0.20s;">
+    <div class="section-header">
+      <div class="section-title">⚡ Icon Logo <span class="section-count" id="countIcon">0</span></div>
+    </div>
+    <div class="logo-grid" id="gridIcon">
+      <div class="empty-state"><div class="empty-state-icon">⚡</div><div class="empty-state-text">Belum ada logo</div></div>
+    </div>
+  </div>
+
+  <!-- MONOCHROME LOGO -->
+  <div class="section-block" style="animation-delay:0.24s;">
+    <div class="section-header">
+      <div class="section-title">⬛ Monochrome Logo <span class="section-count" id="countMonochrome">0</span></div>
+    </div>
+    <div class="logo-grid" id="gridMonochrome">
+      <div class="empty-state"><div class="empty-state-icon">⬛</div><div class="empty-state-text">Belum ada logo</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Tambah Palet -->
+<div class="modal-overlay" id="paletteModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title">Tambah Warna Palet</div>
+      <button class="modal-close" onclick="closePaletteModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Nama Warna</label>
+        <input type="text" id="paletteName" class="form-input" placeholder="cth. Primary Purple"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Kode Warna (HEX)</label>
+        <div style="display:flex;gap:10px;align-items:center;">
+          <input type="color" id="paletteColorPicker" value="#5645d4"
+            style="width:44px;height:44px;border:none;border-radius:8px;cursor:pointer;padding:2px;"
+            oninput="document.getElementById('paletteHex').value=this.value"/>
+          <input type="text" id="paletteHex" class="form-input" placeholder="#5645d4" value="#5645d4"
+            oninput="syncColorPicker()"
+            style="font-family:monospace;flex:1;"/>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closePaletteModal()">Batal</button>
+      <button class="btn-confirm" onclick="savePalette()">Simpan</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Konfirmasi Hapus -->
+<div class="modal-overlay" id="deleteModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title">Hapus Logo</div>
+      <button class="modal-close" onclick="closeDeleteModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:14px;color:var(--charcoal);line-height:1.6;">
+        Yakin ingin menghapus logo <strong id="deleteTargetName"></strong>?<br/>
+        Tindakan ini tidak dapat dibatalkan.
+      </p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeDeleteModal()">Batal</button>
+      <button class="btn-confirm btn-danger-confirm" onclick="confirmDelete()">Hapus</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script src="navbar.js"></script>
+<script>
+/* ── INIT ── */
+const SUPABASE_URL = (window.__FAWZ_CONFIG__ || {}).supabaseUrl || '';
+const SUPABASE_KEY = (window.__FAWZ_CONFIG__ || {}).supabaseKey || '';
+let _sb;
+
+function waitSb(cb, n) {
+  n = n || 0;
+  if (window._supabase) { _sb = window._supabase; cb(); return; }
+  if (n > 30) return;
+  setTimeout(() => waitSb(cb, n + 1), 300);
+}
+
+/* ── USER ── */
+function getUser() {
+  try {
+    const raw = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember');
+    return raw ? JSON.parse(raw) : null;
+  } catch(e) { return null; }
+}
+
+const user = getUser();
+const isHeadAccount = user && user.role === 'head_account';
+
+/* ── SELECTED STATE ── */
+let selectedBgColor = '#ffffff';
+let selectedBgLabel = 'Putih';
+let selectedFile = null;
+let deleteTargetId = null;
+let deleteTargetPath = null;
+
+/* ── ON LOAD ── */
+window.addEventListener('DOMContentLoaded', () => {
+  if (isHeadAccount) {
+    document.getElementById('uploadSection').style.display = 'block';
+    document.getElementById('btnAddPalette').style.display = 'flex';
+  }
+
+  // Drag & drop
+  const dz = document.getElementById('fileDropzone');
+  dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
+  dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+  dz.addEventListener('drop', e => {
+    e.preventDefault(); dz.classList.remove('drag-over');
+    const f = e.dataTransfer.files[0];
+    if (f) applyFile(f);
+  });
+
+  waitSb(() => {
+    loadPalette();
+    loadLogos();
+  });
+});
+
+/* ── FILE SELECTION ── */
+function onFileSelected(e) { applyFile(e.target.files[0]); }
+function applyFile(f) {
+  selectedFile = f;
+  const ext = f.name.split('.').pop().toLowerCase();
+  document.getElementById('logoFormat').value = ext.toUpperCase();
+  document.getElementById('dzText').textContent = f.name;
+  if (!document.getElementById('logoName').value) {
+    document.getElementById('logoName').value = f.name.replace(/\.[^.]+$/, '');
+  }
+}
+
+/* ── BG SWATCH ── */
+function selectBg(el) {
+  document.querySelectorAll('#bgSwatches .swatch').forEach(s => s.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedBgColor = el.dataset.color;
+  selectedBgLabel = el.dataset.label;
+  document.getElementById('bgSelectedLabel').textContent = selectedBgLabel;
+  document.getElementById('bgSelectedHex').textContent = selectedBgColor;
+}
+function onCustomBgColor(input) {
+  selectedBgColor = input.value;
+  selectedBgLabel = 'Custom';
+  document.querySelectorAll('#bgSwatches .swatch').forEach(s => s.classList.remove('selected'));
+  input.parentElement.classList.add('selected');
+  document.getElementById('bgSelectedLabel').textContent = 'Custom';
+  document.getElementById('bgSelectedHex').textContent = input.value;
+}
+
+/* ── UPLOAD ── */
+async function submitUpload() {
+  if (!selectedFile) { showToast('Pilih file terlebih dahulu', 'error'); return; }
+  const name = document.getElementById('logoName').value.trim();
+  const category = document.getElementById('logoCategory').value;
+  const format = document.getElementById('logoFormat').value;
+  if (!name) { showToast('Nama logo harus diisi', 'error'); return; }
+
+  const btn = document.getElementById('btnUpload');
+  const progress = document.getElementById('uploadProgress');
+  btn.style.display = 'none';
+  progress.classList.add('show');
+
+  try {
+    const ext = selectedFile.name.split('.').pop().toLowerCase();
+    const filePath = `logos/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+    const { error: upErr } = await _sb.storage.from('brand-assets').upload(filePath, selectedFile, { upsert: false });
+    if (upErr) throw upErr;
+
+    const { data: urlData } = _sb.storage.from('brand-assets').getPublicUrl(filePath);
+    const publicUrl = urlData.publicUrl;
+
+    const { error: dbErr } = await _sb.from('brand_logos').insert({
+      name, category, format: format.toLowerCase(), file_path: filePath,
+      file_url: publicUrl, bg_color: selectedBgColor, bg_label: selectedBgLabel,
+      uploaded_by: user.name || user.username || '—'
+    });
+    if (dbErr) throw dbErr;
+
+    showToast('Logo berhasil diupload! ✓', 'success');
+    resetForm();
+    loadLogos();
+  } catch(e) {
+    console.error(e);
+    showToast('Gagal upload: ' + (e.message || e), 'error');
+  } finally {
+    btn.style.display = '';
+    progress.classList.remove('show');
+  }
+}
+
+function resetForm() {
+  selectedFile = null;
+  document.getElementById('fileInput').value = '';
+  document.getElementById('logoName').value = '';
+  document.getElementById('logoFormat').value = '';
+  document.getElementById('dzText').textContent = 'Klik atau drag file ke sini';
+  document.getElementById('logoCategory').value = 'primary';
+  selectBg(document.querySelector('.swatch-white'));
+}
+
+/* ── LOAD LOGOS ── */
+async function loadLogos() {
+  const { data, error } = await _sb.from('brand_logos').select('*').order('created_at', { ascending: false });
+  if (error) { console.error(error); return; }
+  const rows = data || [];
+
+  const cats = { primary: [], secondary: [], icon: [], monochrome: [] };
+  rows.forEach(r => { if (cats[r.category]) cats[r.category].push(r); });
+
+  renderLogoSection('gridPrimary',    'countPrimary',    cats.primary,    'Belum ada Primary Logo', '🏷️');
+  renderLogoSection('gridSecondary',  'countSecondary',  cats.secondary,  'Belum ada Secondary Logo', '🔖');
+  renderLogoSection('gridIcon',       'countIcon',       cats.icon,       'Belum ada Icon Logo', '⚡');
+  renderLogoSection('gridMonochrome', 'countMonochrome', cats.monochrome, 'Belum ada Monochrome Logo', '⬛');
+}
+
+function renderLogoSection(gridId, countId, items, emptyText, emptyIcon) {
+  const grid = document.getElementById(gridId);
+  const countEl = document.getElementById(countId);
+  if (countEl) countEl.textContent = items.length;
+
+  if (items.length === 0) {
+    grid.innerHTML = `<div class="empty-state">
+      <div class="empty-state-icon">${emptyIcon}</div>
+      <div class="empty-state-text">${emptyText}</div>
+    </div>`;
+    return;
+  }
+
+  grid.innerHTML = items.map(r => logoCardHTML(r)).join('');
+}
+
+function logoCardHTML(r) {
+  const fmtClass = 'badge-' + (r.format || 'default');
+  const fmtLabel = (r.format || '—').toUpperCase();
+  const bg = r.bg_color || '#ffffff';
+  const isLight = isLightColor(bg);
+  const checkerStyle = bg === 'transparent'
+    ? 'background: repeating-conic-gradient(#ccc 0% 25%, #fff 0% 50%) 0 0 / 16px 16px;'
+    : `background: ${bg};`;
+
+  const deleteBtn = isHeadAccount
+    ? `<button class="btn-action btn-delete" onclick="openDeleteModal('${r.id}','${escHtml(r.name)}','${escHtml(r.file_path)}')">🗑 Hapus</button>`
+    : '';
+
+  return `<div class="logo-card">
+    <div class="logo-preview" style="${checkerStyle}">
+      <img src="${escHtml(r.file_url)}" alt="${escHtml(r.name)}" loading="lazy"/>
+    </div>
+    <div class="logo-meta">
+      <div class="logo-name" title="${escHtml(r.name)}">${escHtml(r.name)}</div>
+      <span class="logo-format-badge ${fmtClass}">${fmtLabel}</span>
+    </div>
+    <div class="logo-actions">
+      <a class="btn-action btn-download" href="${escHtml(r.file_url)}" download="${escHtml(r.name)}.${r.format||'file'}">⬇ Download</a>
+      ${deleteBtn}
+    </div>
+    <div class="logo-uploader">Diupload oleh ${escHtml(r.uploaded_by || '—')}</div>
+  </div>`;
+}
+
+/* ── PALETTE ── */
+async function loadPalette() {
+  const { data, error } = await _sb.from('brand_palette').select('*').order('created_at', { ascending: true });
+  if (error) { console.error(error); return; }
+  renderPalette(data || []);
+}
+
+function renderPalette(items) {
+  const grid = document.getElementById('paletteGrid');
+  if (items.length === 0) {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;">
+      <div class="empty-state-icon">🎨</div>
+      <div class="empty-state-text">Belum ada palet warna</div>
+      <div class="empty-state-hint">Palet akan ditambahkan oleh Head Account</div>
+    </div>`;
+    return;
+  }
+  grid.innerHTML = items.map(c => `
+    <div class="palette-card">
+      <div class="palette-swatch-big" style="background:${escHtml(c.color_hex)};"></div>
+      <div class="palette-info">
+        <div class="palette-color-name">${escHtml(c.color_name)}</div>
+        <div class="palette-code" onclick="copyCode('${escHtml(c.color_hex)}')" title="Klik untuk copy">${escHtml(c.color_hex)}</div>
+      </div>
+    </div>`).join('');
+}
+
+let _editPaletteId = null;
+function openPaletteModal(id, name, hex) {
+  _editPaletteId = id || null;
+  document.getElementById('paletteName').value = name || '';
+  document.getElementById('paletteHex').value = hex || '#5645d4';
+  document.getElementById('paletteColorPicker').value = hex || '#5645d4';
+  document.getElementById('paletteModal').classList.add('open');
+}
+function closePaletteModal() { document.getElementById('paletteModal').classList.remove('open'); }
+
+function syncColorPicker() {
+  const hex = document.getElementById('paletteHex').value;
+  if (/^#[0-9a-fA-F]{6}$/.test(hex)) document.getElementById('paletteColorPicker').value = hex;
+}
+
+async function savePalette() {
+  const name = document.getElementById('paletteName').value.trim();
+  const hex  = document.getElementById('paletteHex').value.trim();
+  if (!name || !hex) { showToast('Nama dan kode warna harus diisi', 'error'); return; }
+  if (!/^#[0-9a-fA-F]{3,8}$/.test(hex)) { showToast('Format HEX tidak valid', 'error'); return; }
+
+  let err;
+  if (_editPaletteId) {
+    ({ error: err } = await _sb.from('brand_palette').update({ color_name: name, color_hex: hex }).eq('id', _editPaletteId));
+  } else {
+    ({ error: err } = await _sb.from('brand_palette').insert({ color_name: name, color_hex: hex }));
+  }
+
+  if (err) { showToast('Gagal simpan: ' + err.message, 'error'); return; }
+  showToast('Warna berhasil disimpan ✓', 'success');
+  closePaletteModal();
+  loadPalette();
+}
+
+/* ── DELETE ── */
+function openDeleteModal(id, name, path) {
+  deleteTargetId = id;
+  deleteTargetPath = path;
+  document.getElementById('deleteTargetName').textContent = name;
+  document.getElementById('deleteModal').classList.add('open');
+}
+function closeDeleteModal() { document.getElementById('deleteModal').classList.remove('open'); }
+
+async function confirmDelete() {
+  if (!deleteTargetId) return;
+  try {
+    if (deleteTargetPath) {
+      await _sb.storage.from('brand-assets').remove([deleteTargetPath]);
+    }
+    const { error } = await _sb.from('brand_logos').delete().eq('id', deleteTargetId);
+    if (error) throw error;
+    showToast('Logo berhasil dihapus', 'success');
+    closeDeleteModal();
+    loadLogos();
+  } catch(e) {
+    showToast('Gagal hapus: ' + (e.message || e), 'error');
+  }
+}
+
+/* ── HELPERS ── */
+function copyCode(text) {
+  navigator.clipboard.writeText(text).then(() => showToast('Kode warna disalin: ' + text, 'success'));
+}
+
+function isLightColor(hex) {
+  if (!hex || hex === 'transparent') return true;
+  const c = hex.replace('#','');
+  const r = parseInt(c.substr(0,2),16), g = parseInt(c.substr(2,2),16), b = parseInt(c.substr(4,2),16);
+  return (r*299 + g*587 + b*114) / 1000 > 128;
+}
+
+function escHtml(str) {
+  return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+let _toastTimer;
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast ' + (type||'');
+  t.classList.add('show');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => t.classList.remove('show'), 3200);
+}
+</script>
+</body>
+</html>
