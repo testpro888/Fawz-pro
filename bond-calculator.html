@@ -286,25 +286,36 @@
           <div class="form-section">
             <div class="form-section-label">Informasi Transaksi</div>
 
-            <!-- Tanggal Beli — selalu tampil -->
-            <div class="form-row">
-              <div class="form-group">
-                <label class="form-label">Trade Date <small id="lbl-trade-sub">Beli</small></label>
-                <input class="form-input" id="inp-trade" type="date" onchange="onTradeChange()"/>
-              </div>
-              <div class="form-group">
-                <label class="form-label">Settlement Date <small>(+2)</small></label>
-                <input class="form-input" id="inp-settle" type="date" onchange="onInputChange()"/>
-              </div>
+            <!-- Checkbox opsional tanggal — hanya tampil di mode Jual -->
+            <div id="grp-trade-date-toggle" style="display:none;margin-bottom:10px;">
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                <input type="checkbox" id="chk-use-trade-date" onchange="toggleTradeDateSection()" style="width:15px;height:15px;cursor:pointer;accent-color:var(--gold);"/>
+                <span style="font-size:0.72rem;font-weight:700;color:#666;text-transform:uppercase;letter-spacing:0.5px;">Sertakan Tanggal Beli</span>
+                <span style="font-size:0.7rem;color:#aaa;font-weight:400;text-transform:none;">(untuk hitung accrued interest & kupon)</span>
+              </label>
             </div>
-            <div class="form-row">
-              <div class="form-group">
-                <label class="form-label">Last Coupon <small>(otomatis)</small></label>
-                <input class="form-input readonly" id="inp-last-coupon" type="date" readonly/>
+
+            <!-- Trade Date & Settlement — tersembunyi di Jual jika checkbox off -->
+            <div id="grp-trade-date-fields">
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Trade Date</label>
+                  <input class="form-input" id="inp-trade" type="date" onchange="onTradeChange()"/>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Settlement Date <small>(+2)</small></label>
+                  <input class="form-input" id="inp-settle" type="date" onchange="onInputChange()"/>
+                </div>
               </div>
-              <div class="form-group">
-                <label class="form-label">Next Coupon <small>(otomatis)</small></label>
-                <input class="form-input readonly" id="inp-next-coupon" type="date" readonly/>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Last Coupon <small>(otomatis)</small></label>
+                  <input class="form-input readonly" id="inp-last-coupon" type="date" readonly/>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Next Coupon <small>(otomatis)</small></label>
+                  <input class="form-input readonly" id="inp-next-coupon" type="date" readonly/>
+                </div>
               </div>
             </div>
 
@@ -313,7 +324,7 @@
               <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:8px;">
                 <input type="checkbox" id="chk-sell-custom-date" onchange="toggleSellCustomDate()" style="width:15px;height:15px;cursor:pointer;accent-color:var(--gold);"/>
                 <span style="font-size:0.72rem;font-weight:700;color:#666;text-transform:uppercase;letter-spacing:0.5px;">Sertakan Tanggal Jual</span>
-                <span style="font-size:0.7rem;color:#aaa;font-weight:400;text-transform:none;">(untuk hitung kupon & accrued)</span>
+                <span style="font-size:0.7rem;color:#aaa;font-weight:400;text-transform:none;">(untuk hitung kupon & accrued jual)</span>
               </label>
               <div id="grp-sell-date-fields" style="display:none;">
                 <div class="form-row">
@@ -852,18 +863,42 @@ function setCalcType(t) {
   calcMode = t;
   document.getElementById('tab-secondary').classList.toggle('active', t === 'beli');
   document.getElementById('tab-ipo').classList.toggle('active', t === 'jual');
-  // Tampilkan field harga jual hanya di mode jual
+
   const showSell = t === 'jual';
+
+  // Field harga jual
   document.getElementById('row-sell-price').style.display = showSell ? '' : 'none';
-  // Tampilkan checkbox tanggal jual di Informasi Transaksi hanya mode jual
-  document.getElementById('grp-sell-custom-date').style.display = showSell ? '' : 'none';
-  // Label Trade Date
-  document.getElementById('lbl-trade-sub').textContent = showSell ? 'Beli' : '';
-  // Reset checkbox saat ganti mode
-  if (!showSell) {
-    const chk = document.getElementById('chk-sell-custom-date');
-    if (chk) chk.checked = false;
+
+  if (showSell) {
+    // Mode Jual: tampilkan checkbox toggle tanggal beli, sembunyikan tanggal dulu
+    document.getElementById('grp-trade-date-toggle').style.display = '';
+    document.getElementById('grp-trade-date-fields').style.display = 'none';
+    document.getElementById('chk-use-trade-date').checked = false;
+    // Tampilkan checkbox tanggal jual
+    document.getElementById('grp-sell-custom-date').style.display = '';
+    // Reset checkbox tanggal jual
+    document.getElementById('chk-sell-custom-date').checked = false;
     document.getElementById('grp-sell-date-fields').style.display = 'none';
+  } else {
+    // Mode Beli: sembunyikan toggle, selalu tampilkan tanggal
+    document.getElementById('grp-trade-date-toggle').style.display = 'none';
+    document.getElementById('grp-trade-date-fields').style.display = '';
+    // Sembunyikan semua hal jual
+    document.getElementById('grp-sell-custom-date').style.display = 'none';
+    document.getElementById('chk-sell-custom-date').checked = false;
+    document.getElementById('grp-sell-date-fields').style.display = 'none';
+  }
+}
+
+function toggleTradeDateSection() {
+  const checked = document.getElementById('chk-use-trade-date').checked;
+  document.getElementById('grp-trade-date-fields').style.display = checked ? '' : 'none';
+  if (checked && !document.getElementById('inp-trade').value) {
+    // Isi default tanggal hari ini
+    const today = new Date();
+    document.getElementById('inp-trade').value  = toISO(today);
+    document.getElementById('inp-settle').value = toISO(addDays(today, 2));
+    onInputChange();
   }
 }
 
@@ -967,32 +1002,47 @@ function calculate() {
 
   // Sell mode fields
   const isJual      = calcMode === 'jual';
+  const useTradeDateBeli = !isJual || document.getElementById('chk-use-trade-date')?.checked;
   const sellPrice   = isJual ? (parseFloat(document.getElementById('inp-sell-price').value) || null) : null;
   const sellYtm     = isJual ? (parseFloat(document.getElementById('inp-sell-yield').value) || null) : null;
-  const useCustomDate = isJual && document.getElementById('chk-sell-custom-date')?.checked;
+  const useCustomSellDate = isJual && document.getElementById('chk-sell-custom-date')?.checked;
   const sellSettle  = isJual
-    ? (useCustomDate && document.getElementById('inp-sell-date').value
+    ? (useCustomSellDate && document.getElementById('inp-sell-date').value
         ? document.getElementById('inp-sell-date').value
-        : settle)
+        : (useTradeDateBeli ? settle : null))
     : null;
 
-  if (!maturity || !settle) { alert('Harap isi Maturity Date dan Settlement Date.'); return; }
+  if (!maturity) { alert('Harap isi Maturity Date.'); return; }
+  if (!isJual && !settle) { alert('Harap isi Settlement Date.'); return; }
   if (coupon <= 0) { alert('Harap isi Coupon Rate.'); return; }
   if (isJual && !sellPrice) { alert('Harap isi Harga Jual.'); return; }
 
-  const { last: lastCoupon, next: nextCoupon } = calcCouponDates(settle, maturity, freq);
-  if (!lastCoupon || !nextCoupon) { alert('Gagal menghitung tanggal kupon.'); return; }
+  // Jika mode Jual tanpa tanggal beli, settle bisa null — skip accrued & flows
+  const hasSettleDate = !!settle && useTradeDateBeli;
+  let lastCoupon = null, nextCoupon = null;
+  let accruedAmt = 0, accruedPct = 0, dirtyPrice = price, totalProceed = (price / 100) * nominal;
+  let daysToNext = null, daysToMat = null, flows = [];
 
-  const accruedAmt = calcAccruedInterest(settle, toISO(lastCoupon), toISO(nextCoupon), coupon, freq, nominal, basis);
-  const accruedPct = (accruedAmt / nominal) * 100;
-  const dirtyPrice  = price + accruedPct;
-  const totalProceed = (dirtyPrice / 100) * nominal;
+  if (hasSettleDate) {
+    const cd = calcCouponDates(settle, maturity, freq);
+    lastCoupon = cd.last; nextCoupon = cd.next;
+    if (!lastCoupon || !nextCoupon) { alert('Gagal menghitung tanggal kupon.'); return; }
+    accruedAmt   = calcAccruedInterest(settle, toISO(lastCoupon), toISO(nextCoupon), coupon, freq, nominal, basis);
+    accruedPct   = (accruedAmt / nominal) * 100;
+    dirtyPrice   = price + accruedPct;
+    totalProceed = (dirtyPrice / 100) * nominal;
+    daysToNext   = Math.round((nextCoupon - new Date(settle + 'T00:00:00')) / 86400000);
+    daysToMat    = Math.round((new Date(maturity + 'T00:00:00') - new Date(settle + 'T00:00:00')) / 86400000);
+    flows        = generateCashflows(settle, maturity, coupon, freq, nominal, taxPct, basis);
+  } else {
+    // Tanpa settle date: dirty = clean, proceed = clean proceed
+    totalProceed = (price / 100) * nominal;
+    daysToMat    = Math.round((new Date(maturity + 'T00:00:00') - new Date()) / 86400000);
+  }
+
   const cleanProceed = (price / 100) * nominal;
   const couponAmt    = (coupon / 100 / freq) * nominal;
   const couponNet    = couponAmt * (1 - taxPct / 100);
-  const daysToNext   = Math.round((nextCoupon - new Date(settle + 'T00:00:00')) / 86400000);
-  const daysToMat    = Math.round((new Date(maturity + 'T00:00:00') - new Date(settle + 'T00:00:00')) / 86400000);
-  const flows        = generateCashflows(settle, maturity, coupon, freq, nominal, taxPct, basis);
 
   // ---- Profit calculation for Jual mode ----
   let profitData = null;
@@ -1024,12 +1074,12 @@ function calculate() {
     const capitalGainNet   = capitalGainGross - taxOnCapGain;
 
     // Hari kepemilikan
-    const buyDate   = new Date(settle    + 'T00:00:00');
+    const buyDate   = hasSettleDate ? new Date(settle + 'T00:00:00') : null;
     const sellDate2 = new Date(sellSettle + 'T00:00:00');
-    const holdDays  = Math.round((sellDate2 - buyDate) / 86400000);
+    const holdDays  = buyDate ? Math.round((sellDate2 - buyDate) / 86400000) : null;
 
-    // Kupon yang diterima selama kepemilikan (nett, hanya jika pakai custom date & berbeda)
-    const hasCouponCalc = useCustomDate && sellSettle !== settle;
+    // Kupon yang diterima selama kepemilikan (nett, hanya jika ada tanggal beli & jual berbeda)
+    const hasCouponCalc = hasSettleDate && useCustomSellDate && sellSettle !== settle && flows.length > 0;
     const couponsReceived = hasCouponCalc
       ? flows.filter(f => { const fd = f.date; return fd > buyDate && fd <= sellDate2; })
       : [];
@@ -1055,10 +1105,11 @@ function calculate() {
   }
 
   renderOutput({ seriesLabel, coupon, freq, maturity, settle, trade, nominal, price, ytm, taxPct,
-    lastCoupon: toISO(lastCoupon), nextCoupon: toISO(nextCoupon),
+    lastCoupon: lastCoupon ? toISO(lastCoupon) : null,
+    nextCoupon: nextCoupon ? toISO(nextCoupon) : null,
     accruedAmt, accruedPct, dirtyPrice, totalProceed, cleanProceed,
     couponAmt, couponNet, daysToNext, daysToMat, basis, flows,
-    isJual, profitData,
+    hasSettleDate, isJual, profitData,
     // DB extras
     hargaModal:        selectedBond?.harga_modal,
     hargaToCustomer:   selectedBond?.harga_to_customer,
@@ -1206,20 +1257,28 @@ function renderOutput(r) {
   <div class="result-card" style="margin-bottom:14px;">
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
       <div style="font-size:0.72rem;font-weight:700;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:1px;">
-        ${esc(r.seriesLabel)} &nbsp;&middot;&nbsp; Settlement ${r.settle ? fmtDateShort(r.settle) : '&mdash;'}
+        ${esc(r.seriesLabel)} &nbsp;&middot;&nbsp;
+        ${r.settle && r.hasSettleDate ? `Settlement ${fmtDateShort(r.settle)}` : 'Tanpa tanggal beli'}
         ${r.isJual ? `&nbsp;&middot;&nbsp; <span style="color:var(--gold-light);">Mode: Jual</span>` : `&nbsp;&middot;&nbsp; <span style="color:var(--gold-light);">Mode: Beli</span>`}
       </div>
     </div>
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;">
       <div>
-        <div style="font-size:0.68rem;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Total Proceed (Dirty)</div>
+        <div style="font-size:0.68rem;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">
+          ${r.hasSettleDate ? 'Total Proceed (Dirty)' : 'Total Proceed (Clean)'}
+        </div>
         <div style="font-size:1.5rem;font-weight:900;color:var(--gold-light);">${fmtIDR(r.totalProceed)}</div>
-        <div style="font-size:0.72rem;color:rgba(255,255,255,0.35);margin-top:2px;">Dirty ${fmtNum(r.dirtyPrice,4)}% × Nominal</div>
+        <div style="font-size:0.72rem;color:rgba(255,255,255,0.35);margin-top:2px;">
+          ${r.hasSettleDate ? `Dirty ${fmtNum(r.dirtyPrice,4)}% × Nominal` : `Clean ${fmtNum(r.price,4)}% × Nominal`}
+        </div>
       </div>
       <div>
         <div style="font-size:0.68rem;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Accrued Interest</div>
-        <div style="font-size:1.5rem;font-weight:900;color:#a8e6c1;">${fmtIDR(r.accruedAmt)}</div>
-        <div style="font-size:0.72rem;color:rgba(255,255,255,0.35);margin-top:2px;">${fmtNum(r.accruedPct,4)}% dari nominal</div>
+        ${r.hasSettleDate
+          ? `<div style="font-size:1.5rem;font-weight:900;color:#a8e6c1;">${fmtIDR(r.accruedAmt)}</div>
+             <div style="font-size:0.72rem;color:rgba(255,255,255,0.35);margin-top:2px;">${fmtNum(r.accruedPct,4)}% dari nominal</div>`
+          : `<div style="font-size:1.5rem;font-weight:900;color:rgba(255,255,255,0.25);">—</div>
+             <div style="font-size:0.72rem;color:rgba(255,255,255,0.25);margin-top:2px;">Tanggal beli tidak diisi</div>`}
       </div>
       <div>
         <div style="font-size:0.68rem;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">YTM</div>
@@ -1252,18 +1311,18 @@ function renderOutput(r) {
     </div>
     <div class="result-item">
       <div class="result-item-label">Last Coupon Date</div>
-      <div class="result-item-value" style="font-size:0.85rem;">${fmtDateShort(r.lastCoupon)}</div>
+      <div class="result-item-value" style="font-size:0.85rem;">${r.lastCoupon ? fmtDateShort(r.lastCoupon) : '—'}</div>
     </div>
     <div class="result-item">
       <div class="result-item-label">Next Coupon Date</div>
       <div class="result-item-value" style="font-size:0.85rem;">
-        ${fmtDateShort(r.nextCoupon)}
-        <span style="font-size:0.7rem;background:#fff0e0;color:#a85e00;padding:2px 6px;border-radius:8px;margin-left:4px;">${r.daysToNext} hr</span>
+        ${r.nextCoupon ? fmtDateShort(r.nextCoupon) : '—'}
+        ${r.daysToNext != null ? `<span style="font-size:0.7rem;background:#fff0e0;color:#a85e00;padding:2px 6px;border-radius:8px;margin-left:4px;">${r.daysToNext} hr</span>` : ''}
       </div>
     </div>
     <div class="result-item">
       <div class="result-item-label">Sisa Hari ke Jatuh Tempo</div>
-      <div class="result-item-value blue">${r.daysToMat.toLocaleString('id-ID')} hari</div>
+      <div class="result-item-value blue">${r.daysToMat != null ? r.daysToMat.toLocaleString('id-ID') + ' hari' : '—'}</div>
     </div>
     <div class="result-item">
       <div class="result-item-label">Sisa Jumlah Kupon</div>
@@ -1273,6 +1332,8 @@ function renderOutput(r) {
 
   ${dbPriceHtml}
 
+  <!-- CASHFLOW TABLE — hanya tampil jika ada settle date -->
+  ${r.hasSettleDate && r.flows.length ? `
   <!-- CASHFLOW TABLE -->
   <div class="cf-card">
     <div class="card-header">
@@ -1304,7 +1365,7 @@ function renderOutput(r) {
       <span>Nominal: <strong>${fmtIDR(r.nominal)}</strong> &nbsp;&middot;&nbsp; Coupon: <strong>${r.coupon}% p.a.</strong> &nbsp;&middot;&nbsp; Frek: <strong>${r.freq}&times;/thn</strong></span>
       <span>JT = Jatuh Tempo &mdash; termasuk pengembalian pokok</span>
     </div>
-  </div>`;
+  </div>` : ''}`;
 }
 </script>
 
