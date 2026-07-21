@@ -356,6 +356,48 @@
     }
     .btn-danger-confirm:hover { background: #b91c1c; }
 
+    /* ── FONT SECTION ── */
+    .font-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 14px;
+    }
+    .font-card {
+      background: var(--canvas);
+      border: 1px solid var(--hairline);
+      border-radius: 12px;
+      padding: 20px 20px 14px;
+      transition: box-shadow 0.2s, transform 0.2s;
+    }
+    .font-card:hover { box-shadow: 0 6px 24px rgba(0,0,0,0.07); transform: translateY(-2px); }
+    .font-preview-text {
+      font-size: 28px; font-weight: 700;
+      color: var(--ink-deep); line-height: 1.1;
+      margin-bottom: 14px;
+      letter-spacing: -0.5px;
+      word-break: break-word;
+    }
+    .font-info { display: flex; flex-direction: column; gap: 4px; }
+    .font-logo-name { font-size: 12px; font-weight: 600; color: var(--slate); }
+    .font-name-text { font-size: 14px; font-weight: 700; color: var(--ink-deep); }
+    .font-type-badge {
+      display: inline-flex; align-items: center;
+      font-size: 10px; font-weight: 700;
+      padding: 2px 9px; border-radius: 20px;
+      text-transform: uppercase; letter-spacing: 0.5px;
+      margin-top: 4px; width: fit-content;
+    }
+    .badge-primer   { background: var(--tint-lavender); color: var(--primary); }
+    .badge-sekunder { background: var(--tint-mint);     color: #166534; }
+    .font-delete-btn {
+      margin-top: 12px; width: 100%;
+      padding: 6px 8px; border-radius: 7px; border: none;
+      background: #fee2e2; color: #991b1b;
+      font-size: 11px; font-weight: 600; font-family: inherit;
+      cursor: pointer; transition: background 0.15s;
+    }
+    .font-delete-btn:hover { background: #fca5a5; }
+
     /* Type toggle */
     .type-toggle {
       padding: 7px 18px;
@@ -450,7 +492,6 @@
   <!-- PAGE HEADER -->
   <div class="page-header">
     <div class="page-title">Brand Logo</div>
-    <div class="page-sub">Kelola aset visual brand Fawz Pro — logo, ikon, dan palet warna.</div>
   </div>
 
   <!-- UPLOAD FORM (head_account only) -->
@@ -591,6 +632,23 @@
       <div class="empty-state"><div class="empty-state-icon"></div><div class="empty-state-text">Belum ada logo</div></div>
     </div>
   </div>
+
+  <!-- FONT -->
+  <div class="section-block" style="animation-delay:0.32s;">
+    <div class="section-header">
+      <div class="section-title">Font <span class="section-count" id="countFont">0</span></div>
+      <button class="btn-add-palette" id="btnAddFont" style="display:none;" onclick="openFontModal()">
+        + Tambah Font
+      </button>
+    </div>
+    <div class="font-grid" id="fontGrid">
+      <div class="empty-state">
+        <div class="empty-state-icon"></div>
+        <div class="empty-state-text">Belum ada font</div>
+        <div class="empty-state-hint">Font akan ditambahkan oleh Head Account</div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- MODAL: Tambah Palet -->
@@ -670,6 +728,52 @@
   </div>
 </div>
 
+<!-- MODAL: Tambah Font -->
+<div class="modal-overlay" id="fontModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title">Tambah Font</div>
+      <button class="modal-close" onclick="closeFontModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Nama Logo / Penggunaan</label>
+        <input type="text" id="fontLogoName" class="form-input" placeholder="cth. Fawz Pro Wordmark"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Nama Font</label>
+        <input type="text" id="fontName" class="form-input" placeholder="cth. Inter, Gilroy, Montserrat"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Tipe</label>
+        <div style="display:flex;gap:8px;">
+          <button type="button" id="btnFontPrimer" class="type-toggle active" onclick="setFontType('primer')">Primer</button>
+          <button type="button" id="btnFontSekunder" class="type-toggle" onclick="setFontType('sekunder')">Sekunder</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Preview Font</label>
+        <div id="fontPreviewBox" style="
+          padding: 16px 18px;
+          border-radius: 10px;
+          border: 1px solid var(--hairline);
+          background: var(--surface-soft);
+          font-size: 22px;
+          font-weight: 600;
+          color: var(--ink-deep);
+          letter-spacing: -0.3px;
+          min-height: 60px;
+          transition: font-family 0.2s;
+        ">Fawz Pro</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeFontModal()">Batal</button>
+      <button class="btn-confirm" onclick="saveFont()">Simpan</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL: Konfirmasi Hapus -->
 <div class="modal-overlay" id="deleteModal">
   <div class="modal-box">
@@ -730,6 +834,7 @@ window.addEventListener('DOMContentLoaded', () => {
   if (isHeadAccount) {
     document.getElementById('uploadSection').style.display = 'block';
     document.getElementById('btnAddPalette').style.display = 'flex';
+    document.getElementById('btnAddFont').style.display = 'flex';
   }
 
   // Drag & drop
@@ -745,6 +850,7 @@ window.addEventListener('DOMContentLoaded', () => {
   waitSb(() => {
     loadPalette();
     loadLogos();
+    loadFonts();
   });
 });
 
@@ -1095,6 +1201,104 @@ function isLightColor(hex) {
 
 function escHtml(str) {
   return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+/* ── FONT ── */
+let _fontType = 'primer';
+let _editFontId = null;
+
+function setFontType(type) {
+  _fontType = type;
+  document.getElementById('btnFontPrimer').classList.toggle('active', type === 'primer');
+  document.getElementById('btnFontSekunder').classList.toggle('active', type === 'sekunder');
+}
+
+function openFontModal(id, logoName, fontName, type) {
+  _editFontId = id || null;
+  _fontType = type || 'primer';
+  document.getElementById('fontLogoName').value = logoName || '';
+  document.getElementById('fontName').value = fontName || '';
+  setFontType(_fontType);
+  updateFontPreview();
+  document.getElementById('fontModal').classList.add('open');
+}
+function closeFontModal() { document.getElementById('fontModal').classList.remove('open'); }
+
+function updateFontPreview() {
+  const name = document.getElementById('fontName').value.trim();
+  const box  = document.getElementById('fontPreviewBox');
+  if (box && name) box.style.fontFamily = '"' + name + '", Inter, sans-serif';
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const fi = document.getElementById('fontName');
+  if (fi) fi.addEventListener('input', updateFontPreview);
+});
+
+async function saveFont() {
+  const logoName = document.getElementById('fontLogoName').value.trim();
+  const fontName = document.getElementById('fontName').value.trim();
+  if (!logoName || !fontName) { showToast('Nama logo dan nama font harus diisi', 'error'); return; }
+
+  const payload = { logo_name: logoName, font_name: fontName, font_type: _fontType };
+  let err;
+  if (_editFontId) {
+    ({ error: err } = await _sb.from('brand_fonts').update(payload).eq('id', _editFontId));
+  } else {
+    ({ error: err } = await _sb.from('brand_fonts').insert(payload));
+  }
+  if (err) { showToast('Gagal simpan: ' + err.message, 'error'); return; }
+  showToast('Font berhasil disimpan', 'success');
+  closeFontModal();
+  loadFonts();
+}
+
+async function loadFonts() {
+  const { data, error } = await _sb.from('brand_fonts').select('*').order('font_type').order('created_at');
+  if (error) { console.error(error); return; }
+  renderFonts(data || []);
+}
+
+function renderFonts(items) {
+  const grid    = document.getElementById('fontGrid');
+  const countEl = document.getElementById('countFont');
+  if (countEl) countEl.textContent = items.length;
+
+  if (items.length === 0) {
+    grid.innerHTML = `<div class="empty-state">
+      <div class="empty-state-icon"></div>
+      <div class="empty-state-text">Belum ada font</div>
+      <div class="empty-state-hint">Font akan ditambahkan oleh Head Account</div>
+    </div>`;
+    return;
+  }
+
+  grid.innerHTML = items.map(f => {
+    const typeLabel = f.font_type === 'primer' ? 'Primer' : 'Sekunder';
+    const typeCls   = 'badge-' + (f.font_type || 'primer');
+    const delBtn = isHeadAccount
+      ? `<button class="font-delete-btn" onclick="deleteFont('${escHtml(f.id)}','${escHtml(f.font_name)}')">Hapus</button>`
+      : '';
+    return `<div class="font-card">
+      <div class="font-preview-text" style="font-family:'${escHtml(f.font_name)}',Inter,sans-serif">
+        Aa Bb Cc
+      </div>
+      <div class="font-info">
+        <div class="font-logo-name">${escHtml(f.logo_name)}</div>
+        <div class="font-name-text">${escHtml(f.font_name)}</div>
+        <span class="font-type-badge ${typeCls}">${typeLabel}</span>
+      </div>
+      ${delBtn}
+    </div>`;
+  }).join('');
+}
+
+async function deleteFont(id, name) {
+  if (!confirm('Hapus font "' + name + '"?')) return;
+  const { error } = await _sb.from('brand_fonts').delete().eq('id', id);
+  if (error) { showToast('Gagal hapus: ' + error.message, 'error'); return; }
+  showToast('Font berhasil dihapus', 'success');
+  loadFonts();
 }
 
 let _toastTimer;

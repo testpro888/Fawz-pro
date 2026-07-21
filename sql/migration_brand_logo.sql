@@ -33,7 +33,22 @@ CREATE TABLE IF NOT EXISTS brand_palette (
   created_at     timestamptz NOT NULL DEFAULT now()
 );
 
--- ── 3. ROW LEVEL SECURITY — TABLE ──
+-- ── 3. BRAND FONTS ──
+CREATE TABLE IF NOT EXISTS brand_fonts (
+  id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  logo_name   text NOT NULL,
+  font_name   text NOT NULL,
+  font_type   text NOT NULL DEFAULT 'primer' CHECK (font_type IN ('primer','sekunder')),
+  created_at  timestamptz NOT NULL DEFAULT now()
+);
+
+DROP POLICY IF EXISTS "brand_fonts_read_all"  ON brand_fonts;
+DROP POLICY IF EXISTS "brand_fonts_write_all" ON brand_fonts;
+ALTER TABLE brand_fonts ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "brand_fonts_read_all"  ON brand_fonts FOR SELECT USING (true);
+CREATE POLICY "brand_fonts_write_all" ON brand_fonts FOR ALL    USING (true) WITH CHECK (true);
+
+-- ── 4. ROW LEVEL SECURITY — TABLE ──
 ALTER TABLE brand_logos  ENABLE ROW LEVEL SECURITY;
 ALTER TABLE brand_palette ENABLE ROW LEVEL SECURITY;
 
