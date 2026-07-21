@@ -1321,44 +1321,99 @@ function renderOutput(r) {
   <!-- PROFIT PANEL (Mode Jual) -->
   ${profitHtml}
 
-  <!-- RESULT GRID -->
-  <div class="result-grid" style="margin-bottom:14px;">
-    <div class="result-item">
-      <div class="result-item-label">Harga Beli (Clean)</div>
-      <div class="result-item-value">${fmtNum(r.price,4)}%</div>
-    </div>
-    <div class="result-item">
-      <div class="result-item-label">Dirty Price</div>
-      <div class="result-item-value gold">${fmtNum(r.dirtyPrice,4)}%</div>
-    </div>
-    <div class="result-item">
-      <div class="result-item-label">Kupon Kotor / Periode</div>
-      <div class="result-item-value positive">${fmtIDR(r.couponAmt)}</div>
-    </div>
-    <div class="result-item">
-      <div class="result-item-label">Kupon Nett (–PPh ${r.taxPct}%)</div>
-      <div class="result-item-value">${fmtIDR(r.couponNet)}</div>
-    </div>
-    <div class="result-item">
-      <div class="result-item-label">Last Coupon Date</div>
-      <div class="result-item-value" style="font-size:0.85rem;">${r.lastCoupon ? fmtDateShort(r.lastCoupon) : '—'}</div>
-    </div>
-    <div class="result-item">
-      <div class="result-item-label">Next Coupon Date</div>
-      <div class="result-item-value" style="font-size:0.85rem;">
-        ${r.nextCoupon ? fmtDateShort(r.nextCoupon) : '—'}
-        ${r.daysToNext != null ? `<span style="font-size:0.7rem;background:#fff0e0;color:#a85e00;padding:2px 6px;border-radius:8px;margin-left:4px;">${r.daysToNext} hr</span>` : ''}
+  <!-- DERIVASI BELI -->
+  ${!r.isJual ? (() => {
+    const buyRows = [];
+
+    // Harga Beli Clean
+    buyRows.push({ label: 'Harga Beli (Clean)', sign: '+', val: r.cleanProceed, note: `${fmtNum(r.price,4)}% × Nominal`, color: '#c0392b' });
+
+    // Accrued Interest (jika ada settle date)
+    if (r.hasSettleDate && r.accruedAmt > 0) {
+      buyRows.push({ label: 'Accrued Interest', sign: '+', val: r.accruedAmt, note: `AI ${fmtNum(r.accruedPct,4)}% dibayar ke penjual`, color: '#c0392b' });
+    }
+
+    // Subtotal = Total Modal Keluar (Dirty)
+    buyRows.push({ label: r.hasSettleDate ? 'Total Modal Beli (Dirty)' : 'Total Modal Beli (Clean)', sign: '=', val: r.totalProceed, note: r.hasSettleDate ? `Dirty ${fmtNum(r.dirtyPrice,4)}% × Nominal` : `Clean ${fmtNum(r.price,4)}% × Nominal`, color: '#c0392b', isSubtotal: true });
+
+    // Kupon per periode
+    buyRows.push({ label: 'Kupon Kotor / Periode', sign: '', val: r.couponAmt, note: `${r.coupon}% ÷ ${r.freq} × Nominal`, color: '#555' });
+    buyRows.push({ label: `PPh Kupon (${r.taxPct}%)`, sign: '−', val: r.couponAmt * (r.taxPct/100), note: `${fmtIDR(r.couponAmt)} × ${r.taxPct}%`, color: '#c0392b' });
+    buyRows.push({ label: 'Kupon Nett / Periode', sign: '=', val: r.couponNet, note: `Setelah PPh ${r.taxPct}%`, color: '#1a7a47', isSubtotal: true });
+
+    // Info jadwal
+    if (r.hasSettleDate && r.lastCoupon) {
+      buyRows.push({ label: 'Last Coupon Date', sign: '', val: null, note: fmtDateShort(r.lastCoupon), color: '#555', isInfo: true });
+    }
+    if (r.hasSettleDate && r.nextCoupon) {
+      buyRows.push({ label: 'Next Coupon Date', sign: '', val: null, note: `${fmtDateShort(r.nextCoupon)}${r.daysToNext!=null?' &nbsp;('+r.daysToNext+' hari lagi)':''}`, color: '#555', isInfo: true });
+    }
+    buyRows.push({ label: 'Sisa ke Jatuh Tempo', sign: '', val: null, note: r.daysToMat != null ? `${r.daysToMat.toLocaleString('id-ID')} hari &nbsp;|&nbsp; ${totalCoupons}× sisa kupon` : '—', color: '#2d4abf', isInfo: true });
+
+    const bRowsHtml = buyRows.map(row => {
+      const isEq   = row.sign === '=';
+      const isInfo = row.isInfo;
+      if (isInfo) {
+        return `<tr style="background:#fafbff;">
+          <td style="padding:6px 12px;font-size:0.75rem;color:#888;">${row.label}</td>
+          <td></td>
+          <td></td>
+          <td style="padding:6px 12px;font-size:0.75rem;color:${row.color};border-left:1px solid #f0f0f5;">${row.note}</td>
+        </tr>`;
+      }
+      return `<tr style="${isEq ? 'border-top:2px solid #e0e0ea;' : ''}">
+        <td style="padding:7px 12px;font-size:0.78rem;color:#555;${isEq?'font-weight:700;':''}">${row.label}</td>
+        <td style="padding:7px 8px;text-align:center;font-size:0.9rem;font-weight:700;color:${row.sign==='+'?'#c0392b':row.sign==='−'?'#c0392b':row.sign==='='?'#444':'#aaa'};width:24px;">${row.sign}</td>
+        <td style="padding:7px 12px;text-align:right;font-size:${isEq?'0.95rem':'0.82rem'};font-weight:${isEq?'800':'600'};color:${row.color};font-variant-numeric:tabular-nums;white-space:nowrap;">
+          ${row.val != null ? fmtIDR(row.val) : ''}
+        </td>
+        <td style="padding:7px 12px;font-size:0.7rem;color:#aaa;border-left:1px solid #f0f0f5;">${row.note}</td>
+      </tr>`;
+    }).join('');
+
+    // Grand total row: YTM
+    const ytmRow = `<tr style="border-top:2px solid #0d0d2b;background:linear-gradient(135deg,#0d0d2b,#1e1252);">
+      <td style="padding:12px 12px;font-size:0.85rem;font-weight:800;color:#fff;">YTM / Yield</td>
+      <td style="padding:12px 8px;text-align:center;font-size:1rem;font-weight:800;color:var(--gold-light);">=</td>
+      <td style="padding:12px 12px;text-align:right;font-size:1.15rem;font-weight:900;color:var(--gold-light);white-space:nowrap;">${fmtPct(r.ytm,4)}</td>
+      <td style="padding:12px 12px;font-size:0.72rem;color:rgba(255,255,255,0.5);border-left:1px solid rgba(255,255,255,0.1);">
+        Yield to Maturity &nbsp;|&nbsp; Dirty ${fmtNum(r.dirtyPrice,4)}%
+      </td>
+    </tr>`;
+
+    return `
+  <div style="background:#fff;border:1.5px solid #e0e0ef;border-radius:14px;margin-bottom:14px;overflow:hidden;">
+    <div style="background:#f8f9ff;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #ebebf5;">
+      <div>
+        <div style="font-size:0.9rem;font-weight:800;color:var(--navy);">Rincian Biaya Pembelian</div>
+        <div style="font-size:0.72rem;color:#888;margin-top:2px;">
+          ${r.settle && r.hasSettleDate ? `Settlement: ${fmtDateShort(r.settle)}` : 'Tanpa tanggal transaksi'}
+          &nbsp;&middot;&nbsp; Nominal: ${fmtIDR(r.nominal)}
+        </div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:1.4rem;font-weight:900;color:var(--navy);">${fmtIDR(r.totalProceed)}</div>
+        <div style="font-size:0.72rem;color:#888;">Total Modal Keluar</div>
       </div>
     </div>
-    <div class="result-item">
-      <div class="result-item-label">Sisa Hari ke Jatuh Tempo</div>
-      <div class="result-item-value blue">${r.daysToMat != null ? r.daysToMat.toLocaleString('id-ID') + ' hari' : '—'}</div>
+    <div style="overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;">
+        <thead>
+          <tr style="background:#fafafa;border-bottom:1px solid #f0f0f5;">
+            <th style="padding:7px 12px;text-align:left;font-size:0.65rem;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:0.8px;">Komponen</th>
+            <th style="padding:7px 8px;width:24px;"></th>
+            <th style="padding:7px 12px;text-align:right;font-size:0.65rem;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:0.8px;">Nilai</th>
+            <th style="padding:7px 12px;text-align:left;font-size:0.65rem;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:0.8px;border-left:1px solid #f0f0f5;">Keterangan</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${bRowsHtml}
+          ${ytmRow}
+        </tbody>
+      </table>
     </div>
-    <div class="result-item">
-      <div class="result-item-label">Sisa Jumlah Kupon</div>
-      <div class="result-item-value">${totalCoupons}× kupon</div>
-    </div>
-  </div>
+  </div>`;
+  })() : ''}
 
   ${dbPriceHtml}
 
