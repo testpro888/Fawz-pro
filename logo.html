@@ -439,6 +439,7 @@
             <option value="secondary">Secondary Logo</option>
             <option value="icon">Icon Logo</option>
             <option value="monochrome">Monochrome Logo</option>
+            <option value="text">Text Logo</option>
           </select>
         </div>
       </div>
@@ -534,6 +535,16 @@
       <div class="section-title">Monochrome Logo <span class="section-count" id="countMonochrome">0</span></div>
     </div>
     <div class="logo-grid" id="gridMonochrome">
+      <div class="empty-state"><div class="empty-state-icon"></div><div class="empty-state-text">Belum ada logo</div></div>
+    </div>
+  </div>
+
+  <!-- TEXT LOGO -->
+  <div class="section-block" style="animation-delay:0.28s;">
+    <div class="section-header">
+      <div class="section-title">Text Logo <span class="section-count" id="countText">0</span></div>
+    </div>
+    <div class="logo-grid" id="gridText">
       <div class="empty-state"><div class="empty-state-icon"></div><div class="empty-state-text">Belum ada logo</div></div>
     </div>
   </div>
@@ -735,13 +746,14 @@ async function loadLogos() {
   if (error) { console.error(error); return; }
   const rows = data || [];
 
-  const cats = { primary: [], secondary: [], icon: [], monochrome: [] };
+  const cats = { primary: [], secondary: [], icon: [], monochrome: [], text: [] };
   rows.forEach(r => { if (cats[r.category]) cats[r.category].push(r); });
 
   renderLogoSection('gridPrimary',    'countPrimary',    cats.primary,    'Belum ada Primary Logo', '');
   renderLogoSection('gridSecondary',  'countSecondary',  cats.secondary,  'Belum ada Secondary Logo', '');
   renderLogoSection('gridIcon',       'countIcon',       cats.icon,       'Belum ada Icon Logo', '');
   renderLogoSection('gridMonochrome', 'countMonochrome', cats.monochrome, 'Belum ada Monochrome Logo', '');
+  renderLogoSection('gridText',       'countText',       cats.text,       'Belum ada Text Logo', '');
 }
 
 function renderLogoSection(gridId, countId, items, emptyText, emptyIcon) {
