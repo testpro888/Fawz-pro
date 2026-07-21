@@ -4,6 +4,16 @@ Semua perubahan signifikan pada project ini didokumentasikan di sini.
 
 ---
 
+## [v1.7.1] — 2026-07-21
+
+### 🐛 Bug Fixes & UI Polish
+- **WA Float** — tombol WhatsApp kini hanya tampilkan ikon saat idle, teks "Contact Person" & nomor muncul saat hover
+- **WA Float** — logo WA diperbaiki agar fit penuh di kontainer (full cover, tanpa double background hijau)
+- **Changelog Modal** — layout diubah dari bottom sheet menjadi modal persegi di tengah layar dengan animasi scale
+- **Dashboard** — versi Fawz Pro (v1.7) ditampilkan di bagian bawah dashboard dengan tombol ⓘ untuk membuka changelog
+
+---
+
 ## [v1.7] — 2026-07-20
 
 ### ✨ New Features
