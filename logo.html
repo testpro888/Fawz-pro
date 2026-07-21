@@ -390,13 +390,42 @@
     /* Responsive */
     @media (max-width: 768px) {
       .upload-grid { grid-template-columns: 1fr 1fr; }
-      .logo-grid { grid-template-columns: 1fr 1fr; }
       .palette-grid { grid-template-columns: repeat(3, 1fr); }
       .page-container { padding: 20px 14px 48px; }
+
+      /* Logo grid: horizontal scroll 2 baris */
+      .logo-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, 150px);
+        grid-template-rows: repeat(2, auto);
+        grid-auto-flow: column;
+        grid-auto-columns: 150px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        gap: 10px;
+        padding-bottom: 8px;
+        /* hide scrollbar tapi tetap bisa scroll */
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+      }
+      .logo-grid::-webkit-scrollbar { display: none; }
+
+      .logo-card {
+        width: 150px;
+        min-width: 150px;
+      }
+      .logo-preview {
+        padding: 12px;
+      }
+      .logo-meta { padding: 8px 10px; }
+      .logo-name { font-size: 11px; }
+      .logo-format-badge { font-size: 9px; }
+      .logo-actions { padding: 6px 10px 8px; gap: 4px; }
+      .btn-action { font-size: 11px; padding: 5px 6px; }
+      .logo-uploader { font-size: 10px; padding: 0 10px 8px; }
     }
     @media (max-width: 480px) {
       .upload-grid { grid-template-columns: 1fr; }
-      .logo-grid { grid-template-columns: 1fr; }
       .palette-grid { grid-template-columns: repeat(2, 1fr); }
     }
   </style>
