@@ -4,6 +4,23 @@ Semua perubahan signifikan pada project ini didokumentasikan di sini.
 
 ---
 
+## [v1.9] — 2026-07-22
+
+### ✨ New Features
+
+#### Birthday Calendar
+- Halaman kalender baru untuk melihat ulang tahun nasabah
+- Tampilkan semua birthday dalam satu kalender bulanan
+- Popup "+N more" saat banyak birthday di satu hari
+
+#### Kalkulator Bonds
+- Kalkulator Obligasi baru di menu Tools
+- Mode **Beli** — hitung biaya pembelian, YTM, dan skenario EXIT (+2/+1/flat/-1/-2)
+- Mode **Jual** — hitung keuntungan/kerugian jual, pajak capital gain & accrued interest
+- Tabel derivasi matematika untuk hasil yang lebih mudah dibaca
+
+---
+
 ## [v1.8] — 2026-07-21
 
 ### ✨ New Features
