@@ -311,6 +311,14 @@
         offset += PAGE;
       }
       allCustomers = all.filter(c => c.birth_date);
+      // Deduplikasi berdasarkan client_id — ambil record pertama per client_id
+      const seen = new Set();
+      allCustomers = allCustomers.filter(c => {
+        const key = c.client_id || c.id;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
       populateSalesFilter();
       updateStats();
       applyFilters();
