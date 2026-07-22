@@ -262,6 +262,20 @@
   </div>
 </div>
 
+<!-- Modal Day (semua birthday di tanggal tertentu) -->
+<div class="modal-overlay" id="dayModal" onclick="closeDayModal(event)">
+  <div class="modal" style="width:420px;">
+    <div class="modal-header">
+      <div class="modal-title" id="dayModalTitle">Ulang Tahun</div>
+      <button class="modal-close" onclick="document.getElementById('dayModal').classList.remove('open')">✕</button>
+    </div>
+    <div id="dayModalContent"></div>
+    <div style="margin-top:16px;display:flex;justify-content:flex-end;">
+      <button class="btn btn-outline" onclick="document.getElementById('dayModal').classList.remove('open')">Tutup</button>
+    </div>
+  </div>
+</div>
+
 <!-- Modal Detail -->
 <div class="modal-overlay" id="detailModal" onclick="closeDetail(event)">
   <div class="modal">
@@ -614,6 +628,44 @@
   function closeDetail(e) {
     if (e.target === document.getElementById('detailModal')) {
       document.getElementById('detailModal').classList.remove('open');
+    }
+  }
+
+  /* ── DAY MODAL (semua birthday di 1 tanggal) ── */
+  function openDayModal(day, bdayList) {
+    document.getElementById('dayModalTitle').textContent =
+      day + ' ' + MONTHS[calMonth] + ' ' + calYear + ' — ' + bdayList.length + ' Ulang Tahun';
+
+    const content = document.getElementById('dayModalContent');
+    content.innerHTML = '';
+    bdayList.forEach(c => {
+      const days = daysUntilBirthday(c.birth_date);
+      const isToday = days === 0;
+      const initial = (c.client_name || '?')[0].toUpperCase();
+      const avatarClass = isToday ? 'today-av' : '';
+      const item = document.createElement('div');
+      item.className = 'bday-item';
+      item.style.cssText = 'padding:10px 0;border-bottom:1px solid #f5f5fa;cursor:pointer;';
+      item.innerHTML = `
+        <div class="bday-avatar ${avatarClass}" style="width:36px;height:36px;font-size:0.9rem;">${initial}</div>
+        <div class="bday-info">
+          <div class="bday-name">${c.client_name || '—'}</div>
+          <div class="bday-date">${formatBirthDate(c.birth_date)} · ${getAge(c.birth_date)} tahun</div>
+          <div class="bday-sales">${c.sales_person_name || '—'}</div>
+        </div>
+        ${isToday ? '<span class="bday-badge badge-today">Hari Ini!</span>' : ''}`;
+      item.onclick = () => {
+        document.getElementById('dayModal').classList.remove('open');
+        openDetail(c);
+      };
+      content.appendChild(item);
+    });
+    document.getElementById('dayModal').classList.add('open');
+  }
+
+  function closeDayModal(e) {
+    if (e.target === document.getElementById('dayModal')) {
+      document.getElementById('dayModal').classList.remove('open');
     }
   }
 
