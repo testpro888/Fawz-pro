@@ -311,10 +311,10 @@
         offset += PAGE;
       }
       allCustomers = all.filter(c => c.birth_date);
-      // Deduplikasi berdasarkan client_id — ambil record pertama per client_id
+      // Deduplikasi berdasarkan kombinasi client_name + birth_date
       const seen = new Set();
       allCustomers = allCustomers.filter(c => {
-        const key = c.client_id || c.id;
+        const key = (c.client_name || '').toLowerCase().trim() + '|' + c.birth_date;
         if (seen.has(key)) return false;
         seen.add(key);
         return true;
