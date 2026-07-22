@@ -301,7 +301,7 @@
       while (true) {
         const { data, error } = await _sb
           .from('customers')
-          .select('id, clientID, clientName, birth_date, salesPersonName, clientStatus')
+          .select('id, client_id, client_name, birth_date, sales_person_name, client_status')
           .not('birth_date', 'is', null)
           .range(offset, offset + PAGE - 1);
         if (error) throw error;
@@ -325,9 +325,9 @@
     const q     = (document.getElementById('searchInput').value || '').toLowerCase();
     const sales = document.getElementById('filterSales').value;
     filtered = allCustomers.filter(c => {
-      if (q && !(c.clientName || '').toLowerCase().includes(q) &&
-               !(c.clientID  || '').toLowerCase().includes(q)) return false;
-      if (sales && (c.salesPersonName || '') !== sales) return false;
+      if (q && !(c.client_name || '').toLowerCase().includes(q) &&
+               !(c.client_id  || '').toLowerCase().includes(q)) return false;
+      if (sales && (c.sales_person_name || '') !== sales) return false;
       return true;
     });
     renderMonthTabs();
@@ -338,7 +338,7 @@
 
   /* ── POPULATE SALES FILTER ── */
   function populateSalesFilter() {
-    const salesSet = new Set(allCustomers.map(c => c.salesPersonName).filter(Boolean));
+    const salesSet = new Set(allCustomers.map(c => c.sales_person_name).filter(Boolean));
     const sel = document.getElementById('filterSales');
     [...salesSet].sort().forEach(s => {
       const opt = document.createElement('option');
@@ -367,7 +367,7 @@
 
     setTxt('statToday', todayBdays.length);
     setTxt('statTodayNames', todayBdays.length
-      ? todayBdays.map(c => c.clientName).join(', ').substring(0,60) + (todayBdays.length > 2 ? '...' : '')
+      ? todayBdays.map(c => c.client_name).join(', ').substring(0,60) + (todayBdays.length > 2 ? '...' : '')
       : 'Tidak ada hari ini');
     setTxt('statThisMonth', thisMonthBdays.length);
     setTxt('statThisMonthLabel', MONTHS[today.getMonth()]);
@@ -380,10 +380,10 @@
       banner.style.display = 'flex';
       document.getElementById('todayBannerTitle').textContent =
         todayBdays.length === 1
-          ? `${todayBdays[0].clientName} berulang tahun hari ini!`
+          ? `${todayBdays[0].client_name} berulang tahun hari ini!`
           : `${todayBdays.length} customer berulang tahun hari ini!`;
       document.getElementById('todayBannerSub').textContent =
-        todayBdays.map(c => c.clientName).join(' • ');
+        todayBdays.map(c => c.client_name).join(' • ');
     } else {
       banner.style.display = 'none';
     }
@@ -464,8 +464,8 @@
         const chip = document.createElement('div');
         const isTodayBday = isToday;
         chip.className = 'birthday-chip ' + (isTodayBday ? 'today-bday' : 'normal-bday');
-        chip.innerHTML = `<span class="chip-name">${c.clientName || c.clientID}</span>`;
-        chip.title = c.clientName;
+        chip.innerHTML = `<span class="chip-name">${c.client_name || c.client_id}</span>`;
+        chip.title = c.client_name;
         chip.onclick = () => openDetail(c);
         cell.appendChild(chip);
       });
@@ -542,7 +542,7 @@
       const d = parseBirth(c.birth_date);
       const isToday = days === 0;
       const isSoon  = days !== null && days > 0 && days <= 7;
-      const initial = (c.clientName || '?')[0].toUpperCase();
+      const initial = (c.client_name || '?')[0].toUpperCase();
       const avatarClass = isToday ? 'today-av' : (isSoon ? 'soon-av' : '');
       const badgeClass  = isToday ? 'badge-today' : (isSoon ? 'badge-soon' : 'badge-normal');
       const badgeText   = isToday ? 'Hari Ini!' : (isSoon ? `${days} hari lagi` : MONTHS[d.m-1]);
@@ -554,9 +554,9 @@
       item.innerHTML = `
         <div class="bday-avatar ${avatarClass}">${initial}</div>
         <div class="bday-info">
-          <div class="bday-name">${c.clientName || '—'}</div>
+          <div class="bday-name">${c.client_name || '—'}</div>
           <div class="bday-date">${formatBirthDate(c.birth_date)} · ${getAge(c.birth_date)} tahun</div>
-          <div class="bday-sales">${c.salesPersonName || '—'} · ${c.clientID || ''}</div>
+          <div class="bday-sales">${c.sales_person_name || '—'} · ${c.client_id || ''}</div>
         </div>
         <div class="days-until">
           <strong>${daysLabel}</strong>${daysUnit}
@@ -581,10 +581,10 @@
     const days = daysUntilBirthday(c.birth_date);
     const daysText = days === 0 ? 'Hari Ini!' : (days === 1 ? 'Besok!' : (days !== null ? `${days} hari lagi` : '—'));
 
-    document.getElementById('detailTitle').textContent = c.clientName || 'Customer';
+    document.getElementById('detailTitle').textContent = c.client_name || 'Customer';
     document.getElementById('detailContent').innerHTML = `
       <div style="text-align:center;padding:16px 0 20px;">
-        <div style="font-size:1.2rem;font-weight:700;color:var(--navy);">${c.clientName || '—'}</div>
+        <div style="font-size:1.2rem;font-weight:700;color:var(--navy);">${c.client_name || '—'}</div>
         <div style="font-size:0.85rem;color:var(--gray);margin-top:4px;">${formatBirthDate(c.birth_date)}</div>
         <div style="margin-top:10px;">
           <span style="background:linear-gradient(135deg,var(--gold),#e8931a);color:#fff;padding:6px 18px;border-radius:20px;font-weight:700;font-size:0.9rem;">
@@ -593,11 +593,11 @@
         </div>
       </div>
       <div class="d-grid" style="margin-top:8px;">
-        <div class="d-item"><label>Client ID</label><span>${c.clientID || '—'}</span></div>
+        <div class="d-item"><label>Client ID</label><span>${c.client_id || '—'}</span></div>
         <div class="d-item"><label>Usia</label><span>${age !== null ? age + ' tahun' : '—'}</span></div>
         <div class="d-item"><label>Tanggal Lahir</label><span>${formatBirthDate(c.birth_date)}</span></div>
-        <div class="d-item"><label>Sales PIC</label><span>${c.salesPersonName || '—'}</span></div>
-        <div class="d-item"><label>Status</label><span>${c.clientStatus || '—'}</span></div>
+        <div class="d-item"><label>Sales PIC</label><span>${c.sales_person_name || '—'}</span></div>
+        <div class="d-item"><label>Status</label><span>${c.client_status || '—'}</span></div>
         <div class="d-item"><label>Hari Tersisa</label><span>${daysText}</span></div>
       </div>`;
     document.getElementById('detailModal').classList.add('open');
@@ -614,7 +614,7 @@
     const rows = [['Client ID','Nama','Tanggal Lahir','Usia','Sales PIC','Status','Hari Hingga Ulang Tahun']];
     filtered.forEach(c => {
       const days = daysUntilBirthday(c.birth_date);
-      rows.push([c.clientID, c.clientName, c.birth_date, getAge(c.birth_date) || '', c.salesPersonName, c.clientStatus, days !== null ? days : '']);
+      rows.push([c.client_id, c.client_name, c.birth_date, getAge(c.birth_date) || '', c.sales_person_name, c.client_status, days !== null ? days : '']);
     });
     const csv = rows.map(r => r.map(v => `"${(v||'').toString().replace(/"/g,'""')}"`).join(',')).join('\n');
     const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8'});
