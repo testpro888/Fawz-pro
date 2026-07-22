@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <script src="config.js"></script>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Fawz Pro | Birthday Calendar</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script>
+    const SUPABASE_URL = (window.__FAWZ_CONFIG__ || {}).supabaseUrl || '';
+    const SUPABASE_KEY = (window.__FAWZ_CONFIG__ || {}).supabaseKey || '';
+    const _sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    window._supabase = _sb;
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const _raw = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember');
+      if (_raw) { try { window._curUser = JSON.parse(_raw); } catch(e) {} }
+      loadBirthdays();
+    });
+  </script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --navy: #0d0d2b;
+      --purple: #1e1252;
+      --gold: #f5a623;
+      --gold-light: #ffc857;
+      --bg: #f4f5fb;
+      --white: #ffffff;
+      --nav-h: 68px;
+      --border: #e0e0ef;
+      --text: #1a1a3a;
+      --gray: #888;
+    }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); min-height: 100vh; padding-top: var(--nav-h); color: var(--text); }
+    .page-container { max-width: 1400px; margin: 0 auto; padding: 36px 28px; }
+    .page-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 28px; flex-wrap: wrap; gap: 16px; }
+    .page-title { font-family: 'Inter', sans-serif; font-size: 2rem; font-weight: 900; color: var(--navy); line-height: 1.1; }
+    .page-subtitle { font-size: 0.88rem; color: var(--gray); margin-top: 4px; }
+    .title-underline { width: 48px; height: 3px; background: linear-gradient(90deg, var(--gold), var(--gold-light)); border-radius: 2px; margin-top: 8px; }
+    .header-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .btn { display: inline-flex; align-items: center; gap: 7px; padding: 11px 20px; border-radius: 10px; font-family: 'Inter', sans-serif; font-size: 0.875rem; font-weight: 600; cursor: pointer; transition: all 0.2s; border: none; white-space: nowrap; }
+    .btn-primary { background: linear-gradient(135deg, var(--gold), #e8931a); color: #fff; box-shadow: 0 4px 14px rgba(245,166,35,0.35); }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(245,166,35,0.45); }
+    .btn-outline { background: #fff; color: var(--navy); border: 1.5px solid var(--border); }
+    .btn-outline:hover { border-color: var(--gold); color: var(--gold); background: #fffbf3; }
+    .btn-outline.active-month { border-color: var(--gold); color: var(--gold); background: #fffbf3; font-weight: 700; }
+    /* Stats */
+    .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+    .stat-box { background: #fff; border-radius: 14px; padding: 18px 22px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+    .stat-box-label { font-size: 0.72rem; color: var(--gray); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+    .stat-box-val { font-size: 1.8rem; font-weight: 700; color: var(--navy); }
+    .stat-box-sub { font-size: 0.75rem; color: var(--gray); margin-top: 4px; }
+    /* Toolbar */
+    .toolbar { background: #fff; border-radius: 14px; padding: 16px 20px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+    .search-wrap { position: relative; flex: 1; min-width: 220px; }
+    .search-wrap input { width: 100%; padding: 10px 16px 10px 40px; border: 1.5px solid var(--border); border-radius: 10px; font-family: 'Inter', sans-serif; font-size: 0.9rem; color: var(--text); outline: none; transition: border 0.2s; }
+    .search-wrap input:focus { border-color: var(--gold); }
+    .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #aaa; font-size: 1rem; }
+    .filter-select { padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 10px; font-family: 'Inter', sans-serif; font-size: 0.875rem; color: var(--text); outline: none; background: #fff; cursor: pointer; }
+    .filter-select:focus { border-color: var(--gold); }
+    /* Month tabs */
+    .month-tabs { display: flex; gap: 6px; flex-wrap: wrap; background: #fff; border-radius: 14px; padding: 14px 20px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+    .month-tab { padding: 7px 16px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; cursor: pointer; border: 1.5px solid var(--border); background: #fff; color: var(--text); transition: all 0.2s; }
+    .month-tab:hover { border-color: var(--gold); color: var(--gold); background: #fffbf3; }
+    .month-tab.active { background: linear-gradient(135deg, var(--gold), #e8931a); border-color: var(--gold); color: #fff; box-shadow: 0 4px 12px rgba(245,166,35,0.3); }
+    .month-tab.has-birthday { position: relative; }
+    .month-tab.has-birthday::after { content: ''; position: absolute; top: -3px; right: -3px; width: 8px; height: 8px; border-radius: 50%; background: #e74c3c; border: 1.5px solid #fff; }
+    /* Calendar Grid */
+    .calendar-section { margin-bottom: 32px; }
+    .cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .cal-title { font-size: 1.2rem; font-weight: 700; color: var(--navy); }
+    .cal-nav { display: flex; gap: 8px; }
+    .cal-nav-btn { width: 36px; height: 36px; border-radius: 10px; border: 1.5px solid var(--border); background: #fff; cursor: pointer; font-size: 1rem; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+    .cal-nav-btn:hover { border-color: var(--gold); background: #fffbf3; }
+    .calendar-grid { background: #fff; border-radius: 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); overflow: hidden; }
+    .cal-days-header { display: grid; grid-template-columns: repeat(7, 1fr); background: #fafafa; border-bottom: 2px solid #f0f0f5; }
+    .cal-day-name { padding: 12px 8px; text-align: center; font-size: 0.72rem; font-weight: 700; color: #aaa; text-transform: uppercase; letter-spacing: 1px; }
+    .cal-day-name:first-child { color: #e74c3c; }
+    .cal-day-name:last-child { color: #e74c3c; }
+    .cal-cells { display: grid; grid-template-columns: repeat(7, 1fr); gap: 0; }
+    .cal-cell { min-height: 110px; padding: 8px; border-right: 1px solid #f5f5fa; border-bottom: 1px solid #f5f5fa; position: relative; transition: background 0.15s; }
+    .cal-cell:nth-child(7n) { border-right: none; }
+    .cal-cell:nth-last-child(-n+7) { border-bottom: none; }
+    .cal-cell:hover { background: #fafafa; }
+    .cal-cell.other-month { background: #fafafa; }
+    .cal-cell.other-month .cal-date { color: #ccc; }
+    .cal-cell.today { background: #fffbf3; }
+    .cal-cell.today .cal-date { background: linear-gradient(135deg, var(--gold), #e8931a); color: #fff; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-weight: 700; }
+    .cal-date { font-size: 0.82rem; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+    .cal-cell:first-child .cal-date, .cal-cell:nth-child(7n+1) .cal-date { color: #e74c3c; }
+    .cal-cell:nth-child(7n) .cal-date { color: #e74c3c; }
+    .birthday-chip { display: flex; align-items: center; gap: 4px; padding: 3px 7px; border-radius: 20px; font-size: 0.68rem; font-weight: 600; margin-bottom: 3px; cursor: pointer; transition: all 0.15s; white-space: nowrap; overflow: hidden; max-width: 100%; }
+    .birthday-chip:hover { transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+    .birthday-chip.today-bday { background: linear-gradient(135deg, #ff6b9d, #e91e8c); color: #fff; }
+    .birthday-chip.normal-bday { background: #f0f0ff; color: #5b4cbf; border: 1px solid #e0d8ff; }
+    .birthday-chip .chip-name { overflow: hidden; text-overflow: ellipsis; }
+    .more-chip { font-size: 0.65rem; color: var(--gold); font-weight: 700; cursor: pointer; padding: 2px 4px; }
+    .more-chip:hover { text-decoration: underline; }
+    /* Birthday List */
+    .bday-list-section { background: #fff; border-radius: 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); overflow: hidden; margin-bottom: 32px; }
+    .bday-list-header { padding: 16px 20px; border-bottom: 2px solid #f0f0f5; display: flex; align-items: center; justify-content: space-between; }
+    .bday-list-title { font-size: 1rem; font-weight: 700; color: var(--navy); }
+    .bday-list-count { font-size: 0.8rem; color: var(--gray); background: #f5f5fa; padding: 4px 12px; border-radius: 20px; }
+    .bday-item { display: flex; align-items: center; gap: 16px; padding: 14px 20px; border-bottom: 1px solid #f5f5fa; transition: background 0.15s; cursor: pointer; }
+    .bday-item:last-child { border-bottom: none; }
+    .bday-item:hover { background: #fffbf3; }
+    .bday-avatar { width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, #667eea, #764ba2); display: flex; align-items: center; justify-content: center; font-size: 1.1rem; font-weight: 700; color: #fff; flex-shrink: 0; font-family: 'Inter', sans-serif; }
+    .bday-avatar.today-av { background: linear-gradient(135deg, #ff6b9d, #e91e8c); }
+    .bday-avatar.soon-av { background: linear-gradient(135deg, var(--gold), #e8931a); }
+    .bday-info { flex: 1; min-width: 0; }
+    .bday-name { font-size: 0.9rem; font-weight: 700; color: var(--navy); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .bday-date { font-size: 0.78rem; color: var(--gray); margin-top: 2px; }
+    .bday-sales { font-size: 0.75rem; color: var(--gray); margin-top: 2px; }
+    .bday-badge { padding: 4px 12px; border-radius: 20px; font-size: 0.72rem; font-weight: 700; flex-shrink: 0; }
+    .badge-today { background: linear-gradient(135deg, #ff6b9d, #e91e8c); color: #fff; }
+    .badge-soon { background: linear-gradient(135deg, var(--gold), #e8931a); color: #fff; }
+    .badge-normal { background: #f0f0ff; color: #5b4cbf; }
+    .days-until { font-size: 0.8rem; color: var(--gray); text-align: right; min-width: 80px; }
+    .days-until strong { color: var(--navy); display: block; font-size: 1.1rem; }
+    /* Today banner */
+    .today-banner { background: linear-gradient(135deg, #fff0f8, #fde8f4); border: 2px solid #f7b8d8; border-radius: 14px; padding: 16px 20px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px; }
+    .today-banner-icon { font-size: 2rem; }
+    .today-banner-text { flex: 1; }
+    .today-banner-title { font-size: 0.95rem; font-weight: 700; color: #c0185a; }
+    .today-banner-sub { font-size: 0.82rem; color: #e96ba0; margin-top: 2px; }
+    /* Empty */
+    .empty-state { text-align: center; padding: 60px 20px; color: #bbb; }
+    .empty-state .empty-icon { font-size: 2.5rem; margin-bottom: 12px; }
+    /* Skeleton */
+    .skeleton { background: linear-gradient(90deg, #f0f0f5 25%, #e8e8f0 50%, #f0f0f5 75%); background-size: 200% 100%; animation: shimmer 1.4s infinite; border-radius: 6px; display: inline-block; }
+    @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    /* Toast */
+    .toast-container { position: fixed; bottom: 28px; right: 28px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+    .toast { padding: 14px 20px; border-radius: 12px; font-size: 0.875rem; font-weight: 500; box-shadow: 0 6px 24px rgba(0,0,0,0.15); animation: toastIn 0.3s ease; max-width: 320px; }
+    @keyframes toastIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+    .toast-info { background: #f0f4ff; border: 1px solid #c5d3ff; color: #2d4abf; }
+    /* Modal */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(13,13,43,0.55); backdrop-filter: blur(4px); z-index: 2000; align-items: center; justify-content: center; }
+    .modal-overlay.open { display: flex; }
+    .modal { background: #fff; border-radius: 20px; padding: 32px; width: 480px; max-width: 96vw; max-height: 92vh; overflow-y: auto; box-shadow: 0 24px 80px rgba(0,0,0,0.2); animation: slideUp 0.25s ease; }
+    @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+    .modal-title { font-size: 1.2rem; font-weight: 700; color: var(--navy); }
+    .modal-close { width: 32px; height: 32px; border-radius: 8px; border: 1.5px solid var(--border); background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1rem; color: var(--gray); transition: all 0.15s; }
+    .modal-close:hover { border-color: #ffcccc; color: #e74c3c; background: #fff0f0; }
+    .d-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .d-item { display: flex; flex-direction: column; gap: 3px; }
+    .d-item label { font-size: 0.65rem; font-weight: 700; color: #bbb; text-transform: uppercase; letter-spacing: 0.8px; }
+    .d-item span { font-size: 0.875rem; color: var(--text); font-weight: 500; word-break: break-all; }
+    .d-item span.empty { color: #ccc; font-style: italic; font-weight: 400; }
+    @media (max-width: 1100px) { .stats-row { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 768px) { .stats-row { grid-template-columns: 1fr 1fr; } .cal-cell { min-height: 70px; } .page-header { flex-direction: column; } }
+    @media (max-width: 480px) { .stats-row { grid-template-columns: 1fr; } .cal-cells { font-size: 0.72rem; } }
+  </style>
+</head>
+<body>
+
+<div id="navbar-placeholder"></div>
+<script src="navbar.js"></script>
+
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <div class="page-title">Birthday Calendar</div>
+      <div class="page-subtitle">Kalender ulang tahun para customer FAWZ Pro</div>
+      <div class="title-underline"></div>
+    </div>
+    <div class="header-actions">
+      <select class="filter-select" id="filterSales" onchange="applyFilters()">
+        <option value="">Semua Sales</option>
+      </select>
+      <button class="btn btn-outline" onclick="exportBirthdays()">Export CSV</button>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="stat-box">
+      <div class="stat-box-label">Ulang Tahun Hari Ini</div>
+      <div class="stat-box-val" id="statToday" style="color:#e91e8c">—</div>
+      <div class="stat-box-sub" id="statTodayNames">—</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-box-label">Bulan Ini</div>
+      <div class="stat-box-val" id="statThisMonth" style="color:#f5a623">—</div>
+      <div class="stat-box-sub" id="statThisMonthLabel">—</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-box-label">7 Hari ke Depan</div>
+      <div class="stat-box-val" id="statUpcoming" style="color:#5b4cbf">—</div>
+      <div class="stat-box-sub">customer akan berulang tahun</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-box-label">Total Data Ulang Tahun</div>
+      <div class="stat-box-val" id="statTotal">—</div>
+      <div class="stat-box-sub">dari total customer</div>
+    </div>
+  </div>
+
+  <!-- Today Banner -->
+  <div class="today-banner" id="todayBanner" style="display:none;">
+    <div class="today-banner-text">
+      <div class="today-banner-title" id="todayBannerTitle">Customer berulang tahun hari ini!</div>
+      <div class="today-banner-sub" id="todayBannerSub"></div>
+    </div>
+  </div>
+
+  <!-- Month Tabs -->
+  <div class="month-tabs" id="monthTabs"></div>
+
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <div class="search-wrap">
+      <span class="search-icon" style="font-size:0.9rem;color:#aaa;">&#128269;</span>
+      <input type="text" id="searchInput" placeholder="Cari nama customer..." oninput="applyFilters()"/>
+    </div>
+    <select class="filter-select" id="filterView" onchange="toggleView()">
+      <option value="calendar">Tampilan Kalender</option>
+      <option value="list">Tampilan List</option>
+    </select>
+  </div>
+
+  <!-- Calendar View -->
+  <div id="calendarView">
+    <div class="calendar-section">
+      <div class="cal-header">
+        <div class="cal-title" id="calMonthTitle">—</div>
+        <div class="cal-nav">
+          <button class="cal-nav-btn" onclick="prevMonth()">◀</button>
+          <button class="btn btn-outline" style="padding:7px 14px;font-size:0.8rem;" onclick="goToday()">Hari Ini</button>
+          <button class="cal-nav-btn" onclick="nextMonth()">▶</button>
+        </div>
+      </div>
+      <div class="calendar-grid">
+        <div class="cal-days-header">
+          <div class="cal-day-name">Min</div>
+          <div class="cal-day-name">Sen</div>
+          <div class="cal-day-name">Sel</div>
+          <div class="cal-day-name">Rab</div>
+          <div class="cal-day-name">Kam</div>
+          <div class="cal-day-name">Jum</div>
+          <div class="cal-day-name">Sab</div>
+        </div>
+        <div class="cal-cells" id="calCells"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- List View -->
+  <div id="listView" style="display:none;">
+    <div class="bday-list-section">
+      <div class="bday-list-header">
+        <div class="bday-list-title" id="listTitle">Daftar Ulang Tahun</div>
+        <div class="bday-list-count" id="listCount">0 customer</div>
+      </div>
+      <div id="bdayListBody">
+        <div class="empty-state"><div class="empty-icon"></div><p>Memuat data...</p></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Detail -->
+<div class="modal-overlay" id="detailModal" onclick="closeDetail(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="detailTitle">Detail Customer</div>
+      <button class="modal-close" onclick="document.getElementById('detailModal').classList.remove('open')">✕</button>
+    </div>
+    <div id="detailContent"></div>
+    <div style="margin-top:20px;display:flex;justify-content:flex-end;gap:10px;">
+      <button class="btn btn-outline" onclick="document.getElementById('detailModal').classList.remove('open')">Tutup</button>
+      <a class="btn btn-primary" href="customer.html" id="detailGoCustomer">Lihat di Data Customer →</a>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+  const MONTHS = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+  const MONTHS_SHORT = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+
+  let allCustomers = [];   // semua customer dengan birthdate
+  let filtered = [];       // setelah filter
+  let currentView = 'calendar';
+  let calYear, calMonth;   // tampilan kalender saat ini
+
+  const today = new Date();
+  calYear  = today.getFullYear();
+  calMonth = today.getMonth(); // 0-based
+
+  /* ── LOAD DATA ── */
+  async function loadBirthdays() {
+    try {
+      let offset = 0;
+      const PAGE = 1000;
+      let all = [];
+      while (true) {
+        const { data, error } = await _sb
+          .from('customers')
+          .select('id, clientID, clientName, birthDate, salesPersonName, clientStatus')
+          .not('birthDate', 'is', null)
+          .range(offset, offset + PAGE - 1);
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+        all = all.concat(data);
+        if (data.length < PAGE) break;
+        offset += PAGE;
+      }
+      allCustomers = all.filter(c => c.birthDate);
+      populateSalesFilter();
+      updateStats();
+      applyFilters();
+    } catch(e) {
+      console.error('Birthday load error:', e);
+      showToast('Gagal memuat data: ' + (e.message || e), 'error');
+    }
+  }
+
+  /* ── FILTER ── */
+  function applyFilters() {
+    const q     = (document.getElementById('searchInput').value || '').toLowerCase();
+    const sales = document.getElementById('filterSales').value;
+    filtered = allCustomers.filter(c => {
+      if (q && !(c.clientName || '').toLowerCase().includes(q) &&
+               !(c.clientID  || '').toLowerCase().includes(q)) return false;
+      if (sales && (c.salesPersonName || '') !== sales) return false;
+      return true;
+    });
+    renderMonthTabs();
+    renderCalendar();
+    renderList();
+    updateStats();
+  }
+
+  /* ── POPULATE SALES FILTER ── */
+  function populateSalesFilter() {
+    const salesSet = new Set(allCustomers.map(c => c.salesPersonName).filter(Boolean));
+    const sel = document.getElementById('filterSales');
+    [...salesSet].sort().forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = s; opt.textContent = s;
+      sel.appendChild(opt);
+    });
+  }
+
+  /* ── STATS ── */
+  function updateStats() {
+    const todayM = today.getMonth() + 1;
+    const todayD = today.getDate();
+
+    const todayBdays = filtered.filter(c => {
+      const d = parseBirth(c.birthDate);
+      return d && d.m === todayM && d.d === todayD;
+    });
+    const thisMonthBdays = filtered.filter(c => {
+      const d = parseBirth(c.birthDate);
+      return d && d.m === todayM;
+    });
+    const upcomingBdays = filtered.filter(c => {
+      const days = daysUntilBirthday(c.birthDate);
+      return days !== null && days > 0 && days <= 7;
+    });
+
+    setTxt('statToday', todayBdays.length);
+    setTxt('statTodayNames', todayBdays.length
+      ? todayBdays.map(c => c.clientName).join(', ').substring(0,60) + (todayBdays.length > 2 ? '...' : '')
+      : 'Tidak ada hari ini');
+    setTxt('statThisMonth', thisMonthBdays.length);
+    setTxt('statThisMonthLabel', MONTHS[today.getMonth()]);
+    setTxt('statUpcoming', upcomingBdays.length);
+    setTxt('statTotal', filtered.length);
+
+    // Today banner
+    const banner = document.getElementById('todayBanner');
+    if (todayBdays.length > 0) {
+      banner.style.display = 'flex';
+      document.getElementById('todayBannerTitle').textContent =
+        todayBdays.length === 1
+          ? `${todayBdays[0].clientName} berulang tahun hari ini!`
+          : `${todayBdays.length} customer berulang tahun hari ini!`;
+      document.getElementById('todayBannerSub').textContent =
+        todayBdays.map(c => c.clientName).join(' • ');
+    } else {
+      banner.style.display = 'none';
+    }
+  }
+
+  /* ── MONTH TABS ── */
+  function renderMonthTabs() {
+    const container = document.getElementById('monthTabs');
+    container.innerHTML = '';
+    // "Semua" tab
+    const allTab = document.createElement('button');
+    allTab.className = 'month-tab' + (calMonth === -1 ? ' active' : '');
+    allTab.textContent = 'Semua';
+    allTab.onclick = () => { calMonth = today.getMonth(); renderCalendar(); renderList(); setActiveMonthTab(); };
+    container.appendChild(allTab);
+
+    MONTHS_SHORT.forEach((m, i) => {
+      const count = filtered.filter(c => { const d = parseBirth(c.birthDate); return d && d.m === i+1; }).length;
+      const tab = document.createElement('button');
+      tab.className = 'month-tab' + (i === calMonth ? ' active' : '') + (count > 0 ? ' has-birthday' : '');
+      tab.textContent = m + (count > 0 ? ` (${count})` : '');
+      tab.dataset.month = i;
+      tab.onclick = () => { calMonth = i; calYear = today.getFullYear(); renderCalendar(); renderList(); setActiveMonthTab(i); };
+      container.appendChild(tab);
+    });
+  }
+
+  function setActiveMonthTab(activeIdx) {
+    document.querySelectorAll('.month-tab').forEach((t, i) => {
+      t.classList.toggle('active', i === (activeIdx === undefined ? calMonth + 1 : activeIdx + 1));
+    });
+  }
+
+  /* ── CALENDAR ── */
+  function renderCalendar() {
+    const title = document.getElementById('calMonthTitle');
+    title.textContent = MONTHS[calMonth] + ' ' + calYear;
+
+    const firstDay = new Date(calYear, calMonth, 1).getDay(); // 0=Sun
+    const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+    const prevDays = new Date(calYear, calMonth, 0).getDate();
+
+    // Build map: day → customers with birthday
+    const bdayMap = {};
+    filtered.forEach(c => {
+      const d = parseBirth(c.birthDate);
+      if (d && d.m === calMonth + 1) {
+        if (!bdayMap[d.d]) bdayMap[d.d] = [];
+        bdayMap[d.d].push(c);
+      }
+    });
+
+    const cells = document.getElementById('calCells');
+    cells.innerHTML = '';
+
+    // Prev month filler
+    for (let i = firstDay - 1; i >= 0; i--) {
+      const cell = document.createElement('div');
+      cell.className = 'cal-cell other-month';
+      cell.innerHTML = `<div class="cal-date">${prevDays - i}</div>`;
+      cells.appendChild(cell);
+    }
+
+    // Current month days
+    for (let d = 1; d <= daysInMonth; d++) {
+      const cell = document.createElement('div');
+      const isToday = (d === today.getDate() && calMonth === today.getMonth() && calYear === today.getFullYear());
+      cell.className = 'cal-cell' + (isToday ? ' today' : '');
+
+      const dateDiv = document.createElement('div');
+      dateDiv.className = 'cal-date';
+      dateDiv.textContent = d;
+      cell.appendChild(dateDiv);
+
+      const bdayList = bdayMap[d] || [];
+      const maxShow = 3;
+      bdayList.slice(0, maxShow).forEach(c => {
+        const chip = document.createElement('div');
+        const isTodayBday = isToday;
+        chip.className = 'birthday-chip ' + (isTodayBday ? 'today-bday' : 'normal-bday');
+        chip.innerHTML = `<span class="chip-name">${c.clientName || c.clientID}</span>`;
+        chip.title = c.clientName;
+        chip.onclick = () => openDetail(c);
+        cell.appendChild(chip);
+      });
+      if (bdayList.length > maxShow) {
+        const more = document.createElement('div');
+        more.className = 'more-chip';
+        more.textContent = `+${bdayList.length - maxShow} lagi`;
+        more.onclick = () => openDayModal(d, bdayList);
+        cell.appendChild(more);
+      }
+      cells.appendChild(cell);
+    }
+
+    // Next month filler
+    const totalCells = firstDay + daysInMonth;
+    const remaining = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
+    for (let d = 1; d <= remaining; d++) {
+      const cell = document.createElement('div');
+      cell.className = 'cal-cell other-month';
+      cell.innerHTML = `<div class="cal-date">${d}</div>`;
+      cells.appendChild(cell);
+    }
+  }
+
+  function prevMonth() {
+    calMonth--;
+    if (calMonth < 0) { calMonth = 11; calYear--; }
+    renderCalendar();
+    setActiveMonthTab(calMonth);
+  }
+  function nextMonth() {
+    calMonth++;
+    if (calMonth > 11) { calMonth = 0; calYear++; }
+    renderCalendar();
+    setActiveMonthTab(calMonth);
+  }
+  function goToday() {
+    calYear = today.getFullYear();
+    calMonth = today.getMonth();
+    renderCalendar();
+    setActiveMonthTab(calMonth);
+  }
+
+  /* ── LIST VIEW ── */
+  function renderList() {
+    const body = document.getElementById('bdayListBody');
+    const title = document.getElementById('listTitle');
+    const countEl = document.getElementById('listCount');
+
+    // Sort by days until birthday
+    const sorted = [...filtered]
+      .filter(c => parseBirth(c.birthDate))
+      .sort((a, b) => {
+        const da = daysUntilBirthday(a.birthDate) ?? 999;
+        const db = daysUntilBirthday(b.birthDate) ?? 999;
+        return da - db;
+      });
+
+    title.textContent = 'Daftar Ulang Tahun — ' + MONTHS[calMonth] + ' ' + calYear;
+    const monthFiltered = sorted.filter(c => {
+      const d = parseBirth(c.birthDate);
+      return d && d.m === calMonth + 1;
+    });
+    countEl.textContent = monthFiltered.length + ' customer';
+
+    if (monthFiltered.length === 0) {
+      body.innerHTML = '<div class="empty-state"><div class="empty-icon"></div><p>Tidak ada ulang tahun di bulan ini</p></div>';
+      return;
+    }
+
+    body.innerHTML = '';
+    monthFiltered.forEach(c => {
+      const days = daysUntilBirthday(c.birthDate);
+      const d = parseBirth(c.birthDate);
+      const isToday = days === 0;
+      const isSoon  = days !== null && days > 0 && days <= 7;
+      const initial = (c.clientName || '?')[0].toUpperCase();
+      const avatarClass = isToday ? 'today-av' : (isSoon ? 'soon-av' : '');
+      const badgeClass  = isToday ? 'badge-today' : (isSoon ? 'badge-soon' : 'badge-normal');
+      const badgeText   = isToday ? 'Hari Ini!' : (isSoon ? `${days} hari lagi` : MONTHS[d.m-1]);
+      const daysLabel   = isToday ? '!' : (days !== null ? days : '—');
+      const daysUnit    = isToday ? 'Hari Ini' : (days === 1 ? 'hari lagi' : days > 1 ? 'hari lagi' : '');
+
+      const item = document.createElement('div');
+      item.className = 'bday-item';
+      item.innerHTML = `
+        <div class="bday-avatar ${avatarClass}">${initial}</div>
+        <div class="bday-info">
+          <div class="bday-name">${c.clientName || '—'}</div>
+          <div class="bday-date">${formatBirthDate(c.birthDate)} · ${getAge(c.birthDate)} tahun</div>
+          <div class="bday-sales">${c.salesPersonName || '—'} · ${c.clientID || ''}</div>
+        </div>
+        <div class="days-until">
+          <strong>${daysLabel}</strong>${daysUnit}
+        </div>
+        <span class="bday-badge ${badgeClass}">${badgeText}</span>`;
+      item.onclick = () => openDetail(c);
+      body.appendChild(item);
+    });
+  }
+
+  /* ── TOGGLE VIEW ── */
+  function toggleView() {
+    currentView = document.getElementById('filterView').value;
+    document.getElementById('calendarView').style.display = currentView === 'calendar' ? 'block' : 'none';
+    document.getElementById('listView').style.display     = currentView === 'list'     ? 'block' : 'none';
+  }
+
+  /* ── DETAIL MODAL ── */
+  function openDetail(c) {
+    const d = parseBirth(c.birthDate);
+    const age = getAge(c.birthDate);
+    const days = daysUntilBirthday(c.birthDate);
+    const daysText = days === 0 ? 'Hari Ini!' : (days === 1 ? 'Besok!' : (days !== null ? `${days} hari lagi` : '—'));
+
+    document.getElementById('detailTitle').textContent = c.clientName || 'Customer';
+    document.getElementById('detailContent').innerHTML = `
+      <div style="text-align:center;padding:16px 0 20px;">
+        <div style="font-size:1.2rem;font-weight:700;color:var(--navy);">${c.clientName || '—'}</div>
+        <div style="font-size:0.85rem;color:var(--gray);margin-top:4px;">${formatBirthDate(c.birthDate)}</div>
+        <div style="margin-top:10px;">
+          <span style="background:linear-gradient(135deg,var(--gold),#e8931a);color:#fff;padding:6px 18px;border-radius:20px;font-weight:700;font-size:0.9rem;">
+            ${daysText}
+          </span>
+        </div>
+      </div>
+      <div class="d-grid" style="margin-top:8px;">
+        <div class="d-item"><label>Client ID</label><span>${c.clientID || '—'}</span></div>
+        <div class="d-item"><label>Usia</label><span>${age !== null ? age + ' tahun' : '—'}</span></div>
+        <div class="d-item"><label>Tanggal Lahir</label><span>${formatBirthDate(c.birthDate)}</span></div>
+        <div class="d-item"><label>Sales PIC</label><span>${c.salesPersonName || '—'}</span></div>
+        <div class="d-item"><label>Status</label><span>${c.clientStatus || '—'}</span></div>
+        <div class="d-item"><label>Hari Tersisa</label><span>${daysText}</span></div>
+      </div>`;
+    document.getElementById('detailModal').classList.add('open');
+  }
+
+  function closeDetail(e) {
+    if (e.target === document.getElementById('detailModal')) {
+      document.getElementById('detailModal').classList.remove('open');
+    }
+  }
+
+  /* ── EXPORT CSV ── */
+  function exportBirthdays() {
+    const rows = [['Client ID','Nama','Tanggal Lahir','Usia','Sales PIC','Status','Hari Hingga Ulang Tahun']];
+    filtered.forEach(c => {
+      const days = daysUntilBirthday(c.birthDate);
+      rows.push([c.clientID, c.clientName, c.birthDate, getAge(c.birthDate) || '', c.salesPersonName, c.clientStatus, days !== null ? days : '']);
+    });
+    const csv = rows.map(r => r.map(v => `"${(v||'').toString().replace(/"/g,'""')}"`).join(',')).join('\n');
+    const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'birthday-calendar-' + new Date().toISOString().slice(0,10) + '.csv';
+    a.click();
+    showToast('Export berhasil!', 'info');
+  }
+
+  /* ── HELPERS ── */
+  function parseBirth(raw) {
+    if (!raw) return null;
+    const parts = raw.split('-');
+    if (parts.length < 3) return null;
+    const y = parseInt(parts[0]), m = parseInt(parts[1]), d = parseInt(parts[2]);
+    if (!y || !m || !d) return null;
+    return { y, m, d };
+  }
+
+  function daysUntilBirthday(raw) {
+    const bd = parseBirth(raw);
+    if (!bd) return null;
+    const now = new Date();
+    let next = new Date(now.getFullYear(), bd.m - 1, bd.d);
+    if (next < new Date(now.getFullYear(), now.getMonth(), now.getDate())) {
+      next = new Date(now.getFullYear() + 1, bd.m - 1, bd.d);
+    }
+    const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    return Math.round((next - todayMidnight) / 86400000);
+  }
+
+  function getAge(raw) {
+    const bd = parseBirth(raw);
+    if (!bd) return null;
+    const now = new Date();
+    let age = now.getFullYear() - bd.y;
+    if (now.getMonth() + 1 < bd.m || (now.getMonth() + 1 === bd.m && now.getDate() < bd.d)) age--;
+    return age;
+  }
+
+  function formatBirthDate(raw) {
+    const bd = parseBirth(raw);
+    if (!bd) return raw || '—';
+    return `${String(bd.d).padStart(2,'0')} ${MONTHS[bd.m-1]} ${bd.y}`;
+  }
+
+  function setTxt(id, val) { const el = document.getElementById(id); if (el) el.textContent = val; }
+
+  function showToast(msg, type='info') {
+    const c = document.getElementById('toastContainer');
+    const t = document.createElement('div');
+    t.className = 'toast toast-' + type;
+    t.textContent = msg;
+    c.appendChild(t);
+    setTimeout(() => t.remove(), 3500);
+  }
+
+  // Init month tabs on load
+  document.addEventListener('DOMContentLoaded', () => {
+    renderMonthTabs();
+    renderCalendar();
+  });
+</script>
+</body>
+</html>

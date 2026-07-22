@@ -203,8 +203,9 @@ console.log('[Fawz navbar.js] v2.5.0 loaded');
       'influencer-fan.html'    : ['head_account', 'admin', 'sales', 'head_sales'],
 
       // Customer dropdown
-      'customer.html'          : ['head_account', 'admin', 'treasury', 'sales', 'head_sales'],
-      'follow-up-customer.html': ['head_account', 'admin', 'treasury', 'sales', 'head_sales'],
+      'customer.html'           : ['head_account', 'admin', 'treasury', 'sales', 'head_sales'],
+      'follow-up-customer.html' : ['head_account', 'admin', 'treasury', 'sales', 'head_sales'],
+      'birthday-calendar.html'  : ['head_account', 'admin', 'treasury', 'sales', 'head_sales'],
 
       // Product dropdown
       'obligasi-bookbuilding.html'    : ['head_account', 'admin', 'treasury', 'sales', 'head_sales'],
