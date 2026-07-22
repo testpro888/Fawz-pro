@@ -301,8 +301,8 @@
       while (true) {
         const { data, error } = await _sb
           .from('customers')
-          .select('id, clientID, clientName, birthDate, salesPersonName, clientStatus')
-          .not('birthDate', 'is', null)
+          .select('id, clientID, clientName, birth_date, salesPersonName, clientStatus')
+          .not('birth_date', 'is', null)
           .range(offset, offset + PAGE - 1);
         if (error) throw error;
         if (!data || data.length === 0) break;
@@ -310,7 +310,7 @@
         if (data.length < PAGE) break;
         offset += PAGE;
       }
-      allCustomers = all.filter(c => c.birthDate);
+      allCustomers = all.filter(c => c.birth_date);
       populateSalesFilter();
       updateStats();
       applyFilters();
@@ -353,15 +353,15 @@
     const todayD = today.getDate();
 
     const todayBdays = filtered.filter(c => {
-      const d = parseBirth(c.birthDate);
+      const d = parseBirth(c.birth_date);
       return d && d.m === todayM && d.d === todayD;
     });
     const thisMonthBdays = filtered.filter(c => {
-      const d = parseBirth(c.birthDate);
+      const d = parseBirth(c.birth_date);
       return d && d.m === todayM;
     });
     const upcomingBdays = filtered.filter(c => {
-      const days = daysUntilBirthday(c.birthDate);
+      const days = daysUntilBirthday(c.birth_date);
       return days !== null && days > 0 && days <= 7;
     });
 
@@ -401,7 +401,7 @@
     container.appendChild(allTab);
 
     MONTHS_SHORT.forEach((m, i) => {
-      const count = filtered.filter(c => { const d = parseBirth(c.birthDate); return d && d.m === i+1; }).length;
+      const count = filtered.filter(c => { const d = parseBirth(c.birth_date); return d && d.m === i+1; }).length;
       const tab = document.createElement('button');
       tab.className = 'month-tab' + (i === calMonth ? ' active' : '') + (count > 0 ? ' has-birthday' : '');
       tab.textContent = m + (count > 0 ? ` (${count})` : '');
@@ -429,7 +429,7 @@
     // Build map: day → customers with birthday
     const bdayMap = {};
     filtered.forEach(c => {
-      const d = parseBirth(c.birthDate);
+      const d = parseBirth(c.birth_date);
       if (d && d.m === calMonth + 1) {
         if (!bdayMap[d.d]) bdayMap[d.d] = [];
         bdayMap[d.d].push(c);
@@ -517,16 +517,16 @@
 
     // Sort by days until birthday
     const sorted = [...filtered]
-      .filter(c => parseBirth(c.birthDate))
+      .filter(c => parseBirth(c.birth_date))
       .sort((a, b) => {
-        const da = daysUntilBirthday(a.birthDate) ?? 999;
-        const db = daysUntilBirthday(b.birthDate) ?? 999;
+        const da = daysUntilBirthday(a.birth_date) ?? 999;
+        const db = daysUntilBirthday(b.birth_date) ?? 999;
         return da - db;
       });
 
     title.textContent = 'Daftar Ulang Tahun — ' + MONTHS[calMonth] + ' ' + calYear;
     const monthFiltered = sorted.filter(c => {
-      const d = parseBirth(c.birthDate);
+      const d = parseBirth(c.birth_date);
       return d && d.m === calMonth + 1;
     });
     countEl.textContent = monthFiltered.length + ' customer';
@@ -538,8 +538,8 @@
 
     body.innerHTML = '';
     monthFiltered.forEach(c => {
-      const days = daysUntilBirthday(c.birthDate);
-      const d = parseBirth(c.birthDate);
+      const days = daysUntilBirthday(c.birth_date);
+      const d = parseBirth(c.birth_date);
       const isToday = days === 0;
       const isSoon  = days !== null && days > 0 && days <= 7;
       const initial = (c.clientName || '?')[0].toUpperCase();
@@ -555,7 +555,7 @@
         <div class="bday-avatar ${avatarClass}">${initial}</div>
         <div class="bday-info">
           <div class="bday-name">${c.clientName || '—'}</div>
-          <div class="bday-date">${formatBirthDate(c.birthDate)} · ${getAge(c.birthDate)} tahun</div>
+          <div class="bday-date">${formatBirthDate(c.birth_date)} · ${getAge(c.birth_date)} tahun</div>
           <div class="bday-sales">${c.salesPersonName || '—'} · ${c.clientID || ''}</div>
         </div>
         <div class="days-until">
@@ -576,16 +576,16 @@
 
   /* ── DETAIL MODAL ── */
   function openDetail(c) {
-    const d = parseBirth(c.birthDate);
-    const age = getAge(c.birthDate);
-    const days = daysUntilBirthday(c.birthDate);
+    const d = parseBirth(c.birth_date);
+    const age = getAge(c.birth_date);
+    const days = daysUntilBirthday(c.birth_date);
     const daysText = days === 0 ? 'Hari Ini!' : (days === 1 ? 'Besok!' : (days !== null ? `${days} hari lagi` : '—'));
 
     document.getElementById('detailTitle').textContent = c.clientName || 'Customer';
     document.getElementById('detailContent').innerHTML = `
       <div style="text-align:center;padding:16px 0 20px;">
         <div style="font-size:1.2rem;font-weight:700;color:var(--navy);">${c.clientName || '—'}</div>
-        <div style="font-size:0.85rem;color:var(--gray);margin-top:4px;">${formatBirthDate(c.birthDate)}</div>
+        <div style="font-size:0.85rem;color:var(--gray);margin-top:4px;">${formatBirthDate(c.birth_date)}</div>
         <div style="margin-top:10px;">
           <span style="background:linear-gradient(135deg,var(--gold),#e8931a);color:#fff;padding:6px 18px;border-radius:20px;font-weight:700;font-size:0.9rem;">
             ${daysText}
@@ -595,7 +595,7 @@
       <div class="d-grid" style="margin-top:8px;">
         <div class="d-item"><label>Client ID</label><span>${c.clientID || '—'}</span></div>
         <div class="d-item"><label>Usia</label><span>${age !== null ? age + ' tahun' : '—'}</span></div>
-        <div class="d-item"><label>Tanggal Lahir</label><span>${formatBirthDate(c.birthDate)}</span></div>
+        <div class="d-item"><label>Tanggal Lahir</label><span>${formatBirthDate(c.birth_date)}</span></div>
         <div class="d-item"><label>Sales PIC</label><span>${c.salesPersonName || '—'}</span></div>
         <div class="d-item"><label>Status</label><span>${c.clientStatus || '—'}</span></div>
         <div class="d-item"><label>Hari Tersisa</label><span>${daysText}</span></div>
@@ -613,8 +613,8 @@
   function exportBirthdays() {
     const rows = [['Client ID','Nama','Tanggal Lahir','Usia','Sales PIC','Status','Hari Hingga Ulang Tahun']];
     filtered.forEach(c => {
-      const days = daysUntilBirthday(c.birthDate);
-      rows.push([c.clientID, c.clientName, c.birthDate, getAge(c.birthDate) || '', c.salesPersonName, c.clientStatus, days !== null ? days : '']);
+      const days = daysUntilBirthday(c.birth_date);
+      rows.push([c.clientID, c.clientName, c.birth_date, getAge(c.birth_date) || '', c.salesPersonName, c.clientStatus, days !== null ? days : '']);
     });
     const csv = rows.map(r => r.map(v => `"${(v||'').toString().replace(/"/g,'""')}"`).join(',')).join('\n');
     const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8'});
