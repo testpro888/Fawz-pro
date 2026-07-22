@@ -1417,6 +1417,84 @@ function renderOutput(r) {
 
   ${dbPriceHtml}
 
+  <!-- SKENARIO EXIT (mode Beli saja) -->
+  ${!r.isJual ? (() => {
+    // Kupon nett 1 tahun penuh
+    const couponNett1Y = r.couponNet * r.freq;
+    // Total modal yang disetor (dirty = clean + AI)
+    const totalModal = r.totalProceed;
+    // Baris: offset dari harga beli clean
+    const scenarios = [
+      { offset: +2, label: 'Harga Naik Jauh'  },
+      { offset: +1, label: 'Harga Naik'        },
+      { offset:  0, label: 'Harga Flat'        },
+      { offset: -1, label: 'Harga Turun'       },
+      { offset: -2, label: 'Harga Turun Jauh'  },
+    ];
+
+    const scRows = scenarios.map(s => {
+      const sellCleanPct   = r.price + s.offset;
+      const sellNominal    = (sellCleanPct / 100) * r.nominal;   // nilai jual clean
+      const totalMasuk     = sellNominal + couponNett1Y;
+      const netPL          = totalMasuk - totalModal;
+      const returnPct      = (netPL / totalModal) * 100;
+      const isUp           = netPL >= 0;
+      const isFlat         = s.offset === 0;
+      return `<tr style="${isFlat ? 'background:#fffbf0;font-weight:700;' : ''}">
+        <td style="padding:8px 12px;text-align:center;font-size:0.82rem;font-weight:700;color:${s.offset>0?'#1a7a47':s.offset<0?'#c0392b':'#444'};">${sellCleanPct.toFixed(2)}</td>
+        <td style="padding:8px 12px;font-size:0.78rem;color:#666;">${s.label}</td>
+        <td style="padding:8px 12px;text-align:right;font-size:0.82rem;font-weight:600;color:#333;font-variant-numeric:tabular-nums;">${fmtIDR(sellNominal)}</td>
+        <td style="padding:8px 12px;text-align:right;font-size:0.82rem;color:#2d4abf;font-variant-numeric:tabular-nums;">${fmtIDR(couponNett1Y)}</td>
+        <td style="padding:8px 12px;text-align:right;font-size:0.82rem;font-weight:600;color:#333;font-variant-numeric:tabular-nums;">${fmtIDR(totalMasuk)}</td>
+        <td style="padding:8px 12px;text-align:right;font-size:0.82rem;font-weight:700;color:${isUp?'#1a7a47':'#c0392b'};font-variant-numeric:tabular-nums;">${isUp?'+':''}${fmtIDR(netPL)}</td>
+        <td style="padding:8px 12px;text-align:right;font-size:0.82rem;font-weight:700;color:${isUp?'#1a7a47':'#c0392b'};">${isUp?'+':''}${returnPct.toFixed(2)}%</td>
+      </tr>`;
+    }).join('');
+
+    return `
+  <div style="background:#fff;border:1.5px solid #e0e0ef;border-radius:14px;margin-bottom:14px;overflow:hidden;">
+    <div style="background:linear-gradient(135deg,#0d0d2b,#1e1252);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;">
+      <div>
+        <div style="font-size:0.88rem;font-weight:800;color:#fff;">Skenario EXIT sebelum Maturity</div>
+        <div style="font-size:0.7rem;color:rgba(255,255,255,0.45);margin-top:2px;">
+          Ilustrasi Hold 1 Tahun &nbsp;&middot;&nbsp; Acuan Harga Beli: ${fmtNum(r.price,4)}% &nbsp;&middot;&nbsp; Nominal: ${fmtIDR(r.nominal)}
+        </div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:0.7rem;color:rgba(255,255,255,0.45);">Kupon Nett / Tahun</div>
+        <div style="font-size:1rem;font-weight:800;color:var(--gold-light);">${fmtIDR(couponNett1Y)}</div>
+      </div>
+    </div>
+    <div style="overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;">
+        <thead>
+          <tr style="background:#f8f9ff;border-bottom:2px solid #e8e8f5;">
+            <th style="padding:8px 12px;text-align:center;font-size:0.65rem;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:0.8px;">Harga Jual</th>
+            <th style="padding:8px 12px;text-align:left;font-size:0.65rem;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:0.8px;">Skenario</th>
+            <th style="padding:8px 12px;text-align:right;font-size:0.65rem;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:0.8px;">Nilai Jual</th>
+            <th style="padding:8px 12px;text-align:right;font-size:0.65rem;font-weight:700;color:#2d4abf;text-transform:uppercase;letter-spacing:0.8px;">Kupon 1 Tahun</th>
+            <th style="padding:8px 12px;text-align:right;font-size:0.65rem;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:0.8px;">Total Masuk</th>
+            <th style="padding:8px 12px;text-align:right;font-size:0.65rem;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:0.8px;">Net P&amp;L</th>
+            <th style="padding:8px 12px;text-align:right;font-size:0.65rem;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:0.8px;">Return p.a.</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="background:#f0f2ff;">
+            <td colspan="2" style="padding:6px 12px;font-size:0.7rem;color:#666;">
+              <strong>Modal Disetor (Dirty):</strong> ${fmtIDR(r.totalProceed)}
+              ${r.hasSettleDate && r.accruedAmt > 0 ? `&nbsp;(Clean ${fmtIDR(r.cleanProceed)} + AI ${fmtIDR(r.accruedAmt)})` : ''}
+            </td>
+            <td colspan="5" style="padding:6px 12px;font-size:0.7rem;color:#888;text-align:right;">
+              Net P&amp;L = Total Masuk − Modal &nbsp;|&nbsp; Return = Net P&amp;L ÷ Modal × 100%
+            </td>
+          </tr>
+          ${scRows}
+        </tbody>
+      </table>
+    </div>
+  </div>`;
+  })() : ''}
+
   <!-- CASHFLOW TABLE — hanya tampil jika ada settle date -->
   ${r.hasSettleDate && r.flows.length ? `
   <!-- CASHFLOW TABLE -->

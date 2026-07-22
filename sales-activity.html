@@ -485,7 +485,8 @@
   async function loadData() {
     try {
       let query = getDb().from('sales_activities').select('*');
-      if (curUser?.role === 'sales') {
+      // Sales dan Bonds (treasury) hanya bisa lihat aktivitas mereka sendiri
+      if (curUser?.role === 'sales' || curUser?.role === 'treasury') {
         query = query.eq('sales_name', curUser.name || '');
       }
       const { data, error } = await query.order('date', { ascending: false });
@@ -507,7 +508,8 @@
     const month  = document.getElementById('filterMonth').value;
 
     filtered = allData.filter(item => {
-      if (curUser?.role === 'sales' && item.salesName !== curUser.name) return false;
+      // Sales dan Bonds (treasury) hanya bisa lihat aktivitas mereka sendiri
+      if ((curUser?.role === 'sales' || curUser?.role === 'treasury') && item.salesName !== curUser.name) return false;
       const matchQ      = !q || [item.salesName, item.client, item.activity, item.notes].some(f => (f||'').toLowerCase().includes(q));
       const matchAct    = !act    || item.activity === act;
       const matchStatus = !status || item.status === status;
