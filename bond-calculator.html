@@ -240,8 +240,8 @@
 
           <!-- CALCULATOR TYPE -->
           <div class="type-tabs">
-            <button class="type-tab active" onclick="setCalcType('secondary')" id="tab-secondary">Pasar Sekunder</button>
-            <button class="type-tab" onclick="setCalcType('ipo')" id="tab-ipo">IPO / Primary</button>
+            <button class="type-tab active" onclick="setCalcType('beli')" id="tab-secondary">Beli</button>
+            <button class="type-tab" onclick="setCalcType('jual')" id="tab-ipo">Jual</button>
           </div>
 
           <!-- DETAIL OBLIGASI (auto-fill dari DB) -->
@@ -285,27 +285,62 @@
           <!-- TRANSAKSI -->
           <div class="form-section">
             <div class="form-section-label">Informasi Transaksi</div>
-            <div class="form-row">
-              <div class="form-group">
-                <label class="form-label">Trade Date</label>
-                <input class="form-input" id="inp-trade" type="date" onchange="onTradeChange()"/>
+
+            <!-- Checkbox opsional tanggal — hanya tampil di mode Jual -->
+            <div id="grp-trade-date-toggle" style="display:none;margin-bottom:10px;">
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                <input type="checkbox" id="chk-use-trade-date" onchange="toggleTradeDateSection()" style="width:15px;height:15px;cursor:pointer;accent-color:var(--gold);"/>
+                <span style="font-size:0.72rem;font-weight:700;color:#666;text-transform:uppercase;letter-spacing:0.5px;">Sertakan Tanggal Beli</span>
+                <span style="font-size:0.7rem;color:#aaa;font-weight:400;text-transform:none;">(untuk hitung accrued interest & kupon)</span>
+              </label>
+            </div>
+
+            <!-- Trade Date & Settlement — tersembunyi di Jual jika checkbox off -->
+            <div id="grp-trade-date-fields">
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Trade Date</label>
+                  <input class="form-input" id="inp-trade" type="date" onchange="onTradeChange()"/>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Settlement Date <small>(+2)</small></label>
+                  <input class="form-input" id="inp-settle" type="date" onchange="onInputChange()"/>
+                </div>
               </div>
-              <div class="form-group">
-                <label class="form-label">Settlement Date <small>(+2)</small></label>
-                <input class="form-input" id="inp-settle" type="date" onchange="onInputChange()"/>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Last Coupon <small>(otomatis)</small></label>
+                  <input class="form-input readonly" id="inp-last-coupon" type="date" readonly/>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Next Coupon <small>(otomatis)</small></label>
+                  <input class="form-input readonly" id="inp-next-coupon" type="date" readonly/>
+                </div>
               </div>
             </div>
-            <div class="form-row">
-              <div class="form-group">
-                <label class="form-label">Last Coupon <small>(otomatis)</small></label>
-                <input class="form-input readonly" id="inp-last-coupon" type="date" readonly/>
-              </div>
-              <div class="form-group">
-                <label class="form-label">Next Coupon <small>(otomatis)</small></label>
-                <input class="form-input readonly" id="inp-next-coupon" type="date" readonly/>
+
+            <!-- Tanggal Jual (checkbox) — hanya tampil di mode Jual -->
+            <div id="grp-sell-custom-date" style="display:none;margin-top:10px;padding-top:10px;border-top:1px dashed #e8e8f0;">
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:8px;">
+                <input type="checkbox" id="chk-sell-custom-date" onchange="toggleSellCustomDate()" style="width:15px;height:15px;cursor:pointer;accent-color:var(--gold);"/>
+                <span style="font-size:0.72rem;font-weight:700;color:#666;text-transform:uppercase;letter-spacing:0.5px;">Sertakan Tanggal Jual</span>
+                <span style="font-size:0.7rem;color:#aaa;font-weight:400;text-transform:none;">(untuk hitung kupon & accrued jual)</span>
+              </label>
+              <div id="grp-sell-date-fields" style="display:none;">
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">Trade Date Jual</label>
+                    <input class="form-input" id="inp-sell-trade" type="date" onchange="onSellTradeChange()"/>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Settlement Date Jual <small>(+2)</small></label>
+                    <input class="form-input" id="inp-sell-date" type="date" onchange="onSellPriceChange()"/>
+                  </div>
+                </div>
               </div>
             </div>
-            <div class="form-group">
+
+            <div class="form-group" style="margin-top:10px;">
               <label class="form-label">Nominal Investasi</label>
               <div class="input-suffix">
                 <input class="form-input" id="inp-nominal" type="text" placeholder="100.000.000" oninput="formatNominal(this); onInputChange()"/>
@@ -319,7 +354,7 @@
             <div class="form-section-label">Harga & Yield</div>
             <div class="form-row">
               <div class="form-group">
-                <label class="form-label">Clean Price <small>%</small></label>
+                <label class="form-label">Harga Beli <small>%</small></label>
                 <div class="input-suffix">
                   <input class="form-input" id="inp-price" type="number" step="0.001" placeholder="100.000" oninput="onPriceChange()"/>
                   <span>%</span>
@@ -333,11 +368,35 @@
                 </div>
               </div>
             </div>
+            <!-- HARGA JUAL — hanya tampil di mode Jual -->
+            <div class="form-row" id="row-sell-price" style="display:none;">
+              <div class="form-group">
+                <label class="form-label">Harga Jual <small>%</small></label>
+                <div class="input-suffix">
+                  <input class="form-input" id="inp-sell-price" type="number" step="0.001" placeholder="101.000" oninput="onSellPriceChange()"/>
+                  <span>%</span>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">YTM Jual <small>%</small></label>
+                <div class="input-suffix">
+                  <input class="form-input" id="inp-sell-yield" type="number" step="0.0001" placeholder="7.500" oninput="onSellYieldChange()"/>
+                  <span>%</span>
+                </div>
+              </div>
+            </div>
             <div class="form-row">
               <div class="form-group">
                 <label class="form-label">PPh Kupon</label>
                 <div class="input-suffix">
                   <input class="form-input" id="inp-tax" type="number" step="1" value="10" oninput="onInputChange()"/>
+                  <span>%</span>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">PPh Capital Gain</label>
+                <div class="input-suffix">
+                  <input class="form-input" id="inp-tax-capgain" type="number" step="1" value="10" oninput="onInputChange()"/>
                   <span>%</span>
                 </div>
               </div>
@@ -799,11 +858,123 @@ function generateCashflows(settle, maturity, coupon, freqPerYear, nominal, taxPc
 // =============================================
 // UI HELPERS
 // =============================================
-let calcMode = 'secondary';
+let calcMode = 'beli';
 function setCalcType(t) {
   calcMode = t;
-  document.getElementById('tab-secondary').classList.toggle('active', t === 'secondary');
-  document.getElementById('tab-ipo').classList.toggle('active', t === 'ipo');
+  document.getElementById('tab-secondary').classList.toggle('active', t === 'beli');
+  document.getElementById('tab-ipo').classList.toggle('active', t === 'jual');
+
+  const showSell = t === 'jual';
+
+  // Field harga jual
+  document.getElementById('row-sell-price').style.display = showSell ? '' : 'none';
+
+  if (showSell) {
+    // Mode Jual: tampilkan checkbox toggle tanggal beli, sembunyikan tanggal dulu
+    document.getElementById('grp-trade-date-toggle').style.display = '';
+    document.getElementById('grp-trade-date-fields').style.display = 'none';
+    document.getElementById('chk-use-trade-date').checked = false;
+    // Tampilkan checkbox tanggal jual
+    document.getElementById('grp-sell-custom-date').style.display = '';
+    // Reset checkbox tanggal jual
+    document.getElementById('chk-sell-custom-date').checked = false;
+    document.getElementById('grp-sell-date-fields').style.display = 'none';
+  } else {
+    // Mode Beli: sembunyikan toggle, selalu tampilkan tanggal
+    document.getElementById('grp-trade-date-toggle').style.display = 'none';
+    document.getElementById('grp-trade-date-fields').style.display = '';
+    // Sembunyikan semua hal jual
+    document.getElementById('grp-sell-custom-date').style.display = 'none';
+    document.getElementById('chk-sell-custom-date').checked = false;
+    document.getElementById('grp-sell-date-fields').style.display = 'none';
+  }
+}
+
+function toggleTradeDateSection() {
+  const checked = document.getElementById('chk-use-trade-date').checked;
+  document.getElementById('grp-trade-date-fields').style.display = checked ? '' : 'none';
+  if (checked && !document.getElementById('inp-trade').value) {
+    // Isi default tanggal hari ini
+    const today = new Date();
+    document.getElementById('inp-trade').value  = toISO(today);
+    document.getElementById('inp-settle').value = toISO(addDays(today, 2));
+    onInputChange();
+  }
+}
+
+function toggleSellCustomDate() {
+  const checked = document.getElementById('chk-sell-custom-date').checked;
+  document.getElementById('grp-sell-date-fields').style.display = checked ? '' : 'none';
+  if (checked) {
+    // Default: set sell trade = today, settle = +2
+    const today = new Date();
+    if (!document.getElementById('inp-sell-trade').value) {
+      document.getElementById('inp-sell-trade').value = toISO(today);
+      document.getElementById('inp-sell-date').value  = toISO(addDays(today, 2));
+    }
+  }
+}
+
+function onSellTradeChange() {
+  const t = new Date(document.getElementById('inp-sell-trade').value);
+  if (!isNaN(t)) document.getElementById('inp-sell-date').value = toISO(addDays(t, 2));
+  onSellPriceChange();
+}
+
+// =============================================
+// SKENARIO EXIT — update baris saat input berubah
+// =============================================
+function __scChange(inp) {
+  const row = parseInt(inp.dataset.row);
+  const val = parseFloat(inp.value);
+  if (isNaN(val) || val <= 0) return;
+
+  // Ambil semua input di baris edge (row 0 = naik jauh, row 4 = turun jauh)
+  const inputs = document.querySelectorAll('[data-row]');
+  let top = null, bot = null;
+  inputs.forEach(el => {
+    if (parseInt(el.dataset.row) === 0) top = parseFloat(el.value);
+    if (parseInt(el.dataset.row) === 4) bot = parseFloat(el.value);
+  });
+  if (top == null || bot == null) return;
+
+  // Ambil data dari hidden meta
+  const meta = document.getElementById('sc-meta');
+  if (!meta) return;
+  const basePrice   = parseFloat(meta.dataset.base);
+  const nominal     = parseFloat(meta.dataset.nominal);
+  const totalModal  = parseFloat(meta.dataset.modal);
+  const coupon1Y    = parseFloat(meta.dataset.coupon);
+
+  // Hitung harga baris 1 dan 3 (otomatis = edge ± 1)
+  const prices = [top, top - 1, basePrice, bot + 1, bot];
+
+  function fmtN(n) { return 'Rp\u00a0' + Math.round(n).toLocaleString('id-ID'); }
+  function colorOf(n) { return n > 0 ? '#1a7a47' : n < 0 ? '#c0392b' : '#444'; }
+
+  for (let i = 0; i < 5; i++) {
+    const px         = prices[i];
+    const sellNom    = (px / 100) * nominal;
+    const totalMasuk = sellNom + coupon1Y;
+    const netPL      = totalMasuk - totalModal;
+    const retPct     = (netPL / totalModal) * 100;
+    const pxColor    = px > basePrice ? '#1a7a47' : px < basePrice ? '#c0392b' : '#444';
+
+    // Update span harga (baris 1 dan 3 bukan input)
+    const pxSpan = document.getElementById('sc-px-' + i);
+    if (pxSpan) { pxSpan.textContent = px.toFixed(2); pxSpan.style.color = pxColor; }
+
+    // Update nilai jual, total masuk, net p&l, return
+    const vjEl  = document.getElementById('sc-vj-'  + i);
+    const tmEl  = document.getElementById('sc-tm-'  + i);
+    const plEl  = document.getElementById('sc-pl-'  + i);
+    const retEl = document.getElementById('sc-ret-' + i);
+
+    if (vjEl)  vjEl.textContent  = fmtN(sellNom);
+    if (tmEl)  tmEl.textContent  = fmtN(totalMasuk);
+    if (plEl)  { plEl.textContent = (netPL >= 0 ? '+' : '') + fmtN(netPL); plEl.style.color = colorOf(netPL); }
+    if (retEl) { retEl.textContent = (retPct >= 0 ? '+' : '') + retPct.toFixed(2) + '%'; retEl.style.color = colorOf(retPct); }
+  }
 }
 
 function onPriceChange() {
@@ -832,6 +1003,39 @@ function onYieldChange() {
   }
 }
 
+function onSellPriceChange() {
+  const sellPrice = parseFloat(document.getElementById('inp-sell-price').value);
+  const maturity  = document.getElementById('inp-maturity').value;
+  const coupon    = parseFloat(document.getElementById('inp-coupon').value) || 0;
+  const freq      = parseInt(document.getElementById('inp-freq').value) || 2;
+  const basis     = document.getElementById('inp-basis').value;
+  // Gunakan tanggal jual jika checkbox aktif, fallback ke settle beli
+  const useCustomDate = document.getElementById('chk-sell-custom-date')?.checked;
+  const sellDate = (useCustomDate && document.getElementById('inp-sell-date').value)
+    ? document.getElementById('inp-sell-date').value
+    : document.getElementById('inp-settle').value;
+  if (!isNaN(sellPrice) && sellPrice > 0 && sellDate && maturity && coupon) {
+    const ytm = yieldFromPrice(sellDate, maturity, coupon, sellPrice, freq, basis);
+    setVal('inp-sell-yield', ytm.toFixed(4));
+  }
+}
+
+function onSellYieldChange() {
+  const ytm      = parseFloat(document.getElementById('inp-sell-yield').value);
+  const maturity = document.getElementById('inp-maturity').value;
+  const coupon   = parseFloat(document.getElementById('inp-coupon').value) || 0;
+  const freq     = parseInt(document.getElementById('inp-freq').value) || 2;
+  const basis    = document.getElementById('inp-basis').value;
+  const useCustomDate = document.getElementById('chk-sell-custom-date')?.checked;
+  const sellDate = (useCustomDate && document.getElementById('inp-sell-date').value)
+    ? document.getElementById('inp-sell-date').value
+    : document.getElementById('inp-settle').value;
+  if (!isNaN(ytm) && ytm > 0 && sellDate && maturity && coupon) {
+    const price = priceFromYield(sellDate, maturity, coupon, ytm, freq, basis);
+    if (price !== null) setVal('inp-sell-price', price.toFixed(4));
+  }
+}
+
 // =============================================
 // MAIN CALCULATE
 // =============================================
@@ -850,28 +1054,118 @@ function calculate() {
   const price    = parseFloat(document.getElementById('inp-price').value)   || 100;
   const ytm      = parseFloat(document.getElementById('inp-yield').value)   || coupon;
   const taxPct   = parseFloat(document.getElementById('inp-tax').value)     || 10;
+  const taxCapGain = parseFloat(document.getElementById('inp-tax-capgain').value) ?? 10;
 
-  if (!maturity || !settle) { alert('Harap isi Maturity Date dan Settlement Date.'); return; }
+  // Sell mode fields
+  const isJual      = calcMode === 'jual';
+  const useTradeDateBeli = !isJual || document.getElementById('chk-use-trade-date')?.checked;
+  const sellPrice   = isJual ? (parseFloat(document.getElementById('inp-sell-price').value) || null) : null;
+  const sellYtm     = isJual ? (parseFloat(document.getElementById('inp-sell-yield').value) || null) : null;
+  const useCustomSellDate = isJual && document.getElementById('chk-sell-custom-date')?.checked;
+  const sellSettle  = isJual
+    ? (useCustomSellDate && document.getElementById('inp-sell-date').value
+        ? document.getElementById('inp-sell-date').value
+        : (useTradeDateBeli ? settle : null))
+    : null;
+
+  if (!maturity) { alert('Harap isi Maturity Date.'); return; }
+  if (!isJual && !settle) { alert('Harap isi Settlement Date.'); return; }
   if (coupon <= 0) { alert('Harap isi Coupon Rate.'); return; }
+  if (isJual && !sellPrice) { alert('Harap isi Harga Jual.'); return; }
 
-  const { last: lastCoupon, next: nextCoupon } = calcCouponDates(settle, maturity, freq);
-  if (!lastCoupon || !nextCoupon) { alert('Gagal menghitung tanggal kupon.'); return; }
+  // Jika mode Jual tanpa tanggal beli, settle bisa null — skip accrued & flows
+  const hasSettleDate = !!settle && useTradeDateBeli;
+  let lastCoupon = null, nextCoupon = null;
+  let accruedAmt = 0, accruedPct = 0, dirtyPrice = price, totalProceed = (price / 100) * nominal;
+  let daysToNext = null, daysToMat = null, flows = [];
 
-  const accruedAmt = calcAccruedInterest(settle, toISO(lastCoupon), toISO(nextCoupon), coupon, freq, nominal, basis);
-  const accruedPct = (accruedAmt / nominal) * 100;
-  const dirtyPrice  = price + accruedPct;
-  const totalProceed = (dirtyPrice / 100) * nominal;
+  if (hasSettleDate) {
+    const cd = calcCouponDates(settle, maturity, freq);
+    lastCoupon = cd.last; nextCoupon = cd.next;
+    if (!lastCoupon || !nextCoupon) { alert('Gagal menghitung tanggal kupon.'); return; }
+    accruedAmt   = calcAccruedInterest(settle, toISO(lastCoupon), toISO(nextCoupon), coupon, freq, nominal, basis);
+    accruedPct   = (accruedAmt / nominal) * 100;
+    dirtyPrice   = price + accruedPct;
+    totalProceed = (dirtyPrice / 100) * nominal;
+    daysToNext   = Math.round((nextCoupon - new Date(settle + 'T00:00:00')) / 86400000);
+    daysToMat    = Math.round((new Date(maturity + 'T00:00:00') - new Date(settle + 'T00:00:00')) / 86400000);
+    flows        = generateCashflows(settle, maturity, coupon, freq, nominal, taxPct, basis);
+  } else {
+    // Tanpa settle date: dirty = clean, proceed = clean proceed
+    totalProceed = (price / 100) * nominal;
+    daysToMat    = Math.round((new Date(maturity + 'T00:00:00') - new Date()) / 86400000);
+  }
+
   const cleanProceed = (price / 100) * nominal;
   const couponAmt    = (coupon / 100 / freq) * nominal;
   const couponNet    = couponAmt * (1 - taxPct / 100);
-  const daysToNext   = Math.round((nextCoupon - new Date(settle + 'T00:00:00')) / 86400000);
-  const daysToMat    = Math.round((new Date(maturity + 'T00:00:00') - new Date(settle + 'T00:00:00')) / 86400000);
-  const flows        = generateCashflows(settle, maturity, coupon, freq, nominal, taxPct, basis);
+
+  // ---- Profit calculation for Jual mode ----
+  let profitData = null;
+  if (isJual && sellPrice !== null) {
+    // Accrued pada tanggal jual
+    const { last: sellLC, next: sellNC } = calcCouponDates(sellSettle, maturity, freq);
+
+    // Saat JUAL: Pembeli wajib membayar AI kepada penjual
+    // Penjual MENERIMA: Clean Price + Accrued Interest (AI menambah penerimaan penjual)
+    // Namun AI yang diterima dikenakan PPh (tax on accrued interest)
+    const sellAccruedAmt = (sellLC && sellNC)
+      ? calcAccruedInterest(sellSettle, toISO(sellLC), toISO(sellNC), coupon, freq, nominal, basis)
+      : 0;
+    const sellAccruedPct  = (sellAccruedAmt / nominal) * 100;
+
+    // Tax on accrued interest yang diterima saat jual
+    const taxOnSellAI     = sellAccruedAmt * (taxPct / 100);
+
+    // Proceeds jual: Clean Price proceeds DITAMBAH AI bersih (AI - tax AI)
+    // Catatan: AI yang diterima dari pembeli dikurangi pajak AI
+    const sellCleanProceeds = (sellPrice / 100) * nominal;
+    const sellProceeds      = sellCleanProceeds + sellAccruedAmt - taxOnSellAI;
+    // Dirty = clean + AI (ini yang dibayar pembeli), penjual nett = clean + AI - tax AI
+    const sellDirtyPrice  = sellPrice + sellAccruedPct;
+
+    // Capital Gain = Harga jual clean - Harga beli clean (dalam Rp)
+    const capitalGainGross = sellCleanProceeds - cleanProceed;
+    const taxOnCapGain     = capitalGainGross > 0 ? capitalGainGross * (taxCapGain / 100) : 0;
+    const capitalGainNet   = capitalGainGross - taxOnCapGain;
+
+    // Hari kepemilikan
+    const buyDate   = hasSettleDate ? new Date(settle + 'T00:00:00') : null;
+    const sellDate2 = new Date(sellSettle + 'T00:00:00');
+    const holdDays  = buyDate ? Math.round((sellDate2 - buyDate) / 86400000) : null;
+
+    // Kupon yang diterima selama kepemilikan (nett, hanya jika ada tanggal beli & jual berbeda)
+    const hasCouponCalc = hasSettleDate && useCustomSellDate && sellSettle !== settle && flows.length > 0;
+    const couponsReceived = hasCouponCalc
+      ? flows.filter(f => { const fd = f.date; return fd > buyDate && fd <= sellDate2; })
+      : [];
+    const totalCouponNett = couponsReceived.reduce((s, f) => s + f.netCoupon, 0);
+
+    // Total keuntungan bersih
+    const totalProfit = capitalGainNet + totalCouponNett + (sellAccruedAmt - taxOnSellAI) - accruedAmt;
+    // Alternatif sederhana: net proceeds jual - net proceeds beli + kupon diterima
+    // = (sellClean + sellAI - taxAI) - (buyClean + buyAI) + couponNett
+    const roi = (totalProfit / totalProceed) * 100;
+
+    profitData = {
+      buyDirtyPrice: dirtyPrice, buyProceeds: totalProceed, buyCleanProceeds: cleanProceed,
+      buyAccruedAmt: accruedAmt, buyAccruedPct: accruedPct,
+      sellPrice, sellDirtyPrice, sellProceeds, sellCleanProceeds,
+      sellAccruedAmt, sellAccruedPct, taxOnSellAI,
+      capitalGainGross, taxOnCapGain, capitalGainNet,
+      holdDays, hasCouponCalc,
+      couponsCount: couponsReceived.length, totalCouponNett,
+      totalProfit, roi,
+      sellSettle, sellYtm, taxCapGain
+    };
+  }
 
   renderOutput({ seriesLabel, coupon, freq, maturity, settle, trade, nominal, price, ytm, taxPct,
-    lastCoupon: toISO(lastCoupon), nextCoupon: toISO(nextCoupon),
+    lastCoupon: lastCoupon ? toISO(lastCoupon) : null,
+    nextCoupon: nextCoupon ? toISO(nextCoupon) : null,
     accruedAmt, accruedPct, dirtyPrice, totalProceed, cleanProceed,
     couponAmt, couponNet, daysToNext, daysToMat, basis, flows,
+    hasSettleDate, isJual, profitData,
     // DB extras
     hargaModal:        selectedBond?.harga_modal,
     hargaToCustomer:   selectedBond?.harga_to_customer,
@@ -926,24 +1220,151 @@ function renderOutput(r) {
     ${r.tanggalUpdate    ? `<span style="margin-left:auto;color:#aaa;">Update: ${fmtDateShort(r.tanggalUpdate)}</span>` : ''}
   </div>` : '';
 
+  // PROFIT PANEL (khusus mode Jual)
+  const profitHtml = (r.isJual && r.profitData) ? (() => {
+    const p = r.profitData;
+    const isProfit = p.totalProfit >= 0;
+    const capIsProfit = p.capitalGainGross >= 0;
+
+    // Baris derivasi
+    const rows = [];
+
+    // 1. Harga Jual Clean
+    rows.push({ label: 'Harga Jual (Clean)', sign: '+', val: p.sellCleanProceeds, note: `${fmtNum(p.sellPrice,4)}% × Nominal`, color: '#1a7a47' });
+
+    // 2. Accrued Interest Jual (diterima dari pembeli)
+    if (p.sellAccruedAmt > 0) {
+      rows.push({ label: 'Accrued Interest Jual', sign: '+', val: p.sellAccruedAmt, note: `AI ${fmtNum(p.sellAccruedPct,4)}% diterima dari pembeli`, color: '#1a7a47' });
+      rows.push({ label: `PPh AI Jual (${r.taxPct}%)`, sign: '−', val: p.taxOnSellAI, note: `${fmtIDR(p.sellAccruedAmt)} × ${r.taxPct}%`, color: '#c0392b' });
+    }
+
+    // 3. Harga Beli Clean (modal keluar)
+    rows.push({ label: 'Harga Beli (Clean)', sign: '−', val: p.buyCleanProceeds, note: `${fmtNum(r.price,4)}% × Nominal`, color: '#c0392b' });
+
+    // 4. Accrued Interest Beli (dibayar ke penjual)
+    if (p.buyAccruedAmt > 0) {
+      rows.push({ label: 'Accrued Interest Beli', sign: '−', val: p.buyAccruedAmt, note: `AI ${fmtNum(r.accruedPct,4)}% dibayar ke penjual`, color: '#c0392b' });
+    }
+
+    // 5. Subtotal = Capital Gain Kotor (sebelum pajak CG)
+    rows.push({ label: 'Capital Gain Kotor', sign: '=', val: p.capitalGainGross, note: capIsProfit ? 'Untung dari selisih harga' : 'Rugi dari selisih harga', color: capIsProfit ? '#1a7a47' : '#c0392b', isSubtotal: true });
+
+    // 6. PPh Capital Gain (hanya jika untung)
+    if (capIsProfit && p.taxOnCapGain > 0) {
+      rows.push({ label: `PPh Capital Gain (${p.taxCapGain}%)`, sign: '−', val: p.taxOnCapGain, note: `${fmtIDR(p.capitalGainGross)} × ${p.taxCapGain}%`, color: '#c0392b' });
+    } else if (!capIsProfit) {
+      rows.push({ label: 'PPh Capital Gain', sign: '−', val: 0, note: 'Tidak dikenakan (Capital Loss)', color: '#aaa' });
+    }
+
+    // 7. Kupon (jika ada)
+    if (p.hasCouponCalc && p.totalCouponNett > 0) {
+      rows.push({ label: `Kupon Nett (${p.couponsCount}× periode)`, sign: '+', val: p.totalCouponNett, note: `Setelah PPh ${r.taxPct}%`, color: '#1a7a47' });
+    }
+
+    // Render baris tabel
+    const rowsHtml = rows.map(row => {
+      const isEq = row.sign === '=';
+      return `<tr style="${isEq ? 'border-top:2px solid #e0e0ea;' : ''}">
+        <td style="padding:7px 12px;font-size:0.78rem;color:#555;${isEq ? 'font-weight:700;' : ''}">${row.label}</td>
+        <td style="padding:7px 8px;text-align:center;font-size:0.9rem;font-weight:700;color:${row.sign==='+'?'#1a7a47':row.sign==='−'?'#c0392b':'#444'};width:24px;">${row.sign}</td>
+        <td style="padding:7px 12px;text-align:right;font-size:${isEq?'0.95rem':'0.82rem'};font-weight:${isEq?'800':'600'};color:${row.color};font-variant-numeric:tabular-nums;white-space:nowrap;">
+          ${row.val === 0 && !capIsProfit && row.sign === '−' ? '—' : fmtIDR(row.val)}
+        </td>
+        <td style="padding:7px 12px;font-size:0.7rem;color:#aaa;border-left:1px solid #f0f0f5;">${row.note}</td>
+      </tr>`;
+    }).join('');
+
+    // Total baris akhir
+    // Total Keuntungan/Kerugian
+    const totalRow = `<tr style="border-top:2px solid ${isProfit?'#a8e6c1':'#f5a8a8'};background:${isProfit?'#f4fff9':'#fff5f5'};">
+      <td style="padding:10px 12px;font-size:0.85rem;font-weight:800;color:${isProfit?'#1a7a47':'#b01a1a'};">Total ${isProfit?'Keuntungan':'Kerugian'}</td>
+      <td style="padding:10px 8px;text-align:center;font-size:1rem;font-weight:800;color:${isProfit?'#1a7a47':'#b01a1a'};">=</td>
+      <td style="padding:10px 12px;text-align:right;font-size:1.1rem;font-weight:900;color:${isProfit?'#1a7a47':'#b01a1a'};white-space:nowrap;">${fmtIDR(p.totalProfit)}</td>
+      <td style="padding:10px 12px;font-size:0.72rem;color:#888;border-left:1px solid #f0f0f5;">
+        ROI: <strong style="color:${isProfit?'#1a7a47':'#b01a1a'};">${p.roi.toFixed(2)}%</strong>
+        ${p.sellYtm ? ` &nbsp;|&nbsp; YTM Jual: <strong>${fmtPct(p.sellYtm,4)}</strong>` : ''}
+      </td>
+    </tr>`;
+
+    // Total Diterima = Nominal Jual (Clean) + Keuntungan Bersih
+    const totalDiterima = p.sellCleanProceeds + p.totalProfit;
+    const grandTotalRow = `<tr style="border-top:2px solid #0d0d2b;background:linear-gradient(135deg,#0d0d2b,#1e1252);">
+      <td style="padding:12px 12px;font-size:0.85rem;font-weight:800;color:#fff;">Total Diterima</td>
+      <td style="padding:12px 8px;text-align:center;font-size:1rem;font-weight:800;color:var(--gold-light);">=</td>
+      <td style="padding:12px 12px;text-align:right;font-size:1.15rem;font-weight:900;color:var(--gold-light);white-space:nowrap;">${fmtIDR(totalDiterima)}</td>
+      <td style="padding:12px 12px;font-size:0.72rem;color:rgba(255,255,255,0.5);border-left:1px solid rgba(255,255,255,0.1);">
+        Nominal Jual ${fmtIDR(p.sellCleanProceeds)} ${isProfit?'+':'−'} ${isProfit?'Keuntungan':'Kerugian'} ${fmtIDR(Math.abs(p.totalProfit))}
+      </td>
+    </tr>`;
+
+    const meta = [
+      r.settle && p.holdDays != null ? `Beli: ${fmtDateShort(r.settle)}` : null,
+      p.sellSettle ? `Jual: ${fmtDateShort(p.sellSettle)}` : null,
+      p.holdDays != null ? `Kepemilikan: ${p.holdDays} hari` : null,
+      !p.hasCouponCalc ? 'Tanpa perhitungan kupon' : null,
+    ].filter(Boolean).join(' &nbsp;&middot;&nbsp; ');
+
+    return `
+  <div style="background:#fff;border:1.5px solid ${isProfit?'#a8e6c1':'#f5a8a8'};border-radius:14px;margin-bottom:14px;overflow:hidden;">
+    <div style="background:${isProfit?'#f4fff9':'#fff5f5'};padding:12px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid ${isProfit?'#d0f0e0':'#f5d0d0'};">
+      <div>
+        <div style="font-size:0.9rem;font-weight:800;color:${isProfit?'#1a7a47':'#b01a1a'};">
+          ${isProfit ? 'Keuntungan' : 'Kerugian'} dari Transaksi Jual-Beli
+        </div>
+        ${meta ? `<div style="font-size:0.72rem;color:#888;margin-top:2px;">${meta}</div>` : ''}
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:1.5rem;font-weight:900;color:${isProfit?'#1a7a47':'#b01a1a'};">${fmtIDR(p.totalProfit)}</div>
+        <div style="font-size:0.72rem;color:#888;">ROI ${p.roi.toFixed(2)}%</div>
+      </div>
+    </div>
+    <div style="overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;">
+        <thead>
+          <tr style="background:#fafafa;border-bottom:1px solid #f0f0f5;">
+            <th style="padding:7px 12px;text-align:left;font-size:0.65rem;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:0.8px;">Komponen</th>
+            <th style="padding:7px 8px;text-align:center;font-size:0.65rem;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:0.8px;width:24px;"></th>
+            <th style="padding:7px 12px;text-align:right;font-size:0.65rem;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:0.8px;">Nilai</th>
+            <th style="padding:7px 12px;text-align:left;font-size:0.65rem;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:0.8px;border-left:1px solid #f0f0f5;">Keterangan</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rowsHtml}
+          ${totalRow}
+          ${grandTotalRow}
+        </tbody>
+      </table>
+    </div>
+  </div>`;
+  })() : '';
+
   panel.innerHTML = `
   <!-- SUMMARY CARD -->
   <div class="result-card" style="margin-bottom:14px;">
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
       <div style="font-size:0.72rem;font-weight:700;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:1px;">
-        ${esc(r.seriesLabel)} &nbsp;&middot;&nbsp; Settlement ${r.settle ? fmtDateShort(r.settle) : '&mdash;'}
+        ${esc(r.seriesLabel)} &nbsp;&middot;&nbsp;
+        ${r.settle && r.hasSettleDate ? `Settlement ${fmtDateShort(r.settle)}` : 'Tanpa tanggal beli'}
+        ${r.isJual ? `&nbsp;&middot;&nbsp; <span style="color:var(--gold-light);">Mode: Jual</span>` : `&nbsp;&middot;&nbsp; <span style="color:var(--gold-light);">Mode: Beli</span>`}
       </div>
     </div>
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;">
       <div>
-        <div style="font-size:0.68rem;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Total Proceed (Dirty)</div>
+        <div style="font-size:0.68rem;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">
+          ${r.hasSettleDate ? 'Total Proceed (Dirty)' : 'Total Proceed (Clean)'}
+        </div>
         <div style="font-size:1.5rem;font-weight:900;color:var(--gold-light);">${fmtIDR(r.totalProceed)}</div>
-        <div style="font-size:0.72rem;color:rgba(255,255,255,0.35);margin-top:2px;">Dirty ${fmtNum(r.dirtyPrice,4)}% × Nominal</div>
+        <div style="font-size:0.72rem;color:rgba(255,255,255,0.35);margin-top:2px;">
+          ${r.hasSettleDate ? `Dirty ${fmtNum(r.dirtyPrice,4)}% × Nominal` : `Clean ${fmtNum(r.price,4)}% × Nominal`}
+        </div>
       </div>
       <div>
         <div style="font-size:0.68rem;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Accrued Interest</div>
-        <div style="font-size:1.5rem;font-weight:900;color:#a8e6c1;">${fmtIDR(r.accruedAmt)}</div>
-        <div style="font-size:0.72rem;color:rgba(255,255,255,0.35);margin-top:2px;">${fmtNum(r.accruedPct,4)}% dari nominal</div>
+        ${r.hasSettleDate
+          ? `<div style="font-size:1.5rem;font-weight:900;color:#a8e6c1;">${fmtIDR(r.accruedAmt)}</div>
+             <div style="font-size:0.72rem;color:rgba(255,255,255,0.35);margin-top:2px;">${fmtNum(r.accruedPct,4)}% dari nominal</div>`
+          : `<div style="font-size:1.5rem;font-weight:900;color:rgba(255,255,255,0.25);">—</div>
+             <div style="font-size:0.72rem;color:rgba(255,255,255,0.25);margin-top:2px;">Tanggal beli tidak diisi</div>`}
       </div>
       <div>
         <div style="font-size:0.68rem;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">YTM</div>
@@ -953,47 +1374,184 @@ function renderOutput(r) {
     </div>
   </div>
 
-  <!-- RESULT GRID -->
-  <div class="result-grid" style="margin-bottom:14px;">
-    <div class="result-item">
-      <div class="result-item-label">Clean Price</div>
-      <div class="result-item-value">${fmtNum(r.price,4)}%</div>
-    </div>
-    <div class="result-item">
-      <div class="result-item-label">Dirty Price</div>
-      <div class="result-item-value gold">${fmtNum(r.dirtyPrice,4)}%</div>
-    </div>
-    <div class="result-item">
-      <div class="result-item-label">Kupon Kotor / Periode</div>
-      <div class="result-item-value positive">${fmtIDR(r.couponAmt)}</div>
-    </div>
-    <div class="result-item">
-      <div class="result-item-label">Kupon Nett (–PPh ${r.taxPct}%)</div>
-      <div class="result-item-value">${fmtIDR(r.couponNet)}</div>
-    </div>
-    <div class="result-item">
-      <div class="result-item-label">Last Coupon Date</div>
-      <div class="result-item-value" style="font-size:0.85rem;">${fmtDateShort(r.lastCoupon)}</div>
-    </div>
-    <div class="result-item">
-      <div class="result-item-label">Next Coupon Date</div>
-      <div class="result-item-value" style="font-size:0.85rem;">
-        ${fmtDateShort(r.nextCoupon)}
-        <span style="font-size:0.7rem;background:#fff0e0;color:#a85e00;padding:2px 6px;border-radius:8px;margin-left:4px;">${r.daysToNext} hr</span>
+  <!-- PROFIT PANEL (Mode Jual) -->
+  ${profitHtml}
+
+  <!-- DERIVASI BELI -->
+  ${!r.isJual ? (() => {
+    const buyRows = [];
+
+    // Harga Beli Clean
+    buyRows.push({ label: 'Harga Beli (Clean)', sign: '+', val: r.cleanProceed, note: `${fmtNum(r.price,4)}% × Nominal`, color: '#c0392b' });
+
+    // Accrued Interest (jika ada settle date)
+    if (r.hasSettleDate && r.accruedAmt > 0) {
+      buyRows.push({ label: 'Accrued Interest', sign: '+', val: r.accruedAmt, note: `AI ${fmtNum(r.accruedPct,4)}% dibayar ke penjual`, color: '#c0392b' });
+    }
+
+    // Subtotal = Total Modal Keluar (Dirty)
+    buyRows.push({ label: r.hasSettleDate ? 'Total Modal Beli (Dirty)' : 'Total Modal Beli (Clean)', sign: '=', val: r.totalProceed, note: r.hasSettleDate ? `Dirty ${fmtNum(r.dirtyPrice,4)}% × Nominal` : `Clean ${fmtNum(r.price,4)}% × Nominal`, color: '#c0392b', isSubtotal: true });
+
+    // Kupon per periode
+    buyRows.push({ label: 'Kupon Kotor / Periode', sign: '', val: r.couponAmt, note: `${r.coupon}% ÷ ${r.freq} × Nominal`, color: '#555' });
+    buyRows.push({ label: `PPh Kupon (${r.taxPct}%)`, sign: '−', val: r.couponAmt * (r.taxPct/100), note: `${fmtIDR(r.couponAmt)} × ${r.taxPct}%`, color: '#c0392b' });
+    buyRows.push({ label: 'Kupon Nett / Periode', sign: '=', val: r.couponNet, note: `Setelah PPh ${r.taxPct}%`, color: '#1a7a47', isSubtotal: true });
+
+    // Info jadwal
+    if (r.hasSettleDate && r.lastCoupon) {
+      buyRows.push({ label: 'Last Coupon Date', sign: '', val: null, note: fmtDateShort(r.lastCoupon), color: '#555', isInfo: true });
+    }
+    if (r.hasSettleDate && r.nextCoupon) {
+      buyRows.push({ label: 'Next Coupon Date', sign: '', val: null, note: `${fmtDateShort(r.nextCoupon)}${r.daysToNext!=null?' &nbsp;('+r.daysToNext+' hari lagi)':''}`, color: '#555', isInfo: true });
+    }
+    buyRows.push({ label: 'Sisa ke Jatuh Tempo', sign: '', val: null, note: r.daysToMat != null ? `${r.daysToMat.toLocaleString('id-ID')} hari &nbsp;|&nbsp; ${totalCoupons}× sisa kupon` : '—', color: '#2d4abf', isInfo: true });
+
+    const bRowsHtml = buyRows.map(row => {
+      const isEq   = row.sign === '=';
+      const isInfo = row.isInfo;
+      if (isInfo) {
+        return `<tr style="background:#fafbff;">
+          <td style="padding:6px 12px;font-size:0.75rem;color:#888;">${row.label}</td>
+          <td></td>
+          <td></td>
+          <td style="padding:6px 12px;font-size:0.75rem;color:${row.color};border-left:1px solid #f0f0f5;">${row.note}</td>
+        </tr>`;
+      }
+      return `<tr style="${isEq ? 'border-top:2px solid #e0e0ea;' : ''}">
+        <td style="padding:7px 12px;font-size:0.78rem;color:#555;${isEq?'font-weight:700;':''}">${row.label}</td>
+        <td style="padding:7px 8px;text-align:center;font-size:0.9rem;font-weight:700;color:${row.sign==='+'?'#c0392b':row.sign==='−'?'#c0392b':row.sign==='='?'#444':'#aaa'};width:24px;">${row.sign}</td>
+        <td style="padding:7px 12px;text-align:right;font-size:${isEq?'0.95rem':'0.82rem'};font-weight:${isEq?'800':'600'};color:${row.color};font-variant-numeric:tabular-nums;white-space:nowrap;">
+          ${row.val != null ? fmtIDR(row.val) : ''}
+        </td>
+        <td style="padding:7px 12px;font-size:0.7rem;color:#aaa;border-left:1px solid #f0f0f5;">${row.note}</td>
+      </tr>`;
+    }).join('');
+
+    return `
+  <div style="background:#fff;border:1.5px solid #e0e0ef;border-radius:14px;margin-bottom:14px;overflow:hidden;">
+    <div style="background:#f8f9ff;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #ebebf5;">
+      <div>
+        <div style="font-size:0.9rem;font-weight:800;color:var(--navy);">Rincian Biaya Pembelian</div>
+        <div style="font-size:0.72rem;color:#888;margin-top:2px;">
+          ${r.settle && r.hasSettleDate ? `Settlement: ${fmtDateShort(r.settle)}` : 'Tanpa tanggal transaksi'}
+          &nbsp;&middot;&nbsp; Nominal: ${fmtIDR(r.nominal)}
+        </div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:1.4rem;font-weight:900;color:var(--navy);">${fmtIDR(r.totalProceed)}</div>
+        <div style="font-size:0.72rem;color:#888;">Total Modal Keluar</div>
       </div>
     </div>
-    <div class="result-item">
-      <div class="result-item-label">Sisa Hari ke Jatuh Tempo</div>
-      <div class="result-item-value blue">${r.daysToMat.toLocaleString('id-ID')} hari</div>
+    <div style="overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;">
+        <thead>
+          <tr style="background:#fafafa;border-bottom:1px solid #f0f0f5;">
+            <th style="padding:7px 12px;text-align:left;font-size:0.65rem;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:0.8px;">Komponen</th>
+            <th style="padding:7px 8px;width:24px;"></th>
+            <th style="padding:7px 12px;text-align:right;font-size:0.65rem;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:0.8px;">Nilai</th>
+            <th style="padding:7px 12px;text-align:left;font-size:0.65rem;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:0.8px;border-left:1px solid #f0f0f5;">Keterangan</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${bRowsHtml}
+        </tbody>
+      </table>
     </div>
-    <div class="result-item">
-      <div class="result-item-label">Sisa Jumlah Kupon</div>
-      <div class="result-item-value">${totalCoupons}× kupon</div>
+    <div style="background:linear-gradient(135deg,#0d0d2b,#1e1252);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+      <div style="font-size:0.8rem;color:rgba(255,255,255,0.55);">
+        Total Modal Keluar &nbsp;&middot;&nbsp; YTM <strong style="color:var(--gold-light);">${fmtPct(r.ytm,4)}</strong>
+        &nbsp;&middot;&nbsp; Dirty <strong style="color:rgba(255,255,255,0.7);">${fmtNum(r.dirtyPrice,4)}%</strong>
+      </div>
+      <div style="font-size:1.3rem;font-weight:900;color:var(--gold-light);">${fmtIDR(r.totalProceed)}</div>
     </div>
-  </div>
+  </div>`;
+  })() : ''}
 
   ${dbPriceHtml}
 
+  <!-- SKENARIO EXIT (mode Beli saja) -->
+  ${!r.isJual ? (() => {
+    const couponNett1Y = r.couponNet * r.freq;
+    const totalModal   = r.totalProceed;
+    const basePrice    = r.price;
+    const nominal      = r.nominal;
+
+    // Render 5 baris langsung sebagai HTML string (tidak perlu JS runtime untuk render awal)
+    // Row 0 dan 4 editable (naik jauh & turun jauh)
+    const labels  = ['Harga Naik Jauh','Harga Naik','Harga Flat','Harga Turun','Harga Turun Jauh'];
+    const offsets = [2, 1, 0, -1, -2];
+
+    const scRows = offsets.map((o, i) => {
+      const px          = parseFloat((basePrice + o).toFixed(4));
+      const sellNominal = (px / 100) * nominal;
+      const totalMasuk  = sellNominal + couponNett1Y;
+      const netPL       = totalMasuk - totalModal;
+      const retPct      = (netPL / totalModal) * 100;
+      const isUp        = netPL >= 0;
+      const isFlat      = o === 0;
+      const isEdge      = i === 0 || i === 4;
+      const pxColor     = o > 0 ? '#1a7a47' : o < 0 ? '#c0392b' : '#444';
+      const cellS       = 'padding:7px 12px;text-align:right;font-size:0.82rem;font-variant-numeric:tabular-nums;';
+
+      const hargaCell = isEdge
+        ? `<input type="number" step="0.01" value="${px.toFixed(2)}" data-row="${i}"
+             onchange="__scChange(this)"
+             style="width:72px;padding:4px 6px;border:1.5px solid #e0e0ef;border-radius:7px;
+                    font-size:0.82rem;font-weight:700;color:${pxColor};text-align:center;
+                    font-family:Inter,sans-serif;background:#f8f9ff;outline:none;" />`
+        : `<span id="sc-px-${i}" style="font-size:0.82rem;font-weight:700;color:${pxColor};">${px.toFixed(2)}</span>`;
+
+      return `<tr id="sc-row-${i}" style="${isFlat ? 'background:#fffbf0;' : 'border-bottom:1px solid #f5f5fa;'}">
+        <td style="padding:7px 12px;text-align:center;">${hargaCell}</td>
+        <td style="padding:7px 12px;font-size:0.78rem;color:#666;${isFlat?'font-weight:700;':''}">${labels[i]}</td>
+        <td id="sc-vj-${i}"  style="${cellS}color:#333;font-weight:600;">${fmtIDR(sellNominal)}</td>
+        <td style="${cellS}color:#2d4abf;">${fmtIDR(couponNett1Y)}</td>
+        <td id="sc-tm-${i}"  style="${cellS}color:#333;font-weight:600;">${fmtIDR(totalMasuk)}</td>
+        <td id="sc-pl-${i}"  style="${cellS}font-weight:700;color:${isUp?'#1a7a47':'#c0392b'};">${isUp?'+':''}${fmtIDR(netPL)}</td>
+        <td id="sc-ret-${i}" style="padding:7px 12px;text-align:right;font-size:0.82rem;font-weight:700;color:${isUp?'#1a7a47':'#c0392b'};">${isUp?'+':''}${retPct.toFixed(2)}%</td>
+      </tr>`;
+    }).join('');
+
+    return `
+  <div style="background:#fff;border:1.5px solid #e0e0ef;border-radius:14px;margin-bottom:14px;overflow:hidden;">
+    <div style="background:linear-gradient(135deg,#0d0d2b,#1e1252);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;">
+      <div>
+        <div style="font-size:0.88rem;font-weight:800;color:#fff;">Skenario EXIT sebelum Maturity</div>
+        <div style="font-size:0.7rem;color:rgba(255,255,255,0.45);margin-top:2px;">
+          Ilustrasi Hold 1 Tahun &nbsp;&middot;&nbsp; Acuan Harga Beli: ${fmtNum(r.price,4)}% &nbsp;&middot;&nbsp; Nominal: ${fmtIDR(r.nominal)}
+        </div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:0.7rem;color:rgba(255,255,255,0.45);">Kupon Nett / Tahun</div>
+        <div style="font-size:1rem;font-weight:800;color:var(--gold-light);">${fmtIDR(couponNett1Y)}</div>
+      </div>
+    </div>
+    <div style="overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;">
+        <thead>
+          <tr style="background:#f8f9ff;border-bottom:2px solid #e8e8f5;">
+            <th style="padding:8px 12px;text-align:center;font-size:0.65rem;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:0.8px;min-width:90px;">Harga Jual</th>
+            <th style="padding:8px 12px;text-align:left;font-size:0.65rem;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:0.8px;">Skenario</th>
+            <th style="padding:8px 12px;text-align:right;font-size:0.65rem;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:0.8px;">Nilai Jual</th>
+            <th style="padding:8px 12px;text-align:right;font-size:0.65rem;font-weight:700;color:#2d4abf;text-transform:uppercase;letter-spacing:0.8px;">Kupon 1 Tahun</th>
+            <th style="padding:8px 12px;text-align:right;font-size:0.65rem;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:0.8px;">Total Masuk</th>
+            <th style="padding:8px 12px;text-align:right;font-size:0.65rem;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:0.8px;">Net P&amp;L</th>
+            <th style="padding:8px 12px;text-align:right;font-size:0.65rem;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:0.8px;">Return p.a.</th>
+          </tr>
+        </thead>
+        <tbody>${scRows}</tbody>
+      </table>
+    </div>
+    <div style="padding:8px 14px;background:#f8f9ff;border-top:1px solid #f0f0f5;font-size:0.7rem;color:#aaa;">
+      <span id="sc-meta" data-base="${r.price}" data-nominal="${r.nominal}" data-modal="${totalModal}" data-coupon="${couponNett1Y}" style="display:none;"></span>
+      Modal Disetor: <strong style="color:#444;">${fmtIDR(totalModal)}</strong>
+      ${r.hasSettleDate && r.accruedAmt > 0 ? `&nbsp;(Clean ${fmtIDR(r.cleanProceed)} + AI ${fmtIDR(r.accruedAmt)})` : ''}
+    </div>
+  </div>`;
+  })() : ''}
+
+  <!-- CASHFLOW TABLE — hanya tampil jika ada settle date -->
+  ${r.hasSettleDate && r.flows.length ? `
   <!-- CASHFLOW TABLE -->
   <div class="cf-card">
     <div class="card-header">
@@ -1025,7 +1583,7 @@ function renderOutput(r) {
       <span>Nominal: <strong>${fmtIDR(r.nominal)}</strong> &nbsp;&middot;&nbsp; Coupon: <strong>${r.coupon}% p.a.</strong> &nbsp;&middot;&nbsp; Frek: <strong>${r.freq}&times;/thn</strong></span>
       <span>JT = Jatuh Tempo &mdash; termasuk pengembalian pokok</span>
     </div>
-  </div>`;
+  </div>` : ''}`;
 }
 </script>
 
