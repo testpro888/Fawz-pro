@@ -921,6 +921,62 @@ function onSellTradeChange() {
   onSellPriceChange();
 }
 
+// =============================================
+// SKENARIO EXIT — update baris saat input berubah
+// =============================================
+function __scChange(inp) {
+  const row = parseInt(inp.dataset.row);
+  const val = parseFloat(inp.value);
+  if (isNaN(val) || val <= 0) return;
+
+  // Ambil semua input di baris edge (row 0 = naik jauh, row 4 = turun jauh)
+  const inputs = document.querySelectorAll('[data-row]');
+  let top = null, bot = null;
+  inputs.forEach(el => {
+    if (parseInt(el.dataset.row) === 0) top = parseFloat(el.value);
+    if (parseInt(el.dataset.row) === 4) bot = parseFloat(el.value);
+  });
+  if (top == null || bot == null) return;
+
+  // Ambil data dari hidden meta
+  const meta = document.getElementById('sc-meta');
+  if (!meta) return;
+  const basePrice   = parseFloat(meta.dataset.base);
+  const nominal     = parseFloat(meta.dataset.nominal);
+  const totalModal  = parseFloat(meta.dataset.modal);
+  const coupon1Y    = parseFloat(meta.dataset.coupon);
+
+  // Hitung harga baris 1 dan 3 (otomatis = edge ± 1)
+  const prices = [top, top - 1, basePrice, bot + 1, bot];
+
+  function fmtN(n) { return 'Rp\u00a0' + Math.round(n).toLocaleString('id-ID'); }
+  function colorOf(n) { return n > 0 ? '#1a7a47' : n < 0 ? '#c0392b' : '#444'; }
+
+  for (let i = 0; i < 5; i++) {
+    const px         = prices[i];
+    const sellNom    = (px / 100) * nominal;
+    const totalMasuk = sellNom + coupon1Y;
+    const netPL      = totalMasuk - totalModal;
+    const retPct     = (netPL / totalModal) * 100;
+    const pxColor    = px > basePrice ? '#1a7a47' : px < basePrice ? '#c0392b' : '#444';
+
+    // Update span harga (baris 1 dan 3 bukan input)
+    const pxSpan = document.getElementById('sc-px-' + i);
+    if (pxSpan) { pxSpan.textContent = px.toFixed(2); pxSpan.style.color = pxColor; }
+
+    // Update nilai jual, total masuk, net p&l, return
+    const vjEl  = document.getElementById('sc-vj-'  + i);
+    const tmEl  = document.getElementById('sc-tm-'  + i);
+    const plEl  = document.getElementById('sc-pl-'  + i);
+    const retEl = document.getElementById('sc-ret-' + i);
+
+    if (vjEl)  vjEl.textContent  = fmtN(sellNom);
+    if (tmEl)  tmEl.textContent  = fmtN(totalMasuk);
+    if (plEl)  { plEl.textContent = (netPL >= 0 ? '+' : '') + fmtN(netPL); plEl.style.color = colorOf(netPL); }
+    if (retEl) { retEl.textContent = (retPct >= 0 ? '+' : '') + retPct.toFixed(2) + '%'; retEl.style.color = colorOf(retPct); }
+  }
+}
+
 function onPriceChange() {
   const price    = parseFloat(document.getElementById('inp-price').value);
   const settle   = document.getElementById('inp-settle').value;
@@ -1421,11 +1477,47 @@ function renderOutput(r) {
   ${!r.isJual ? (() => {
     const couponNett1Y = r.couponNet * r.freq;
     const totalModal   = r.totalProceed;
-    // Default offsets: +2, +1, 0, -1, -2
-    const scenarioId = 'sc_' + Date.now();
+    const basePrice    = r.price;
+    const nominal      = r.nominal;
+
+    // Render 5 baris langsung sebagai HTML string (tidak perlu JS runtime untuk render awal)
+    // Row 0 dan 4 editable (naik jauh & turun jauh)
+    const labels  = ['Harga Naik Jauh','Harga Naik','Harga Flat','Harga Turun','Harga Turun Jauh'];
+    const offsets = [2, 1, 0, -1, -2];
+
+    const scRows = offsets.map((o, i) => {
+      const px          = parseFloat((basePrice + o).toFixed(4));
+      const sellNominal = (px / 100) * nominal;
+      const totalMasuk  = sellNominal + couponNett1Y;
+      const netPL       = totalMasuk - totalModal;
+      const retPct      = (netPL / totalModal) * 100;
+      const isUp        = netPL >= 0;
+      const isFlat      = o === 0;
+      const isEdge      = i === 0 || i === 4;
+      const pxColor     = o > 0 ? '#1a7a47' : o < 0 ? '#c0392b' : '#444';
+      const cellS       = 'padding:7px 12px;text-align:right;font-size:0.82rem;font-variant-numeric:tabular-nums;';
+
+      const hargaCell = isEdge
+        ? `<input type="number" step="0.01" value="${px.toFixed(2)}" data-row="${i}"
+             onchange="__scChange(this)"
+             style="width:72px;padding:4px 6px;border:1.5px solid #e0e0ef;border-radius:7px;
+                    font-size:0.82rem;font-weight:700;color:${pxColor};text-align:center;
+                    font-family:Inter,sans-serif;background:#f8f9ff;outline:none;" />`
+        : `<span id="sc-px-${i}" style="font-size:0.82rem;font-weight:700;color:${pxColor};">${px.toFixed(2)}</span>`;
+
+      return `<tr id="sc-row-${i}" style="${isFlat ? 'background:#fffbf0;' : 'border-bottom:1px solid #f5f5fa;'}">
+        <td style="padding:7px 12px;text-align:center;">${hargaCell}</td>
+        <td style="padding:7px 12px;font-size:0.78rem;color:#666;${isFlat?'font-weight:700;':''}">${labels[i]}</td>
+        <td id="sc-vj-${i}"  style="${cellS}color:#333;font-weight:600;">${fmtIDR(sellNominal)}</td>
+        <td style="${cellS}color:#2d4abf;">${fmtIDR(couponNett1Y)}</td>
+        <td id="sc-tm-${i}"  style="${cellS}color:#333;font-weight:600;">${fmtIDR(totalMasuk)}</td>
+        <td id="sc-pl-${i}"  style="${cellS}font-weight:700;color:${isUp?'#1a7a47':'#c0392b'};">${isUp?'+':''}${fmtIDR(netPL)}</td>
+        <td id="sc-ret-${i}" style="padding:7px 12px;text-align:right;font-size:0.82rem;font-weight:700;color:${isUp?'#1a7a47':'#c0392b'};">${isUp?'+':''}${retPct.toFixed(2)}%</td>
+      </tr>`;
+    }).join('');
 
     return `
-  <div style="background:#fff;border:1.5px solid #e0e0ef;border-radius:14px;margin-bottom:14px;overflow:hidden;" id="${scenarioId}-wrap">
+  <div style="background:#fff;border:1.5px solid #e0e0ef;border-radius:14px;margin-bottom:14px;overflow:hidden;">
     <div style="background:linear-gradient(135deg,#0d0d2b,#1e1252);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;">
       <div>
         <div style="font-size:0.88rem;font-weight:800;color:#fff;">Skenario EXIT sebelum Maturity</div>
@@ -1439,7 +1531,7 @@ function renderOutput(r) {
       </div>
     </div>
     <div style="overflow-x:auto;">
-      <table style="width:100%;border-collapse:collapse;" id="${scenarioId}-tbl">
+      <table style="width:100%;border-collapse:collapse;">
         <thead>
           <tr style="background:#f8f9ff;border-bottom:2px solid #e8e8f5;">
             <th style="padding:8px 12px;text-align:center;font-size:0.65rem;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:0.8px;min-width:90px;">Harga Jual</th>
@@ -1451,85 +1543,15 @@ function renderOutput(r) {
             <th style="padding:8px 12px;text-align:right;font-size:0.65rem;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:0.8px;">Return p.a.</th>
           </tr>
         </thead>
-        <tbody id="${scenarioId}-body">
-        </tbody>
+        <tbody>${scRows}</tbody>
       </table>
     </div>
     <div style="padding:8px 14px;background:#f8f9ff;border-top:1px solid #f0f0f5;font-size:0.7rem;color:#aaa;">
+      <span id="sc-meta" data-base="${r.price}" data-nominal="${r.nominal}" data-modal="${totalModal}" data-coupon="${couponNett1Y}" style="display:none;"></span>
       Modal Disetor: <strong style="color:#444;">${fmtIDR(totalModal)}</strong>
       ${r.hasSettleDate && r.accruedAmt > 0 ? `&nbsp;(Clean ${fmtIDR(r.cleanProceed)} + AI ${fmtIDR(r.accruedAmt)})` : ''}
     </div>
-  </div>
-  <script>
-  (function(){
-    var basePrice   = ${r.price};
-    var nominal     = ${r.nominal};
-    var totalModal  = ${totalModal};
-    var coupon1Y    = ${couponNett1Y};
-    // [offset, label, editable-row-key]
-    var offsets = [2, 1, 0, -1, -2];
-    var labels  = ['Harga Naik Jauh','Harga Naik','Harga Flat','Harga Turun','Harga Turun Jauh'];
-    // Current price values (rows 0-4)
-    var prices  = offsets.map(function(o){ return parseFloat((basePrice + o).toFixed(4)); });
-
-    function calcRow(px) {
-      var sellNominal  = (px / 100) * nominal;
-      var totalMasuk   = sellNominal + coupon1Y;
-      var netPL        = totalMasuk - totalModal;
-      var retPct       = (netPL / totalModal) * 100;
-      return { sellNominal:sellNominal, totalMasuk:totalMasuk, netPL:netPL, retPct:retPct };
-    }
-
-    function fmtN(n){ return 'Rp\u00a0' + Math.round(n).toLocaleString('id-ID'); }
-    function fmtR(n){ return (n>=0?'+':'')+n.toFixed(2)+'%'; }
-    function fmtP(n){ return (n>=0?'+':'')+fmtN(n); }
-    function colorOf(n){ return n>0?'#1a7a47':n<0?'#c0392b':'#444'; }
-
-    function renderTable() {
-      var tbody = document.getElementById('${scenarioId}-body');
-      if (!tbody) return;
-      var html = '';
-      for (var i=0;i<5;i++) {
-        var px     = prices[i];
-        var isFlat = (i===2);
-        var isEdge = (i===0||i===4); // naik jauh & turun jauh = editable
-        var d      = calcRow(px);
-        var pxColor = px > basePrice ? '#1a7a47' : px < basePrice ? '#c0392b' : '#444';
-        var cellStyle = 'padding:7px 12px;text-align:right;font-size:0.82rem;font-variant-numeric:tabular-nums;';
-        var inputOrText = isEdge
-          ? '<input type="number" step="0.01" value="'+px.toFixed(2)+'" data-row="'+i+'" style="width:72px;padding:4px 6px;border:1.5px solid #e0e0ef;border-radius:7px;font-size:0.82rem;font-weight:700;color:'+pxColor+';text-align:center;font-family:Inter,sans-serif;background:#f8f9ff;outline:none;" oninput="window.__scUpdate(\'${scenarioId}\',this)" />'
-          : '<span style="font-size:0.82rem;font-weight:700;color:'+pxColor+';">'+px.toFixed(2)+'</span>';
-        html += '<tr style="'+(isFlat?'background:#fffbf0;':'border-bottom:1px solid #f5f5fa;')+'">'
-          +'<td style="padding:7px 12px;text-align:center;">'+inputOrText+'</td>'
-          +'<td style="padding:7px 12px;font-size:0.78rem;color:#666;'+(isFlat?'font-weight:700;':'')+'">'+labels[i]+'</td>'
-          +'<td style="'+cellStyle+'color:#333;font-weight:600;">'+fmtN(d.sellNominal)+'</td>'
-          +'<td style="'+cellStyle+'color:#2d4abf;">'+fmtN(coupon1Y)+'</td>'
-          +'<td style="'+cellStyle+'color:#333;font-weight:600;">'+fmtN(d.totalMasuk)+'</td>'
-          +'<td style="'+cellStyle+'font-weight:700;color:'+colorOf(d.netPL)+';">'+fmtP(d.netPL)+'</td>'
-          +'<td style="padding:7px 12px;text-align:right;font-size:0.82rem;font-weight:700;color:'+colorOf(d.retPct)+';">'+fmtR(d.retPct)+'</td>'
-          +'</tr>';
-      }
-      tbody.innerHTML = html;
-    }
-
-    window.__scUpdate = window.__scUpdate || {};
-    window.__scUpdate = function(id, inp) {
-      if (id !== '${scenarioId}') return;
-      var row = parseInt(inp.dataset.row);
-      var val = parseFloat(inp.value);
-      if (isNaN(val) || val <= 0) return;
-      prices[row] = val;
-      // Recalculate middle rows based on the two edge inputs
-      var top = prices[0], bot = prices[4];
-      prices[1] = parseFloat((top - 1).toFixed(4));
-      prices[2] = parseFloat(basePrice.toFixed(4));
-      prices[3] = parseFloat((bot + 1).toFixed(4));
-      renderTable();
-    };
-
-    renderTable();
-  })();
-  <\/script>`;
+  </div>`;
   })() : ''}
 
   <!-- CASHFLOW TABLE — hanya tampil jika ada settle date -->
