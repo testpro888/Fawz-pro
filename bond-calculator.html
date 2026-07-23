@@ -674,6 +674,17 @@ function fmtDateShort(d) {
   return dt.toLocaleDateString('id-ID', { day:'numeric', month:'short', year:'numeric' });
 }
 function addDays(d, n) { const r = new Date(d); r.setDate(r.getDate() + n); return r; }
+// T+n hanya hari kerja (skip Sabtu & Minggu)
+function addBusinessDays(d, n) {
+  const r = new Date(d);
+  let added = 0;
+  while (added < n) {
+    r.setDate(r.getDate() + 1);
+    const day = r.getDay(); // 0=Sun, 6=Sat
+    if (day !== 0 && day !== 6) added++;
+  }
+  return r;
+}
 function toISO(d) {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, '0');
@@ -693,13 +704,13 @@ function formatNominal(el) {
 window.addEventListener('DOMContentLoaded', () => {
   const today = new Date();
   document.getElementById('inp-trade').value  = toISO(today);
-  document.getElementById('inp-settle').value = toISO(addDays(today, 2));
+  document.getElementById('inp-settle').value = toISO(addBusinessDays(today, 2));
   loadBonds();
 });
 
 function onTradeChange() {
-  const t = new Date(document.getElementById('inp-trade').value);
-  if (!isNaN(t)) document.getElementById('inp-settle').value = toISO(addDays(t, 2));
+  const t = new Date(document.getElementById('inp-trade').value + 'T00:00:00');
+  if (!isNaN(t)) document.getElementById('inp-settle').value = toISO(addBusinessDays(t, 2));
   onInputChange();
 }
 
@@ -910,7 +921,7 @@ function toggleTradeDateSection() {
     // Isi default tanggal hari ini
     const today = new Date();
     document.getElementById('inp-trade').value  = toISO(today);
-    document.getElementById('inp-settle').value = toISO(addDays(today, 2));
+    document.getElementById('inp-settle').value = toISO(addBusinessDays(today, 2));
     onInputChange();
   }
 }
@@ -923,14 +934,14 @@ function toggleSellCustomDate() {
     const today = new Date();
     if (!document.getElementById('inp-sell-trade').value) {
       document.getElementById('inp-sell-trade').value = toISO(today);
-      document.getElementById('inp-sell-date').value  = toISO(addDays(today, 2));
+      document.getElementById('inp-sell-date').value  = toISO(addBusinessDays(today, 2));
     }
   }
 }
 
 function onSellTradeChange() {
-  const t = new Date(document.getElementById('inp-sell-trade').value);
-  if (!isNaN(t)) document.getElementById('inp-sell-date').value = toISO(addDays(t, 2));
+  const t = new Date(document.getElementById('inp-sell-trade').value + 'T00:00:00');
+  if (!isNaN(t)) document.getElementById('inp-sell-date').value = toISO(addBusinessDays(t, 2));
   onSellPriceChange();
 }
 
