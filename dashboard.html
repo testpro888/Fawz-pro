@@ -350,19 +350,42 @@
         const salesName = (u.name || '').toLowerCase().trim();
 
         const today = new Date();
-        const mm = String(today.getMonth() + 1).padStart(2, '0');
-        const dd = String(today.getDate()).padStart(2, '0');
-        const suffix = `-${mm}-${dd}`;
+        const todayM = today.getMonth() + 1; // 1-based
+        const todayD = today.getDate();
 
-        let q = _sbDash
-          .from('customers')
-          .select('client_name, birth_date, sales_person_name')
-          .like('birth_date', `%${suffix}`);
+        // Load semua customer yang punya birth_date (sama seperti birthday-calendar.html)
+        let allData = [];
+        let offset = 0;
+        const pageSize = 1000;
+        while (true) {
+          let q = _sbDash
+            .from('customers')
+            .select('client_name, birth_date, sales_person_name')
+            .not('birth_date', 'is', null)
+            .range(offset, offset + pageSize - 1);
+          const { data, error } = await q;
+          if (error || !data) break;
+          allData = allData.concat(data);
+          if (data.length < pageSize) break;
+          offset += pageSize;
+        }
 
-        const { data, error } = await q;
-        if (error || !data) return;
+        // Filter: bulan & hari sama dengan hari ini
+        let results = allData.filter(c => {
+          if (!c.birth_date) return false;
+          const parts = c.birth_date.split('-');
+          if (parts.length < 3) return false;
+          return parseInt(parts[1]) === todayM && parseInt(parts[2]) === todayD;
+        });
 
-        let results = data;
+        // Deduplikasi by client_name + birth_date
+        const seen = new Set();
+        results = results.filter(c => {
+          const key = (c.client_name || '').toLowerCase().trim() + '|' + c.birth_date;
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
 
         // Filter by sales untuk role sales
         if (role === 'sales' && salesName) {
