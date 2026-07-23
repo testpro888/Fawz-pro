@@ -6,7 +6,7 @@ Semua perubahan signifikan pada project ini didokumentasikan di sini.
 
 ## [v1.9] — 2026-07-22
 
-### ✨ New Features
+### New Features
 
 #### Birthday Calendar
 - Halaman kalender baru untuk melihat ulang tahun nasabah
@@ -23,7 +23,7 @@ Semua perubahan signifikan pada project ini didokumentasikan di sini.
 
 ## [v1.8] — 2026-07-21
 
-### ✨ New Features
+### New Features
 
 #### Brand Logo Page
 - Halaman **Brand Logo** baru di menu Tools
@@ -34,7 +34,7 @@ Semua perubahan signifikan pada project ini didokumentasikan di sini.
 
 ## [v1.7.1] — 2026-07-21
 
-### 🐛 Bug Fixes & UI Polish
+### Bug Fixes & UI Polish
 - **WA Float** — tombol WhatsApp kini hanya tampilkan ikon saat idle, teks "Contact Person" & nomor muncul saat hover
 - **WA Float** — logo WA diperbaiki agar fit penuh di kontainer (full cover, tanpa double background hijau)
 - **Changelog Modal** — layout diubah dari bottom sheet menjadi modal persegi di tengah layar dengan animasi scale
@@ -44,7 +44,7 @@ Semua perubahan signifikan pada project ini didokumentasikan di sini.
 
 ## [v1.7] — 2026-07-20
 
-### ✨ New Features
+### New Features
 
 #### Job Report — Link & File Attachment
 - Setiap task di Job Report kini mendukung **link referensi** (URL bebas) dan **file attachment** (upload gambar/dokumen)
@@ -60,7 +60,7 @@ Semua perubahan signifikan pada project ini didokumentasikan di sini.
 #### Customer — Data Enrichment
 - Kolom **email** dan **phone** kini muncul di tabel Client Volume >100 Juta
 
-### 🐛 Bug Fixes
+### Bug Fixes
 - Paginated fetch diperbaiki agar bisa load data lebih dari 1.000 baris
 - Support delimiter semicolon dan quoted fields saat import CSV
 - Batch CSV import diperbaiki untuk performa lebih baik
@@ -69,7 +69,7 @@ Semua perubahan signifikan pada project ini didokumentasikan di sini.
 
 ## [v1.6] — Influencer & Referral System
 
-### ✨ New Features
+### New Features
 - Sistem **Influencer Registration** — form publik di `influencer-register.html`, approval workflow di `influencer.html`
 - Tab **Request** dan **Influencer List** di halaman manajemen influencer
 - Halaman **Influencer Fan** di bawah menu Sales
@@ -77,7 +77,7 @@ Semua perubahan signifikan pada project ini didokumentasikan di sini.
 - **Referral Agent** system dengan halaman dan dashboard terpisah
 - Notifikasi badge merah pada avatar profil untuk job report & reply baru
 
-### 🐛 Bug Fixes
+### Bug Fixes
 - Auto-select sales dari data customer
 - Fix link referral ke `pp.ikutin.id/referral-agent/register`
 
@@ -85,7 +85,7 @@ Semua perubahan signifikan pada project ini didokumentasikan di sini.
 
 ## [v1.5] — Job Report System
 
-### ✨ New Features
+### New Features
 - Sistem **Job Report** menggantikan Daily Activity Report
 - Role-based visibility: admin/head_account bisa lihat semua user
 - Fitur **reply/diskusi per task** dengan indikator unread
@@ -96,7 +96,7 @@ Semua perubahan signifikan pada project ini didokumentasikan di sini.
 
 ## [v1.4] — Sales & Commission
 
-### ✨ New Features
+### New Features
 - **Sales Tracker** dengan deteksi referral code
 - **Commission Report** dengan layout cetak A4
 - **Log Commission** dan **Commission Settings**
@@ -106,7 +106,7 @@ Semua perubahan signifikan pada project ini didokumentasikan di sini.
 
 ## [v1.3] — Saham Trading System
 
-### ✨ New Features
+### New Features
 - Kalender grid transaksi saham (volume & fee dipisah)
 - **Rekap Bulanan** dengan tabel scrollable max 10 baris
 - Upload CSV format kalender (`NO, CLIENT CODE, NAMA, SALES, 1-31, TOTAL`)
@@ -117,7 +117,7 @@ Semua perubahan signifikan pada project ini didokumentasikan di sini.
 
 ## [v1.2] — Fawz Point & Bond
 
-### ✨ New Features
+### New Features
 - Sistem **Fawz Point** dengan redemption
 - **Bond Calculator** dan **Bond Transaction**
 - Ranking berubah menjadi Rekap Transaksi
@@ -126,7 +126,7 @@ Semua perubahan signifikan pada project ini didokumentasikan di sini.
 
 ## [v1.1] — Core CRM
 
-### ✨ New Features
+### New Features
 - Halaman **Customer** dengan CRUD dan filter
 - Check membership via Petik Profit (`pp.ikutin.id`)
 - Analytics dashboard
