@@ -273,7 +273,7 @@
               <div class="form-group">
                 <label class="form-label">Day Count Basis</label>
                 <select class="form-select" id="inp-basis" onchange="onInputChange()">
-                  <option value="ACT/ACT">ACT / ACT</option>
+                  <option value="ACT/ACT" selected>ACT / ACT</option>
                   <option value="ACT/365">ACT / 365</option>
                   <option value="30/360">30 / 360</option>
                   <option value="ACT/360">ACT / 360</option>
@@ -746,7 +746,18 @@ function days30_360(d1, d2) {
 
 // =============================================
 // ACCRUED INTEREST
-// AI = (Coupon/Freq) × (DaysAccrued/PeriodDays) × Nominal
+// AI = (Nominal × Kupon/Freq) × (HariBerjalan / HariPeriode)
+//
+// Metode Actual/Actual (default):
+//   - Hari berjalan : jumlah hari kalender aktual dari lastCoupon ke settle
+//   - Hari per periode : jumlah hari kalender aktual dari lastCoupon ke nextCoupon
+//   Contoh: lastCoupon 15 Jul 2026, settle 27 Jul 2026, nextCoupon 15 Jan 2027
+//   → HariBerjalan = 12, HariPeriode = 184
+//   → AI = (Nominal × 6.875%/2) × (12/184) = Rp 2.241.848
+//
+// Metode 30/360:
+//   - Hari berjalan : days30_360(lastCoupon, settle)
+//   - Hari per periode : 360 / freqPerYear (tetap, mis. 180 untuk semi-annual)
 // =============================================
 function calcAccruedInterest(settle, lastCoupon, nextCoupon, couponRate, freqPerYear, nominal, basis) {
   if (!settle || !lastCoupon || !nextCoupon) return 0;
@@ -756,15 +767,17 @@ function calcAccruedInterest(settle, lastCoupon, nextCoupon, couponRate, freqPer
   let daysAccrued, periodDays;
   if (basis === '30/360') {
     daysAccrued = days30_360(lc, s);
-    periodDays  = days30_360(lc, nc);
+    periodDays  = 360 / freqPerYear;
   } else if (basis === 'ACT/360') {
     daysAccrued = (s - lc) / 86400000;
     periodDays  = 360 / freqPerYear;
   } else if (basis === 'ACT/365') {
     daysAccrued = (s - lc) / 86400000;
     periodDays  = 365 / freqPerYear;
-  } else { // ACT/ACT
+  } else { // ACT/ACT (default)
+    // Hari aktual dari last coupon ke settlement
     daysAccrued = (s - lc) / 86400000;
+    // Hari aktual dalam satu periode kupon (last coupon → next coupon)
     periodDays  = (nc - lc) / 86400000;
   }
   if (periodDays <= 0) return 0;
@@ -844,8 +857,8 @@ function generateCashflows(settle, maturity, coupon, freqPerYear, nominal, taxPc
     let periodDays;
     if (basis === 'ACT/365')      periodDays = 365 / freqPerYear;
     else if (basis === 'ACT/360') periodDays = 360 / freqPerYear;
-    else if (basis === '30/360')  periodDays = days30_360(prevDate, cfDate);
-    else                          periodDays = (cfDate - prevDate) / 86400000;
+    else if (basis === '30/360')  periodDays = 360 / freqPerYear;
+    else                          periodDays = (cfDate - prevDate) / 86400000; // ACT/ACT
     const grossCoupon = couponPerPeriod;
     const tax         = grossCoupon * (taxPct / 100);
     const netCoupon   = grossCoupon - tax;
