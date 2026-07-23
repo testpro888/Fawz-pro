@@ -82,37 +82,6 @@ CREATE POLICY "anon_select_customer_securities"
   TO anon
   USING (true);
 
--- 5. Migrasi data lama dari tabel customers ke customer_securities
---    (untuk customer yang belum punya entry di customer_securities)
-INSERT INTO public.customer_securities (
-  customer_id,
-  sekuritas_name,
-  rdn_bank_name,
-  rdn_account_no,
-  personal_bank_name,
-  personal_account_no,
-  personal_account_name,
-  sort_order
-)
-SELECT
-  c.id,
-  'Maybank Sekuritas',
-  -- rdn_bank_name: ambil dari savings_bank_name jika ada, fallback ke bank_account_id
-  COALESCE(NULLIF(c.savings_bank_name, ''), NULLIF(c.bank_account_id, '')),
-  -- rdn_account_no: SavingsID
-  NULLIF(c.savings_id, ''),
-  -- personal_bank_name: BankAccountID
-  NULLIF(c.bank_account_id, ''),
-  -- personal_account_no: BankAccountNo
-  NULLIF(c.bank_account_no, ''),
-  -- personal_account_name: BankAccountName
-  NULLIF(c.bank_account_name, ''),
-  0
-FROM public.customers c
-WHERE
-  -- hanya migrate jika ada data rekening
-  (c.savings_id IS NOT NULL OR c.bank_account_no IS NOT NULL)
-  -- dan belum ada entry securities untuk customer ini
-  AND NOT EXISTS (
-    SELECT 1 FROM public.customer_securities s WHERE s.customer_id = c.id
-  );
+-- 5. Migrasi data lama tidak diperlukan:
+--    Tabel customers tidak menyimpan kolom rekening secara flat.
+--    Data sekuritas akan diisi saat user edit/tambah customer melalui form.
