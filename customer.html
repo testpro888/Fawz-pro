@@ -1378,6 +1378,28 @@
     return null;
   }
 
+  // Helper: upsert satu baris ke customer_securities dari data CSV row
+  // Hanya dijalankan kalau ada data rekening (SavingsID atau BankAccountNo)
+  async function upsertSecuritiesFromRow(customerId, row) {
+    const hasData = row.savingsID || row.bankAccountNo || row.bankAccountID || row.savingsBankID;
+    if (!customerId || !hasData) return;
+    // Hapus securities lama untuk customer ini (1 row per import = replace)
+    await window._supabase.from('customer_securities').delete().eq('customer_id', customerId);
+    // Tentukan sekuritas name: coba dari SavingsBankID lalu BankAccountID, fallback Maybank Sekuritas
+    // Di CSV tidak ada kolom nama sekuritas eksplisit — gunakan 'Maybank Sekuritas' sebagai default
+    const secRow = {
+      customer_id:          customerId,
+      sekuritas_name:       'Maybank Sekuritas',
+      rdn_bank_name:        row.savingsBankID  || null,  // SavingsBankID = Bank RDN (e.g. "BCA", "BNIIS")
+      rdn_account_no:       row.savingsID      || null,  // SavingsID = No Rekening RDN
+      personal_bank_name:   row.bankAccountID  || null,  // BankAccountID = Nama Bank rekening pribadi
+      personal_account_no:  row.bankAccountNo  || null,  // BankAccountNo = No Rekening
+      personal_account_name: row.bankAccountName || null, // BankAccountName = Nama di rekening
+      sort_order:           0,
+    };
+    await window._supabase.from('customer_securities').insert(secRow);
+  }
+
   async function importCSV() {
     if (!csvRows.length) return;
     const btn = document.getElementById('uploadSaveBtn');
@@ -1429,7 +1451,7 @@
         for (const item of batch) {
           const rowData = { ...item.supaRow };
           const clientId = rowData.client_id;
-          delete rowData.client_id; // jangan update kolom client_id itu sendiri
+          delete rowData.client_id;
 
           // Cek apakah client_id sudah ada di DB
           const { data: existing } = await window._supabase
@@ -1439,24 +1461,33 @@
             .maybeSingle();
 
           if (existing) {
-            // Sudah ada → update saja, tidak buat duplikat
             const { error: updErr } = await window._supabase
               .from('customers')
               .update(rowData)
               .eq('client_id', clientId);
             if (updErr) { errors.push(`Update ${clientId}: ${updErr.message}`); console.error('Update err:', updErr); }
-            else { success++; }
+            else {
+              await upsertSecuritiesFromRow(existing.id, item.row);
+              success++;
+            }
           } else {
-            // Belum ada → insert baru
             const insertRow = { ...rowData, client_id: clientId };
-            const { error: insErr } = await window._supabase
+            const { data: inserted, error: insErr } = await window._supabase
               .from('customers')
-              .insert(insertRow);
+              .insert(insertRow)
+              .select('id')
+              .single();
             if (insErr) {
-              // 23505 = unique_violation, artinya race condition — record sudah ada, anggap sukses
-              if (insErr.code === '23505') { success++; }
-              else { errors.push(`Insert ${clientId}: ${insErr.message}`); console.error('Insert err:', insErr); }
-            } else { success++; }
+              if (insErr.code === '23505') {
+                // Race condition — coba ambil id lalu upsert securities
+                const { data: rc } = await window._supabase.from('customers').select('id').eq('client_id', clientId).maybeSingle();
+                if (rc) await upsertSecuritiesFromRow(rc.id, item.row);
+                success++;
+              } else { errors.push(`Insert ${clientId}: ${insErr.message}`); console.error('Insert err:', insErr); }
+            } else {
+              await upsertSecuritiesFromRow(inserted.id, item.row);
+              success++;
+            }
           }
         }
       }
@@ -1469,43 +1500,35 @@
         const supaRow = item.supaRow;
         let existingRow = null;
 
-        // Cek berdasarkan ktp_number jika tersedia
         if (supaRow.ktp_number) {
           const { data } = await window._supabase
-            .from('customers')
-            .select('id')
-            .eq('ktp_number', supaRow.ktp_number)
-            .maybeSingle();
+            .from('customers').select('id').eq('ktp_number', supaRow.ktp_number).maybeSingle();
           existingRow = data;
         }
-
-        // Kalau tidak ada ktp_number, cek berdasarkan email
         if (!existingRow && supaRow.email) {
           const { data } = await window._supabase
-            .from('customers')
-            .select('id')
-            .eq('email', supaRow.email)
-            .maybeSingle();
+            .from('customers').select('id').eq('email', supaRow.email).maybeSingle();
           existingRow = data;
         }
 
         if (existingRow) {
-          // Sudah ada → update saja berdasarkan id internal
           const { error: updErr } = await window._supabase
-            .from('customers')
-            .update(supaRow)
-            .eq('id', existingRow.id);
+            .from('customers').update(supaRow).eq('id', existingRow.id);
           if (updErr) { errors.push(`Update (no clientID): ${updErr.message}`); console.error('Update err:', updErr); }
-          else { success++; }
+          else {
+            await upsertSecuritiesFromRow(existingRow.id, item.row);
+            success++;
+          }
         } else {
-          // Belum ada → insert baru
-          const { error: insErr } = await window._supabase
-            .from('customers')
-            .insert(supaRow);
+          const { data: inserted, error: insErr } = await window._supabase
+            .from('customers').insert(supaRow).select('id').single();
           if (insErr) {
-            if (insErr.code === '23505') { success++; } // sudah ada, skip
+            if (insErr.code === '23505') { success++; }
             else { errors.push(`Insert: ${insErr.message}`); console.error('Insert error detail:', insErr); }
-          } else { success++; }
+          } else {
+            await upsertSecuritiesFromRow(inserted.id, item.row);
+            success++;
+          }
         }
       }
 
