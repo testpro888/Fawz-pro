@@ -700,11 +700,6 @@
       gap: 12px;
       margin-bottom: 12px;
     }
-    .bday-icon {
-      font-size: 22px;
-      flex-shrink: 0;
-      line-height: 1;
-    }
     .bday-title-wrap { flex: 1; }
     .bday-title {
       font-size: 14px;
@@ -1017,12 +1012,11 @@
   <!-- Birthday Widget -->
   <div class="birthday-widget" id="birthdayWidget" style="display:none;">
     <div class="bday-header">
-      <div class="bday-icon">🎂</div>
       <div class="bday-title-wrap">
         <div class="bday-title">Ulang Tahun Hari Ini</div>
         <div class="bday-sub" id="bdayCount">Memuat...</div>
       </div>
-      <a href="birthday-calendar.html" class="bday-link">Lihat Kalender →</a>
+      <a href="birthday-calendar.html" class="bday-link">Lihat Kalender &rarr;</a>
     </div>
     <div class="bday-list" id="bdayList"></div>
   </div>
@@ -1067,7 +1061,7 @@
           <span class="cl-badge current">v1.9</span>
           <span class="cl-date">22 Juli 2026</span>
         </div>
-        <div class="cl-section-label">✨ New Features</div>
+        <div class="cl-section-label">New Features</div>
         <ul class="cl-list">
           <li><strong>Birthday Calendar</strong> — kalender ulang tahun nasabah dengan popup "+N more" saat banyak birthday.</li>
           <li><strong>Kalkulator Bonds</strong> — mode Beli (biaya pembelian, YTM, skenario EXIT) &amp; mode Jual (keuntungan/kerugian, pajak).</li>
@@ -1079,7 +1073,7 @@
           <span class="cl-badge">v1.8</span>
           <span class="cl-date">21 Juli 2026</span>
         </div>
-        <div class="cl-section-label">✨ New Features</div>
+        <div class="cl-section-label">New Features</div>
         <ul class="cl-list">
           <li><strong>Brand Logo Page</strong> — halaman baru di menu Tools untuk kelola aset visual brand.</li>
           <li>Upload dan kelola logo brand per kategori.</li>
@@ -1092,7 +1086,7 @@
           <span class="cl-badge">v1.7.1</span>
           <span class="cl-date">21 Juli 2026</span>
         </div>
-        <div class="cl-section-label">🐛 Bug Fixes &amp; UI Polish</div>
+        <div class="cl-section-label">Bug Fixes & UI Polish</div>
         <ul class="cl-list">
           <li><strong>WA Float</strong> — hanya tampilkan ikon saat idle, teks muncul saat hover.</li>
           <li><strong>WA Float</strong> — logo WA diperbaiki agar fit penuh di kontainer.</li>
@@ -1106,13 +1100,13 @@
           <span class="cl-badge">v1.7</span>
           <span class="cl-date">20 Juli 2026</span>
         </div>
-        <div class="cl-section-label">✨ New Features</div>
+        <div class="cl-section-label">New Features</div>
         <ul class="cl-list">
           <li><strong>Job Report — Link &amp; File Attachment</strong><br>Setiap task kini bisa dilampirkan <em>link referensi</em> (URL bebas) dan <em>file attachment</em> (gambar/dokumen). File diupload ke Supabase Storage bucket <code>job-attachments</code>.</li>
           <li><strong>Follow Up Customer — Status Baru</strong><br>Tambah status <em>"Under Follow Up"</em> dan kolom porto &amp; total nilai porto.</li>
           <li><strong>Customer — Data Enrichment</strong><br>Kolom email dan nomor HP muncul di tabel Client Volume &gt;100 Juta.</li>
         </ul>
-        <div class="cl-section-label">🐛 Bug Fixes</div>
+        <div class="cl-section-label">Bug Fixes</div>
         <ul class="cl-list">
           <li>Paginated fetch diperbaiki agar bisa load data &gt;1.000 baris.</li>
           <li>Support delimiter semicolon dan quoted fields saat import CSV.</li>
