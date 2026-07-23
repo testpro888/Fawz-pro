@@ -950,7 +950,12 @@
             personalAccountName: c.bankAccountName||'',
           }] : []);
           if (!entries.length) return '<div style="color:#ccc;font-style:italic;font-size:0.85rem;">Belum ada data sekuritas</div>';
-          return entries.map((s, idx) => `
+          // Filter out entries yang semua field rekening kosong
+          const nonEmpty = entries.filter(s =>
+            s.rdnBankName || s.rdnAccountNo || s.personalBankName || s.personalAccountNo || s.personalAccountName
+          );
+          if (!nonEmpty.length) return '<div style="color:#ccc;font-style:italic;font-size:0.85rem;">Belum ada data sekuritas</div>';
+          return nonEmpty.map((s, idx) => `
             <div class="det-sec-card">
               <div class="det-sec-header">
                 <div class="det-sec-num">${idx+1}</div>
