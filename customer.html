@@ -615,13 +615,14 @@
           mapped.savingsBankID = sec.rdn_bank_name || '';
         }
         mapped.securities = (r.customer_securities || []).map(s => ({
-          sekuritasName: s.sekuritas_name || 'Maybank',
+          sekuritasName: s.sekuritas_name || 'Maybank Sekuritas',
           rdnBankName: s.rdn_bank_name || '',
-          rdnAccountNo: s.rdn_account_no || '',
-          kseiSingleID: s.sid || '',
-          personalBankName: s.personal_bank_name || '',
-          personalAccountNo: s.personal_account_no || '',
-          personalAccountName: s.personal_account_name || '',
+          rdnBankID: s.rdn_bank_id || '',
+          rdnAccountNo: s.rdn_account_no || '',         // SavingsID
+          savingsBankID: s.rdn_bank_id || '',           // SavingsBankID
+          personalBankName: s.personal_bank_name || '', // BankAccountID
+          personalAccountNo: s.personal_account_no || '', // BankAccountNo
+          personalAccountName: s.personal_account_name || '', // BankAccountName
         }));
         return mapped;
       });
@@ -670,6 +671,7 @@
         closed_date: parseDateField(data.closedDate || data.closed_date || ''),
       };
 
+      let customerId = docId;
       if (docId) {
         const { error } = await window._supabase.from('customers').update(row).eq('id', docId);
         if (error) throw error;
@@ -679,9 +681,29 @@
       } else {
         const { data: inserted, error } = await window._supabase.from('customers').insert(row).select().single();
         if (error) throw error;
+        customerId = inserted.id;
         allCustomers.unshift(mapCustomerRow(inserted));
         showToast('Customer berhasil ditambahkan', 'success');
       }
+
+      // Simpan / update customer_securities
+      if (data.securities && data.securities.length > 0) {
+        // Hapus semua securities lama untuk customer ini, lalu insert ulang
+        await window._supabase.from('customer_securities').delete().eq('customer_id', customerId);
+        const secRows = data.securities.map((s, i) => ({
+          customer_id:          customerId,
+          sekuritas_name:       s.sekuritasName || 'Maybank Sekuritas',
+          rdn_bank_name:        s.rdnBankName   || null,
+          rdn_account_no:       s.rdnAccountNo  || null,
+          personal_bank_name:   s.personalBankName   || null,
+          personal_account_no:  s.personalAccountNo  || null,
+          personal_account_name: s.personalAccountName || null,
+          sort_order:           i,
+        }));
+        const { error: secErr } = await window._supabase.from('customer_securities').insert(secRows);
+        if (secErr) console.error('Gagal simpan securities:', secErr);
+      }
+
       document.getElementById('formModal').classList.remove('open');
       applyFilters(); updateStats(); populateFilters();
     } catch (e) { console.error(e); showToast('Gagal menyimpan data', 'error'); }
@@ -874,6 +896,8 @@
 
   function openAddModal() {
     clearForm();
+    // Otomatis tambah Sekuritas 1 = Maybank Sekuritas
+    addSekuritas({ sekuritasName: 'Maybank Sekuritas' });
     document.getElementById('formModalTitle').textContent = 'Tambah Customer';
     document.getElementById('formModal').classList.add('open');
   }
