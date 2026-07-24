@@ -1118,20 +1118,28 @@
     const offerPrice    = parseFloat(document.getElementById('ordOfferInput').value) || parseFloat(ob.harga_beli) || parseFloat(ob.hargaBeli) || 100;
     const nominalAmount = unitAmount * (offerPrice / 100);
 
-    // Accrued Interest = YEARFRAC(Last Coupon, Settlement) × Unit Amount × Coupon Rate
+    // Accrued Interest — Metode ACT/ACT (sesuai bond-calculator)
+    // AI = (Nominal × Kupon/Freq) × (HariBerjalan / HariPeriode)
+    // HariBerjalan  = actual days dari lastCoupon ke settlement
+    // HariPeriode   = actual days dari lastCoupon ke nextCoupon
     const lastCouponStr = ob.last_coupon_date || ob.lastCouponDate || '';
+    const nextCouponStr = ob.next_coupon_date || ob.nextCouponDate || '';
     const settlementStr = document.getElementById('ordSettlement').value || '';
     const couponRate    = parseFloat(ob.kupon) || 0; // % per tahun
+    const freqPerYear   = parseInt(ob.kupon_freq) || 2; // frekuensi kupon per tahun
 
     let accruedInterest = 0;
-    if (lastCouponStr && settlementStr && couponRate > 0) {
-      const lastCouponDate = new Date(lastCouponStr);
-      const settlementDate = new Date(settlementStr);
-      if (!isNaN(lastCouponDate) && !isNaN(settlementDate) && settlementDate > lastCouponDate) {
-        const diffDays = (settlementDate - lastCouponDate) / (1000 * 60 * 60 * 24);
-        const yearFrac = diffDays / 360; // ACT/360 sesuai konvensi obligasi Indonesia
-        // AI = YEARFRAC(lastCoupon, settlement) × Unit Amount × Coupon%
-        accruedInterest = yearFrac * unitAmount * (couponRate / 100);
+    if (lastCouponStr && nextCouponStr && settlementStr && couponRate > 0) {
+      const lastCouponDate = new Date(lastCouponStr + 'T00:00:00');
+      const nextCouponDate = new Date(nextCouponStr + 'T00:00:00');
+      const settlementDate = new Date(settlementStr + 'T00:00:00');
+      if (!isNaN(lastCouponDate) && !isNaN(nextCouponDate) && !isNaN(settlementDate) && settlementDate > lastCouponDate) {
+        const daysAccrued = (settlementDate - lastCouponDate) / 86400000;
+        const periodDays  = (nextCouponDate - lastCouponDate) / 86400000;
+        if (periodDays > 0) {
+          // AI = (Nominal × Kupon/Freq) × (HariBerjalan / HariPeriode)
+          accruedInterest = (unitAmount * (couponRate / 100) / freqPerYear) * (daysAccrued / periodDays);
+        }
       }
     }
 
@@ -1566,25 +1574,33 @@
     const bidPrice = parseFloat(document.getElementById('sellBidInput').value) || 100;
     const nominalAmount = amount * (bidPrice / 100);
 
-    // Accrued Interest — pakai data obligasi terpilih (jika list mode) atau manual
+    // Accrued Interest — Metode ACT/ACT (sesuai bond-calculator)
+    // AI = (Nominal × Kupon/Freq) × (HariBerjalan / HariPeriode)
     let lastCouponStr = '';
+    let nextCouponStr = '';
     let couponRate = 0;
+    let freqPerYear = 2;
     if (sellMode === 'list' && sellSelectedObl) {
       lastCouponStr = sellSelectedObl.last_coupon_date || sellSelectedObl.lastCouponDate || '';
-      couponRate = parseFloat(sellSelectedObl.kupon) || 0;
+      nextCouponStr = sellSelectedObl.next_coupon_date || sellSelectedObl.nextCouponDate || '';
+      couponRate    = parseFloat(sellSelectedObl.kupon) || 0;
+      freqPerYear   = parseInt(sellSelectedObl.kupon_freq) || 2;
     } else if (sellMode === 'manual') {
       couponRate = parseFloat(document.getElementById('sellManualKupon').value) || 0;
     }
     const settlementStr = document.getElementById('sellSettlement').value || '';
 
     let accruedInterest = 0;
-    if (lastCouponStr && settlementStr && couponRate > 0) {
-      const lastCouponDate = new Date(lastCouponStr);
-      const settlementDate = new Date(settlementStr);
-      if (!isNaN(lastCouponDate) && !isNaN(settlementDate) && settlementDate > lastCouponDate) {
-        const diffDays = (settlementDate - lastCouponDate) / (1000 * 60 * 60 * 24);
-        const yearFrac = diffDays / 360;
-        accruedInterest = yearFrac * amount * (couponRate / 100);
+    if (lastCouponStr && nextCouponStr && settlementStr && couponRate > 0) {
+      const lastCouponDate = new Date(lastCouponStr + 'T00:00:00');
+      const nextCouponDate = new Date(nextCouponStr + 'T00:00:00');
+      const settlementDate = new Date(settlementStr + 'T00:00:00');
+      if (!isNaN(lastCouponDate) && !isNaN(nextCouponDate) && !isNaN(settlementDate) && settlementDate > lastCouponDate) {
+        const daysAccrued = (settlementDate - lastCouponDate) / 86400000;
+        const periodDays  = (nextCouponDate - lastCouponDate) / 86400000;
+        if (periodDays > 0) {
+          accruedInterest = (amount * (couponRate / 100) / freqPerYear) * (daysAccrued / periodDays);
+        }
       }
     }
 

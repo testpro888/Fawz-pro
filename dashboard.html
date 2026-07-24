@@ -139,6 +139,9 @@
 
       // Load summary bar untuk semua role
       loadSummaryBar(role);
+
+      // Load birthday widget
+      loadBirthdayWidget(role);
     });
 
     async function loadSummaryBar(role) {
@@ -338,6 +341,73 @@
         const badge = document.getElementById('sumCustomerBadge');
         if (badge) badge.textContent = 'YTD ' + year;
       } catch(e) { console.error('Gagal load all customer count:', e); }
+    }
+
+    async function loadBirthdayWidget(role) {
+      try {
+        const raw = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember');
+        const u = raw ? JSON.parse(raw) : {};
+        const salesName = (u.name || '').toLowerCase().trim();
+
+        const today = new Date();
+        const todayM = today.getMonth() + 1; // 1-based
+        const todayD = today.getDate();
+
+        // Load semua customer yang punya birth_date (sama seperti birthday-calendar.html)
+        let allData = [];
+        let offset = 0;
+        const pageSize = 1000;
+        while (true) {
+          let q = _sbDash
+            .from('customers')
+            .select('client_name, birth_date, sales_person_name')
+            .not('birth_date', 'is', null)
+            .range(offset, offset + pageSize - 1);
+          const { data, error } = await q;
+          if (error || !data) break;
+          allData = allData.concat(data);
+          if (data.length < pageSize) break;
+          offset += pageSize;
+        }
+
+        // Filter: bulan & hari sama dengan hari ini
+        let results = allData.filter(c => {
+          if (!c.birth_date) return false;
+          const parts = c.birth_date.split('-');
+          if (parts.length < 3) return false;
+          return parseInt(parts[1]) === todayM && parseInt(parts[2]) === todayD;
+        });
+
+        // Deduplikasi by client_name + birth_date
+        const seen = new Set();
+        results = results.filter(c => {
+          const key = (c.client_name || '').toLowerCase().trim() + '|' + c.birth_date;
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
+
+        // Filter by sales untuk role sales
+        if (role === 'sales' && salesName) {
+          results = results.filter(r =>
+            (r.sales_person_name || '').toLowerCase().trim() === salesName
+          );
+        }
+
+        if (!results.length) return;
+
+        const widget = document.getElementById('birthdayWidget');
+        const subEl  = document.getElementById('bdayCount');
+        const listEl = document.getElementById('bdayList');
+
+        widget.style.display = '';
+        subEl.textContent = `${results.length} customer berulang tahun hari ini`;
+        listEl.innerHTML = results.map(r => {
+          const name = (r.client_name || '—').toUpperCase();
+          return `<div class="bday-chip"><span class="bday-chip-dot"></span>${name}</div>`;
+        }).join('');
+
+      } catch(e) { console.error('Gagal load birthday widget:', e); }
     }
   </script>
 
@@ -615,6 +685,65 @@
     .wa-icon  { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; transition: border-radius 0.25s; overflow: hidden; }
     .wa-float:hover .wa-icon { border-radius: 8px; }
 
+    /* ── BIRTHDAY WIDGET ── */
+    .birthday-widget {
+      background: var(--canvas);
+      border: 1px solid #f2b8d8;
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin-bottom: 24px;
+      animation: fadeUp 0.45s 0.36s ease both;
+    }
+    .bday-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .bday-title-wrap { flex: 1; }
+    .bday-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--ink-deep);
+    }
+    .bday-sub {
+      font-size: 12px;
+      color: var(--stone);
+      margin-top: 1px;
+    }
+    .bday-link {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--primary);
+      text-decoration: none;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .bday-link:hover { text-decoration: underline; }
+    .bday-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .bday-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--tint-rose);
+      border: 1px solid #f2b8d8;
+      border-radius: 9999px;
+      padding: 4px 12px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--ink);
+    }
+    .bday-chip-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: #e879b8;
+      flex-shrink: 0;
+    }
+
     /* ── VERSION BAR ── */
     .version-bar {
       display: flex;
@@ -880,6 +1009,18 @@
     </div>
   </div>
 
+  <!-- Birthday Widget -->
+  <div class="birthday-widget" id="birthdayWidget" style="display:none;">
+    <div class="bday-header">
+      <div class="bday-title-wrap">
+        <div class="bday-title">Ulang Tahun Hari Ini</div>
+        <div class="bday-sub" id="bdayCount">Memuat...</div>
+      </div>
+      <a href="birthday-calendar.html" class="bday-link">Lihat Kalender &rarr;</a>
+    </div>
+    <div class="bday-list" id="bdayList"></div>
+  </div>
+
   <!-- Quick Actions -->
   <div class="section-title">Menu Cepat</div>
   <div class="quick-actions">
@@ -920,7 +1061,7 @@
           <span class="cl-badge current">v1.9</span>
           <span class="cl-date">22 Juli 2026</span>
         </div>
-        <div class="cl-section-label">✨ New Features</div>
+        <div class="cl-section-label">New Features</div>
         <ul class="cl-list">
           <li><strong>Birthday Calendar</strong> — kalender ulang tahun nasabah dengan popup "+N more" saat banyak birthday.</li>
           <li><strong>Kalkulator Bonds</strong> — mode Beli (biaya pembelian, YTM, skenario EXIT) &amp; mode Jual (keuntungan/kerugian, pajak).</li>
@@ -932,7 +1073,7 @@
           <span class="cl-badge">v1.8</span>
           <span class="cl-date">21 Juli 2026</span>
         </div>
-        <div class="cl-section-label">✨ New Features</div>
+        <div class="cl-section-label">New Features</div>
         <ul class="cl-list">
           <li><strong>Brand Logo Page</strong> — halaman baru di menu Tools untuk kelola aset visual brand.</li>
           <li>Upload dan kelola logo brand per kategori.</li>
@@ -945,7 +1086,7 @@
           <span class="cl-badge">v1.7.1</span>
           <span class="cl-date">21 Juli 2026</span>
         </div>
-        <div class="cl-section-label">🐛 Bug Fixes &amp; UI Polish</div>
+        <div class="cl-section-label">Bug Fixes & UI Polish</div>
         <ul class="cl-list">
           <li><strong>WA Float</strong> — hanya tampilkan ikon saat idle, teks muncul saat hover.</li>
           <li><strong>WA Float</strong> — logo WA diperbaiki agar fit penuh di kontainer.</li>
@@ -959,13 +1100,13 @@
           <span class="cl-badge">v1.7</span>
           <span class="cl-date">20 Juli 2026</span>
         </div>
-        <div class="cl-section-label">✨ New Features</div>
+        <div class="cl-section-label">New Features</div>
         <ul class="cl-list">
           <li><strong>Job Report — Link &amp; File Attachment</strong><br>Setiap task kini bisa dilampirkan <em>link referensi</em> (URL bebas) dan <em>file attachment</em> (gambar/dokumen). File diupload ke Supabase Storage bucket <code>job-attachments</code>.</li>
           <li><strong>Follow Up Customer — Status Baru</strong><br>Tambah status <em>"Under Follow Up"</em> dan kolom porto &amp; total nilai porto.</li>
           <li><strong>Customer — Data Enrichment</strong><br>Kolom email dan nomor HP muncul di tabel Client Volume &gt;100 Juta.</li>
         </ul>
-        <div class="cl-section-label">🐛 Bug Fixes</div>
+        <div class="cl-section-label">Bug Fixes</div>
         <ul class="cl-list">
           <li>Paginated fetch diperbaiki agar bisa load data &gt;1.000 baris.</li>
           <li>Support delimiter semicolon dan quoted fields saat import CSV.</li>
