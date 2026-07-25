@@ -238,6 +238,80 @@
 
 <div class="toast-container" id="toastContainer"></div>
 
+<!-- ===== APPROVE MODAL ===== -->
+<div class="modal-overlay" id="approveModal" onclick="if(event.target===this)closeApproveModal()">
+  <div class="modal" style="width:560px;">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">Approve Transaksi</div>
+        <div style="font-size:.78rem;color:var(--gray);margin-top:2px;" id="approveTxInfo">—</div>
+      </div>
+      <button class="modal-close" onclick="closeApproveModal()">✕</button>
+    </div>
+
+    <div style="padding:0 32px 8px;">
+      <!-- Info transaksi -->
+      <div style="background:#f8f9ff;border-radius:10px;padding:12px 16px;margin-bottom:18px;border:1px solid #e8e8f5;font-size:.82rem;display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px 16px;">
+        <div><span style="color:#888;">Seri:</span> <strong id="apv-seri">—</strong></div>
+        <div><span style="color:#888;">Nasabah:</span> <strong id="apv-nasabah">—</strong></div>
+        <div><span style="color:#888;">Nominal:</span> <strong id="apv-nominal">—</strong></div>
+        <div><span style="color:#888;">Unit:</span> <strong id="apv-unit">—</strong></div>
+        <div><span style="color:#888;">Kupon:</span> <strong id="apv-kupon">—</strong></div>
+        <div><span style="color:#888;">Settlement:</span> <strong id="apv-settlement">—</strong></div>
+      </div>
+
+      <div style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--gold);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid #f0f0f5;">Harga & Komisi</div>
+
+      <div class="form-grid" style="margin-bottom:14px;">
+        <div class="form-group">
+          <label class="form-label">Modal / unit <span style="color:var(--red);">*</span></label>
+          <input type="text" class="form-input" id="apv-modal-per-unit" placeholder="99,00" oninput="fmtDecimalInput(this);apvRecalc()"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Modal to Sales / unit</label>
+          <input type="text" class="form-input" id="apv-modal-sales" placeholder="99,50" oninput="fmtDecimalInput(this);apvRecalc()"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Harga to Customer / unit <span style="color:var(--red);">*</span></label>
+          <input type="text" class="form-input" id="apv-harga-cust" placeholder="100,00" oninput="fmtDecimalInput(this);apvRecalc()"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">TLA Code</label>
+          <select class="form-input" id="apv-tla-code" onchange="apvRecalc()">
+            <option value="0">0 – Tidak ada TLA</option>
+            <option value="1">1 – Ada TLA</option>
+          </select>
+        </div>
+        <div class="form-group" id="apv-tla-group" style="display:none;">
+          <label class="form-label">Nama TLA</label>
+          <input type="text" class="form-input" id="apv-tla-name" placeholder="Nama TLA"/>
+        </div>
+      </div>
+
+      <!-- Ringkasan kalkulasi -->
+      <div class="calc-summary" id="apvCalcSummary">
+        <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#888;margin-bottom:10px;">📊 Ringkasan Kalkulasi</div>
+        <div class="calc-row"><span class="lbl">Modal Total</span><span class="val" id="apv-cs-modal">—</span></div>
+        <div class="calc-row"><span class="lbl">Harga Cust Total</span><span class="val" id="apv-cs-harga-cust-total">—</span></div>
+        <div class="calc-row"><span class="lbl">Revenue Fawz</span><span class="val green" id="apv-cs-rev-fawz">—</span></div>
+        <div class="calc-row"><span class="lbl">Payout Sekuritas (30%)</span><span class="val" id="apv-cs-payout-sek">—</span></div>
+        <div class="calc-row"><span class="lbl">Komisi Sales (60%×10%)</span><span class="val red" id="apv-cs-comm-sales">—</span></div>
+        <div class="calc-row"><span class="lbl">Komisi TLA</span><span class="val red" id="apv-cs-comm-tla">—</span></div>
+        <div class="calc-row"><span class="lbl">Total Expenses</span><span class="val red" id="apv-cs-total-exp">—</span></div>
+        <div class="calc-row"><span class="lbl">Profit Fawz</span><span class="val gold" id="apv-cs-profit">—</span></div>
+      </div>
+
+      <div id="apvAlert" style="margin-top:10px;padding:9px 14px;border-radius:8px;font-size:.82rem;display:none;"></div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-outline btn-sm" onclick="closeApproveModal()">Batal</button>
+      <button class="btn btn-reject btn-sm" onclick="rejectFromApproveModal()">Reject</button>
+      <button class="btn btn-approve btn-sm" id="apvSubmitBtn" onclick="submitApprove()">✓ Approve</button>
+    </div>
+  </div>
+</div>
+
 <!-- ===== ADD TRANSACTION MODAL ===== -->
 <div class="modal-overlay" id="addModal" onclick="if(event.target===this)closeAddModal()">
   <div class="modal add-modal">
@@ -623,25 +697,202 @@
     document.getElementById('detailFooter').innerHTML = `
       <button class="btn btn-outline btn-sm" onclick="closeDetail()">Tutup</button>
       ${canAct ? `<button class="btn btn-reject btn-sm" onclick="reject('${id}');closeDetail()">Reject</button>` : ''}
-      ${canAct ? `<button class="btn btn-approve btn-sm" onclick="approve('${id}');closeDetail()">Approve</button>` : ''}`;
+      ${canAct && r.status === 'pending' ? `<button class="btn btn-approve btn-sm" onclick="closeDetail();approve('${id}')">Approve</button>` : ''}`;
 
     document.getElementById('detailModal').classList.add('open');
   }
 
   function closeDetail() { document.getElementById('detailModal').classList.remove('open'); }
 
-  async function approve(id) {
-    if (!confirm('Approve transaksi ini?')) return;
+  // ===== APPROVE MODAL =====
+  let approvingRow = null;
+
+  function approve(id) {
+    const r = allRows.find(x => x.id === id);
+    if (!r) return;
+    approvingRow = r;
+
+    // Fill info
+    document.getElementById('approveTxInfo').textContent = `${r.seri} — ${r.nasabah}`;
+    document.getElementById('apv-seri').textContent      = r.seri;
+    document.getElementById('apv-nasabah').textContent   = r.nasabah;
+    document.getElementById('apv-nominal').textContent   = 'Rp ' + r.nominal.toLocaleString('id-ID');
+    document.getElementById('apv-unit').textContent      = r.unit ? r.unit.toLocaleString('id-ID') : '—';
+    document.getElementById('apv-kupon').textContent     = r.kupon != null ? Number(r.kupon).toFixed(3) + '%' : '—';
+    document.getElementById('apv-settlement').textContent = r.settlement || '—';
+
+    // Reset inputs
+    document.getElementById('apv-modal-per-unit').value = '';
+    document.getElementById('apv-modal-sales').value    = '';
+    document.getElementById('apv-harga-cust').value     = '';
+    document.getElementById('apv-tla-code').value       = '0';
+    document.getElementById('apv-tla-name').value       = r.tlaName || '';
+    document.getElementById('apv-tla-group').style.display = 'none';
+    document.getElementById('apvAlert').style.display = 'none';
+    apvResetSummary();
+
+    document.getElementById('approveModal').classList.add('open');
+  }
+
+  function closeApproveModal() {
+    document.getElementById('approveModal').classList.remove('open');
+    approvingRow = null;
+  }
+
+  function apvResetSummary() {
+    ['apv-cs-modal','apv-cs-harga-cust-total','apv-cs-rev-fawz','apv-cs-payout-sek',
+     'apv-cs-comm-sales','apv-cs-comm-tla','apv-cs-total-exp','apv-cs-profit']
+      .forEach(id => { const el = document.getElementById(id); if (el) el.textContent = '—'; });
+  }
+
+  function apvGetDecimal(id) {
+    const v = (document.getElementById(id)?.value || '').replace(/[^0-9,]/g,'').replace(',','.');
+    return parseFloat(v) || 0;
+  }
+
+  function apvRecalc() {
+    const tlaCode = parseInt(document.getElementById('apv-tla-code').value) || 0;
+    document.getElementById('apv-tla-group').style.display = tlaCode === 1 ? '' : 'none';
+
+    if (!approvingRow) return;
+    const nominal      = approvingRow.nominal || 0;
+    const unit         = nominal / 100;  // unit count
+    const modalPerUnit = apvGetDecimal('apv-modal-per-unit');
+    const hargaCust    = apvGetDecimal('apv-harga-cust');
+
+    if (!modalPerUnit || !hargaCust) { apvResetSummary(); return; }
+
+    const modalTotal     = unit * modalPerUnit;
+    const hargaCustTotal = unit * hargaCust;
+    const grossRevFawz   = hargaCustTotal - modalTotal;
+    const revFawz        = grossRevFawz * 0.9;
+    const payoutSek      = revFawz * 0.30;
+    const revSales       = revFawz;
+    const commSales      = (revSales * 0.60) * 0.10;
+    const commTla        = tlaCode === 1 ? commSales * 0.50 : 0;
+    const totalExp       = commSales + commTla;
+    const profit         = payoutSek - commSales - commTla;
+
+    const rp = v => 'Rp ' + Math.round(v).toLocaleString('id-ID');
+    document.getElementById('apv-cs-modal').textContent          = rp(modalTotal);
+    document.getElementById('apv-cs-harga-cust-total').textContent = rp(hargaCustTotal);
+    document.getElementById('apv-cs-rev-fawz').textContent       = rp(revFawz);
+    document.getElementById('apv-cs-payout-sek').textContent     = rp(payoutSek);
+    document.getElementById('apv-cs-comm-sales').textContent     = rp(commSales);
+    document.getElementById('apv-cs-comm-tla').textContent       = tlaCode === 1 ? rp(commTla) : '—';
+    document.getElementById('apv-cs-total-exp').textContent      = rp(totalExp);
+    document.getElementById('apv-cs-profit').textContent         = rp(profit);
+  }
+
+  async function submitApprove() {
+    if (!approvingRow) return;
+    const modalPerUnit = apvGetDecimal('apv-modal-per-unit');
+    const modalSales   = apvGetDecimal('apv-modal-sales');
+    const hargaCust    = apvGetDecimal('apv-harga-cust');
+    const tlaCode      = parseInt(document.getElementById('apv-tla-code').value) || 0;
+    const tlaName      = document.getElementById('apv-tla-name').value.trim();
+
+    const alertEl = document.getElementById('apvAlert');
+    if (!modalPerUnit || !hargaCust) {
+      alertEl.style.display = '';
+      alertEl.style.background = '#fff0f0';
+      alertEl.style.color = '#c0392b';
+      alertEl.style.border = '1px solid #ffcccc';
+      alertEl.textContent = 'Modal/unit dan Harga to Customer wajib diisi.';
+      return;
+    }
+    alertEl.style.display = 'none';
+
+    const nominal      = approvingRow.nominal || 0;
+    const unit         = nominal / 100;
+    const modalTotal   = unit * modalPerUnit;
+    const hargaCustTotal = unit * hargaCust;
+    const grossRevFawz = hargaCustTotal - modalTotal;
+    const revFawz      = grossRevFawz * 0.9;
+    const payoutSek    = revFawz * 0.30;
+    const revSales     = revFawz;
+    const commSales    = (revSales * 0.60) * 0.10;
+    const commTla      = tlaCode === 1 ? commSales * 0.50 : 0;
+    const totalExp     = commSales + commTla;
+    const profit       = payoutSek - commSales - commTla;
+
+    const btn = document.getElementById('apvSubmitBtn');
+    btn.textContent = 'Menyimpan...'; btn.disabled = true;
+
     try {
       const { error } = await getDb().from('bb_orders').update({
-        status: 'verified',
-      }).eq('id', id);
+        status:            'verified',
+        approved_by:       curUser.name,
+        approved_at:       new Date().toISOString(),
+        modal_per_unit:    modalPerUnit,
+        modal_total:       modalTotal,
+        modal_to_sales:    modalSales || null,
+        harga_to_customer: hargaCust,
+        revenue_fawz:      revFawz,
+        payout_sekuritas:  payoutSek,
+        revenue_sales:     revSales,
+        commission_sales:  commSales,
+        tla_code:          tlaCode,
+        tla_name:          tlaName || null,
+        commission_tla:    commTla,
+        total_expenses:    totalExp,
+        profit:            profit,
+      }).eq('id', approvingRow.id);
+
       if (error) throw error;
-      const r = allRows.find(x => x.id === id);
-      if (r) { r.status = 'verified'; r.approvedBy = curUser.name; }
+
+      // Update local data
+      const r = allRows.find(x => x.id === approvingRow.id);
+      if (r) {
+        r.status       = 'verified';
+        r.approvedBy   = curUser.name;
+        r.modalPerUnit = modalPerUnit;
+        r.modalTotal   = modalTotal;
+        r.modalSales   = modalSales;
+        r.hargaCust    = hargaCust;
+        r.revFawz      = revFawz;
+        r.payoutSek    = payoutSek;
+        r.revSales     = revSales;
+        r.commSales    = commSales;
+        r.tlaCode      = tlaCode;
+        r.tlaName      = tlaName;
+        r.commTla      = commTla;
+        r.totalExp     = totalExp;
+        r.profit       = profit;
+      }
+
+      closeApproveModal();
+      applyFilter();
+      updateStats();
+      showToast(`Transaksi ${approvingRow.seri} berhasil di-approve`, 'success');
+    } catch(e) {
+      console.error(e);
+      alertEl.style.display = '';
+      alertEl.style.background = '#fff0f0';
+      alertEl.style.color = '#c0392b';
+      alertEl.style.border = '1px solid #ffcccc';
+      alertEl.textContent = 'Gagal approve: ' + (e.message || '');
+    } finally {
+      btn.textContent = '✓ Approve'; btn.disabled = false;
+    }
+  }
+
+  async function rejectFromApproveModal() {
+    if (!approvingRow) return;
+    if (!confirm('Reject transaksi ini?')) return;
+    try {
+      const { error } = await getDb().from('bb_orders').update({
+        status: 'rejected',
+        rejected_by: curUser.name,
+        rejected_at: new Date().toISOString(),
+      }).eq('id', approvingRow.id);
+      if (error) throw error;
+      const r = allRows.find(x => x.id === approvingRow.id);
+      if (r) { r.status = 'rejected'; r.rejectedBy = curUser.name; }
+      closeApproveModal();
       applyFilter(); updateStats();
-      showToast('Transaksi berhasil di-approve', 'success');
-    } catch(e) { showToast('Gagal approve: ' + e.message, 'error'); }
+      showToast('Transaksi ditolak', 'info');
+    } catch(e) { showToast('Gagal reject: ' + e.message, 'error'); }
   }
 
   async function reject(id) {
@@ -649,10 +900,12 @@
     try {
       const { error } = await getDb().from('bb_orders').update({
         status: 'rejected',
+        rejected_by: curUser?.name || '',
+        rejected_at: new Date().toISOString(),
       }).eq('id', id);
       if (error) throw error;
       const r = allRows.find(x => x.id === id);
-      if (r) { r.status = 'rejected'; r.rejectedBy = curUser.name; }
+      if (r) { r.status = 'rejected'; r.rejectedBy = curUser?.name || ''; }
       applyFilter(); updateStats();
       showToast('Transaksi ditolak', 'info');
     } catch(e) { showToast('Gagal reject: ' + e.message, 'error'); }
