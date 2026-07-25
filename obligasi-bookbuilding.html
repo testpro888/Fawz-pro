@@ -1102,10 +1102,21 @@
   // COUPON DATE CALC (sama dengan bond-calculator)
   // Hitung last & next coupon dari settlement + maturity + freq
   // =============================================
+
+  // Normalisasi string tanggal ke format YYYY-MM-DD (ambil 10 char pertama)
+  // Menangani format: "2031-03-15", "2031-03-15T00:00:00+07:00", "2031-03-15T00:00:00Z"
+  function normDateStr(s) {
+    if (!s) return '';
+    return String(s).substring(0, 10);
+  }
+
   function calcCouponDates(settle, maturity, freqPerYear) {
-    if (!settle || !maturity) return { last: null, next: null };
-    const s   = new Date(settle   + 'T00:00:00');
-    const mat = new Date(maturity + 'T00:00:00');
+    const settleNorm   = normDateStr(settle);
+    const maturityNorm = normDateStr(maturity);
+    if (!settleNorm || !maturityNorm) return { last: null, next: null };
+    const s   = new Date(settleNorm   + 'T00:00:00');
+    const mat = new Date(maturityNorm + 'T00:00:00');
+    if (isNaN(s) || isNaN(mat)) return { last: null, next: null };
     const mpp = Math.round(12 / freqPerYear);
     let d = new Date(mat);
     let iters = 0;
@@ -1131,10 +1142,13 @@
   // AI = (Nominal × Kupon/Freq) × (HariBerjalan / HariPeriode)
   // =============================================
   function calcAccruedInterest(settle, lastCoupon, nextCoupon, couponRate, freqPerYear, nominal) {
-    if (!settle || !lastCoupon || !nextCoupon) return 0;
-    const s  = new Date(settle     + 'T00:00:00');
-    const lc = new Date(lastCoupon + 'T00:00:00');
-    const nc = new Date(nextCoupon + 'T00:00:00');
+    const s0  = normDateStr(settle);
+    const lc0 = normDateStr(lastCoupon);
+    const nc0 = normDateStr(nextCoupon);
+    if (!s0 || !lc0 || !nc0) return 0;
+    const s  = new Date(s0  + 'T00:00:00');
+    const lc = new Date(lc0 + 'T00:00:00');
+    const nc = new Date(nc0 + 'T00:00:00');
     if (isNaN(s) || isNaN(lc) || isNaN(nc) || s <= lc) return 0;
     const daysAccrued = (s  - lc) / 86400000;
     const periodDays  = (nc - lc) / 86400000;
@@ -1163,8 +1177,8 @@
     const nominalAmount = unitAmount * (offerPrice / 100);
 
     // Accrued Interest — gunakan calcCouponDates dari maturity+settlement (sama dengan bond-calculator)
-    const settlementStr = document.getElementById('ordSettlement').value || '';
-    const maturityStr   = ob.jatuh_tempo || ob.jatuhTempo || '';
+    const settlementStr = normDateStr(document.getElementById('ordSettlement').value || '');
+    const maturityStr   = normDateStr(ob.jatuh_tempo || ob.jatuhTempo || '');
     const couponRate    = parseFloat(ob.kupon) || 0; // % per tahun
     const freqPerYear   = parseInt(ob.kupon_freq) || 2; // frekuensi kupon per tahun
 
@@ -1623,11 +1637,11 @@
     if (sellMode === 'list' && sellSelectedObl) {
       couponRate  = parseFloat(sellSelectedObl.kupon) || 0;
       freqPerYear = parseInt(sellSelectedObl.kupon_freq) || 2;
-      maturityStr = sellSelectedObl.jatuh_tempo || sellSelectedObl.jatuhTempo || '';
+      maturityStr = normDateStr(sellSelectedObl.jatuh_tempo || sellSelectedObl.jatuhTempo || '');
     } else if (sellMode === 'manual') {
       couponRate = parseFloat(document.getElementById('sellManualKupon').value) || 0;
     }
-    const settlementStr = document.getElementById('sellSettlement').value || '';
+    const settlementStr = normDateStr(document.getElementById('sellSettlement').value || '');
 
     // Hitung last/next coupon dari maturity + settlement (metode bond-calculator)
     if (settlementStr && maturityStr && couponRate > 0) {
