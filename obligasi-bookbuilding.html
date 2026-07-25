@@ -1195,7 +1195,18 @@
     if (!lastCouponStr) lastCouponStr = ob.last_coupon_date || ob.lastCouponDate || '';
     if (!nextCouponStr) nextCouponStr = ob.next_coupon_date || ob.nextCouponDate || '';
 
+    console.log('[AI DEBUG]', {
+      settlementStr, maturityStr, couponRate, freqPerYear,
+      lastCouponStr, nextCouponStr, unitAmount,
+      jatuh_tempo_raw: ob.jatuh_tempo,
+      kupon_freq_raw: ob.kupon_freq,
+      last_coupon_raw: ob.last_coupon_date,
+      next_coupon_raw: ob.next_coupon_date,
+    });
+
     const accruedInterest = calcAccruedInterest(settlementStr, lastCouponStr, nextCouponStr, couponRate, freqPerYear, unitAmount);
+
+    console.log('[AI RESULT]', accruedInterest);
 
     const totalNominal = nominalAmount + accruedInterest;
 
