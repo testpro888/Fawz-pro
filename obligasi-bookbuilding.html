@@ -1180,7 +1180,10 @@
     const settlementStr = normDateStr(document.getElementById('ordSettlement').value || '');
     const maturityStr   = normDateStr(ob.jatuh_tempo || ob.jatuhTempo || '');
     const couponRate    = parseFloat(ob.kupon) || 0; // % per tahun
-    const freqPerYear   = parseInt(ob.kupon_freq) || 2; // frekuensi kupon per tahun
+    // kupon_freq di DB = interval bulan (6=semi-annual, 3=quarterly, 1=monthly, 12=annual)
+    // → convert ke jumlah kupon per tahun: freqPerYear = 12 / kupon_freq
+    const freqMap     = { 1: 12, 3: 4, 6: 2, 12: 1 };
+    const freqPerYear = freqMap[parseInt(ob.kupon_freq)] || 2;
 
     let lastCouponStr = '';
     let nextCouponStr = '';
@@ -1195,18 +1198,7 @@
     if (!lastCouponStr) lastCouponStr = ob.last_coupon_date || ob.lastCouponDate || '';
     if (!nextCouponStr) nextCouponStr = ob.next_coupon_date || ob.nextCouponDate || '';
 
-    console.log('[AI DEBUG]', {
-      settlementStr, maturityStr, couponRate, freqPerYear,
-      lastCouponStr, nextCouponStr, unitAmount,
-      jatuh_tempo_raw: ob.jatuh_tempo,
-      kupon_freq_raw: ob.kupon_freq,
-      last_coupon_raw: ob.last_coupon_date,
-      next_coupon_raw: ob.next_coupon_date,
-    });
-
     const accruedInterest = calcAccruedInterest(settlementStr, lastCouponStr, nextCouponStr, couponRate, freqPerYear, unitAmount);
-
-    console.log('[AI RESULT]', accruedInterest);
 
     const totalNominal = nominalAmount + accruedInterest;
 
@@ -1647,7 +1639,9 @@
     let nextCouponStr = '';
     if (sellMode === 'list' && sellSelectedObl) {
       couponRate  = parseFloat(sellSelectedObl.kupon) || 0;
-      freqPerYear = parseInt(sellSelectedObl.kupon_freq) || 2;
+      // kupon_freq di DB = interval bulan (6=semi-annual, 3=quarterly, 1=monthly, 12=annual)
+      const freqMap2 = { 1: 12, 3: 4, 6: 2, 12: 1 };
+      freqPerYear = freqMap2[parseInt(sellSelectedObl.kupon_freq)] || 2;
       maturityStr = normDateStr(sellSelectedObl.jatuh_tempo || sellSelectedObl.jatuhTempo || '');
     } else if (sellMode === 'manual') {
       couponRate = parseFloat(document.getElementById('sellManualKupon').value) || 0;
