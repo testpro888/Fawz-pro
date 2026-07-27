@@ -1628,6 +1628,22 @@
     const allowedRoles = ['head_account','admin','treasury','sales','head_sales'];
     if (!allowedRoles.includes(_gu.role)) { window.location.replace('dashboard.html'); return; }
 
+    // ── EXPORT / IMPORT RESTRICTION ──
+    // Hanya user dengan username 'fawzheadaccount' yang boleh export & import
+    const isHeadAccount = (_gu.username || '').toLowerCase() === 'fawzheadaccount';
+    if (!isHeadAccount) {
+      // Sembunyikan tombol Upload CSV & Export CSV di header-actions
+      const headerBtns = document.querySelectorAll('.header-actions .btn-outline');
+      headerBtns.forEach(btn => btn.style.display = 'none');
+
+      // Override fungsi export & import agar tidak bisa dijalankan
+      window.exportCSV = function() {
+        showToast('Anda tidak memiliki akses untuk export data.', 'error'); };
+      window.openUploadModal = function() {
+        showToast('Anda tidak memiliki akses untuk import data.', 'error'); };
+      window.importCSV = function() { return; };
+    }
+
     // ── SALES RESTRICTIONS ──
     if (_gu.role === 'sales') {
       // Sembunyikan tombol tambah, upload, export, edit, hapus, bulk delete
