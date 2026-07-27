@@ -595,10 +595,34 @@
   (function() {
     const raw = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember');
     if (!raw) { window.location.replace('login.html'); return; }
+    sessionStorage.setItem('fawz_user', raw);
     const _gu = JSON.parse(raw);
     window._curUser = _gu;
     const allowedRoles = ['head_account','admin','treasury','sales','head_sales'];
     if (!allowedRoles.includes(_gu.role)) { window.location.replace('dashboard.html'); return; }
+
+    // ── EXPORT / IMPORT / ADD RESTRICTION ──
+    // Hanya user dengan username 'fawzheadaccount' yang boleh export, import, & tambah data
+    const isHeadAccount = (_gu.username || '').toLowerCase() === 'fawzheadaccount';
+    if (!isHeadAccount) {
+      // Sembunyikan tombol Upload CSV & Export CSV di header-actions
+      const headerBtns = document.querySelectorAll('.header-actions .btn-outline');
+      headerBtns.forEach(btn => btn.style.display = 'none');
+
+      // Sembunyikan tombol "+ Tambah Data"
+      const addBtn = document.querySelector('.header-actions .btn-primary');
+      if (addBtn) addBtn.style.display = 'none';
+
+      // Override fungsi export, import & tambah agar tidak bisa dijalankan
+      window.exportCSV = function() {
+        showToast('Anda tidak memiliki akses untuk export data.', 'error'); };
+      window.openUploadModal = function() {
+        showToast('Anda tidak memiliki akses untuk import data.', 'error'); };
+      window.importCSV = function() { return; };
+      window.openAddModal = function() {
+        showToast('Anda tidak memiliki akses untuk menambah data.', 'error'); };
+      window.saveData = function() { return; };
+    }
   })();
 </script>
 </body>

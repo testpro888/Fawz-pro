@@ -263,6 +263,10 @@
           // Simpan dengan expiry 30 hari
           const expiry = Date.now() + 30 * 24 * 60 * 60 * 1000;
           localStorage.setItem('fawz_user_remember', JSON.stringify({ ...sessionUser, _exp: expiry }));
+        } else {
+          // Simpan session biasa dengan expiry 8 jam agar tab baru tidak logout
+          const expiry = Date.now() + 8 * 60 * 60 * 1000;
+          localStorage.setItem('fawz_user_remember', JSON.stringify({ ...sessionUser, _exp: expiry }));
         }
 
         showMsg('success', '✅ Login berhasil! Mengalihkan...');
