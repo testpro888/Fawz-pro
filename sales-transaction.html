@@ -25,6 +25,12 @@
         const raw = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember');
         const curUser = raw ? JSON.parse(raw) : null;
         window._curUser = curUser;
+
+        // Sembunyikan tombol Export jika bukan fawzheadaccount
+        if (curUser?.username !== 'fawzheadaccount') {
+          document.querySelectorAll('button[onclick="exportCSV()"]').forEach(el => el.style.display = 'none');
+        }
+
         const db = window._supabase;
         const isSales    = curUser?.role === 'sales';
         const isTreasury = curUser?.role === 'treasury';
@@ -687,6 +693,7 @@
 
   /* ─── Export CSV ─── */
   function exportCSV() {
+    if (window._curUser?.username !== 'fawzheadaccount') { alert('Akses ditolak: hanya fawzheadaccount yang dapat mengexport data.'); return; }
     const rows = filteredRows.length ? filteredRows : (window._allRows || []);
     if (!rows.length) { alert('Tidak ada data untuk di-export.'); return; }
     const header = ['Date','Tipe','Sales','Sales Code','Client ID','Nasabah','Produk','Aksi','Nominal','Fee','Status'];

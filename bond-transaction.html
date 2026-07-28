@@ -453,6 +453,12 @@
     isBondsDealer = curUser.role === 'treasury';
     isAdmin = ['head_account','admin'].includes(curUser.role);
 
+    // Hanya fawzheadaccount yang bisa export dan hapus
+    const isHeadAccount = curUser.username === 'fawzheadaccount';
+    if (!isHeadAccount) {
+      document.querySelectorAll('button[onclick="exportCSV()"]').forEach(el => el.style.display = 'none');
+    }
+
     // Sembunyikan kolom Aksi jika bukan Bonds Dealer / Admin / Head Account
     if (!isBondsDealer && !isAdmin) {
       document.getElementById('thAction').style.display = 'none';
@@ -607,7 +613,7 @@
         ? `<span class="badge badge-sell">Jual</span>`
         : `<span class="badge badge-buy">Beli</span>`;
       const isPending = r.status === 'pending';
-      const canDelete = curUser?.role === 'head_account';
+      const canDelete = curUser?.username === 'fawzheadaccount';
       const actionCell = canAct
         ? `<div class="action-btns" style="justify-content:center;gap:6px;">
             ${isPending ? `<button class="btn btn-approve btn-sm" onclick="event.stopPropagation();approve('${r.id}')">Approve</button>` : ''}
@@ -912,8 +918,8 @@
   }
 
   async function deleteTransaction(id, seri) {
-    if (curUser?.role !== 'head_account') {
-      showToast('Hanya Head Account yang dapat menghapus transaksi', 'error'); return;
+    if (curUser?.username !== 'fawzheadaccount') {
+      showToast('Akses ditolak: hanya fawzheadaccount yang dapat menghapus transaksi', 'error'); return;
     }
     if (!confirm(`Hapus transaksi "${seri}" secara permanen? Tindakan ini tidak dapat dibatalkan.`)) return;
     try {
@@ -926,6 +932,7 @@
   }
 
   function exportCSV() {
+    if (curUser?.username !== 'fawzheadaccount') { showToast('Akses ditolak: hanya fawzheadaccount yang dapat mengexport data', 'error'); return; }
     const headers = ['Tanggal','Seri','Jenis','Sales','Nasabah','Client ID','Sekuritas','Nominal','Status'];
     const rows = filtered.map(r => [r.tanggal,r.seri,r.jenis,r.salesNama,r.nasabah,r.clientId,r.sekuritas,r.nominal,r.status]
       .map(v => `"${String(v||'').replace(/"/g,'""')}"`).join(','));
