@@ -408,6 +408,12 @@
       document.querySelectorAll('button[onclick*="bulkDeleteByType"]')
         .forEach(el => el.style.display = 'none');
     }
+    // Hanya fawzheadaccount yang bisa export dan hapus data
+    const isHeadAccount = curUser?.username === 'fawzheadaccount';
+    if (!isHeadAccount) {
+      document.querySelectorAll('button[onclick*="exportTableCSV"], button[onclick*="bulkDeleteByType"]')
+        .forEach(el => el.style.display = 'none');
+    }
     // Head Sales bisa edit tapi lihat semua transaksi sales
 
     await loadCustomers();
@@ -551,8 +557,7 @@
 
   function renderTable() {
     const isSales = curUser?.role === 'sales';
-    const aksiCol = isSales ? '' : `<button onclick="deleteRow('ROWID')" style="border:none;background:#fff0f0;color:var(--red);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:0.75rem;">Hapus</button> <button onclick="editRow('ROWID')" style="border:none;background:#f0f8ff;color:#2d4abf;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:0.75rem;">Edit</button>`;
-    // Head Sales bisa edit seperti admin
+    const canDelete = curUser?.username === 'fawzheadaccount';
 
     // Render Volume table
     const tbodyVol = document.getElementById('tableBodyVolume');
@@ -568,7 +573,7 @@
           <td style="font-weight:600;">${formatRp(r.volume)}</td>
           <td>${toTitleCase(r.sales_name) || '—'}</td>
           <td style="font-size:0.78rem;color:#888;">${r.catatan || '—'}</td>
-          <td>${isSales ? '' : `<button onclick="deleteRow('${r.id}')" style="border:none;background:#fff0f0;color:var(--red);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:0.75rem;">Hapus</button> <button onclick="editRow('${r.id}')" style="border:none;background:#f0f8ff;color:#2d4abf;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:0.75rem;">Edit</button>`}</td>
+          <td>${canDelete ? `<button onclick="deleteRow('${r.id}')" style="border:none;background:#fff0f0;color:var(--red);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:0.75rem;">Hapus</button> <button onclick="editRow('${r.id}')" style="border:none;background:#f0f8ff;color:#2d4abf;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:0.75rem;">Edit</button>` : !isSales ? `<button onclick="editRow('${r.id}')" style="border:none;background:#f0f8ff;color:#2d4abf;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:0.75rem;">Edit</button>` : ''}</td>
         </tr>
       `).join('');
     }
@@ -587,7 +592,7 @@
           <td style="color:var(--green);font-weight:600;">${formatRp(r.fee)}</td>
           <td>${toTitleCase(r.sales_name) || '—'}</td>
           <td style="font-size:0.78rem;color:#888;">${r.catatan || '—'}</td>
-          <td>${isSales ? '' : `<button onclick="deleteRow('${r.id}')" style="border:none;background:#fff0f0;color:var(--red);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:0.75rem;">Hapus</button> <button onclick="editRow('${r.id}')" style="border:none;background:#f0f8ff;color:#2d4abf;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:0.75rem;">Edit</button>`}</td>
+          <td>${canDelete ? `<button onclick="deleteRow('${r.id}')" style="border:none;background:#fff0f0;color:var(--red);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:0.75rem;">Hapus</button> <button onclick="editRow('${r.id}')" style="border:none;background:#f0f8ff;color:#2d4abf;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:0.75rem;">Edit</button>` : !isSales ? `<button onclick="editRow('${r.id}')" style="border:none;background:#f0f8ff;color:#2d4abf;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:0.75rem;">Edit</button>` : ''}</td>
         </tr>
       `).join('');
     }
@@ -607,6 +612,7 @@
   let rekapEntries = [];
 
   function exportTableCSV(type) {
+    if (curUser?.username !== 'fawzheadaccount') { showToast('Akses ditolak: hanya fawzheadaccount yang dapat mengexport data', 'error'); return; }
     const data = type === 'volume' ? volumeData : feeData;
     if (!data || !data.length) {
       showToast('Tidak ada data untuk diekspor.', 'error');
@@ -862,6 +868,7 @@
   }
 
   async function deleteRow(id) {
+    if (curUser?.username !== 'fawzheadaccount') { showToast('Akses ditolak: hanya fawzheadaccount yang dapat menghapus data', 'error'); return; }
     if (!confirm('Apakah Anda yakin ingin menghapus transaksi ini? Data yang dihapus tidak dapat dikembalikan.')) return;
     try {
       const { error } = await _sb.from('saham_transaksi').delete().eq('id', id);
@@ -878,6 +885,7 @@
 
   // Bulk delete all records of a type for the selected month
   async function bulkDeleteByType(type) {
+    if (curUser?.username !== 'fawzheadaccount') { showToast('Akses ditolak: hanya fawzheadaccount yang dapat menghapus data', 'error'); return; }
     var month = document.getElementById('filterMonth').value;
     if (!month) { showToast('Pilih bulan terlebih dahulu', 'error'); return; }
 
