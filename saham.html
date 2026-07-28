@@ -698,7 +698,7 @@
   // Store rekap entries globally for search filtering
   let rekapEntries = [];
 
-  function exportTableCSV(type) {
+  async function exportTableCSV(type) {
     if (curUser?.username !== 'fawzheadaccount') { showToast('Akses ditolak: hanya fawzheadaccount yang dapat mengexport data', 'error'); return; }
     const data = type === 'volume' ? volumeData : feeData;
     if (!data || !data.length) {
