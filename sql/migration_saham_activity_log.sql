@@ -58,3 +58,13 @@ do $$ begin
     execute 'create policy "saham_log_select" on public.saham_activity_log for select to anon using (true)';
   end if;
 end $$;
+
+-- Delete: diizinkan via anon (kontrol dilakukan di JS — hanya fawzheadaccount)
+do $$ begin
+  if not exists (
+    select 1 from pg_policies
+    where tablename = 'saham_activity_log' and policyname = 'saham_log_delete'
+  ) then
+    execute 'create policy "saham_log_delete" on public.saham_activity_log for delete to anon using (true)';
+  end if;
+end $$;

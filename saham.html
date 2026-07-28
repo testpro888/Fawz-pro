@@ -398,7 +398,10 @@
     </div>
 
     <div class="modal-footer" style="justify-content:space-between;">
-      <div style="font-size:0.78rem;color:var(--gray);">Menampilkan 100 aktivitas terbaru</div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:0.78rem;color:var(--gray);">Menampilkan 500 aktivitas terbaru</span>
+        <button id="btnDeleteHistory" onclick="deleteAllHistory()" style="display:none;padding:6px 14px;font-size:0.78rem;font-weight:600;border:1.5px solid #ffcccc;border-radius:8px;background:#fff0f0;color:var(--red);cursor:pointer;font-family:'Inter',sans-serif;">Hapus Semua History</button>
+      </div>
       <button class="btn btn-outline" onclick="closeHistoryModal()" style="padding:8px 18px;font-size:0.82rem;">Tutup</button>
     </div>
   </div>
@@ -1272,6 +1275,10 @@
     document.getElementById('logTableBody').innerHTML =
       '<tr><td colspan="10" style="text-align:center;padding:32px;color:#bbb;">Memuat...</td></tr>';
 
+    // Tampilkan tombol hapus hanya untuk fawzheadaccount
+    const btnDel = document.getElementById('btnDeleteHistory');
+    if (btnDel) btnDel.style.display = curUser?.username === 'fawzheadaccount' ? '' : 'none';
+
     try {
       const { data, error } = await _sb
         .from('saham_activity_log')
@@ -1301,6 +1308,34 @@
 
   function closeHistoryModal() {
     document.getElementById('historyModal').classList.remove('open');
+  }
+
+  async function deleteAllHistory() {
+    if (curUser?.username !== 'fawzheadaccount') {
+      showToast('Akses ditolak', 'error'); return;
+    }
+    if (!confirm('Hapus SEMUA history aktivitas? Tindakan ini tidak dapat dibatalkan.')) return;
+
+    const btn = document.getElementById('btnDeleteHistory');
+    if (btn) { btn.textContent = 'Menghapus...'; btn.disabled = true; }
+
+    try {
+      // Hapus semua rows — filter created_at > epoch agar tidak error jika tabel kosong
+      const { error } = await _sb
+        .from('saham_activity_log')
+        .delete()
+        .gte('id', 0);
+
+      if (error) throw error;
+
+      _logData = [];
+      renderLogTable();
+      showToast('Semua history berhasil dihapus', 'success');
+    } catch(e) {
+      showToast('Gagal hapus history: ' + e.message, 'error');
+    } finally {
+      if (btn) { btn.textContent = 'Hapus Semua History'; btn.disabled = false; }
+    }
   }
 
   function clearLogFilter() {
