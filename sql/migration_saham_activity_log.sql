@@ -40,15 +40,21 @@ create index if not exists idx_saham_activity_log_username
 alter table public.saham_activity_log enable row level security;
 
 -- Insert: semua authenticated user
-create policy "saham_log_insert"
-  on public.saham_activity_log
-  for insert
-  to anon
-  with check (true);
+do $$ begin
+  if not exists (
+    select 1 from pg_policies
+    where tablename = 'saham_activity_log' and policyname = 'saham_log_insert'
+  ) then
+    execute 'create policy "saham_log_insert" on public.saham_activity_log for insert to anon with check (true)';
+  end if;
+end $$;
 
 -- Select: semua authenticated user (ditampilkan di UI, difilter per role di JS)
-create policy "saham_log_select"
-  on public.saham_activity_log
-  for select
-  to anon
-  using (true);
+do $$ begin
+  if not exists (
+    select 1 from pg_policies
+    where tablename = 'saham_activity_log' and policyname = 'saham_log_select'
+  ) then
+    execute 'create policy "saham_log_select" on public.saham_activity_log for select to anon using (true)';
+  end if;
+end $$;
