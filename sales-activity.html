@@ -571,9 +571,23 @@
 
     const pg = document.getElementById('pagination');
     let pgHtml = '';
-    for (let i = 1; i <= totalPages; i++) {
+
+    // Prev button
+    pgHtml += `<div class="pg-btn" onclick="goPage(${Math.max(1,currentPage-1)})" ${currentPage===1?'style="opacity:.4;pointer-events:none;"':''}>‹</div>`;
+
+    // Sliding window: 5 pages centered on currentPage
+    const WINDOW = 5;
+    let pageStart = Math.max(1, currentPage - Math.floor(WINDOW / 2));
+    let pageEnd   = pageStart + WINDOW - 1;
+    if (pageEnd > totalPages) { pageEnd = totalPages; pageStart = Math.max(1, pageEnd - WINDOW + 1); }
+
+    for (let i = pageStart; i <= pageEnd; i++) {
       pgHtml += `<div class="pg-btn ${i===currentPage?'active':''}" onclick="goPage(${i})">${i}</div>`;
     }
+
+    // Next button
+    pgHtml += `<div class="pg-btn" onclick="goPage(${Math.min(totalPages,currentPage+1)})" ${currentPage===totalPages?'style="opacity:.4;pointer-events:none;"':''}>›</div>`;
+
     pg.innerHTML = pgHtml;
   }
 
