@@ -7,10 +7,10 @@
   <title>Fawz Pro | Transaksi Saham</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 
-  <script src="js/saham-holidays.js"></script>
-  <script src="js/saham-aggregation.js"></script>
-  <script src="js/saham-validation.js"></script>
-  <script src="js/commission-settings.js"></script>
+  <script src="js/saham-holidays.js?v=3"></script>
+  <script src="js/saham-aggregation.js?v=3"></script>
+  <script src="js/saham-validation.js?v=3"></script>
+  <script src="js/commission-settings.js?v=3"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script>
     const SUPABASE_URL = (window.__FAWZ_CONFIG__ || {}).supabaseUrl || '';
@@ -97,6 +97,26 @@
     .toast-success { background: #f0fff8; border: 1px solid #a8e6c1; color: #1e7e4e; }
     .toast-error { background: #fff0f0; border: 1px solid #ffcccc; color: #c0392b; }
 
+    /* Activity Log Modal */
+    .log-modal { width: 860px; }
+    .log-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+    .log-table thead { background: var(--navy); }
+    .log-table thead th { padding: 10px 12px; text-align: left; font-weight: 600; color: #fff; font-size: 0.72rem; letter-spacing: 0.3px; white-space: nowrap; }
+    .log-table tbody tr { border-bottom: 1px solid #f5f5fc; transition: background 0.12s; }
+    .log-table tbody tr:hover { background: #fffbf3; }
+    .log-table tbody td { padding: 9px 12px; color: #333; vertical-align: middle; }
+    .log-badge { display: inline-block; font-size: 0.67rem; font-weight: 700; padding: 2px 8px; border-radius: 20px; white-space: nowrap; }
+    .log-badge-tambah  { background: #e8f8f0; color: #1e7e4e; border: 1px solid rgba(39,174,96,.25); }
+    .log-badge-edit    { background: #fff8e8; color: #b8860b; border: 1px solid rgba(243,156,18,.3); }
+    .log-badge-hapus   { background: #fff0f0; color: #c0392b; border: 1px solid rgba(231,76,60,.2); }
+    .log-badge-detail  { background: #f0f4ff; color: #2d4abf; border: 1px solid rgba(45,74,191,.2); }
+    .log-badge-export  { background: #f3f0ff; color: #6b3fa0; border: 1px solid rgba(107,63,160,.2); }
+    .log-badge-bulk_delete { background: #fff0f0; color: #c0392b; border: 1px solid rgba(231,76,60,.3); }
+    .log-badge-upload  { background: #e8f5e9; color: #2e7d32; border: 1px solid rgba(46,125,50,.2); }
+    .log-filter-bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; }
+    .log-filter-bar select, .log-filter-bar input { height: 32px; border: 1px solid var(--border); border-radius: 7px; padding: 0 10px; font-family: 'Inter', sans-serif; font-size: 0.78rem; color: var(--text); outline: none; }
+    .log-filter-bar select:focus, .log-filter-bar input:focus { border-color: var(--gold); }
+
     /* Type selector */
     .type-selector { display: flex; gap: 12px; margin-bottom: 4px; }
     .type-selector label { display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 600; color: var(--navy); padding: 8px 16px; border-radius: 8px; border: 1.5px solid var(--border); transition: all 0.2s; }
@@ -146,6 +166,7 @@
       <a href="saham-ranking.html" class="btn btn-outline">Rekap Transaksi</a>
       <a href="fawz-point.html" class="btn btn-outline">Fawz Point</a>
       <button class="btn btn-outline" onclick="openUploadModal()">Upload CSV</button>
+      <button class="btn btn-outline" id="btnHistory" onclick="openHistoryModal()" style="display:none;">History</button>
       <button class="btn btn-primary" onclick="openAddModal()">+ Input Transaksi</button>
     </div>
   </div>
@@ -322,6 +343,70 @@
 
 <div class="toast-container" id="toastContainer"></div>
 
+<!-- Modal: Activity History Log -->
+<div class="modal-overlay" id="historyModal" onclick="if(event.target===this)closeHistoryModal()">
+  <div class="modal log-modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">History Aktivitas</div>
+        <div style="font-size:0.78rem;color:var(--gray);margin-top:2px;">Riwayat aksi user di halaman Transaksi Saham</div>
+      </div>
+      <button class="modal-close" onclick="closeHistoryModal()">✕</button>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="log-filter-bar">
+      <select id="logFilterAction" onchange="renderLogTable()">
+        <option value="">Semua Aksi</option>
+        <option value="tambah">Tambah</option>
+        <option value="edit">Edit</option>
+        <option value="hapus">Hapus</option>
+        <option value="bulk_delete">Bulk Hapus</option>
+        <option value="detail">Lihat Detail</option>
+        <option value="export">Export CSV</option>
+        <option value="upload">Upload CSV</option>
+      </select>
+      <select id="logFilterUser" onchange="renderLogTable()">
+        <option value="">Semua User</option>
+      </select>
+      <input type="date" id="logFilterDate" onchange="renderLogTable()" placeholder="Filter tanggal"/>
+      <button onclick="clearLogFilter()" style="height:32px;padding:0 12px;border:1px solid var(--border);border-radius:7px;background:#fff;font-family:'Inter',sans-serif;font-size:0.78rem;cursor:pointer;color:var(--gray);">Reset</button>
+      <span id="logCount" style="margin-left:auto;font-size:0.78rem;color:var(--gray);"></span>
+    </div>
+
+    <!-- Table -->
+    <div style="max-height:480px;overflow-y:auto;border-radius:10px;border:1px solid var(--border);">
+      <table class="log-table">
+        <thead style="position:sticky;top:0;z-index:1;">
+          <tr>
+            <th>Waktu</th>
+            <th>User</th>
+            <th>Role</th>
+            <th>Aksi</th>
+            <th>Client ID</th>
+            <th>Nama Nasabah</th>
+            <th>Tipe</th>
+            <th>Volume</th>
+            <th>Fee</th>
+            <th>Keterangan</th>
+          </tr>
+        </thead>
+        <tbody id="logTableBody">
+          <tr><td colspan="10" style="text-align:center;padding:32px;color:#bbb;">Memuat...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="modal-footer" style="justify-content:space-between;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:0.78rem;color:var(--gray);">Menampilkan 500 aktivitas terbaru</span>
+        <button id="btnDeleteHistory" onclick="deleteAllHistory()" style="display:none;padding:6px 14px;font-size:0.78rem;font-weight:600;border:1.5px solid #ffcccc;border-radius:8px;background:#fff0f0;color:var(--red);cursor:pointer;font-family:'Inter',sans-serif;">Hapus Semua History</button>
+      </div>
+      <button class="btn btn-outline" onclick="closeHistoryModal()" style="padding:8px 18px;font-size:0.82rem;">Tutup</button>
+    </div>
+  </div>
+</div>
+
 <!-- Modal: Upload CSV -->
 <div class="modal-overlay" id="uploadModal" onclick="if(event.target===this)closeUploadModal()">
   <div class="modal">
@@ -413,6 +498,11 @@
     if (!isHeadAccount) {
       document.querySelectorAll('button[onclick*="exportTableCSV"], button[onclick*="bulkDeleteByType"]')
         .forEach(el => el.style.display = 'none');
+    }
+    // History tombol tampil untuk semua user kecuali sales
+    if (curUser?.role !== 'sales') {
+      const btnHistory = document.getElementById('btnHistory');
+      if (btnHistory) btnHistory.style.display = '';
     }
     // Head Sales bisa edit tapi lihat semua transaksi sales
 
@@ -611,7 +701,7 @@
   // Store rekap entries globally for search filtering
   let rekapEntries = [];
 
-  function exportTableCSV(type) {
+  async function exportTableCSV(type) {
     if (curUser?.username !== 'fawzheadaccount') { showToast('Akses ditolak: hanya fawzheadaccount yang dapat mengexport data', 'error'); return; }
     const data = type === 'volume' ? volumeData : feeData;
     if (!data || !data.length) {
@@ -641,6 +731,7 @@
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     showToast('Export ' + (type === 'volume' ? 'Volume' : 'Fee') + ' berhasil diunduh.', 'success');
+    await logActivity('export', {}, 'Export ' + type + ' bulan ' + month + ' (' + data.length + ' baris)');
   }
 
   function renderRekap() {
@@ -856,6 +947,18 @@
         allData.unshift(result);
       }
 
+      // Log aktivitas
+      const txType = (volume > 0 && fee > 0) ? 'keduanya' : (volume > 0 ? 'volume' : 'fee');
+      await logActivity(editingId ? 'edit' : 'tambah', {
+        id: result?.id,
+        tanggal:     tanggal,
+        client_id:   client_id,
+        client_name: client_name,
+        type:        txType,
+        volume:      volume,
+        fee:         fee,
+      });
+
       populateClientDropdown();
       applyFilter();
       closeModal();
@@ -871,8 +974,21 @@
     if (curUser?.username !== 'fawzheadaccount') { showToast('Akses ditolak: hanya fawzheadaccount yang dapat menghapus data', 'error'); return; }
     if (!confirm('Apakah Anda yakin ingin menghapus transaksi ini? Data yang dihapus tidak dapat dikembalikan.')) return;
     try {
+      // Ambil data sebelum dihapus untuk log
+      const row = allData.find(r => r.id === id);
       const { error } = await _sb.from('saham_transaksi').delete().eq('id', id);
       if (error) throw new Error(error.message || 'Database error');
+
+      await logActivity('hapus', {
+        id:          row?.id,
+        tanggal:     row?.tanggal,
+        client_id:   row?.client_id,
+        client_name: row?.client_name,
+        type:        row?.volume > 0 && row?.fee > 0 ? 'keduanya' : (row?.volume > 0 ? 'volume' : 'fee'),
+        volume:      row?.volume,
+        fee:         row?.fee,
+      });
+
       allData = allData.filter(r => r.id !== id);
       populateClientDropdown();
       applyFilter();
@@ -917,6 +1033,8 @@
     } else {
       showToast(success + ' berhasil, ' + errors + ' gagal dihapus', 'error');
     }
+
+    await logActivity('bulk_delete', {}, 'Bulk hapus ' + success + ' data ' + type + ' bulan ' + month);
   }
 
   let editingId = null;
@@ -934,6 +1052,17 @@
     document.getElementById('validationErrorContainer').style.display = 'none';
     document.getElementById('validationErrors').innerHTML = '';
     document.getElementById('addModal').classList.add('open');
+
+    // Log aksi lihat detail / buka edit
+    logActivity('detail', {
+      id:          row.id,
+      tanggal:     row.tanggal,
+      client_id:   row.client_id,
+      client_name: row.client_name,
+      type:        row.volume > 0 && row.fee > 0 ? 'keduanya' : (row.volume > 0 ? 'volume' : 'fee'),
+      volume:      row.volume,
+      fee:         row.fee,
+    }, 'Buka form edit');
   }
 
   function onClientSelect() {
@@ -1104,6 +1233,186 @@
     document.getElementById('filterMonth').value = '';
     loadData();
   }
+
+  // ── Activity Log ──────────────────────────────────────────────────────────
+
+  /**
+   * Catat aktivitas user ke tabel saham_activity_log
+   * @param {string} action  - 'tambah'|'edit'|'hapus'|'detail'|'export'|'bulk_delete'|'upload'
+   * @param {object} txData  - data transaksi terkait (opsional)
+   * @param {string} notes   - keterangan tambahan (opsional)
+   */
+  async function logActivity(action, txData = {}, notes = '') {
+    if (!curUser) return;
+    try {
+      const payload = {
+        username:       curUser.username || '',
+        user_name:      curUser.name || '',
+        user_role:      curUser.role || '',
+        action:         action,
+        tx_id:          txData.id   ? String(txData.id)   : null,
+        tx_tanggal:     txData.tanggal   || null,
+        tx_client_id:   txData.client_id  || null,
+        tx_client_name: txData.client_name || null,
+        tx_type:        txData.type  || null,
+        tx_volume:      txData.volume != null ? Number(txData.volume) : null,
+        tx_fee:         txData.fee    != null ? Number(txData.fee)    : null,
+        notes:          notes || null,
+      };
+      await _sb.from('saham_activity_log').insert(payload);
+    } catch(e) {
+      // Log gagal tidak boleh break UI
+      console.warn('logActivity error:', e.message);
+    }
+  }
+
+  // ── History Modal ──────────────────────────────────────────────────────────
+
+  let _logData = [];
+
+  async function openHistoryModal() {
+    document.getElementById('historyModal').classList.add('open');
+    document.getElementById('logTableBody').innerHTML =
+      '<tr><td colspan="10" style="text-align:center;padding:32px;color:#bbb;">Memuat...</td></tr>';
+
+    // Tampilkan tombol hapus hanya untuk fawzheadaccount
+    const btnDel = document.getElementById('btnDeleteHistory');
+    if (btnDel) btnDel.style.display = curUser?.username === 'fawzheadaccount' ? '' : 'none';
+
+    try {
+      const { data, error } = await _sb
+        .from('saham_activity_log')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(500);
+
+      if (error) throw error;
+      _logData = data || [];
+
+      // Populate user filter dropdown
+      const users = [...new Set(_logData.map(r => r.username).filter(Boolean))].sort();
+      const sel = document.getElementById('logFilterUser');
+      sel.innerHTML = '<option value="">Semua User</option>';
+      users.forEach(u => {
+        const opt = document.createElement('option');
+        opt.value = u; opt.textContent = u;
+        sel.appendChild(opt);
+      });
+
+      renderLogTable();
+    } catch(e) {
+      document.getElementById('logTableBody').innerHTML =
+        `<tr><td colspan="10" style="text-align:center;padding:32px;color:var(--red);">Gagal memuat: ${e.message}</td></tr>`;
+    }
+  }
+
+  function closeHistoryModal() {
+    document.getElementById('historyModal').classList.remove('open');
+  }
+
+  async function deleteAllHistory() {
+    if (curUser?.username !== 'fawzheadaccount') {
+      showToast('Akses ditolak', 'error'); return;
+    }
+    if (!confirm('Hapus SEMUA history aktivitas? Tindakan ini tidak dapat dibatalkan.')) return;
+
+    const btn = document.getElementById('btnDeleteHistory');
+    if (btn) { btn.textContent = 'Menghapus...'; btn.disabled = true; }
+
+    try {
+      // Hapus semua rows — filter created_at > epoch agar tidak error jika tabel kosong
+      const { error } = await _sb
+        .from('saham_activity_log')
+        .delete()
+        .gte('id', 0);
+
+      if (error) throw error;
+
+      _logData = [];
+      renderLogTable();
+      showToast('Semua history berhasil dihapus', 'success');
+    } catch(e) {
+      showToast('Gagal hapus history: ' + e.message, 'error');
+    } finally {
+      if (btn) { btn.textContent = 'Hapus Semua History'; btn.disabled = false; }
+    }
+  }
+
+  function clearLogFilter() {
+    document.getElementById('logFilterAction').value = '';
+    document.getElementById('logFilterUser').value = '';
+    document.getElementById('logFilterDate').value = '';
+    renderLogTable();
+  }
+
+  function renderLogTable() {
+    const actionF = document.getElementById('logFilterAction').value;
+    const userF   = document.getElementById('logFilterUser').value;
+    const dateF   = document.getElementById('logFilterDate').value;   // 'YYYY-MM-DD'
+
+    const rows = _logData.filter(r => {
+      if (actionF && r.action !== actionF) return false;
+      if (userF   && r.username !== userF) return false;
+      if (dateF) {
+        const d = (r.created_at || '').slice(0, 10);
+        if (d !== dateF) return false;
+      }
+      return true;
+    });
+
+    document.getElementById('logCount').textContent = rows.length + ' aktivitas';
+
+    const tbody = document.getElementById('logTableBody');
+    if (!rows.length) {
+      tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:32px;color:#bbb;">Tidak ada aktivitas</td></tr>';
+      return;
+    }
+
+    const LABEL = {
+      tambah:      'Tambah',
+      edit:        'Edit',
+      hapus:       'Hapus',
+      bulk_delete: 'Bulk Hapus',
+      detail:      'Lihat Detail',
+      export:      'Export CSV',
+      upload:      'Upload CSV',
+    };
+
+    tbody.innerHTML = rows.slice(0, 200).map(r => {
+      const dt   = r.created_at ? new Date(r.created_at) : null;
+      const waktu = dt
+        ? dt.toLocaleDateString('id-ID', { day:'2-digit', month:'short', year:'numeric' })
+          + ' '
+          + dt.toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit', second:'2-digit' })
+        : '—';
+
+      const badge = `<span class="log-badge log-badge-${r.action || ''}">${LABEL[r.action] || r.action || '—'}</span>`;
+
+      const vol = r.tx_volume != null ? 'Rp ' + Number(r.tx_volume).toLocaleString('id-ID') : '—';
+      const fee = r.tx_fee    != null ? 'Rp ' + Number(r.tx_fee).toLocaleString('id-ID')    : '—';
+
+      return `<tr>
+        <td style="white-space:nowrap;font-size:0.76rem;">${waktu}</td>
+        <td style="font-weight:600;font-size:0.8rem;">${esc(r.username || '')}
+          <div style="font-size:0.7rem;color:var(--gray);font-weight:400;">${esc(r.user_name || '')}</div>
+        </td>
+        <td style="font-size:0.75rem;color:var(--gray);">${esc(r.user_role || '—')}</td>
+        <td>${badge}</td>
+        <td style="font-size:0.78rem;">${esc(r.tx_client_id || '—')}</td>
+        <td style="font-size:0.78rem;">${esc(r.tx_client_name || '—')}</td>
+        <td style="font-size:0.75rem;color:var(--gray);">${esc(r.tx_type || '—')}</td>
+        <td style="font-size:0.78rem;text-align:right;">${vol}</td>
+        <td style="font-size:0.78rem;text-align:right;color:var(--green);">${fee}</td>
+        <td style="font-size:0.75rem;color:var(--gray);">${esc(r.notes || '—')}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  function esc(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
 
   window.addEventListener('DOMContentLoaded', initPage);
 
@@ -1355,12 +1664,14 @@
       statusEl.style.border = '1px solid #a8e6c1';
       statusEl.style.color = '#1e7e4e';
       statusEl.textContent = `Berhasil upload ${success} transaksi!`;
+      await logActivity('upload', {}, 'Upload CSV ' + uploadType.toUpperCase() + ' bulan ' + uploadMonth + ': ' + success + ' transaksi berhasil');
       await loadData();
     } else {
       statusEl.style.background = '#fff0f0';
       statusEl.style.border = '1px solid #ffcccc';
       statusEl.style.color = '#c0392b';
       statusEl.textContent = `${success} berhasil, ${errors} gagal.`;
+      await logActivity('upload', {}, 'Upload CSV ' + uploadType.toUpperCase() + ' bulan ' + uploadMonth + ': ' + success + ' berhasil, ' + errors + ' gagal');
       if (success > 0) await loadData();
     }
 
