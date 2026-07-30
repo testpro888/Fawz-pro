@@ -542,7 +542,7 @@ console.log('[Fawz navbar.js] v2.5.0 loaded');
       if (badge) { badge.textContent = unread; badge.style.display = unread > 0 ? 'flex' : 'none'; }
     }
     // Navigate
-    window.location.href = 'obligasi-bookbuilding.html';
+    window.location.href = 'obligasi-order.html';
   };
 
   window.markAllRead = function(e) {
