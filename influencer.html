@@ -16,7 +16,13 @@
     (function() {
       const raw = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember');
       if (!raw) { window.location.replace('login.html'); return; }
-      window._curUser = JSON.parse(raw);
+      const _u = JSON.parse(raw);
+      const _role = (_u.role || '').toLowerCase();
+      if (!['admin', 'head_sales', 'head_account'].includes(_role)) {
+        window.location.replace('dashboard.html');
+        return;
+      }
+      window._curUser = _u;
     })();
   </script>
   <style>

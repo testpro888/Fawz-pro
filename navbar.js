@@ -198,13 +198,13 @@ console.log('[Fawz navbar.js] v2.5.0 loaded');
       'sales-transaction.html' : ['head_account', 'admin', 'treasury', 'sales', 'head_sales'],
       'sales-tracker.html'     : ['head_account', 'admin', 'head_sales'],
       'sales.html'             : ['head_account', 'admin', 'head_sales'],
-      'referral-agent.html'    : ['head_account', 'admin', 'sales', 'head_sales'],
-      'influencer.html'        : ['head_account', 'admin', 'sales', 'head_sales'],
-      'influencer-fan.html'    : ['head_account', 'admin', 'sales', 'head_sales'],
+      'referral-agent.html'    : ['head_account', 'admin', 'head_sales'],
+      'influencer.html'        : ['head_account', 'admin', 'head_sales'],
+      'influencer-fan.html'    : ['head_account', 'admin', 'head_sales'],
 
       // Customer dropdown
       'customer.html'           : ['head_account', 'admin', 'treasury', 'sales', 'head_sales'],
-      'follow-up-customer.html' : ['head_account', 'admin', 'treasury', 'sales', 'head_sales'],
+      'follow-up-customer.html' : ['head_account', 'admin', 'head_sales'],
       'birthday-calendar.html'  : ['head_account', 'admin', 'treasury', 'sales', 'head_sales'],
 
       // Product dropdown
