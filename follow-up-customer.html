@@ -598,7 +598,7 @@
     sessionStorage.setItem('fawz_user', raw);
     const _gu = JSON.parse(raw);
     window._curUser = _gu;
-    const allowedRoles = ['head_account','admin','treasury','sales','head_sales'];
+    const allowedRoles = ['head_account','admin','head_sales'];
     if (!allowedRoles.includes(_gu.role)) { window.location.replace('dashboard.html'); return; }
 
     // ── EXPORT / IMPORT / ADD RESTRICTION ──
