@@ -16,6 +16,11 @@
     window.addEventListener('DOMContentLoaded', () => {
       const _raw = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember');
       if (_raw) { try { window._curUser = JSON.parse(_raw); } catch(e) {} }
+      // Sembunyikan filter sales untuk role sales (hanya tampil data mereka sendiri)
+      if (window._curUser && (window._curUser.role || '').toLowerCase() === 'sales') {
+        const filterSalesWrap = document.getElementById('filterSales');
+        if (filterSalesWrap) filterSalesWrap.style.display = 'none';
+      }
       loadBirthdays();
     });
   </script>
@@ -309,15 +314,26 @@
   /* ── LOAD DATA ── */
   async function loadBirthdays() {
     try {
+      const curUser = window._curUser || {};
+      const isSales = (curUser.role || '').toLowerCase() === 'sales';
+      const salesName = (curUser.name || '').trim();
+
       let offset = 0;
       const PAGE = 1000;
       let all = [];
       while (true) {
-        const { data, error } = await _sb
+        let q = _sb
           .from('customers')
           .select('id, client_id, client_name, birth_date, sales_person_name, client_status')
           .not('birth_date', 'is', null)
           .range(offset, offset + PAGE - 1);
+
+        // Untuk role sales: filter hanya client mereka sendiri
+        if (isSales && salesName) {
+          q = q.ilike('sales_person_name', salesName);
+        }
+
+        const { data, error } = await q;
         if (error) throw error;
         if (!data || data.length === 0) break;
         all = all.concat(data);
@@ -333,7 +349,8 @@
         seen.add(key);
         return true;
       });
-      populateSalesFilter();
+      // Untuk non-sales: populate filter dropdown
+      if (!isSales) populateSalesFilter();
       updateStats();
       applyFilters();
     } catch(e) {
