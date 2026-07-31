@@ -26,27 +26,37 @@
         const curUser = raw ? JSON.parse(raw) : null;
         window._curUser = curUser;
 
+        const role      = (curUser?.role || '').toLowerCase();
+        const isSales    = role === 'sales';
+        const isTreasury = role === 'treasury';
+        const salesName  = (curUser?.name || '').trim();
+
         // Sembunyikan tombol Export jika bukan fawzheadaccount
         if (curUser?.username !== 'fawzheadaccount') {
           document.querySelectorAll('button[onclick="exportCSV()"]').forEach(el => el.style.display = 'none');
         }
 
+        // Untuk role sales: update subtitle & sembunyikan kolom Sales di tabel
+        if (isSales) {
+          const subtitleEl = document.querySelector('.page-subtitle');
+          if (subtitleEl) subtitleEl.textContent = 'Menampilkan transaksi milik: ' + salesName;
+          // Sembunyikan header kolom Sales (index 2)
+          const thSales = document.querySelector('thead tr th:nth-child(3)');
+          if (thSales) thSales.style.display = 'none';
+        }
+
         const db = window._supabase;
-        const isSales    = curUser?.role === 'sales';
-        const isTreasury = curUser?.role === 'treasury';
-        const salesName  = curUser?.name || '';
-        const canSeeAll  = ['head_account','admin','treasury'].includes(curUser?.role);
 
         // 1. Bonds — dari bb_orders
         let qBonds = db.from('bb_orders').select('*').order('created_at', { ascending: false });
-        if (isSales) qBonds = qBonds.eq('sales_pic', salesName);
+        if (isSales) qBonds = qBonds.ilike('sales_pic', salesName);
         const { data: bondsData } = await qBonds;
 
         // 2. Saham — dari saham_transaksi (skip untuk treasury/Bonds)
         let sahamData = [];
         if (!isTreasury) {
           let qSaham = db.from('saham_transaksi').select('*').order('tanggal', { ascending: false });
-          if (isSales) qSaham = qSaham.eq('sales_name', salesName);
+          if (isSales) qSaham = qSaham.ilike('sales_name', salesName);
           const { data } = await qSaham;
           sahamData = data || [];
         }
@@ -552,10 +562,12 @@
       const tipeStyle   = TIPE_BADGE[r.tipe] || 'background:#f0f0f5;color:#888;';
       const nom = Number(r.nominal||0);
       const fee = Number(r.fee||0);
+      const isSalesRole = (window._curUser?.role || '').toLowerCase() === 'sales';
+      const salesCell = isSalesRole ? '' : `<td><strong style="font-size:.82rem;">${esc(r.salesNama)}</strong><br><span style="font-size:.7rem;color:#aaa;">${esc(r.salesKode)}</span></td>`;
       return `<tr>
         <td style="font-size:.78rem;color:#888;white-space:nowrap;">${formatDate(r.tanggal)}</td>
         <td><span class="badge" style="${tipeStyle}font-size:.67rem;font-weight:700;padding:3px 10px;border-radius:20px;">${r.tipe}</span></td>
-        <td><strong style="font-size:.82rem;">${esc(r.salesNama)}</strong><br><span style="font-size:.7rem;color:#aaa;">${esc(r.salesKode)}</span></td>
+        ${salesCell}
         <td style="font-size:.8rem;">${esc(r.clientId)}</td>
         <td style="font-size:.82rem;">${esc(r.nasabah)}</td>
         <td><span class="product-tag" style="font-size:.7rem;">${esc(r.produk)}</span></td>
