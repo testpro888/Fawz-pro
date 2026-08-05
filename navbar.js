@@ -198,7 +198,7 @@ console.log('[Fawz navbar.js] v2.5.0 loaded');
       'sales-transaction.html' : ['head_account', 'admin', 'treasury', 'sales', 'head_sales'],
       'leads-tracker.html'     : ['head_account', 'admin', 'head_sales'],
       'sales.html'             : ['head_account', 'admin', 'head_sales'],
-      'referral-agent.html'    : ['head_account', 'admin', 'head_sales'],
+      'profit-ambassador.html' : ['head_account', 'admin', 'head_sales'],
       'influencer.html'        : ['head_account', 'admin', 'head_sales'],
       'influencer-fans.html'   : ['head_account', 'admin', 'head_sales'],
 
