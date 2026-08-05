@@ -801,7 +801,7 @@ function buildReportHTML(salesObj, monthName, month, year, period, saham, obl, s
   page2.innerHTML += `
     <div class="slip-nb">
       Nb : Pembayaran Komisi akan dilakukan hanya untuk yang jumlahnya mencapai atau melebihi
-      Rp100.000. Komisi dengan jumlah kurang dari Rp100.000 tidak akan diproses atau dibayarkan.
+      Rp100.000. Komisi dengan jumlah kurang dari Rp100.000 akan diakumulasikan ke bulan berikutnya hingga mencapai Rp100.000.
     </div>`;
 
   page2.innerHTML += reportFooterHTML(tanggalHariIni);
