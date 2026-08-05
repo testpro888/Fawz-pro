@@ -200,7 +200,7 @@ console.log('[Fawz navbar.js] v2.5.0 loaded');
       'sales.html'             : ['head_account', 'admin', 'head_sales'],
       'referral-agent.html'    : ['head_account', 'admin', 'head_sales'],
       'influencer.html'        : ['head_account', 'admin', 'head_sales'],
-      'influencer-fan.html'    : ['head_account', 'admin', 'head_sales'],
+      'influencer-fans.html'   : ['head_account', 'admin', 'head_sales'],
 
       // Customer dropdown
       'customer.html'           : ['head_account', 'admin', 'treasury', 'sales', 'head_sales'],
@@ -278,6 +278,14 @@ console.log('[Fawz navbar.js] v2.5.0 loaded');
         .filter(l => l.style.display !== 'none');
       if (visibleLinks.length === 0) group.style.display = 'none';
     });
+
+    // ── USERNAME EXCEPTIONS ──
+    // Sembunyikan logo.html khusus untuk user 'husni'
+    const username = (user.username || user.name || '').toLowerCase();
+    if (username === 'husni') {
+      document.querySelectorAll('.dropdown-item[href="logo.html"]').forEach(el => el.style.display = 'none');
+      document.querySelectorAll('.mob-link[href="logo.html"]').forEach(el => el.style.display = 'none');
+    }
 
     // Active link — highlight menu sesuai halaman aktif
     const currentFile = window.location.pathname.split('/').pop() || 'dashboard.html';
