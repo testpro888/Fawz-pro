@@ -338,6 +338,7 @@
               </div>
             </th>
             <th>#</th>
+            <th>Fawz ID</th>
             <th class="th-sort" onclick="toggleSort('clientID')" id="thClientID">Client ID <span class="sort-icon none" id="sortIconClientID"></span></th>
             <th class="th-sort" onclick="toggleSort('clientName')" id="thClientName">Nama Nasabah <span class="sort-icon none" id="sortIconClientName"></span></th>
             <th>KSEI Single ID / RDN</th>
@@ -349,7 +350,7 @@
           </tr>
         </thead>
         <tbody id="customerTableBody">
-          <tr><td colspan="10"><div class="empty-state"><div class="empty-icon">⏳</div><p>Memuat data...</p></div></td></tr>
+          <tr><td colspan="11"><div class="empty-state"><div class="empty-icon">⏳</div><p>Memuat data...</p></div></td></tr>
         </tbody>
       </table>
     </div>
@@ -507,6 +508,7 @@
   function mapCustomerRow(r) {
     return {
       id: r.id,
+      fawzId: r.fawz_id || '',
       clientID: r.client_id || '',
       clientName: r.client_name || '',
       cifInvestorBirthDate: r.birth_date || '',
@@ -556,6 +558,90 @@
     return allData;
   }
 
+  // ===== AUTO-GENERATE FAWZ ID =====
+  function generateFawzId(existingIds) {
+    let id;
+    do {
+      const num = Math.floor(100000 + Math.random() * 900000); // 6 digit
+      id = 'F' + num;
+    } while (existingIds.has(id));
+    return id;
+  }
+
+  // Mendapatkan "base" Client ID: jika karakter terakhir Y atau N, hapus suffix tersebut
+  // Contoh: RW028Y → RW028, RW028N → RW028 (dianggap orang yang sama)
+  function getClientIdBase(clientID) {
+    if (!clientID) return '';
+    const upper = clientID.toUpperCase().trim();
+    const lastChar = upper.slice(-1);
+    if (lastChar === 'Y' || lastChar === 'N') {
+      return upper.slice(0, -1);
+    }
+    return upper;
+  }
+
+  async function autoGenerateFawzIds() {
+    // Collect existing fawz_ids to avoid duplicates
+    const existingIds = new Set(allCustomers.filter(c => c.fawzId).map(c => c.fawzId));
+
+    // Build a map: clientIdBase → fawzId (from already-assigned customers)
+    // Prioritas: ambil fawz_id pertama yang ditemukan untuk setiap base
+    const baseToFawzId = {};
+    for (const c of allCustomers) {
+      if (c.fawzId && c.clientID) {
+        const base = getClientIdBase(c.clientID);
+        if (base && !baseToFawzId[base]) {
+          baseToFawzId[base] = c.fawzId;
+        }
+      }
+    }
+
+    // FIX-UP: Samakan Fawz ID untuk customer yang sudah punya tapi base-nya sama
+    // Contoh: RW028Y=F587973, RW028N=F364362 → keduanya jadi F587973
+    for (const c of allCustomers) {
+      if (c.fawzId && c.clientID) {
+        const base = getClientIdBase(c.clientID);
+        if (base && baseToFawzId[base] && c.fawzId !== baseToFawzId[base]) {
+          const correctId = baseToFawzId[base];
+          c.fawzId = correctId;
+          try {
+            await window._supabase.from('customers').update({ fawz_id: correctId }).eq('id', c.id);
+          } catch(e) {
+            console.warn('Gagal fix Fawz ID untuk', c.id, e);
+          }
+        }
+      }
+    }
+
+    // Generate Fawz ID untuk customer yang belum punya
+    const toUpdate = allCustomers.filter(c => !c.fawzId);
+    if (toUpdate.length === 0) { applyFilters(); return; }
+
+    for (const c of toUpdate) {
+      const base = getClientIdBase(c.clientID);
+      let newId;
+
+      // Jika ada customer lain dengan base Client ID yang sama dan sudah punya Fawz ID, pakai yang sama
+      if (base && baseToFawzId[base]) {
+        newId = baseToFawzId[base];
+      } else {
+        newId = generateFawzId(existingIds);
+        existingIds.add(newId);
+        if (base) baseToFawzId[base] = newId;
+      }
+
+      c.fawzId = newId;
+      // Save to Supabase
+      try {
+        await window._supabase.from('customers').update({ fawz_id: newId }).eq('id', c.id);
+      } catch(e) {
+        console.warn('Gagal simpan Fawz ID untuk', c.id, e);
+      }
+    }
+    // Re-render setelah generate
+    applyFilters();
+  }
+
   async function loadCustomers() {
     try {
       const cu = window._curUser || JSON.parse(sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember') || '{}');
@@ -593,6 +679,7 @@
           currentPage = 1;
           renderTable(filteredCustomers);
           updateStats();
+          autoGenerateFawzIds();
           return;
         }
         // Petik Profit: jatuh ke flow bawah (load semua customer tanpa filter)
@@ -627,6 +714,7 @@
         return mapped;
       });
       applyFilters(); updateStats(); populateFilters();
+      autoGenerateFawzIds();
       showToast('Data berhasil dimuat', 'success');
     } catch (e) {
       console.error(e);
@@ -929,7 +1017,7 @@
       <div class="detail-section">
         <div class="detail-section-title">🪪 Identitas Klien</div>
         <div class="detail-grid">
-          ${di('Client ID', c.clientID, true)}${di('Nama Lengkap', c.clientName)}${di('Tgl. Lahir', fmtDate(c.cifInvestorBirthDate))}
+          ${di('Fawz ID', c.fawzId, true)}${di('Client ID', c.clientID, true)}${di('Nama Lengkap', c.clientName)}${di('Tgl. Lahir', fmtDate(c.cifInvestorBirthDate))}
           ${di('No. KTP (NIK)', c.cifInvestorKTPNumber, true)}${di('NPWP', c.npwp, true)}${di('Email', c.email)}
           ${di('Telepon', c.phone)}${di('Pekerjaan', c.cifInvestorOccupation)}${di('Jabatan', c.cifInvestorPosition)}
           ${di('Nama Perusahaan', c.cifCompanyName)}${di('Bidang Usaha', c.cifInvestorNatureOfBusiness)}
@@ -1068,7 +1156,7 @@
       `Menampilkan ${pageData.length > 0 ? start + 1 : 0}–${end} dari ${total} data`;
 
     if (pageData.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="10"><div class="empty-state"><div class="empty-icon">👥</div><p>Belum ada data customer</p></div></td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="11"><div class="empty-state"><div class="empty-icon">👥</div><p>Belum ada data customer</p></div></td></tr>`;
       renderPagination(0, 0); return;
     }
 
@@ -1088,6 +1176,7 @@
           <input type="checkbox" class="row-cb" data-id="${c.id}" ${checked} onchange="toggleRowSelect('${c.id}', this.checked)"/>
         </td>
         <td style="color:#bbb;font-size:0.78rem;">${start+i+1}</td>
+        <td><span style="font-family:'Courier New',monospace;font-size:0.8rem;color:var(--gold);font-weight:700;">${esc(c.fawzId||'—')}</span></td>
         <td><span style="font-family:'Courier New',monospace;font-size:0.8rem;color:#666;">${esc(c.clientID||'—')}</span></td>
         <td>
           <div style="font-weight:600;">${esc(c.clientName||'—')}</div>
