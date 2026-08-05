@@ -583,10 +583,9 @@
   async function autoGenerateFawzIds() {
     // Collect existing fawz_ids to avoid duplicates
     const existingIds = new Set(allCustomers.filter(c => c.fawzId).map(c => c.fawzId));
-    const toUpdate = allCustomers.filter(c => !c.fawzId);
-    if (toUpdate.length === 0) return;
 
     // Build a map: clientIdBase → fawzId (from already-assigned customers)
+    // Prioritas: ambil fawz_id pertama yang ditemukan untuk setiap base
     const baseToFawzId = {};
     for (const c of allCustomers) {
       if (c.fawzId && c.clientID) {
@@ -596,6 +595,27 @@
         }
       }
     }
+
+    // FIX-UP: Samakan Fawz ID untuk customer yang sudah punya tapi base-nya sama
+    // Contoh: RW028Y=F587973, RW028N=F364362 → keduanya jadi F587973
+    for (const c of allCustomers) {
+      if (c.fawzId && c.clientID) {
+        const base = getClientIdBase(c.clientID);
+        if (base && baseToFawzId[base] && c.fawzId !== baseToFawzId[base]) {
+          const correctId = baseToFawzId[base];
+          c.fawzId = correctId;
+          try {
+            await window._supabase.from('customers').update({ fawz_id: correctId }).eq('id', c.id);
+          } catch(e) {
+            console.warn('Gagal fix Fawz ID untuk', c.id, e);
+          }
+        }
+      }
+    }
+
+    // Generate Fawz ID untuk customer yang belum punya
+    const toUpdate = allCustomers.filter(c => !c.fawzId);
+    if (toUpdate.length === 0) { applyFilters(); return; }
 
     for (const c of toUpdate) {
       const base = getClientIdBase(c.clientID);
