@@ -568,15 +568,48 @@
     return id;
   }
 
+  // Mendapatkan "base" Client ID: jika karakter terakhir Y atau N, hapus suffix tersebut
+  // Contoh: RW028Y → RW028, RW028N → RW028 (dianggap orang yang sama)
+  function getClientIdBase(clientID) {
+    if (!clientID) return '';
+    const upper = clientID.toUpperCase().trim();
+    const lastChar = upper.slice(-1);
+    if (lastChar === 'Y' || lastChar === 'N') {
+      return upper.slice(0, -1);
+    }
+    return upper;
+  }
+
   async function autoGenerateFawzIds() {
     // Collect existing fawz_ids to avoid duplicates
     const existingIds = new Set(allCustomers.filter(c => c.fawzId).map(c => c.fawzId));
     const toUpdate = allCustomers.filter(c => !c.fawzId);
     if (toUpdate.length === 0) return;
 
+    // Build a map: clientIdBase → fawzId (from already-assigned customers)
+    const baseToFawzId = {};
+    for (const c of allCustomers) {
+      if (c.fawzId && c.clientID) {
+        const base = getClientIdBase(c.clientID);
+        if (base && !baseToFawzId[base]) {
+          baseToFawzId[base] = c.fawzId;
+        }
+      }
+    }
+
     for (const c of toUpdate) {
-      const newId = generateFawzId(existingIds);
-      existingIds.add(newId);
+      const base = getClientIdBase(c.clientID);
+      let newId;
+
+      // Jika ada customer lain dengan base Client ID yang sama dan sudah punya Fawz ID, pakai yang sama
+      if (base && baseToFawzId[base]) {
+        newId = baseToFawzId[base];
+      } else {
+        newId = generateFawzId(existingIds);
+        existingIds.add(newId);
+        if (base) baseToFawzId[base] = newId;
+      }
+
       c.fawzId = newId;
       // Save to Supabase
       try {
