@@ -4,7 +4,7 @@
   <script src="config.js"></script>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Fawz Pro | Data Sales</title>
+  <title>Fawz Pro | Sales Inhouse</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 
   <!-- Commission Settings Module -->
@@ -90,13 +90,13 @@
           // Re-fetch after insert
           const { data: refreshed } = await _sb()
             .from('sales').select('*').order('created_at', { ascending: false });
-          window._allSales = refreshed || [];
+          window._allSales = (refreshed || []).filter(r => !(r.kode||'').toUpperCase().startsWith('PP'));
           renderTable(window._allSales);
           loadCommissionSettings(currentPeriod);
           return;
         }
 
-        window._allSales = rows || [];
+        window._allSales = (rows || []).filter(r => !(r.kode||'').toUpperCase().startsWith('PP'));
         renderTable(window._allSales);
         loadCommissionSettings(currentPeriod);
       } catch(e) {
@@ -515,7 +515,7 @@
   <!-- Header -->
   <div class="page-header">
     <div>
-      <div class="page-title">Data Sales</div>
+      <div class="page-title">Sales Inhouse</div>
       <div class="page-subtitle">Kelola seluruh tim sales Fawz Pro</div>
     </div>
     <div style="display:flex;align-items:center;gap:8px;">

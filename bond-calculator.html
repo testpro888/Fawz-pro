@@ -1375,11 +1375,11 @@ function renderOutput(r) {
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;">
       <div>
         <div style="font-size:0.68rem;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">
-          ${r.hasSettleDate ? 'Total Proceed (Dirty)' : 'Total Proceed (Clean)'}
+          ${r.hasSettleDate ? 'Total Proceed (Bruto)' : 'Total Proceed (Clean)'}
         </div>
         <div style="font-size:1.5rem;font-weight:900;color:var(--gold-light);">${fmtIDR(r.totalProceed)}</div>
         <div style="font-size:0.72rem;color:rgba(255,255,255,0.35);margin-top:2px;">
-          ${r.hasSettleDate ? `Dirty ${fmtNum(r.dirtyPrice,4)}% × Nominal` : `Clean ${fmtNum(r.price,4)}% × Nominal`}
+          ${r.hasSettleDate ? `Bruto ${fmtNum(r.dirtyPrice,4)}% × Nominal` : `Clean ${fmtNum(r.price,4)}% × Nominal`}
         </div>
       </div>
       <div>
@@ -1413,8 +1413,8 @@ function renderOutput(r) {
       buyRows.push({ label: 'Accrued Interest', sign: '+', val: r.accruedAmt, note: `AI ${fmtNum(r.accruedPct,4)}% dibayar ke penjual`, color: '#c0392b' });
     }
 
-    // Subtotal = Total Modal Keluar (Dirty)
-    buyRows.push({ label: r.hasSettleDate ? 'Total Modal Beli (Dirty)' : 'Total Modal Beli (Clean)', sign: '=', val: r.totalProceed, note: r.hasSettleDate ? `Dirty ${fmtNum(r.dirtyPrice,4)}% × Nominal` : `Clean ${fmtNum(r.price,4)}% × Nominal`, color: '#c0392b', isSubtotal: true });
+    // Subtotal = Total Modal Keluar (Bruto)
+    buyRows.push({ label: r.hasSettleDate ? 'Total Modal Beli (Bruto)' : 'Total Modal Beli (Clean)', sign: '=', val: r.totalProceed, note: r.hasSettleDate ? `Bruto ${fmtNum(r.dirtyPrice,4)}% × Nominal` : `Clean ${fmtNum(r.price,4)}% × Nominal`, color: '#c0392b', isSubtotal: true });
 
     // Kupon per periode
     buyRows.push({ label: 'Kupon Kotor / Periode', sign: '', val: r.couponAmt, note: `${r.coupon}% ÷ ${r.freq} × Nominal`, color: '#555' });
@@ -1484,7 +1484,7 @@ function renderOutput(r) {
     <div style="background:linear-gradient(135deg,#0d0d2b,#1e1252);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
       <div style="font-size:0.8rem;color:rgba(255,255,255,0.55);">
         Total Modal Keluar &nbsp;&middot;&nbsp; YTM <strong style="color:var(--gold-light);">${fmtPct(r.ytm,4)}</strong>
-        &nbsp;&middot;&nbsp; Dirty <strong style="color:rgba(255,255,255,0.7);">${fmtNum(r.dirtyPrice,4)}%</strong>
+        &nbsp;&middot;&nbsp; Bruto <strong style="color:rgba(255,255,255,0.7);">${fmtNum(r.dirtyPrice,4)}%</strong>
       </div>
       <div style="font-size:1.3rem;font-weight:900;color:var(--gold-light);">${fmtIDR(r.totalProceed)}</div>
     </div>

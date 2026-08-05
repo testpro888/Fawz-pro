@@ -455,7 +455,7 @@
 
     populateFilters();
     applyFilter();
-    updateBanner();
+    await updateBanner();
     // Set default filter komisi ke bulan ini
     const now2 = new Date();
     const ym = now2.getFullYear() + '-' + String(now2.getMonth()+1).padStart(2,'0');
@@ -721,32 +721,28 @@
     document.getElementById('sKomisiWaranTx').textContent      = `${waranRows.length} transaksi`;
   }
 
-  function updateBanner() {
+  async function updateBanner() {
     // Komisi Berjalan = hanya transaksi bulan ini (reset tiap tanggal 1)
     const now = new Date();
     const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0,10);
     const lastOfMonth  = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().slice(0,10);
     const bulanLabel   = now.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+    const ym = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
 
-    // Komisi dari obligasi/reksadana/waran
+    // Load effective settings for this month to get accurate rates
+    try {
+      await loadEffectiveSettings(ym);
+    } catch(e) {
+      console.warn('updateBanner: loadEffectiveSettings failed', e);
+    }
+
+    // Use calcSalesCommission with current month filter — same logic as Komisi Per Sales cards
+    const results = calcSalesCommission(ym);
+    const totalBerjalan = results.reduce((sum, s) => sum + s.komisi, 0);
+
+    // Count transactions for this month
     const bulanObl = allRows.filter(r => (r.tanggal || '') >= firstOfMonth && (r.tanggal || '') <= lastOfMonth);
-    const komisiObl = bulanObl.reduce((s, r) => s + r.komisi, 0);
-
-    // Komisi dari saham (target-based, per-sales)
-    const salesFeeMap = {};
-    sahamRows.forEach(r => {
-      if (!r.tanggal || r.tanggal < firstOfMonth || r.tanggal > lastOfMonth) return;
-      const key = (r.sales_name || '—').toLowerCase().trim();
-      salesFeeMap[key] = (salesFeeMap[key] || 0) + (parseFloat(r.fee) || 0);
-    });
-    const komisiSaham = Object.values(salesFeeMap).reduce((sum, fee) => {
-      const GD = window.CommissionSettings ? window.CommissionSettings.GLOBAL_DEFAULT : { target_fee: 10_000_000, rate_above: 0.12, rate_below: 0.05 };
-      const rate = fee >= GD.target_fee ? GD.rate_above : GD.rate_below;
-      return sum + fee * rate;
-    }, 0);
-
-    const totalBerjalan = komisiObl + komisiSaham;
-    const jumlahTrx     = bulanObl.length + sahamRows.filter(r =>
+    const jumlahTrx = bulanObl.length + sahamRows.filter(r =>
       r.tanggal && r.tanggal >= firstOfMonth && r.tanggal <= lastOfMonth).length;
 
     document.getElementById('bannerTotal').textContent = fmtRpFull(totalBerjalan);
