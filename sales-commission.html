@@ -425,6 +425,10 @@
   // Effective commission settings per-period (Req 5.1, 5.5, 5.8)
   // Populated by loadEffectiveSettings(period); keyed by sales_id (UUID)
   var effectiveSettingsMap = {}; // { [sales_id]: SettingsRecord }
+
+  // Profit Ambassador (PP) settings from referral_agents table
+  // Keyed by agent_code (lowercase), value: { fee_status, fee_below_pct, fee_target_pct, target_fee }
+  var referralAgentsMap = {};
   let sortCol    = 'tanggal';
   let sortAsc    = false;
   let curPage    = 1;
@@ -444,7 +448,7 @@
     canPay = ['head_account','treasury'].includes(curUser.role);
 
     try {
-      await Promise.all([loadPaidStatus(), loadAllData(), loadSahamFee()]);
+      await Promise.all([loadPaidStatus(), loadAllData(), loadSahamFee(), loadReferralAgents()]);
     } catch(e) {
       console.error(e);
       showToast('Gagal memuat data komisi', 'error');
@@ -612,6 +616,29 @@
     } catch(e) { console.warn('saham_transaksi:', e.message); }
   }
 
+  // ─── LOAD REFERRAL AGENTS (Profit Ambassador PP) ─────────
+  async function loadReferralAgents() {
+    try {
+      const { data, error } = await window._supabase
+        .from('referral_agents')
+        .select('agent_code, fee_status, fee_below_pct, fee_target_pct, target_fee, nama, client_name');
+      if (error) { console.warn('referral_agents:', error.message); return; }
+      referralAgentsMap = {};
+      (data || []).forEach(function(r) {
+        const code = (r.agent_code || '').toLowerCase().trim();
+        if (code) {
+          referralAgentsMap[code] = {
+            fee_status: r.fee_status || 'free',
+            fee_below_pct: r.fee_below_pct,
+            fee_target_pct: r.fee_target_pct,
+            target_fee: r.target_fee,
+            nama: r.nama || r.client_name || ''
+          };
+        }
+      });
+    } catch(e) { console.warn('loadReferralAgents:', e.message); }
+  }
+
   // ─── POPULATE FILTERS ────────────────────────────────────
   function populateFilters() {
     const salesSet = [...new Set(allRows.map(r => r.salesNama).filter(v => v && v !== '—'))].sort();
@@ -772,6 +799,9 @@
    * Resolves EffectiveSettings for a given sales name key.
    * Since saham_transaksi stores sales_name (text) not sales_id (UUID),
    * we look up by sales_name case-insensitively.
+   * For Profit Ambassadors (PP prefix), reads rates from referral_agents:
+   *   Premium → 8% (below) / 16% (on target)
+   *   Free    → 5% (below) / 12% (on target)
    * Falls back to GLOBAL_DEFAULT if no match found (Req 5.2).
    */
   function getSettingsForSalesByName(salesName) {
@@ -780,12 +810,28 @@
     }
     const CS = window.CommissionSettings;
     const key = (salesName || '').toLowerCase().trim();
+
+    // 1. Check sales_commission_settings (per-period custom settings)
     const record = Object.values(effectiveSettingsMap).find(function(r) {
       return (r.sales_name || '').toLowerCase().trim() === key;
     });
     if (record) {
       return { target_fee: record.target_fee, rate_above: record.rate_above, rate_below: record.rate_below, isDefault: false };
     }
+
+    // 2. Check referral_agents for Profit Ambassador (PP prefix)
+    const agent = referralAgentsMap[key];
+    if (agent) {
+      // Default rates based on premium/free status
+      const PP_DEFAULTS = { free: { below: 0.05, target: 0.12 }, premium: { below: 0.08, target: 0.16 } };
+      const status = agent.fee_status === 'premium' ? 'premium' : 'free';
+      const rateBelow  = agent.fee_below_pct != null ? agent.fee_below_pct / 100 : PP_DEFAULTS[status].below;
+      const rateTarget = agent.fee_target_pct != null ? agent.fee_target_pct / 100 : PP_DEFAULTS[status].target;
+      const targetFee  = agent.target_fee != null ? agent.target_fee : CS.GLOBAL_DEFAULT.target_fee;
+      return { target_fee: targetFee, rate_above: rateTarget, rate_below: rateBelow, isDefault: false };
+    }
+
+    // 3. Fallback to GLOBAL_DEFAULT
     return { ...CS.GLOBAL_DEFAULT };
   }
 
