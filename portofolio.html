@@ -208,12 +208,8 @@
         <input type="text" id="txNominal" readonly placeholder="Auto"/>
       </div>
       <div class="form-group">
-        <label>Buy Fee</label>
-        <input type="text" id="txBuyFee" readonly placeholder="Auto"/>
-      </div>
-      <div class="form-group">
-        <label>Sell Fee</label>
-        <input type="text" id="txSellFee" readonly placeholder="Auto"/>
+        <label>Fee</label>
+        <input type="text" id="txFee" readonly placeholder="Auto"/>
       </div>
     </div>
     <div class="form-actions">
@@ -231,13 +227,12 @@
             <th>Qty (Lot)</th>
             <th>Price</th>
             <th>Nominal</th>
-            <th>Buy Fee</th>
-            <th>Sell Fee</th>
+            <th>Fee</th>
             <th>Aksi</th>
           </tr>
         </thead>
         <tbody id="transactionBody">
-          <tr><td colspan="9" class="empty-state">Belum ada transaksi</td></tr>
+          <tr><td colspan="8" class="empty-state">Belum ada transaksi</td></tr>
         </tbody>
       </table>
     </div>
@@ -322,7 +317,7 @@ async function loadPortfolio() {
   if (!selectedCustomerId) {
     document.getElementById('clientInfo').innerHTML = '';
     document.getElementById('portfolioBody').innerHTML = '<tr><td colspan="5" class="empty-state">Pilih Client untuk melihat portofolio</td></tr>';
-    document.getElementById('transactionBody').innerHTML = '<tr><td colspan="9" class="empty-state">Belum ada transaksi</td></tr>';
+    document.getElementById('transactionBody').innerHTML = '<tr><td colspan="8" class="empty-state">Belum ada transaksi</td></tr>';
     resetSummary();
     return;
   }
@@ -403,7 +398,7 @@ function renderTransactions() {
   document.getElementById('txPageInfo').textContent = `${total} transaksi`;
 
   if (total === 0) {
-    tbody.innerHTML = '<tr><td colspan="9" class="empty-state">Belum ada transaksi</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" class="empty-state">Belum ada transaksi</td></tr>';
     document.getElementById('txPagination').innerHTML = '';
     return;
   }
@@ -413,6 +408,7 @@ function renderTransactions() {
 
   tbody.innerHTML = pageData.map(t => {
     const nominal = t.qty_lot * 100 * t.price;
+    const fee = (t.buy_fee || 0) + (t.sell_fee || 0);
     const badgeClass = t.transaction_type === 'Buy' ? 'badge-buy' : 'badge-sell';
     const date = new Date(t.created_at).toLocaleDateString('id-ID', { day:'2-digit', month:'short', year:'numeric' });
     return `
@@ -423,8 +419,7 @@ function renderTransactions() {
       <td>${formatNum(t.qty_lot)}</td>
       <td>${formatRp(t.price)}</td>
       <td>${formatRp(nominal)}</td>
-      <td>${formatRp(t.buy_fee)}</td>
-      <td>${formatRp(t.sell_fee)}</td>
+      <td>${formatRp(fee)}</td>
       <td><button class="btn btn-danger btn-sm" onclick="deleteTransaction('${t.id}')">Hapus</button></td>
     </tr>`;
   }).join('');
@@ -453,13 +448,9 @@ function calcTxNominal() {
 
   document.getElementById('txNominal').value = formatRp(nominal);
 
-  if (txType === 'Buy') {
-    document.getElementById('txBuyFee').value = formatRp(nominal * buyFeePercent / 100);
-    document.getElementById('txSellFee').value = 'Rp 0';
-  } else {
-    document.getElementById('txBuyFee').value = 'Rp 0';
-    document.getElementById('txSellFee').value = formatRp(nominal * sellFeePercent / 100);
-  }
+  const feePercent = txType === 'Buy' ? buyFeePercent : sellFeePercent;
+  const fee = nominal * feePercent / 100;
+  document.getElementById('txFee').value = formatRp(fee);
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -481,8 +472,8 @@ async function submitTransaction() {
   const nominal = qty * 100 * price;
   const buyFeePercent = parseFloat(document.getElementById('buyFeeInput').value) || 0;
   const sellFeePercent = parseFloat(document.getElementById('sellFeeInput').value) || 0;
-  const buyFee = txType === 'Buy' ? nominal * buyFeePercent / 100 : 0;
-  const sellFee = txType === 'Sell' ? nominal * sellFeePercent / 100 : 0;
+  const feePercent = txType === 'Buy' ? buyFeePercent : sellFeePercent;
+  const fee = nominal * feePercent / 100;
 
   const cust = customers.find(c => c.id === selectedCustomerId);
   const clientIdText = cust ? cust.client_id : '';
@@ -496,7 +487,7 @@ async function submitTransaction() {
     }
   }
 
-  // Insert transaksi
+  // Insert transaksi (fee disimpan di buy_fee untuk Buy, sell_fee untuk Sell)
   const { error } = await window._supabase
     .from('portfolio_transactions')
     .insert({
@@ -506,21 +497,35 @@ async function submitTransaction() {
       transaction_type: txType,
       qty_lot: qty,
       price,
-      buy_fee: buyFee,
-      sell_fee: sellFee
+      buy_fee: txType === 'Buy' ? fee : 0,
+      sell_fee: txType === 'Sell' ? fee : 0
     });
 
   if (error) { alert('Gagal menyimpan: ' + error.message); return; }
 
-  // Update portofolio berdasarkan transaksi
+  // Update portofolio (qty & avg price)
   await updatePortfolioFromTransaction(stock, txType, qty, price, clientIdText);
+
+  // Update cash balance: Buy mengurangi, Sell menambah
+  let cashBalance = parseFloat(document.getElementById('cashBalanceInput').value) || 0;
+  if (txType === 'Buy') {
+    cashBalance -= (nominal + fee);
+  } else {
+    cashBalance += (nominal - fee);
+  }
+  // Save new cash balance
+  document.getElementById('cashBalanceInput').value = cashBalance;
+  document.getElementById('cashBalanceDisplay').textContent = formatRp(cashBalance);
+  await window._supabase
+    .from('customer_portfolio')
+    .update({ cash_balance: cashBalance })
+    .eq('customer_id', selectedCustomerId);
 
   document.getElementById('txStock').value = '';
   document.getElementById('txQty').value = '';
   document.getElementById('txPrice').value = '';
   document.getElementById('txNominal').value = '';
-  document.getElementById('txBuyFee').value = '';
-  document.getElementById('txSellFee').value = '';
+  document.getElementById('txFee').value = '';
 
   loadPortfolio();
 }
