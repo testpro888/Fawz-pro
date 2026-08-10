@@ -45,7 +45,7 @@ CREATE TABLE IF NOT EXISTS public.portfolio_transactions (
   customer_id     uuid NOT NULL REFERENCES public.customers(id) ON DELETE CASCADE,
   client_id       text,
   stock           text NOT NULL,
-  transaction_type text NOT NULL CHECK (transaction_type IN ('Buy', 'Sell')),
+  transaction_type text NOT NULL CHECK (transaction_type IN ('Buy', 'Sell', 'Bond Buy', 'Bond Sell', 'Income', 'Outcome')),
   qty_lot         numeric NOT NULL DEFAULT 0,
   price           numeric NOT NULL DEFAULT 0,
   nominal         numeric NOT NULL DEFAULT 0,
@@ -59,6 +59,8 @@ CREATE INDEX IF NOT EXISTS idx_portfolio_transactions_customer_id
   ON public.portfolio_transactions(customer_id);
 CREATE INDEX IF NOT EXISTS idx_portfolio_transactions_client_id
   ON public.portfolio_transactions(client_id);
+CREATE INDEX IF NOT EXISTS idx_portfolio_transactions_type
+  ON public.portfolio_transactions(transaction_type);
 
 -- 3. RLS
 ALTER TABLE public.customer_portfolio ENABLE ROW LEVEL SECURITY;
@@ -73,3 +75,13 @@ CREATE POLICY "allow_all_customer_portfolio"
 CREATE POLICY "allow_all_portfolio_transactions"
   ON public.portfolio_transactions FOR ALL
   USING (true) WITH CHECK (true);
+
+-- ============================================================
+-- MIGRATION: Jika tabel sudah ada dengan constraint lama,
+-- jalankan ini untuk update constraint transaction_type:
+-- ============================================================
+-- ALTER TABLE public.portfolio_transactions
+--   DROP CONSTRAINT IF EXISTS portfolio_transactions_transaction_type_check;
+-- ALTER TABLE public.portfolio_transactions
+--   ADD CONSTRAINT portfolio_transactions_transaction_type_check
+--   CHECK (transaction_type IN ('Buy', 'Sell', 'Bond Buy', 'Bond Sell', 'Income', 'Outcome'));
