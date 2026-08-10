@@ -205,6 +205,7 @@ console.log('[Fawz navbar.js] v2.5.0 loaded');
       // Customer dropdown
       'customer.html'           : ['head_account', 'admin', 'treasury', 'sales', 'head_sales'],
       'follow-up-customer.html' : ['head_account', 'admin', 'head_sales'],
+      'portofolio.html'         : ['head_account', 'admin', 'treasury', 'sales', 'head_sales'],
       'birthday-calendar.html'  : ['head_account', 'admin', 'treasury', 'sales', 'head_sales'],
 
       // Product dropdown
