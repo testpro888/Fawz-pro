@@ -185,6 +185,10 @@
     </div>
     <div class="form-row">
       <div class="form-group">
+        <label>Tanggal</label>
+        <input type="date" id="txDate"/>
+      </div>
+      <div class="form-group">
         <label>Stock</label>
         <input type="text" id="txStock" placeholder="BBCA" style="text-transform:uppercase"/>
       </div>
@@ -254,6 +258,8 @@ const TX_PER_PAGE = 10;
 
 async function initPage() {
   await loadClients();
+  // Set default date to today
+  document.getElementById('txDate').value = new Date().toISOString().split('T')[0];
   // Close dropdown on outside click
   document.addEventListener('click', (e) => {
     const wrap = document.querySelector('.client-search-wrap');
@@ -488,6 +494,7 @@ async function submitTransaction() {
   }
 
   // Insert transaksi (fee disimpan di buy_fee untuk Buy, sell_fee untuk Sell)
+  const txDate = document.getElementById('txDate').value;
   const { error } = await window._supabase
     .from('portfolio_transactions')
     .insert({
@@ -498,7 +505,8 @@ async function submitTransaction() {
       qty_lot: qty,
       price,
       buy_fee: txType === 'Buy' ? fee : 0,
-      sell_fee: txType === 'Sell' ? fee : 0
+      sell_fee: txType === 'Sell' ? fee : 0,
+      created_at: txDate ? new Date(txDate).toISOString() : new Date().toISOString()
     });
 
   if (error) { alert('Gagal menyimpan: ' + error.message); return; }
@@ -526,6 +534,8 @@ async function submitTransaction() {
   document.getElementById('txPrice').value = '';
   document.getElementById('txNominal').value = '';
   document.getElementById('txFee').value = '';
+  // Reset date to today
+  document.getElementById('txDate').value = new Date().toISOString().split('T')[0];
 
   loadPortfolio();
 }
