@@ -270,7 +270,7 @@ async function initPage() {
 async function loadClients() {
   const { data, error } = await window._supabase
     .from('customers')
-    .select('id, client_id, name')
+    .select('id, client_id, client_name')
     .order('client_id');
   if (error) { console.error(error); return; }
   customers = data || [];
@@ -290,8 +290,8 @@ function filterClients() {
   const dd = document.getElementById('clientDropdown');
   const filtered = customers.filter(c => {
     const cid = (c.client_id || '').toLowerCase();
-    const name = (c.name || '').toLowerCase();
-    return cid.includes(q) || name.includes(q);
+    const cname = (c.client_name || '').toLowerCase();
+    return cid.includes(q) || cname.includes(q);
   }).slice(0, 30);
 
   if (filtered.length === 0) {
@@ -300,7 +300,7 @@ function filterClients() {
     dd.innerHTML = filtered.map(c =>
       `<div class="client-dropdown-item" onclick="selectClient('${c.id}')">
         <span class="cid">${c.client_id || '-'}</span>
-        <span class="cname">${c.name || ''}</span>
+        <span class="cname">${c.client_name || ''}</span>
       </div>`
     ).join('');
   }
@@ -311,8 +311,8 @@ function selectClient(id) {
   const cust = customers.find(c => c.id === id);
   if (!cust) return;
   selectedCustomerId = id;
-  document.getElementById('clientSearchInput').value = `${cust.client_id} — ${cust.name}`;
-  document.getElementById('clientInfo').innerHTML = `<strong>${cust.name}</strong>`;
+  document.getElementById('clientSearchInput').value = `${cust.client_id} — ${cust.client_name}`;
+  document.getElementById('clientInfo').innerHTML = `<strong>${cust.client_name}</strong>`;
   closeClientDropdown();
   loadPortfolio();
 }
