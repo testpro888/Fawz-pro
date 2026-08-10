@@ -259,8 +259,15 @@
         <input type="text" id="bondName" placeholder="FR0098"/>
       </div>
       <div class="form-group">
+        <label>Transaksi</label>
+        <select id="bondType">
+          <option value="Bond Buy">Buy</option>
+          <option value="Bond Sell">Sell</option>
+        </select>
+      </div>
+      <div class="form-group">
         <label>Price (%)</label>
-        <input type="number" id="bondPrice" placeholder="100" step="0.01" min="0" oninput="calcBondNominal()"/>
+        <input type="number" id="bondPrice" placeholder="100" step="0.01" min="0"/>
       </div>
       <div class="form-group">
         <label>Nominal</label>
@@ -276,13 +283,14 @@
           <tr>
             <th>Tanggal</th>
             <th>Nama Bonds</th>
+            <th>Transaksi</th>
             <th>Price</th>
             <th>Nominal</th>
             <th>Aksi</th>
           </tr>
         </thead>
         <tbody id="bondTransactionBody">
-          <tr><td colspan="5" class="empty-state">Belum ada transaksi obligasi</td></tr>
+          <tr><td colspan="6" class="empty-state">Belum ada transaksi obligasi</td></tr>
         </tbody>
       </table>
     </div>
@@ -779,7 +787,7 @@ async function loadBondTransactions() {
     .from('portfolio_transactions')
     .select('*')
     .eq('customer_id', selectedCustomerId)
-    .eq('transaction_type', 'Bond')
+    .in('transaction_type', ['Bond Buy', 'Bond Sell'])
     .order('created_at', { ascending: false });
   if (error) console.error(error);
   bondTransactionData = data || [];
@@ -795,7 +803,7 @@ function renderBondTransactions() {
   document.getElementById('bondPageInfo').textContent = `${total} transaksi`;
 
   if (total === 0) {
-    tbody.innerHTML = '<tr><td colspan="5" class="empty-state">Belum ada transaksi obligasi</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-state">Belum ada transaksi obligasi</td></tr>';
     document.getElementById('bondPagination').innerHTML = '';
     return;
   }
@@ -805,11 +813,14 @@ function renderBondTransactions() {
 
   tbody.innerHTML = pageData.map(t => {
     const date = new Date(t.created_at).toLocaleDateString('id-ID', { day:'2-digit', month:'short', year:'numeric' });
+    const txLabel = t.transaction_type === 'Bond Buy' ? 'Buy' : 'Sell';
+    const badgeClass = t.transaction_type === 'Bond Buy' ? 'badge-buy' : 'badge-sell';
     return `
     <tr>
       <td>${date}</td>
       <td><strong>${t.stock}</strong></td>
-      <td>${t.buy_price || t.price || 0}%</td>
+      <td><span class="${badgeClass}">${txLabel}</span></td>
+      <td>${t.price || 0}%</td>
       <td>${formatRp(t.qty_lot)}</td>
       <td><button class="btn btn-danger btn-sm" onclick="deleteBondTransaction('${t.id}')">Hapus</button></td>
     </tr>`;
@@ -829,6 +840,7 @@ async function submitBondTransaction() {
 
   const bondDate = document.getElementById('bondDate').value;
   const bondName = document.getElementById('bondName').value.trim();
+  const bondType = document.getElementById('bondType').value;
   const bondPrice = parseFloat(document.getElementById('bondPrice').value) || 0;
   const bondNominal = parseFloat(document.getElementById('bondNominal').value) || 0;
 
@@ -843,7 +855,7 @@ async function submitBondTransaction() {
       customer_id: selectedCustomerId,
       client_id: clientIdText,
       stock: bondName,
-      transaction_type: 'Bond',
+      transaction_type: bondType,
       qty_lot: bondNominal,
       price: bondPrice,
       buy_fee: 0,
@@ -853,9 +865,13 @@ async function submitBondTransaction() {
 
   if (error) { alert('Gagal menyimpan: ' + error.message); return; }
 
-  // Update cash balance (bond buy mengurangi cash)
+  // Update cash balance: Buy mengurangi, Sell menambah
   let cashBalance = parseFloat(document.getElementById('cashBalanceInput').value) || 0;
-  cashBalance -= bondNominal;
+  if (bondType === 'Bond Buy') {
+    cashBalance -= bondNominal;
+  } else {
+    cashBalance += bondNominal;
+  }
   document.getElementById('cashBalanceInput').value = cashBalance;
   document.getElementById('cashBalanceDisplay').textContent = formatRp(cashBalance);
   await window._supabase.from('customer_portfolio').update({ cash_balance: cashBalance }).eq('customer_id', selectedCustomerId);
