@@ -30,64 +30,82 @@
     @keyframes fadeUp { from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)} }
 
     .page-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:28px; flex-wrap:wrap; gap:16px; animation:fadeUp .4s ease both; }
-    .page-title { font-size:2rem; font-weight:900; color:var(--navy); }
-    .page-subtitle { font-size:.88rem; color:var(--gray); margin-top:4px; }
-    .title-underline { width:48px; height:3px; background:linear-gradient(90deg,var(--gold),var(--gold-light)); border-radius:2px; margin-top:8px; }
+    .page-title { font-size:1.8rem; font-weight:800; color:var(--navy); }
+    .page-subtitle { font-size:.84rem; color:var(--gray); margin-top:4px; }
+    .title-underline { width:40px; height:3px; background:linear-gradient(90deg,var(--gold),var(--gold-light)); border-radius:2px; margin-top:8px; }
 
-    .btn { display:inline-flex; align-items:center; gap:7px; padding:10px 18px; border-radius:10px; font-family:'Inter',sans-serif; font-size:.85rem; font-weight:600; cursor:pointer; border:none; transition:all .2s; }
-    .btn-primary { background:linear-gradient(135deg,var(--gold),#e8931a); color:#fff; box-shadow:0 4px 14px rgba(245,166,35,.35); }
-    .btn-primary:hover { transform:translateY(-2px); box-shadow:0 8px 22px rgba(245,166,35,.45); }
+    .btn { display:inline-flex; align-items:center; gap:6px; padding:9px 16px; border-radius:8px; font-family:'Inter',sans-serif; font-size:.82rem; font-weight:600; cursor:pointer; border:none; transition:all .2s; }
+    .btn-primary { background:linear-gradient(135deg,var(--gold),#e8931a); color:#fff; box-shadow:0 3px 10px rgba(245,166,35,.3); }
+    .btn-primary:hover { transform:translateY(-1px); box-shadow:0 6px 18px rgba(245,166,35,.4); }
     .btn-outline { background:#fff; color:var(--navy); border:1.5px solid var(--border); }
     .btn-outline:hover { border-color:var(--gold); color:var(--gold); }
-    .btn-danger { background:linear-gradient(135deg,var(--red),#c0392b); color:#fff; }
-    .btn-sm { padding:7px 14px; font-size:.78rem; }
+    .btn-danger { background:#fff; color:var(--red); border:1.5px solid #fdd; }
+    .btn-danger:hover { background:#fff5f5; border-color:var(--red); }
+    .btn-sm { padding:6px 12px; font-size:.75rem; }
 
-    /* Client selector */
-    .selector-bar { background:#fff; border-radius:14px; padding:18px 22px; display:flex; gap:14px; align-items:center; flex-wrap:wrap; margin-bottom:24px; box-shadow:0 2px 10px rgba(0,0,0,.05); animation:fadeUp .4s .05s ease both; }
-    .selector-bar label { font-size:.82rem; font-weight:600; color:var(--navy); }
-    .selector-bar select { padding:10px 14px; border:1.5px solid var(--border); border-radius:10px; font-family:'Inter',sans-serif; font-size:.875rem; outline:none; background:#fff; cursor:pointer; min-width:260px; }
-    .selector-bar select:focus { border-color:var(--gold); }
-    .client-info { font-size:.85rem; color:var(--gray); margin-left:8px; }
-    .client-info strong { color:var(--navy); }
+    /* Client selector with search */
+    .selector-bar { background:#fff; border-radius:12px; padding:16px 20px; display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:22px; box-shadow:0 1px 6px rgba(0,0,0,.04); animation:fadeUp .4s .05s ease both; }
+    .selector-bar label { font-size:.78rem; font-weight:600; color:var(--navy); white-space:nowrap; }
+    .client-search-wrap { position:relative; flex:1; min-width:280px; }
+    .client-search-wrap input { width:100%; padding:10px 14px; border:1.5px solid var(--border); border-radius:8px; font-family:'Inter',sans-serif; font-size:.85rem; outline:none; transition:border .2s; }
+    .client-search-wrap input:focus { border-color:var(--gold); }
+    .client-dropdown { position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--border); border-top:none; border-radius:0 0 8px 8px; max-height:220px; overflow-y:auto; z-index:50; display:none; box-shadow:0 6px 20px rgba(0,0,0,.1); }
+    .client-dropdown.open { display:block; }
+    .client-dropdown-item { padding:10px 14px; font-size:.84rem; cursor:pointer; transition:background .1s; border-bottom:1px solid #f5f5f5; }
+    .client-dropdown-item:last-child { border-bottom:none; }
+    .client-dropdown-item:hover { background:#fffbf3; }
+    .client-dropdown-item .cid { font-weight:600; color:var(--navy); }
+    .client-dropdown-item .cname { color:var(--gray); margin-left:6px; }
+    .client-info { font-size:.82rem; color:var(--gray); }
+    .client-info strong { color:var(--navy); font-weight:600; }
 
-    /* Container sections */
-    .section-card { background:#fff; border-radius:16px; box-shadow:0 2px 12px rgba(0,0,0,.06); overflow:hidden; margin-bottom:28px; animation:fadeUp .4s .1s ease both; }
-    .section-header { padding:18px 22px; border-bottom:1px solid #f0f0f5; display:flex; align-items:center; justify-content:space-between; }
-    .section-title { font-size:1.05rem; font-weight:700; color:var(--navy); }
+    /* Sections */
+    .section-card { background:#fff; border-radius:12px; box-shadow:0 1px 6px rgba(0,0,0,.04); overflow:hidden; margin-bottom:24px; animation:fadeUp .4s .1s ease both; }
+    .section-header { padding:16px 20px; border-bottom:1px solid #f0f0f5; display:flex; align-items:center; justify-content:space-between; }
+    .section-title { font-size:.95rem; font-weight:700; color:var(--navy); }
 
     /* Table */
     .table-wrap { overflow-x:auto; }
-    table { width:100%; border-collapse:collapse; font-size:.855rem; }
-    thead { background:linear-gradient(135deg,var(--navy),var(--purple)); }
-    thead th { padding:13px 14px; text-align:left; font-size:.7rem; font-weight:700; color:rgba(255,255,255,.8); text-transform:uppercase; letter-spacing:1px; white-space:nowrap; }
-    tbody tr { border-bottom:1px solid #f5f5fa; transition:background .12s; }
+    table { width:100%; border-collapse:collapse; font-size:.83rem; }
+    thead { background:#fafafa; }
+    thead th { padding:12px 14px; text-align:left; font-size:.68rem; font-weight:700; color:var(--gray); text-transform:uppercase; letter-spacing:.8px; white-space:nowrap; border-bottom:2px solid #f0f0f5; }
+    tbody tr { border-bottom:1px solid #f8f8fb; transition:background .1s; }
     tbody tr:last-child { border-bottom:none; }
-    tbody tr:hover { background:#fffbf3; }
-    tbody td { padding:12px 14px; vertical-align:middle; }
-    .empty-state { text-align:center; padding:40px 20px; color:#bbb; font-size:.9rem; }
+    tbody tr:hover { background:#fafafa; }
+    tbody td { padding:11px 14px; vertical-align:middle; }
+    .empty-state { text-align:center; padding:36px 20px; color:#ccc; font-size:.85rem; }
 
-    /* Summary row */
-    .summary-row { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; padding:16px 22px; border-top:1px solid #f0f0f5; background:#fafafa; }
-    .summary-item label { font-size:.7rem; color:var(--gray); text-transform:uppercase; letter-spacing:.5px; display:block; margin-bottom:4px; }
-    .summary-item .val { font-size:1.1rem; font-weight:700; color:var(--navy); }
+    /* Summary */
+    .summary-row { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; padding:16px 20px; border-top:1px solid #f0f0f5; background:#fafbfc; }
+    .summary-item label { font-size:.68rem; color:var(--gray); text-transform:uppercase; letter-spacing:.5px; display:block; margin-bottom:3px; }
+    .summary-item .val { font-size:1rem; font-weight:700; color:var(--navy); }
+    .summary-item input { margin-top:5px; padding:7px 10px; border:1.5px solid var(--border); border-radius:6px; font-size:.82rem; width:100%; outline:none; font-family:'Inter',sans-serif; transition:border .2s; }
+    .summary-item input:focus { border-color:var(--gold); }
 
     /* Form */
-    .form-row { display:grid; grid-template-columns:repeat(auto-fit, minmax(160px,1fr)); gap:12px; padding:16px 22px; }
-    .form-group { display:flex; flex-direction:column; gap:4px; }
-    .form-group label { font-size:.72rem; font-weight:600; color:var(--gray); text-transform:uppercase; letter-spacing:.5px; }
-    .form-group input, .form-group select { padding:9px 12px; border:1.5px solid var(--border); border-radius:8px; font-family:'Inter',sans-serif; font-size:.85rem; outline:none; transition:border .2s; }
+    .form-row { display:grid; grid-template-columns:repeat(auto-fit, minmax(140px,1fr)); gap:10px; padding:14px 20px; }
+    .form-group { display:flex; flex-direction:column; gap:3px; }
+    .form-group label { font-size:.68rem; font-weight:600; color:var(--gray); text-transform:uppercase; letter-spacing:.5px; }
+    .form-group input, .form-group select { padding:8px 10px; border:1.5px solid var(--border); border-radius:6px; font-family:'Inter',sans-serif; font-size:.82rem; outline:none; transition:border .2s; }
     .form-group input:focus, .form-group select:focus { border-color:var(--gold); }
     .form-group input[readonly] { background:#f9f9f9; color:var(--gray); }
-    .form-actions { padding:12px 22px; border-top:1px solid #f0f0f5; display:flex; gap:10px; justify-content:flex-end; }
+    .form-actions { padding:10px 20px; border-top:1px solid #f0f0f5; display:flex; gap:10px; justify-content:flex-end; }
 
     /* Badge */
-    .badge-buy { background:#e8f5e9; color:#2e7d32; display:inline-block; padding:3px 10px; border-radius:20px; font-size:.7rem; font-weight:700; }
-    .badge-sell { background:#fce4ec; color:#c62828; display:inline-block; padding:3px 10px; border-radius:20px; font-size:.7rem; font-weight:700; }
+    .badge-buy { background:#e8f5e9; color:#2e7d32; display:inline-block; padding:2px 8px; border-radius:4px; font-size:.7rem; font-weight:600; }
+    .badge-sell { background:#fce4ec; color:#c62828; display:inline-block; padding:2px 8px; border-radius:4px; font-size:.7rem; font-weight:600; }
+
+    /* Pagination */
+    .table-footer { padding:12px 20px; display:flex; align-items:center; justify-content:space-between; border-top:1px solid #f0f0f5; font-size:.78rem; color:var(--gray); }
+    .pagination { display:flex; gap:3px; }
+    .pg-btn { width:28px; height:28px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:.75rem; cursor:pointer; border:1.5px solid var(--border); background:#fff; color:var(--text); transition:all .12s; }
+    .pg-btn.active { background:var(--gold); border-color:var(--gold); color:#fff; font-weight:700; }
+    .pg-btn:hover:not(.active) { border-color:var(--gold); }
 
     /* Responsive */
     @media(max-width:768px) {
       .selector-bar { flex-direction:column; align-items:stretch; }
-      .selector-bar select { min-width:100%; }
+      .client-search-wrap { min-width:100%; }
       .summary-row { grid-template-columns:1fr; }
       .form-row { grid-template-columns:1fr 1fr; }
     }
@@ -109,20 +127,21 @@
     </div>
   </div>
 
-  <!-- Client Selector -->
+  <!-- Client Selector with search/filter -->
   <div class="selector-bar">
-    <label>Client ID:</label>
-    <select id="clientSelect" onchange="loadPortfolio()">
-      <option value="">— Pilih Client —</option>
-    </select>
+    <label>Client:</label>
+    <div class="client-search-wrap">
+      <input type="text" id="clientSearchInput" placeholder="Ketik Client ID atau nama..." autocomplete="off" onfocus="openClientDropdown()" oninput="filterClients()"/>
+      <div class="client-dropdown" id="clientDropdown"></div>
+    </div>
     <span class="client-info" id="clientInfo"></span>
   </div>
 
-  <!-- ═══ CONTAINER 1: Tabel Portofolio ═══ -->
+  <!-- CONTAINER 1: Tabel Portofolio -->
   <div class="section-card">
     <div class="section-header">
-      <div class="section-title">📊 Portofolio</div>
-      <button class="btn btn-primary btn-sm" onclick="savePortfolio()">💾 Save</button>
+      <div class="section-title">Portofolio</div>
+      <button class="btn btn-primary btn-sm" onclick="savePortfolio()">Save</button>
     </div>
     <div class="table-wrap">
       <table>
@@ -136,40 +155,38 @@
           </tr>
         </thead>
         <tbody id="portfolioBody">
-          <tr><td colspan="5" class="empty-state">Pilih Client ID untuk melihat portofolio</td></tr>
+          <tr><td colspan="5" class="empty-state">Pilih Client untuk melihat portofolio</td></tr>
         </tbody>
       </table>
     </div>
-    <!-- Summary: Cash Balance, Buy Fee, Sell Fee -->
     <div class="summary-row">
       <div class="summary-item">
         <label>Cash Balance</label>
         <div class="val" id="cashBalanceDisplay">Rp 0</div>
-        <input type="number" id="cashBalanceInput" placeholder="0" style="margin-top:6px; padding:7px 10px; border:1.5px solid var(--border); border-radius:8px; font-size:.85rem; width:100%; outline:none;" oninput="this.style.borderColor='var(--gold)'"/>
+        <input type="number" id="cashBalanceInput" placeholder="0"/>
       </div>
       <div class="summary-item">
         <label>Buy Fee (%)</label>
         <div class="val" id="buyFeeDisplay">0%</div>
-        <input type="number" step="0.01" id="buyFeeInput" placeholder="0.15" style="margin-top:6px; padding:7px 10px; border:1.5px solid var(--border); border-radius:8px; font-size:.85rem; width:100%; outline:none;" oninput="this.style.borderColor='var(--gold)'"/>
+        <input type="number" step="0.01" id="buyFeeInput" placeholder="0.15"/>
       </div>
       <div class="summary-item">
         <label>Sell Fee (%)</label>
         <div class="val" id="sellFeeDisplay">0%</div>
-        <input type="number" step="0.01" id="sellFeeInput" placeholder="0.25" style="margin-top:6px; padding:7px 10px; border:1.5px solid var(--border); border-radius:8px; font-size:.85rem; width:100%; outline:none;" oninput="this.style.borderColor='var(--gold)'"/>
+        <input type="number" step="0.01" id="sellFeeInput" placeholder="0.25"/>
       </div>
     </div>
   </div>
 
-  <!-- ═══ CONTAINER 2: Input Transaksi ═══ -->
+  <!-- CONTAINER 2: Input Transaksi -->
   <div class="section-card">
     <div class="section-header">
-      <div class="section-title">📝 Input Transaksi</div>
+      <div class="section-title">Input Transaksi</div>
     </div>
-    <!-- Form input transaksi -->
     <div class="form-row">
       <div class="form-group">
         <label>Stock</label>
-        <input type="text" id="txStock" placeholder="e.g. BBCA" style="text-transform:uppercase"/>
+        <input type="text" id="txStock" placeholder="BBCA" style="text-transform:uppercase"/>
       </div>
       <div class="form-group">
         <label>Transaksi</label>
@@ -224,6 +241,10 @@
         </tbody>
       </table>
     </div>
+    <div class="table-footer">
+      <span id="txPageInfo">0 transaksi</span>
+      <div class="pagination" id="txPagination"></div>
+    </div>
   </div>
 
 </div><!-- end page-container -->
@@ -233,12 +254,19 @@ let customers = [];
 let portfolioData = [];
 let transactionData = [];
 let selectedCustomerId = null;
+let txPage = 1;
+const TX_PER_PAGE = 10;
 
 async function initPage() {
   await loadClients();
+  // Close dropdown on outside click
+  document.addEventListener('click', (e) => {
+    const wrap = document.querySelector('.client-search-wrap');
+    if (wrap && !wrap.contains(e.target)) closeClientDropdown();
+  });
 }
 
-// ══════ LOAD CLIENTS ══════
+// ══════ CLIENT SEARCH/FILTER ══════
 async function loadClients() {
   const { data, error } = await window._supabase
     .from('customers')
@@ -246,29 +274,58 @@ async function loadClients() {
     .order('client_id');
   if (error) { console.error(error); return; }
   customers = data || [];
-  const sel = document.getElementById('clientSelect');
-  sel.innerHTML = '<option value="">— Pilih Client —</option>';
-  customers.forEach(c => {
-    sel.innerHTML += `<option value="${c.id}" data-name="${c.name}">${c.client_id} — ${c.name}</option>`;
-  });
+}
+
+function openClientDropdown() {
+  filterClients();
+  document.getElementById('clientDropdown').classList.add('open');
+}
+
+function closeClientDropdown() {
+  document.getElementById('clientDropdown').classList.remove('open');
+}
+
+function filterClients() {
+  const q = document.getElementById('clientSearchInput').value.toLowerCase().trim();
+  const dd = document.getElementById('clientDropdown');
+  const filtered = customers.filter(c => {
+    const cid = (c.client_id || '').toLowerCase();
+    const name = (c.name || '').toLowerCase();
+    return cid.includes(q) || name.includes(q);
+  }).slice(0, 30);
+
+  if (filtered.length === 0) {
+    dd.innerHTML = '<div class="client-dropdown-item" style="color:#bbb">Tidak ditemukan</div>';
+  } else {
+    dd.innerHTML = filtered.map(c =>
+      `<div class="client-dropdown-item" onclick="selectClient('${c.id}')">
+        <span class="cid">${c.client_id || '-'}</span>
+        <span class="cname">${c.name || ''}</span>
+      </div>`
+    ).join('');
+  }
+  dd.classList.add('open');
+}
+
+function selectClient(id) {
+  const cust = customers.find(c => c.id === id);
+  if (!cust) return;
+  selectedCustomerId = id;
+  document.getElementById('clientSearchInput').value = `${cust.client_id} — ${cust.name}`;
+  document.getElementById('clientInfo').innerHTML = `<strong>${cust.name}</strong>`;
+  closeClientDropdown();
+  loadPortfolio();
 }
 
 // ══════ LOAD PORTFOLIO ══════
 async function loadPortfolio() {
-  const sel = document.getElementById('clientSelect');
-  selectedCustomerId = sel.value;
-  const opt = sel.options[sel.selectedIndex];
-  const infoEl = document.getElementById('clientInfo');
-
   if (!selectedCustomerId) {
-    infoEl.innerHTML = '';
-    document.getElementById('portfolioBody').innerHTML = '<tr><td colspan="5" class="empty-state">Pilih Client ID untuk melihat portofolio</td></tr>';
+    document.getElementById('clientInfo').innerHTML = '';
+    document.getElementById('portfolioBody').innerHTML = '<tr><td colspan="5" class="empty-state">Pilih Client untuk melihat portofolio</td></tr>';
     document.getElementById('transactionBody').innerHTML = '<tr><td colspan="9" class="empty-state">Belum ada transaksi</td></tr>';
     resetSummary();
     return;
   }
-
-  infoEl.innerHTML = `<strong>${opt.dataset.name || ''}</strong>`;
 
   // Load portfolio
   const { data: porto, error: e1 } = await window._supabase
@@ -288,9 +345,10 @@ async function loadPortfolio() {
     .order('created_at', { ascending: false });
   if (e2) console.error(e2);
   transactionData = txs || [];
+  txPage = 1;
   renderTransactions();
 
-  // Load summary (use first row's fees/balance or defaults)
+  // Load summary
   if (portfolioData.length > 0) {
     const first = portfolioData[0];
     document.getElementById('cashBalanceInput').value = first.cash_balance || 0;
@@ -326,19 +384,31 @@ function renderPortfolio() {
       <td>${formatNum(p.qty_lot)}</td>
       <td>${formatRp(p.buy_price)}</td>
       <td>${formatRp(p.qty_lot * 100 * p.buy_price)}</td>
-      <td><button class="btn btn-danger btn-sm" onclick="deletePortfolioRow('${p.id}')">🗑️</button></td>
+      <td><button class="btn btn-danger btn-sm" onclick="deletePortfolioRow('${p.id}')">Hapus</button></td>
     </tr>
   `).join('');
 }
 
-// ══════ RENDER TRANSACTIONS TABLE ══════
+// ══════ RENDER TRANSACTIONS TABLE (PAGINATED) ══════
 function renderTransactions() {
   const tbody = document.getElementById('transactionBody');
-  if (transactionData.length === 0) {
+  const total = transactionData.length;
+  const totalPages = Math.ceil(total / TX_PER_PAGE) || 1;
+
+  if (txPage > totalPages) txPage = totalPages;
+
+  document.getElementById('txPageInfo').textContent = `${total} transaksi`;
+
+  if (total === 0) {
     tbody.innerHTML = '<tr><td colspan="9" class="empty-state">Belum ada transaksi</td></tr>';
+    document.getElementById('txPagination').innerHTML = '';
     return;
   }
-  tbody.innerHTML = transactionData.map(t => {
+
+  const start = (txPage - 1) * TX_PER_PAGE;
+  const pageData = transactionData.slice(start, start + TX_PER_PAGE);
+
+  tbody.innerHTML = pageData.map(t => {
     const nominal = t.qty_lot * 100 * t.price;
     const badgeClass = t.transaction_type === 'Buy' ? 'badge-buy' : 'badge-sell';
     const date = new Date(t.created_at).toLocaleDateString('id-ID', { day:'2-digit', month:'short', year:'numeric' });
@@ -352,9 +422,21 @@ function renderTransactions() {
       <td>${formatRp(nominal)}</td>
       <td>${formatRp(t.buy_fee)}</td>
       <td>${formatRp(t.sell_fee)}</td>
-      <td><button class="btn btn-danger btn-sm" onclick="deleteTransaction('${t.id}')">🗑️</button></td>
+      <td><button class="btn btn-danger btn-sm" onclick="deleteTransaction('${t.id}')">Hapus</button></td>
     </tr>`;
   }).join('');
+
+  // Pagination buttons
+  let pgHtml = '';
+  for (let i = 1; i <= totalPages; i++) {
+    pgHtml += `<div class="pg-btn ${i === txPage ? 'active' : ''}" onclick="goTxPage(${i})">${i}</div>`;
+  }
+  document.getElementById('txPagination').innerHTML = pgHtml;
+}
+
+function goTxPage(p) {
+  txPage = p;
+  renderTransactions();
 }
 
 // ══════ CALC TRANSACTION NOMINAL & FEES ══════
@@ -377,7 +459,6 @@ function calcTxNominal() {
   }
 }
 
-// Recalc when type changes
 document.addEventListener('DOMContentLoaded', () => {
   const txTypeEl = document.getElementById('txType');
   if (txTypeEl) txTypeEl.addEventListener('change', calcTxNominal);
@@ -385,7 +466,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // ══════ SUBMIT TRANSACTION ══════
 async function submitTransaction() {
-  if (!selectedCustomerId) { alert('Pilih Client ID terlebih dahulu'); return; }
+  if (!selectedCustomerId) { alert('Pilih Client terlebih dahulu'); return; }
 
   const stock = document.getElementById('txStock').value.trim().toUpperCase();
   const txType = document.getElementById('txType').value;
@@ -400,8 +481,6 @@ async function submitTransaction() {
   const buyFee = txType === 'Buy' ? nominal * buyFeePercent / 100 : 0;
   const sellFee = txType === 'Sell' ? nominal * sellFeePercent / 100 : 0;
 
-  // Get client_id text
-  const sel = document.getElementById('clientSelect');
   const cust = customers.find(c => c.id === selectedCustomerId);
   const clientIdText = cust ? cust.client_id : '';
 
@@ -420,7 +499,6 @@ async function submitTransaction() {
 
   if (error) { alert('Gagal menyimpan: ' + error.message); return; }
 
-  // Clear form
   document.getElementById('txStock').value = '';
   document.getElementById('txQty').value = '';
   document.getElementById('txPrice').value = '';
@@ -428,19 +506,17 @@ async function submitTransaction() {
   document.getElementById('txBuyFee').value = '';
   document.getElementById('txSellFee').value = '';
 
-  // Reload
   loadPortfolio();
 }
 
-// ══════ SAVE PORTFOLIO (Cash Balance, Buy Fee, Sell Fee) ══════
+// ══════ SAVE PORTFOLIO ══════
 async function savePortfolio() {
-  if (!selectedCustomerId) { alert('Pilih Client ID terlebih dahulu'); return; }
+  if (!selectedCustomerId) { alert('Pilih Client terlebih dahulu'); return; }
 
   const cashBalance = parseFloat(document.getElementById('cashBalanceInput').value) || 0;
   const buyFee = parseFloat(document.getElementById('buyFeeInput').value) || 0;
   const sellFee = parseFloat(document.getElementById('sellFeeInput').value) || 0;
 
-  // Update semua row portofolio milik customer ini
   const { error } = await window._supabase
     .from('customer_portfolio')
     .update({ cash_balance: cashBalance, buy_fee: buyFee, sell_fee: sellFee })
@@ -448,7 +524,6 @@ async function savePortfolio() {
 
   if (error) { alert('Gagal menyimpan: ' + error.message); return; }
 
-  // Jika belum ada row, insert satu row placeholder
   if (portfolioData.length === 0) {
     const cust = customers.find(c => c.id === selectedCustomerId);
     await window._supabase.from('customer_portfolio').insert({
@@ -463,11 +538,10 @@ async function savePortfolio() {
     });
   }
 
-  // Update display
   document.getElementById('cashBalanceDisplay').textContent = formatRp(cashBalance);
   document.getElementById('buyFeeDisplay').textContent = buyFee + '%';
   document.getElementById('sellFeeDisplay').textContent = sellFee + '%';
-  alert('✅ Portofolio berhasil disimpan');
+  alert('Portofolio berhasil disimpan');
   loadPortfolio();
 }
 
