@@ -51,7 +51,7 @@ CREATE TABLE IF NOT EXISTS public.portfolio_transactions (
   nominal         numeric NOT NULL DEFAULT 0,
   buy_fee         numeric NOT NULL DEFAULT 0,
   sell_fee        numeric NOT NULL DEFAULT 0,
-  created_at      timestamptz DEFAULT now()
+  created_at      timestamptz DEFAULT NULL
 );
 
 -- Index

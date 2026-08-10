@@ -363,11 +363,6 @@ const TX_PER_PAGE = 10;
 
 async function initPage() {
   await loadClients();
-  // Set default dates to today
-  const today = new Date().toISOString().split('T')[0];
-  document.getElementById('txDate').value = today;
-  document.getElementById('bondDate').value = today;
-  document.getElementById('otherDate').value = today;
   // Close dropdown on outside click
   document.addEventListener('click', (e) => {
     const wrap = document.querySelector('.client-search-wrap');
@@ -529,7 +524,7 @@ function renderTransactions() {
     const nominal = t.qty_lot * 100 * t.price;
     const fee = (t.buy_fee || 0) + (t.sell_fee || 0);
     const badgeClass = t.transaction_type === 'Buy' ? 'badge-buy' : 'badge-sell';
-    const date = new Date(t.created_at).toLocaleDateString('id-ID', { day:'2-digit', month:'short', year:'numeric' });
+    const date = t.created_at ? new Date(t.created_at).toLocaleDateString('id-ID', { day:'2-digit', month:'short', year:'numeric' }) : '-';
     return `
     <tr>
       <td>${date}</td>
@@ -608,6 +603,7 @@ async function submitTransaction() {
 
   // Insert transaksi (fee disimpan di buy_fee untuk Buy, sell_fee untuk Sell)
   const txDate = document.getElementById('txDate').value;
+  const hasDate = !!txDate;
   const { error } = await window._supabase
     .from('portfolio_transactions')
     .insert({
@@ -619,7 +615,7 @@ async function submitTransaction() {
       price,
       buy_fee: txType === 'Buy' ? fee : 0,
       sell_fee: txType === 'Sell' ? fee : 0,
-      created_at: txDate ? new Date(txDate).toISOString() : new Date().toISOString()
+      created_at: hasDate ? new Date(txDate).toISOString() : null
     });
 
   if (error) { alert('Gagal menyimpan: ' + error.message); return; }
@@ -627,28 +623,28 @@ async function submitTransaction() {
   // Update portofolio (qty & avg price)
   await updatePortfolioFromTransaction(stock, txType, qty, price, clientIdText);
 
-  // Update cash balance: Buy mengurangi, Sell menambah
-  let cashBalance = parseFloat(document.getElementById('cashBalanceInput').value) || 0;
-  if (txType === 'Buy') {
-    cashBalance -= (nominal + fee);
-  } else {
-    cashBalance += (nominal - fee);
+  // Update cash balance hanya jika ada tanggal
+  if (hasDate) {
+    let cashBalance = parseFloat(document.getElementById('cashBalanceInput').value) || 0;
+    if (txType === 'Buy') {
+      cashBalance -= (nominal + fee);
+    } else {
+      cashBalance += (nominal - fee);
+    }
+    document.getElementById('cashBalanceInput').value = cashBalance;
+    document.getElementById('cashBalanceDisplay').textContent = formatRp(cashBalance);
+    await window._supabase
+      .from('customer_portfolio')
+      .update({ cash_balance: cashBalance })
+      .eq('customer_id', selectedCustomerId);
   }
-  // Save new cash balance
-  document.getElementById('cashBalanceInput').value = cashBalance;
-  document.getElementById('cashBalanceDisplay').textContent = formatRp(cashBalance);
-  await window._supabase
-    .from('customer_portfolio')
-    .update({ cash_balance: cashBalance })
-    .eq('customer_id', selectedCustomerId);
 
   document.getElementById('txStock').value = '';
   document.getElementById('txQty').value = '';
   document.getElementById('txPrice').value = '';
   document.getElementById('txNominal').value = '';
   document.getElementById('txFee').value = '';
-  // Reset date to today
-  document.getElementById('txDate').value = new Date().toISOString().split('T')[0];
+  document.getElementById('txDate').value = '';
 
   loadPortfolio();
 }
@@ -812,7 +808,7 @@ function renderBondTransactions() {
   const pageData = bondTransactionData.slice(start, start + TX_PER_PAGE);
 
   tbody.innerHTML = pageData.map(t => {
-    const date = new Date(t.created_at).toLocaleDateString('id-ID', { day:'2-digit', month:'short', year:'numeric' });
+    const date = t.created_at ? new Date(t.created_at).toLocaleDateString('id-ID', { day:'2-digit', month:'short', year:'numeric' }) : '-';
     const txLabel = t.transaction_type === 'Bond Buy' ? 'Buy' : 'Sell';
     const badgeClass = t.transaction_type === 'Bond Buy' ? 'badge-buy' : 'badge-sell';
     return `
@@ -860,26 +856,28 @@ async function submitBondTransaction() {
       price: bondPrice,
       buy_fee: 0,
       sell_fee: 0,
-      created_at: bondDate ? new Date(bondDate).toISOString() : new Date().toISOString()
+      created_at: bondDate ? new Date(bondDate).toISOString() : null
     });
 
   if (error) { alert('Gagal menyimpan: ' + error.message); return; }
 
-  // Update cash balance: Buy mengurangi, Sell menambah
-  let cashBalance = parseFloat(document.getElementById('cashBalanceInput').value) || 0;
-  if (bondType === 'Bond Buy') {
-    cashBalance -= bondNominal;
-  } else {
-    cashBalance += bondNominal;
+  // Update cash balance hanya jika ada tanggal
+  if (bondDate) {
+    let cashBalance = parseFloat(document.getElementById('cashBalanceInput').value) || 0;
+    if (bondType === 'Bond Buy') {
+      cashBalance -= bondNominal;
+    } else {
+      cashBalance += bondNominal;
+    }
+    document.getElementById('cashBalanceInput').value = cashBalance;
+    document.getElementById('cashBalanceDisplay').textContent = formatRp(cashBalance);
+    await window._supabase.from('customer_portfolio').update({ cash_balance: cashBalance }).eq('customer_id', selectedCustomerId);
   }
-  document.getElementById('cashBalanceInput').value = cashBalance;
-  document.getElementById('cashBalanceDisplay').textContent = formatRp(cashBalance);
-  await window._supabase.from('customer_portfolio').update({ cash_balance: cashBalance }).eq('customer_id', selectedCustomerId);
 
   document.getElementById('bondName').value = '';
   document.getElementById('bondPrice').value = '';
   document.getElementById('bondNominal').value = '';
-  document.getElementById('bondDate').value = new Date().toISOString().split('T')[0];
+  document.getElementById('bondDate').value = '';
 
   loadBondTransactions();
 }
@@ -919,7 +917,7 @@ function renderOtherTransactions() {
   const pageData = otherTransactionData.slice(start, start + TX_PER_PAGE);
 
   tbody.innerHTML = pageData.map(t => {
-    const date = new Date(t.created_at).toLocaleDateString('id-ID', { day:'2-digit', month:'short', year:'numeric' });
+    const date = t.created_at ? new Date(t.created_at).toLocaleDateString('id-ID', { day:'2-digit', month:'short', year:'numeric' }) : '-';
     const badgeClass = t.transaction_type === 'Income' ? 'badge-buy' : 'badge-sell';
     return `
     <tr>
@@ -964,25 +962,27 @@ async function submitOtherTransaction() {
       price: nominal,
       buy_fee: 0,
       sell_fee: 0,
-      created_at: otherDate ? new Date(otherDate).toISOString() : new Date().toISOString()
+      created_at: otherDate ? new Date(otherDate).toISOString() : null
     });
 
   if (error) { alert('Gagal menyimpan: ' + error.message); return; }
 
-  // Update cash balance
-  let cashBalance = parseFloat(document.getElementById('cashBalanceInput').value) || 0;
-  if (otherType === 'Income') {
-    cashBalance += nominal;
-  } else {
-    cashBalance -= nominal;
+  // Update cash balance hanya jika ada tanggal
+  if (otherDate) {
+    let cashBalance = parseFloat(document.getElementById('cashBalanceInput').value) || 0;
+    if (otherType === 'Income') {
+      cashBalance += nominal;
+    } else {
+      cashBalance -= nominal;
+    }
+    document.getElementById('cashBalanceInput').value = cashBalance;
+    document.getElementById('cashBalanceDisplay').textContent = formatRp(cashBalance);
+    await window._supabase.from('customer_portfolio').update({ cash_balance: cashBalance }).eq('customer_id', selectedCustomerId);
   }
-  document.getElementById('cashBalanceInput').value = cashBalance;
-  document.getElementById('cashBalanceDisplay').textContent = formatRp(cashBalance);
-  await window._supabase.from('customer_portfolio').update({ cash_balance: cashBalance }).eq('customer_id', selectedCustomerId);
 
   document.getElementById('otherDesc').value = '';
   document.getElementById('otherNominal').value = '';
-  document.getElementById('otherDate').value = new Date().toISOString().split('T')[0];
+  document.getElementById('otherDate').value = '';
 
   loadOtherTransactions();
 }
