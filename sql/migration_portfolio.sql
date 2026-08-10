@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS public.customer_portfolio (
   stock           text NOT NULL,
   qty_lot         numeric NOT NULL DEFAULT 0,
   buy_price       numeric NOT NULL DEFAULT 0,
-  nominal         numeric GENERATED ALWAYS AS (qty_lot * 100 * buy_price) STORED,
+  nominal         numeric NOT NULL DEFAULT 0,
   cash_balance    numeric NOT NULL DEFAULT 0,
   buy_fee         numeric NOT NULL DEFAULT 0,
   sell_fee        numeric NOT NULL DEFAULT 0,
@@ -48,7 +48,7 @@ CREATE TABLE IF NOT EXISTS public.portfolio_transactions (
   transaction_type text NOT NULL CHECK (transaction_type IN ('Buy', 'Sell')),
   qty_lot         numeric NOT NULL DEFAULT 0,
   price           numeric NOT NULL DEFAULT 0,
-  nominal         numeric GENERATED ALWAYS AS (qty_lot * 100 * price) STORED,
+  nominal         numeric NOT NULL DEFAULT 0,
   buy_fee         numeric NOT NULL DEFAULT 0,
   sell_fee        numeric NOT NULL DEFAULT 0,
   created_at      timestamptz DEFAULT now()

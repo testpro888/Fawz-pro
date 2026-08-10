@@ -149,7 +149,7 @@
           <tr>
             <th>Stock</th>
             <th>Qty (Lot)</th>
-            <th>Buy Price</th>
+            <th>Avg Price</th>
             <th>Nominal</th>
             <th>Aksi</th>
           </tr>
@@ -374,19 +374,22 @@ function resetSummary() {
 // ══════ RENDER PORTFOLIO TABLE ══════
 function renderPortfolio() {
   const tbody = document.getElementById('portfolioBody');
-  if (portfolioData.length === 0) {
+  if (portfolioData.length === 0 || (portfolioData.length === 1 && portfolioData[0].stock === '-')) {
     tbody.innerHTML = '<tr><td colspan="5" class="empty-state">Belum ada data portofolio</td></tr>';
     return;
   }
-  tbody.innerHTML = portfolioData.map(p => `
+  tbody.innerHTML = portfolioData.filter(p => p.stock !== '-').map(p => {
+    const avgPrice = p.buy_price || 0;
+    const nominal = p.qty_lot * 100 * avgPrice;
+    return `
     <tr>
       <td><strong>${p.stock}</strong></td>
       <td>${formatNum(p.qty_lot)}</td>
-      <td>${formatRp(p.buy_price)}</td>
-      <td>${formatRp(p.qty_lot * 100 * p.buy_price)}</td>
+      <td>${formatRp(avgPrice)}</td>
+      <td>${formatRp(nominal)}</td>
       <td><button class="btn btn-danger btn-sm" onclick="deletePortfolioRow('${p.id}')">Hapus</button></td>
-    </tr>
-  `).join('');
+    </tr>`;
+  }).join('');
 }
 
 // ══════ RENDER TRANSACTIONS TABLE (PAGINATED) ══════
@@ -484,6 +487,16 @@ async function submitTransaction() {
   const cust = customers.find(c => c.id === selectedCustomerId);
   const clientIdText = cust ? cust.client_id : '';
 
+  // Validasi Sell: cek apakah ada cukup qty di portofolio
+  if (txType === 'Sell') {
+    const existing = portfolioData.find(p => p.stock === stock);
+    if (!existing || existing.qty_lot < qty) {
+      alert(`Qty tidak cukup. Portofolio ${stock}: ${existing ? existing.qty_lot : 0} lot`);
+      return;
+    }
+  }
+
+  // Insert transaksi
   const { error } = await window._supabase
     .from('portfolio_transactions')
     .insert({
@@ -499,6 +512,9 @@ async function submitTransaction() {
 
   if (error) { alert('Gagal menyimpan: ' + error.message); return; }
 
+  // Update portofolio berdasarkan transaksi
+  await updatePortfolioFromTransaction(stock, txType, qty, price, clientIdText);
+
   document.getElementById('txStock').value = '';
   document.getElementById('txQty').value = '';
   document.getElementById('txPrice').value = '';
@@ -509,6 +525,57 @@ async function submitTransaction() {
   loadPortfolio();
 }
 
+// ══════ UPDATE PORTFOLIO FROM TRANSACTION ══════
+async function updatePortfolioFromTransaction(stock, txType, qty, price, clientIdText) {
+  const cashBalance = parseFloat(document.getElementById('cashBalanceInput').value) || 0;
+  const buyFeeVal = parseFloat(document.getElementById('buyFeeInput').value) || 0;
+  const sellFeeVal = parseFloat(document.getElementById('sellFeeInput').value) || 0;
+
+  // Cari existing portfolio row untuk stock ini
+  const existing = portfolioData.find(p => p.stock === stock);
+
+  if (txType === 'Buy') {
+    if (existing) {
+      // Hitung avg price baru: (oldQty*oldAvg + newQty*newPrice) / (oldQty+newQty)
+      const oldQty = existing.qty_lot;
+      const oldAvg = existing.buy_price;
+      const newTotalQty = oldQty + qty;
+      const newAvg = (oldQty * oldAvg + qty * price) / newTotalQty;
+
+      await window._supabase
+        .from('customer_portfolio')
+        .update({ qty_lot: newTotalQty, buy_price: Math.round(newAvg * 100) / 100 })
+        .eq('id', existing.id);
+    } else {
+      // Insert row baru
+      await window._supabase.from('customer_portfolio').insert({
+        customer_id: selectedCustomerId,
+        client_id: clientIdText,
+        stock,
+        qty_lot: qty,
+        buy_price: price,
+        cash_balance: cashBalance,
+        buy_fee: buyFeeVal,
+        sell_fee: sellFeeVal
+      });
+    }
+  } else {
+    // SELL: kurangi qty
+    if (existing) {
+      const newQty = existing.qty_lot - qty;
+      if (newQty <= 0) {
+        // Hapus row dari portofolio
+        await window._supabase.from('customer_portfolio').delete().eq('id', existing.id);
+      } else {
+        await window._supabase
+          .from('customer_portfolio')
+          .update({ qty_lot: newQty })
+          .eq('id', existing.id);
+      }
+    }
+  }
+}
+
 // ══════ SAVE PORTFOLIO ══════
 async function savePortfolio() {
   if (!selectedCustomerId) { alert('Pilih Client terlebih dahulu'); return; }
@@ -517,16 +584,17 @@ async function savePortfolio() {
   const buyFee = parseFloat(document.getElementById('buyFeeInput').value) || 0;
   const sellFee = parseFloat(document.getElementById('sellFeeInput').value) || 0;
 
-  const { error } = await window._supabase
-    .from('customer_portfolio')
-    .update({ cash_balance: cashBalance, buy_fee: buyFee, sell_fee: sellFee })
-    .eq('customer_id', selectedCustomerId);
-
-  if (error) { alert('Gagal menyimpan: ' + error.message); return; }
-
-  if (portfolioData.length === 0) {
+  // Update semua row portofolio milik customer ini
+  if (portfolioData.length > 0) {
+    const { error } = await window._supabase
+      .from('customer_portfolio')
+      .update({ cash_balance: cashBalance, buy_fee: buyFee, sell_fee: sellFee })
+      .eq('customer_id', selectedCustomerId);
+    if (error) { alert('Gagal menyimpan: ' + error.message); return; }
+  } else {
+    // Jika belum ada row, insert satu row settings
     const cust = customers.find(c => c.id === selectedCustomerId);
-    await window._supabase.from('customer_portfolio').insert({
+    const { error } = await window._supabase.from('customer_portfolio').insert({
       customer_id: selectedCustomerId,
       client_id: cust ? cust.client_id : '',
       stock: '-',
@@ -536,6 +604,7 @@ async function savePortfolio() {
       buy_fee: buyFee,
       sell_fee: sellFee
     });
+    if (error) { alert('Gagal menyimpan: ' + error.message); return; }
   }
 
   document.getElementById('cashBalanceDisplay').textContent = formatRp(cashBalance);
