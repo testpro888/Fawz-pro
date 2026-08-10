@@ -178,12 +178,16 @@
     </div>
   </div>
 
-  <!-- CONTAINER 2: Input Transaksi -->
+  <!-- CONTAINER 2: Input Transaksi (Saham) -->
   <div class="section-card">
     <div class="section-header">
-      <div class="section-title">Input Transaksi</div>
+      <div class="section-title">Input Transaksi (Saham)</div>
     </div>
     <div class="form-row">
+      <div class="form-group">
+        <label>Tanggal</label>
+        <input type="date" id="txDate"/>
+      </div>
       <div class="form-group">
         <label>Stock</label>
         <input type="text" id="txStock" placeholder="BBCA" style="text-transform:uppercase"/>
@@ -215,8 +219,6 @@
     <div class="form-actions">
       <button class="btn btn-primary" onclick="submitTransaction()">+ Tambah Transaksi</button>
     </div>
-
-    <!-- Tabel history transaksi -->
     <div class="table-wrap">
       <table>
         <thead>
@@ -242,6 +244,113 @@
     </div>
   </div>
 
+  <!-- CONTAINER 3: Input Transaksi (Obligasi) -->
+  <div class="section-card">
+    <div class="section-header">
+      <div class="section-title">Input Transaksi (Obligasi)</div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Tanggal</label>
+        <input type="date" id="bondDate"/>
+      </div>
+      <div class="form-group">
+        <label>Nama Bonds</label>
+        <input type="text" id="bondName" placeholder="FR0098"/>
+      </div>
+      <div class="form-group">
+        <label>Transaksi</label>
+        <select id="bondType">
+          <option value="Bond Buy">Buy</option>
+          <option value="Bond Sell">Sell</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Price (%)</label>
+        <input type="number" id="bondPrice" placeholder="100" step="0.01" min="0"/>
+      </div>
+      <div class="form-group">
+        <label>Nominal</label>
+        <input type="number" id="bondNominal" placeholder="0" min="0"/>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-primary" onclick="submitBondTransaction()">+ Tambah Transaksi</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Tanggal</th>
+            <th>Nama Bonds</th>
+            <th>Transaksi</th>
+            <th>Price</th>
+            <th>Nominal</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="bondTransactionBody">
+          <tr><td colspan="6" class="empty-state">Belum ada transaksi obligasi</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="table-footer">
+      <span id="bondPageInfo">0 transaksi</span>
+      <div class="pagination" id="bondPagination"></div>
+    </div>
+  </div>
+
+  <!-- CONTAINER 4: Input Transaksi (Lain-Lain) -->
+  <div class="section-card">
+    <div class="section-header">
+      <div class="section-title">Input Transaksi (Lain-Lain)</div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Tanggal</label>
+        <input type="date" id="otherDate"/>
+      </div>
+      <div class="form-group">
+        <label>Keterangan</label>
+        <input type="text" id="otherDesc" placeholder="Dividen, Transfer, dll"/>
+      </div>
+      <div class="form-group">
+        <label>Transaksi</label>
+        <select id="otherType">
+          <option value="Income">Income</option>
+          <option value="Outcome">Outcome</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Nominal</label>
+        <input type="number" id="otherNominal" placeholder="0" min="0"/>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-primary" onclick="submitOtherTransaction()">+ Tambah Transaksi</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Tanggal</th>
+            <th>Keterangan</th>
+            <th>Transaksi</th>
+            <th>Nominal</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="otherTransactionBody">
+          <tr><td colspan="5" class="empty-state">Belum ada transaksi lain-lain</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="table-footer">
+      <span id="otherPageInfo">0 transaksi</span>
+      <div class="pagination" id="otherPagination"></div>
+    </div>
+  </div>
+
 </div><!-- end page-container -->
 
 <script>
@@ -254,6 +363,11 @@ const TX_PER_PAGE = 10;
 
 async function initPage() {
   await loadClients();
+  // Set default dates to today
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('txDate').value = today;
+  document.getElementById('bondDate').value = today;
+  document.getElementById('otherDate').value = today;
   // Close dropdown on outside click
   document.addEventListener('click', (e) => {
     const wrap = document.querySelector('.client-search-wrap');
@@ -332,16 +446,21 @@ async function loadPortfolio() {
   portfolioData = porto || [];
   renderPortfolio();
 
-  // Load transactions
+  // Load transactions (saham only: Buy/Sell)
   const { data: txs, error: e2 } = await window._supabase
     .from('portfolio_transactions')
     .select('*')
     .eq('customer_id', selectedCustomerId)
+    .in('transaction_type', ['Buy', 'Sell'])
     .order('created_at', { ascending: false });
   if (e2) console.error(e2);
   transactionData = txs || [];
   txPage = 1;
   renderTransactions();
+
+  // Load bond & other transactions
+  await loadBondTransactions();
+  await loadOtherTransactions();
 
   // Load summary
   if (portfolioData.length > 0) {
@@ -488,6 +607,7 @@ async function submitTransaction() {
   }
 
   // Insert transaksi (fee disimpan di buy_fee untuk Buy, sell_fee untuk Sell)
+  const txDate = document.getElementById('txDate').value;
   const { error } = await window._supabase
     .from('portfolio_transactions')
     .insert({
@@ -498,7 +618,8 @@ async function submitTransaction() {
       qty_lot: qty,
       price,
       buy_fee: txType === 'Buy' ? fee : 0,
-      sell_fee: txType === 'Sell' ? fee : 0
+      sell_fee: txType === 'Sell' ? fee : 0,
+      created_at: txDate ? new Date(txDate).toISOString() : new Date().toISOString()
     });
 
   if (error) { alert('Gagal menyimpan: ' + error.message); return; }
@@ -526,6 +647,8 @@ async function submitTransaction() {
   document.getElementById('txPrice').value = '';
   document.getElementById('txNominal').value = '';
   document.getElementById('txFee').value = '';
+  // Reset date to today
+  document.getElementById('txDate').value = new Date().toISOString().split('T')[0];
 
   loadPortfolio();
 }
@@ -630,6 +753,238 @@ async function deleteTransaction(id) {
   if (!confirm('Hapus transaksi ini?')) return;
   await window._supabase.from('portfolio_transactions').delete().eq('id', id);
   loadPortfolio();
+}
+
+async function deleteBondTransaction(id) {
+  if (!confirm('Hapus transaksi obligasi ini?')) return;
+  await window._supabase.from('portfolio_transactions').delete().eq('id', id);
+  loadBondTransactions();
+}
+
+async function deleteOtherTransaction(id) {
+  if (!confirm('Hapus transaksi ini?')) return;
+  // Update cash balance back
+  const tx = otherTransactionData.find(t => t.id === id);
+  if (tx) {
+    let cashBalance = parseFloat(document.getElementById('cashBalanceInput').value) || 0;
+    if (tx.transaction_type === 'Income') cashBalance -= (tx.price || 0);
+    else cashBalance += (tx.price || 0);
+    document.getElementById('cashBalanceInput').value = cashBalance;
+    document.getElementById('cashBalanceDisplay').textContent = formatRp(cashBalance);
+    await window._supabase.from('customer_portfolio').update({ cash_balance: cashBalance }).eq('customer_id', selectedCustomerId);
+  }
+  await window._supabase.from('portfolio_transactions').delete().eq('id', id);
+  loadOtherTransactions();
+}
+
+// ══════ BOND TRANSACTIONS ══════
+let bondTransactionData = [];
+let bondPage = 1;
+
+async function loadBondTransactions() {
+  if (!selectedCustomerId) return;
+  const { data, error } = await window._supabase
+    .from('portfolio_transactions')
+    .select('*')
+    .eq('customer_id', selectedCustomerId)
+    .in('transaction_type', ['Bond Buy', 'Bond Sell'])
+    .order('created_at', { ascending: false });
+  if (error) console.error(error);
+  bondTransactionData = data || [];
+  bondPage = 1;
+  renderBondTransactions();
+}
+
+function renderBondTransactions() {
+  const tbody = document.getElementById('bondTransactionBody');
+  const total = bondTransactionData.length;
+  const totalPages = Math.ceil(total / TX_PER_PAGE) || 1;
+  if (bondPage > totalPages) bondPage = totalPages;
+  document.getElementById('bondPageInfo').textContent = `${total} transaksi`;
+
+  if (total === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-state">Belum ada transaksi obligasi</td></tr>';
+    document.getElementById('bondPagination').innerHTML = '';
+    return;
+  }
+
+  const start = (bondPage - 1) * TX_PER_PAGE;
+  const pageData = bondTransactionData.slice(start, start + TX_PER_PAGE);
+
+  tbody.innerHTML = pageData.map(t => {
+    const date = new Date(t.created_at).toLocaleDateString('id-ID', { day:'2-digit', month:'short', year:'numeric' });
+    const txLabel = t.transaction_type === 'Bond Buy' ? 'Buy' : 'Sell';
+    const badgeClass = t.transaction_type === 'Bond Buy' ? 'badge-buy' : 'badge-sell';
+    return `
+    <tr>
+      <td>${date}</td>
+      <td><strong>${t.stock}</strong></td>
+      <td><span class="${badgeClass}">${txLabel}</span></td>
+      <td>${t.price || 0}%</td>
+      <td>${formatRp(t.qty_lot)}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="deleteBondTransaction('${t.id}')">Hapus</button></td>
+    </tr>`;
+  }).join('');
+
+  let pgHtml = '';
+  for (let i = 1; i <= totalPages; i++) {
+    pgHtml += `<div class="pg-btn ${i === bondPage ? 'active' : ''}" onclick="goBondPage(${i})">${i}</div>`;
+  }
+  document.getElementById('bondPagination').innerHTML = pgHtml;
+}
+
+function goBondPage(p) { bondPage = p; renderBondTransactions(); }
+
+async function submitBondTransaction() {
+  if (!selectedCustomerId) { alert('Pilih Client terlebih dahulu'); return; }
+
+  const bondDate = document.getElementById('bondDate').value;
+  const bondName = document.getElementById('bondName').value.trim();
+  const bondType = document.getElementById('bondType').value;
+  const bondPrice = parseFloat(document.getElementById('bondPrice').value) || 0;
+  const bondNominal = parseFloat(document.getElementById('bondNominal').value) || 0;
+
+  if (!bondName || bondNominal <= 0) { alert('Lengkapi data transaksi obligasi'); return; }
+
+  const cust = customers.find(c => c.id === selectedCustomerId);
+  const clientIdText = cust ? cust.client_id : '';
+
+  const { error } = await window._supabase
+    .from('portfolio_transactions')
+    .insert({
+      customer_id: selectedCustomerId,
+      client_id: clientIdText,
+      stock: bondName,
+      transaction_type: bondType,
+      qty_lot: bondNominal,
+      price: bondPrice,
+      buy_fee: 0,
+      sell_fee: 0,
+      created_at: bondDate ? new Date(bondDate).toISOString() : new Date().toISOString()
+    });
+
+  if (error) { alert('Gagal menyimpan: ' + error.message); return; }
+
+  // Update cash balance: Buy mengurangi, Sell menambah
+  let cashBalance = parseFloat(document.getElementById('cashBalanceInput').value) || 0;
+  if (bondType === 'Bond Buy') {
+    cashBalance -= bondNominal;
+  } else {
+    cashBalance += bondNominal;
+  }
+  document.getElementById('cashBalanceInput').value = cashBalance;
+  document.getElementById('cashBalanceDisplay').textContent = formatRp(cashBalance);
+  await window._supabase.from('customer_portfolio').update({ cash_balance: cashBalance }).eq('customer_id', selectedCustomerId);
+
+  document.getElementById('bondName').value = '';
+  document.getElementById('bondPrice').value = '';
+  document.getElementById('bondNominal').value = '';
+  document.getElementById('bondDate').value = new Date().toISOString().split('T')[0];
+
+  loadBondTransactions();
+}
+
+// ══════ OTHER TRANSACTIONS ══════
+let otherTransactionData = [];
+let otherPage = 1;
+
+async function loadOtherTransactions() {
+  if (!selectedCustomerId) return;
+  const { data, error } = await window._supabase
+    .from('portfolio_transactions')
+    .select('*')
+    .eq('customer_id', selectedCustomerId)
+    .in('transaction_type', ['Income', 'Outcome'])
+    .order('created_at', { ascending: false });
+  if (error) console.error(error);
+  otherTransactionData = data || [];
+  otherPage = 1;
+  renderOtherTransactions();
+}
+
+function renderOtherTransactions() {
+  const tbody = document.getElementById('otherTransactionBody');
+  const total = otherTransactionData.length;
+  const totalPages = Math.ceil(total / TX_PER_PAGE) || 1;
+  if (otherPage > totalPages) otherPage = totalPages;
+  document.getElementById('otherPageInfo').textContent = `${total} transaksi`;
+
+  if (total === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" class="empty-state">Belum ada transaksi lain-lain</td></tr>';
+    document.getElementById('otherPagination').innerHTML = '';
+    return;
+  }
+
+  const start = (otherPage - 1) * TX_PER_PAGE;
+  const pageData = otherTransactionData.slice(start, start + TX_PER_PAGE);
+
+  tbody.innerHTML = pageData.map(t => {
+    const date = new Date(t.created_at).toLocaleDateString('id-ID', { day:'2-digit', month:'short', year:'numeric' });
+    const badgeClass = t.transaction_type === 'Income' ? 'badge-buy' : 'badge-sell';
+    return `
+    <tr>
+      <td>${date}</td>
+      <td>${t.stock || '-'}</td>
+      <td><span class="${badgeClass}">${t.transaction_type}</span></td>
+      <td>${formatRp(t.price)}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="deleteOtherTransaction('${t.id}')">Hapus</button></td>
+    </tr>`;
+  }).join('');
+
+  let pgHtml = '';
+  for (let i = 1; i <= totalPages; i++) {
+    pgHtml += `<div class="pg-btn ${i === otherPage ? 'active' : ''}" onclick="goOtherPage(${i})">${i}</div>`;
+  }
+  document.getElementById('otherPagination').innerHTML = pgHtml;
+}
+
+function goOtherPage(p) { otherPage = p; renderOtherTransactions(); }
+
+async function submitOtherTransaction() {
+  if (!selectedCustomerId) { alert('Pilih Client terlebih dahulu'); return; }
+
+  const otherDate = document.getElementById('otherDate').value;
+  const desc = document.getElementById('otherDesc').value.trim();
+  const otherType = document.getElementById('otherType').value;
+  const nominal = parseFloat(document.getElementById('otherNominal').value) || 0;
+
+  if (!desc || nominal <= 0) { alert('Lengkapi data transaksi'); return; }
+
+  const cust = customers.find(c => c.id === selectedCustomerId);
+  const clientIdText = cust ? cust.client_id : '';
+
+  const { error } = await window._supabase
+    .from('portfolio_transactions')
+    .insert({
+      customer_id: selectedCustomerId,
+      client_id: clientIdText,
+      stock: desc,
+      transaction_type: otherType,
+      qty_lot: 0,
+      price: nominal,
+      buy_fee: 0,
+      sell_fee: 0,
+      created_at: otherDate ? new Date(otherDate).toISOString() : new Date().toISOString()
+    });
+
+  if (error) { alert('Gagal menyimpan: ' + error.message); return; }
+
+  // Update cash balance
+  let cashBalance = parseFloat(document.getElementById('cashBalanceInput').value) || 0;
+  if (otherType === 'Income') {
+    cashBalance += nominal;
+  } else {
+    cashBalance -= nominal;
+  }
+  document.getElementById('cashBalanceInput').value = cashBalance;
+  document.getElementById('cashBalanceDisplay').textContent = formatRp(cashBalance);
+  await window._supabase.from('customer_portfolio').update({ cash_balance: cashBalance }).eq('customer_id', selectedCustomerId);
+
+  document.getElementById('otherDesc').value = '';
+  document.getElementById('otherNominal').value = '';
+  document.getElementById('otherDate').value = new Date().toISOString().split('T')[0];
+
+  loadOtherTransactions();
 }
 
 // ══════ UTILS ══════
