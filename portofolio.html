@@ -449,12 +449,32 @@ async function initPage() {
 
 // ══════ CLIENT SEARCH/FILTER ══════
 async function loadClients() {
+  // Get current user
+  const raw = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember');
+  const curUser = raw ? JSON.parse(raw) : {};
+  const userRole = curUser.role || '';
+  const userName = (curUser.name || '').trim().toLowerCase();
+
+  // Roles that can see all clients
+  const canSeeAll = ['admin', 'head_sales', 'head_account'].includes(userRole);
+
   const { data, error } = await window._supabase
     .from('customers')
-    .select('id, client_id, client_name')
+    .select('id, client_id, client_name, sales_person_name')
     .order('client_id');
   if (error) { console.error(error); return; }
-  customers = data || [];
+
+  let allClients = data || [];
+
+  // Filter by sales name if not admin/head
+  if (!canSeeAll && userName) {
+    allClients = allClients.filter(c => {
+      const salesPic = (c.sales_person_name || '').toLowerCase();
+      return salesPic === userName;
+    });
+  }
+
+  customers = allClients;
 }
 
 function openClientDropdown() {
