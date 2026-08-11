@@ -79,8 +79,8 @@
     .summary-row { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; padding:16px 20px; border-top:1px solid #f0f0f5; background:#fafbfc; }
     .summary-item label { font-size:.68rem; color:var(--gray); text-transform:uppercase; letter-spacing:.5px; display:block; margin-bottom:3px; }
     .summary-item .val { font-size:1rem; font-weight:700; color:var(--navy); }
-    .summary-item input { margin-top:5px; padding:7px 10px; border:1.5px solid var(--border); border-radius:6px; font-size:.82rem; width:100%; outline:none; font-family:'Inter',sans-serif; transition:border .2s; }
-    .summary-item input:focus { border-color:var(--gold); }
+    .summary-item input, .summary-item select { margin-top:5px; padding:7px 10px; border:1.5px solid var(--border); border-radius:6px; font-size:.82rem; width:100%; outline:none; font-family:'Inter',sans-serif; transition:border .2s; }
+    .summary-item input:focus, .summary-item select:focus { border-color:var(--gold); }
 
     /* Form */
     .form-row { display:grid; grid-template-columns:repeat(auto-fit, minmax(140px,1fr)); gap:10px; padding:14px 20px; }
@@ -168,12 +168,38 @@
       <div class="summary-item">
         <label>Buy Fee (%)</label>
         <div class="val" id="buyFeeDisplay">0%</div>
-        <input type="number" step="0.01" id="buyFeeInput" placeholder="0.15"/>
+        <select id="buyFeeInput">
+          <option value="0.101">0.101%</option>
+          <option value="0.111">0.111%</option>
+          <option value="0.121">0.121%</option>
+          <option value="0.131">0.131%</option>
+          <option value="0.141">0.141%</option>
+          <option value="0.151" selected>0.151%</option>
+          <option value="0.161">0.161%</option>
+          <option value="0.171">0.171%</option>
+          <option value="0.181">0.181%</option>
+          <option value="0.191">0.191%</option>
+          <option value="0.201">0.201%</option>
+          <option value="0.202">0.202%</option>
+        </select>
       </div>
       <div class="summary-item">
         <label>Sell Fee (%)</label>
         <div class="val" id="sellFeeDisplay">0%</div>
-        <input type="number" step="0.01" id="sellFeeInput" placeholder="0.25"/>
+        <select id="sellFeeInput">
+          <option value="0.201">0.201%</option>
+          <option value="0.211">0.211%</option>
+          <option value="0.221">0.221%</option>
+          <option value="0.231">0.231%</option>
+          <option value="0.241">0.241%</option>
+          <option value="0.251" selected>0.251%</option>
+          <option value="0.261">0.261%</option>
+          <option value="0.271">0.271%</option>
+          <option value="0.281">0.281%</option>
+          <option value="0.291">0.291%</option>
+          <option value="0.301">0.301%</option>
+          <option value="0.302">0.302%</option>
+        </select>
       </div>
     </div>
   </div>
@@ -473,8 +499,8 @@ async function loadPortfolio() {
 
 function resetSummary() {
   document.getElementById('cashBalanceInput').value = '';
-  document.getElementById('buyFeeInput').value = '';
-  document.getElementById('sellFeeInput').value = '';
+  document.getElementById('buyFeeInput').value = '0.151';
+  document.getElementById('sellFeeInput').value = '0.251';
   document.getElementById('cashBalanceDisplay').textContent = 'Rp 0';
   document.getElementById('buyFeeDisplay').textContent = '0%';
   document.getElementById('sellFeeDisplay').textContent = '0%';
