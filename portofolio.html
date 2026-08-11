@@ -168,7 +168,7 @@
       <div class="summary-item">
         <label>Buy Fee (%)</label>
         <div class="val" id="buyFeeDisplay">0%</div>
-        <select id="buyFeeInput">
+        <select id="buyFeeInput" onchange="syncFeeFromBuy()">
           <option value="0.101">0.101%</option>
           <option value="0.111">0.111%</option>
           <option value="0.121">0.121%</option>
@@ -186,7 +186,7 @@
       <div class="summary-item">
         <label>Sell Fee (%)</label>
         <div class="val" id="sellFeeDisplay">0%</div>
-        <select id="sellFeeInput">
+        <select id="sellFeeInput" onchange="syncFeeFromSell()">
           <option value="0.201">0.201%</option>
           <option value="0.211">0.211%</option>
           <option value="0.221">0.221%</option>
@@ -201,6 +201,9 @@
           <option value="0.302">0.302%</option>
         </select>
       </div>
+    </div>
+    <div style="padding:8px 20px 14px; font-size:.72rem; color:#aaa; font-style:italic;">
+      * Perhitungan fee bersifat estimasi dan dapat berbeda dengan nilai aktual yang dikenakan sekuritas.
     </div>
   </div>
 
@@ -575,6 +578,27 @@ function renderTransactions() {
 function goTxPage(p) {
   txPage = p;
   renderTransactions();
+}
+
+// ══════ FEE PAIRING ══════
+// Buy dan Sell fee berpasangan: Sell = Buy + 0.1
+const FEE_PAIRS = {
+  '0.101': '0.201', '0.111': '0.211', '0.121': '0.221', '0.131': '0.231',
+  '0.141': '0.241', '0.151': '0.251', '0.161': '0.261', '0.171': '0.271',
+  '0.181': '0.281', '0.191': '0.291', '0.201': '0.301', '0.202': '0.302'
+};
+const FEE_PAIRS_REVERSE = Object.fromEntries(Object.entries(FEE_PAIRS).map(([k,v]) => [v,k]));
+
+function syncFeeFromBuy() {
+  const buyVal = document.getElementById('buyFeeInput').value;
+  const sellVal = FEE_PAIRS[buyVal];
+  if (sellVal) document.getElementById('sellFeeInput').value = sellVal;
+}
+
+function syncFeeFromSell() {
+  const sellVal = document.getElementById('sellFeeInput').value;
+  const buyVal = FEE_PAIRS_REVERSE[sellVal];
+  if (buyVal) document.getElementById('buyFeeInput').value = buyVal;
 }
 
 // ══════ CALC TRANSACTION NOMINAL & FEES ══════
