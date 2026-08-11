@@ -189,6 +189,24 @@
         </tbody>
       </table>
     </div>
+    <!-- Obligasi in portfolio -->
+    <div style="border-top:1px solid #f0f0f5; padding:12px 20px 6px;">
+      <div style="font-size:.78rem; font-weight:700; color:var(--gray); text-transform:uppercase; letter-spacing:.5px; margin-bottom:8px;">Obligasi</div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Nama Bonds</th>
+            <th>Nominal</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="portfolioBondBody">
+          <tr><td colspan="3" class="empty-state">Belum ada obligasi</td></tr>
+        </tbody>
+      </table>
+    </div>
     <div class="summary-row">
       <div class="summary-item">
         <label>Cash Balance</label>
@@ -497,8 +515,13 @@ async function loadPortfolio() {
     .eq('customer_id', selectedCustomerId)
     .order('stock');
   if (e1) console.error(e1);
-  portfolioData = porto || [];
+  const allPorto = porto || [];
+  // Split: bonds have buy_price = -1 as marker, or we check by naming
+  // Better: use a convention — bonds stored with buy_price = -1
+  portfolioData = allPorto.filter(p => p.buy_price >= 0);
+  bondPortfolioData = allPorto.filter(p => p.buy_price < 0);
   renderPortfolio();
+  renderBondPortfolio();
 
   // Load transactions (saham only: Buy/Sell)
   const { data: txs, error: e2 } = await window._supabase
@@ -566,6 +589,30 @@ function renderPortfolio() {
       <td style="font-weight:700; font-size:.85rem; color:var(--navy);">${formatRp(totalNominal)}</td>
       <td></td>
     </tr>`;
+}
+
+// ══════ RENDER BOND PORTFOLIO ══════
+let bondPortfolioData = [];
+
+function renderBondPortfolio() {
+  const tbody = document.getElementById('portfolioBondBody');
+  if (bondPortfolioData.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="3" class="empty-state">Belum ada obligasi</td></tr>';
+    return;
+  }
+  tbody.innerHTML = bondPortfolioData.map(b => `
+    <tr>
+      <td><strong>${b.stock}</strong></td>
+      <td>${formatRp(b.qty_lot)}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="deleteBondPortfolioRow('${b.id}')">Hapus</button></td>
+    </tr>
+  `).join('');
+}
+
+async function deleteBondPortfolioRow(id) {
+  if (!confirm('Hapus obligasi dari portofolio?')) return;
+  await window._supabase.from('customer_portfolio').delete().eq('id', id);
+  loadPortfolio();
 }
 
 // ══════ RENDER TRANSACTIONS TABLE (PAGINATED) ══════
@@ -949,6 +996,9 @@ async function submitBondTransaction() {
 
   if (error) { alert('Gagal menyimpan: ' + error.message); return; }
 
+  // Update bond portfolio: Buy menambah, Sell mengurangi
+  await updateBondPortfolio(bondName, bondType, bondNominal, clientIdText);
+
   // Update cash balance hanya jika ada tanggal
   if (bondDate) {
     let cashBalance = parseFloat(document.getElementById('cashBalanceInput').value) || 0;
@@ -968,6 +1018,40 @@ async function submitBondTransaction() {
   document.getElementById('bondDate').value = '';
 
   loadBondTransactions();
+  loadPortfolio();
+}
+
+// Update bond in portfolio table (buy_price = -1 as bond marker)
+async function updateBondPortfolio(bondName, bondType, nominal, clientIdText) {
+  const existing = bondPortfolioData.find(b => b.stock === bondName);
+
+  if (bondType === 'Bond Buy') {
+    if (existing) {
+      const newNominal = existing.qty_lot + nominal;
+      await window._supabase.from('customer_portfolio').update({ qty_lot: newNominal }).eq('id', existing.id);
+    } else {
+      await window._supabase.from('customer_portfolio').insert({
+        customer_id: selectedCustomerId,
+        client_id: clientIdText,
+        stock: bondName,
+        qty_lot: nominal,
+        buy_price: -1,
+        cash_balance: parseFloat(document.getElementById('cashBalanceInput').value) || 0,
+        buy_fee: parseFloat(document.getElementById('buyFeeInput').value) || 0,
+        sell_fee: parseFloat(document.getElementById('sellFeeInput').value) || 0
+      });
+    }
+  } else {
+    // Bond Sell: kurangi nominal
+    if (existing) {
+      const newNominal = existing.qty_lot - nominal;
+      if (newNominal <= 0) {
+        await window._supabase.from('customer_portfolio').delete().eq('id', existing.id);
+      } else {
+        await window._supabase.from('customer_portfolio').update({ qty_lot: newNominal }).eq('id', existing.id);
+      }
+    }
+  }
 }
 
 // ══════ OTHER TRANSACTIONS ══════
