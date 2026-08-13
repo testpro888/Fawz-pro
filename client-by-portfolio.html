@@ -236,7 +236,7 @@ async function loadAllData() {
     .in('customer_id', customerIds)
     .order('stock');
   if (e2) console.error(e2);
-  allPortfolio = (porto || []).filter(p => p.stock && p.stock !== '-');
+  allPortfolio = (porto || []).filter(p => p.stock && p.stock !== '-' && (Number(p.qty_lot) > 0 || Number(p.nominal) > 0));
 }
 
 // ══════ TAB SWITCH ══════
