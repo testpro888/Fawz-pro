@@ -820,6 +820,11 @@ function getUser() {
 }
 
 const user = getUser();
+if (!user) { window.location.replace('login.html'); }
+// Blokir akses untuk username 'husni'
+if (user && (user.username || user.name || '').toLowerCase() === 'husni') {
+  window.location.replace('dashboard.html');
+}
 const isHeadAccount = user && user.role === 'head_account';
 
 /* ── SELECTED STATE ── */
