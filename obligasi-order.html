@@ -1515,8 +1515,8 @@
   }
 
   function fmtPrice(o) {
-    // Price = harga offer/bid dari data obligasi (harga_beli = offer price)
-    const price = o.harga_beli || o.hargaBeli;
+    // Harga ke Sales = harga bid (harga_jual dalam data obligasi)
+    const price = o.harga_jual || o.hargaJual;
     if (!price || price === 0) return '—';
     return Number(price).toFixed(2).replace('.', ',');
   }
