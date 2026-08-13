@@ -1508,14 +1508,14 @@
   }
 
   function fmtHargaOrder(o) {
-    // Show harga yang diinput user di form Harga Order
-    const harga = o.harga;
+    // Harga Order = harga yang diinput user (dari bookbuilding: harga_beli_sales, dari order page: harga)
+    const harga = o.harga_beli_sales || o.hargaBeliSales || o.harga;
     if (!harga || harga === '0' || harga === 0) return '—';
     return Number(harga).toFixed(2).replace('.', ',');
   }
 
   function fmtPrice(o) {
-    // Show harga_beli (offer price) dari data obligasi
+    // Price = harga offer/bid dari data obligasi (harga_beli = offer price)
     const price = o.harga_beli || o.hargaBeli;
     if (!price || price === 0) return '—';
     return Number(price).toFixed(2).replace('.', ',');
