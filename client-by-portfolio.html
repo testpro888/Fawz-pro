@@ -223,20 +223,20 @@ async function loadAllData() {
   allCustomers = {};
   custList.forEach(c => { allCustomers[c.id] = c; });
 
-  // Load all portfolio holdings
-  const customerIds = custList.map(c => c.id);
-  if (customerIds.length === 0) {
-    allPortfolio = [];
-    return;
-  }
-
+  // Load all portfolio holdings (no filter — Supabase .in() has limits)
   const { data: porto, error: e2 } = await window._supabase
     .from('customer_portfolio')
     .select('*')
-    .in('customer_id', customerIds)
     .order('stock');
   if (e2) console.error(e2);
-  allPortfolio = (porto || []).filter(p => p.stock && p.stock !== '-' && (Number(p.qty_lot) > 0 || Number(p.nominal) > 0));
+
+  // Filter: only keep portfolios belonging to accessible customers & with active holdings
+  const customerIdSet = new Set(custList.map(c => c.id));
+  allPortfolio = (porto || []).filter(p =>
+    p.stock && p.stock !== '-' &&
+    customerIdSet.has(p.customer_id) &&
+    (Number(p.qty_lot) > 0 || Number(p.nominal) > 0)
+  );
 }
 
 // ══════ TAB SWITCH ══════
@@ -288,7 +288,12 @@ function renderList() {
     if (!grouped[key]) grouped[key] = { stock: key, clients: new Set(), totalLot: 0, totalNominal: 0 };
     grouped[key].clients.add(p.customer_id);
     grouped[key].totalLot += Number(p.qty_lot) || 0;
-    grouped[key].totalNominal += Number(p.nominal) || 0;
+    // Untuk obligasi, qty_lot menyimpan nominal (bukan lot)
+    if (currentTab === 'obligasi') {
+      grouped[key].totalNominal += Number(p.qty_lot) || 0;
+    } else {
+      grouped[key].totalNominal += (Number(p.qty_lot) || 0) * 100 * (Number(p.buy_price) || 0);
+    }
   });
 
   const sorted = Object.values(grouped).sort((a, b) => b.clients.size - a.clients.size);
@@ -360,7 +365,10 @@ function doSearch() {
   // Stats
   const uniqueClients = new Set(items.map(p => p.customer_id));
   const totalLot = items.reduce((s, p) => s + (Number(p.qty_lot) || 0), 0);
-  const totalNominal = items.reduce((s, p) => s + (Number(p.nominal) || 0), 0);
+  // Untuk obligasi, qty_lot menyimpan nominal
+  const totalNominal = currentTab === 'saham'
+    ? items.reduce((s, p) => s + ((Number(p.qty_lot) || 0) * 100 * (Number(p.buy_price) || 0)), 0)
+    : items.reduce((s, p) => s + (Number(p.qty_lot) || 0), 0);
 
   document.getElementById('statsCard').style.display = '';
   document.getElementById('statStock').innerHTML = currentTab === 'saham'
@@ -390,7 +398,8 @@ function doSearch() {
       </tr>`;
     }).join('');
   } else {
-    items.sort((a, b) => (Number(b.nominal) || 0) - (Number(a.nominal) || 0));
+    // Obligasi: qty_lot = nominal
+    items.sort((a, b) => (Number(b.qty_lot) || 0) - (Number(a.qty_lot) || 0));
     tbody.innerHTML = items.map((p, i) => {
       const cust = allCustomers[p.customer_id] || {};
       return `
@@ -399,7 +408,7 @@ function doSearch() {
         <td><strong>${cust.client_id || '-'}</strong></td>
         <td>${cust.client_name || '-'}</td>
         <td>${cust.sales_person_name || '-'}</td>
-        <td>${formatRp(p.nominal || 0)}</td>
+        <td>${formatRp(p.qty_lot || 0)}</td>
       </tr>`;
     }).join('');
   }
