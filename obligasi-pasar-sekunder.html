@@ -255,6 +255,9 @@
         <div class="pagination" id="pg-gov-idr"></div>
       </div>
     </div>
+    <div class="disclaimer-box" style="margin-top:10px;padding:12px 16px;background:#fffbf3;border:1.5px solid #f5e0a0;border-radius:10px;font-size:0.8rem;color:#7a5100;line-height:1.6;">
+      ⚠️ <strong>Disclaimer:</strong> Harga dan yield yang tercantum bersifat indikatif dan dapat berubah sewaktu-waktu sesuai kondisi pasar. Mohon konfirmasi ketersediaan dan harga terkini sebelum melakukan order.
+    </div>
   </div>
 
   <!-- TAB: Gov USD -->
@@ -294,6 +297,9 @@
         <div id="info-gov-usd">Menampilkan 0 data</div>
         <div class="pagination" id="pg-gov-usd"></div>
       </div>
+    </div>
+    <div class="disclaimer-box" style="margin-top:10px;padding:12px 16px;background:#fffbf3;border:1.5px solid #f5e0a0;border-radius:10px;font-size:0.8rem;color:#7a5100;line-height:1.6;">
+      ⚠️ <strong>Disclaimer:</strong> Harga dan yield yang tercantum bersifat indikatif dan dapat berubah sewaktu-waktu sesuai kondisi pasar. Mohon konfirmasi ketersediaan dan harga terkini sebelum melakukan order.
     </div>
   </div>
 
@@ -335,6 +341,9 @@
         <div class="pagination" id="pg-korp-idr"></div>
       </div>
     </div>
+    <div class="disclaimer-box" style="margin-top:10px;padding:12px 16px;background:#fffbf3;border:1.5px solid #f5e0a0;border-radius:10px;font-size:0.8rem;color:#7a5100;line-height:1.6;">
+      ⚠️ <strong>Disclaimer:</strong> Harga dan yield yang tercantum bersifat indikatif dan dapat berubah sewaktu-waktu sesuai kondisi pasar. Mohon konfirmasi ketersediaan dan harga terkini sebelum melakukan order.
+    </div>
   </div>
 
   <!-- TAB: Korp USD -->
@@ -374,6 +383,9 @@
         <div id="info-korp-usd">Menampilkan 0 data</div>
         <div class="pagination" id="pg-korp-usd"></div>
       </div>
+    </div>
+    <div class="disclaimer-box" style="margin-top:10px;padding:12px 16px;background:#fffbf3;border:1.5px solid #f5e0a0;border-radius:10px;font-size:0.8rem;color:#7a5100;line-height:1.6;">
+      ⚠️ <strong>Disclaimer:</strong> Harga dan yield yang tercantum bersifat indikatif dan dapat berubah sewaktu-waktu sesuai kondisi pasar. Mohon konfirmasi ketersediaan dan harga terkini sebelum melakukan order.
     </div>
   </div>
 </div>
@@ -711,6 +723,36 @@
       document.querySelectorAll('#tbody-' + cat + ' .action-btns').forEach(el => el.closest('td').style.display = 'none');
     };
   }
+
+  // Cek apakah user boleh lihat kolom harga internal (Harga Modal, Modal to Sales, Harga to Customer)
+  function canViewInternalPrices() {
+    const raw = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember');
+    if (!raw) return false;
+    try {
+      const user = JSON.parse(raw);
+      // Hanya head_account dan bonds (treasury) yang boleh lihat
+      return user.role === 'head_account' || user.role === 'treasury';
+    } catch(e) { return false; }
+  }
+
+  function applyInternalPriceRestrictions() {
+    if (canViewInternalPrices()) return; // Tidak perlu sembunyikan
+
+    // Tambahkan CSS untuk menyembunyikan kolom harga internal
+    const style = document.createElement('style');
+    style.textContent = `
+      .col-harga-internal { display: none !important; }
+    `;
+    document.head.appendChild(style);
+
+    // Tandai kolom thead yang perlu disembunyikan
+    document.querySelectorAll('thead th').forEach(th => {
+      const text = th.textContent.trim();
+      if (text === 'Harga Modal' || text === 'Modal to Sales' || text === 'Harga to Customer') {
+        th.classList.add('col-harga-internal');
+      }
+    });
+  }
   // ===== TABS =====
   function switchTab(cat) {
     activeTab = cat;
@@ -775,9 +817,9 @@
         <td style="color:#27ae60;">${fmtHarga(r.harga_jual)}</td>
         <td style="color:#e74c3c;">${fmtHarga(r.harga_beli)}</td>
         <td>${r.yield != null ? fmtDecimal(r.yield, 4) + '%' : '—'}</td>
-        <td style="color:#7c3aed;">${r.harga_modal != null ? fmtHarga(r.harga_modal) : '—'}</td>
-        <td style="color:#0369a1;">${r.modal_to_sales != null ? fmtHarga(r.modal_to_sales) : '—'}</td>
-        <td style="color:#b45309;">${r.harga_to_customer != null ? fmtHarga(r.harga_to_customer) : '—'}</td>
+        <td style="color:#7c3aed;" class="col-harga-internal">${r.harga_modal != null ? fmtHarga(r.harga_modal) : '—'}</td>
+        <td style="color:#0369a1;" class="col-harga-internal">${r.modal_to_sales != null ? fmtHarga(r.modal_to_sales) : '—'}</td>
+        <td style="color:#b45309;" class="col-harga-internal">${r.harga_to_customer != null ? fmtHarga(r.harga_to_customer) : '—'}</td>
         <td style="font-size:0.8rem;color:#888;">${fmtDate(r.tanggal_update)}</td>
         <td>
           <div class="action-btns">
@@ -1838,6 +1880,7 @@ TLKM25,Telkom USD Bond 2025,USY8564UAC94,PT Telkom Indonesia (Persero) Tbk,PT Te
 
   // BOOT
   initAuth();
+  applyInternalPriceRestrictions();
   // Init format info untuk kategori default upload modal
   renderCsvFormatInfo('gov-idr');
 </script>
