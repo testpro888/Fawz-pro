@@ -13,9 +13,7 @@ Semua perubahan signifikan pada project ini didokumentasikan di sini.
 - Searchable client filter dengan pagination
 - **Client by Portofolio** — reverse lookup nasabah berdasarkan kepemilikan saham/obligasi
 - Input **Transaksi Obligasi** (Buy/Sell) dan **Transaksi Lain-lain** (Income/Outcome)
-- Auto-update saldo kas & holding saat input transaksi Buy/Sell
 - Buy/Sell Fee menggunakan dropdown list dengan auto-pair dan disclaimer estimasi
-- Kolom **Harga ke Customer** & **Harga ke Sales** — akses dibatasi untuk head_account/bonds
 - Total nominal ditampilkan di tabel portofolio
 - Filter client list berdasarkan sales name (role-based access)
 - Bond transactions tampil di tabel portofolio (di bawah stocks)
