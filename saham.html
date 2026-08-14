@@ -157,8 +157,14 @@
     </div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
       <div style="display:flex;align-items:center;gap:4px;">
-        <input type="month" id="filterMonth" onchange="loadData()" style="height:38px;border:1px solid var(--border);border-radius:8px;padding:0 12px;font-family:'Inter',sans-serif;font-size:0.82rem;"/>
-        <button onclick="clearMonthFilter()" title="Lihat semua data" style="height:38px;width:38px;border:1px solid var(--border);border-radius:8px;background:#fff;cursor:pointer;font-size:1rem;color:var(--gray);display:flex;align-items:center;justify-content:center;" onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--gold)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--gray)'">✕</button>
+        <input type="month" id="filterMonth" onchange="onFilterModeMonth()" style="height:38px;border:1px solid var(--border);border-radius:8px;padding:0 12px;font-family:'Inter',sans-serif;font-size:0.82rem;"/>
+        <button onclick="setFilterOneYear()" title="Filter 1 Tahun Terakhir" style="height:38px;padding:0 12px;border:1px solid var(--border);border-radius:8px;background:#fff;cursor:pointer;font-size:0.75rem;font-weight:600;color:var(--navy);font-family:'Inter',sans-serif;white-space:nowrap;" onmouseover="if(!this.classList.contains('active')){this.style.borderColor='var(--gold)';this.style.color='var(--gold)';}" onmouseout="if(!this.classList.contains('active')){this.style.borderColor='var(--border)';this.style.color='var(--navy)';}" id="btnOneYear">1 Tahun</button>
+        <button onclick="clearAllFilters()" title="Reset semua filter" style="height:38px;width:38px;border:1px solid var(--border);border-radius:8px;background:#fff;cursor:pointer;font-size:1rem;color:var(--gray);display:flex;align-items:center;justify-content:center;" onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--gold)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--gray)'">✕</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:4px;">
+        <input type="date" id="filterDateFrom" onchange="onFilterModeRange()" placeholder="Dari" title="Dari tanggal" style="height:38px;border:1px solid var(--border);border-radius:8px;padding:0 10px;font-family:'Inter',sans-serif;font-size:0.78rem;"/>
+        <span style="font-size:0.78rem;color:var(--gray);">—</span>
+        <input type="date" id="filterDateTo" onchange="onFilterModeRange()" placeholder="Sampai" title="Sampai tanggal" style="height:38px;border:1px solid var(--border);border-radius:8px;padding:0 10px;font-family:'Inter',sans-serif;font-size:0.78rem;"/>
       </div>
       <select id="filterClient" onchange="onFilterChange()" style="height:38px;border:1px solid var(--border);border-radius:8px;padding:0 12px;font-family:'Inter',sans-serif;font-size:0.82rem;min-width:180px;">
         <option value="">Semua Nasabah</option>
@@ -534,21 +540,31 @@
   async function loadData() {
     try {
       const month = document.getElementById('filterMonth').value;
+      const dateFrom = document.getElementById('filterDateFrom').value;
+      const dateTo = document.getElementById('filterDateTo').value;
       const isSales = curUser?.role === 'sales';
       const salesName = curUser?.name || '';
 
-      // Filter by month at database level with pagination to get all rows
+      allData = [];
+      var pageSize = 1000;
+      var offset = 0;
+      var hasMore = true;
+
+      // Determine date range from filter mode
+      let startDate = null;
+      let endDate = null;
+
       if (month) {
         const [year, mon] = month.split('-').map(Number);
-        const startDate = month + '-01';
+        startDate = month + '-01';
         const lastDay = new Date(year, mon, 0).getDate();
-        const endDate = year + '-' + String(mon).padStart(2,'0') + '-' + String(lastDay).padStart(2,'0');
-        
-        allData = [];
-        var pageSize = 1000;
-        var offset = 0;
-        var hasMore = true;
+        endDate = year + '-' + String(mon).padStart(2,'0') + '-' + String(lastDay).padStart(2,'0');
+      } else if (dateFrom && dateTo) {
+        startDate = dateFrom;
+        endDate = dateTo;
+      }
 
+      if (startDate && endDate) {
         while (hasMore) {
           let q = _sb
             .from('saham_transaksi')
@@ -558,7 +574,6 @@
             .order('tanggal', { ascending: false })
             .range(offset, offset + pageSize - 1);
           if (isSales) q = q.ilike('sales_name', salesName);
-          // Head Sales tidak perlu filter - bisa lihat semua
           const { data, error } = await q;
 
           if (error) throw error;
@@ -574,7 +589,6 @@
       } else {
         let q = _sb.from('saham_transaksi').select('*').order('tanggal', { ascending: false });
         if (isSales) q = q.ilike('sales_name', salesName);
-        // Head Sales tidak perlu filter - bisa lihat semua
         const { data, error } = await q;
         if (error) throw error;
         allData = data || [];
@@ -614,7 +628,21 @@
     var month = document.getElementById('filterMonth').value;
     var clientSelect = document.getElementById('filterClient');
     var currentValue = clientSelect.value;
-    var clients = getClientsForMonth(allData, month);
+    var clients;
+    if (month) {
+      clients = getClientsForMonth(allData, month);
+    } else {
+      // Date range or no filter — use all loaded data
+      var clientMap = {};
+      for (var i = 0; i < allData.length; i++) {
+        var tx = allData[i];
+        if (tx.client_id && !clientMap[tx.client_id]) {
+          clientMap[tx.client_id] = { client_id: tx.client_id, client_name: tx.client_name || tx.client_id };
+        }
+      }
+      clients = Object.keys(clientMap).map(function(key) { return clientMap[key]; });
+      clients.sort(function(a, b) { return (a.client_name || '').localeCompare(b.client_name || ''); });
+    }
     clientSelect.innerHTML = '<option value="">Semua Nasabah</option>';
     for (var i = 0; i < clients.length; i++) {
       var opt = document.createElement('option');
@@ -635,6 +663,7 @@
   function applyFilter() {
     var month = document.getElementById('filterMonth').value;
     var clientId = document.getElementById('filterClient').value;
+    // When using date range (no month selected), skip month filtering since DB already filtered
     filteredData = getFilteredTransactions(allData, month, clientId);
     // Separate into volume and fee data
     volumeData = filteredData.filter(function(r) { return parseFloat(r.volume) > 0; });
@@ -790,11 +819,21 @@
 
   async function renderSummary() {
     var month = document.getElementById('filterMonth').value;
+    var dateFrom = document.getElementById('filterDateFrom').value;
+    var dateTo = document.getElementById('filterDateTo').value;
     var monthlySummary = window.SahamAggregation.calculateMonthlySummary(filteredData);
 
     // Update Monthly Summary label based on filter
     var monthlyLabel = document.querySelector('#summarySection .stat-box:first-child .stat-box-label');
-    if (monthlyLabel) monthlyLabel.textContent = month ? 'Monthly Summary' : 'Total Keseluruhan';
+    if (monthlyLabel) {
+      if (month) {
+        monthlyLabel.textContent = 'Monthly Summary';
+      } else if (dateFrom && dateTo) {
+        monthlyLabel.textContent = 'Range Summary';
+      } else {
+        monthlyLabel.textContent = 'Total Keseluruhan';
+      }
+    }
 
     document.getElementById('summaryMonthlyVolume').textContent = formatRp(monthlySummary.totalVolume);
     document.getElementById('summaryMonthlyFee').textContent = formatRp(monthlySummary.totalFee);
@@ -802,7 +841,14 @@
 
     // YTD: if no month selected, use current year; else use selected year
     try {
-      var year = month ? month.split('-')[0] : String(new Date().getFullYear());
+      var year;
+      if (month) {
+        year = month.split('-')[0];
+      } else if (dateFrom) {
+        year = dateFrom.split('-')[0];
+      } else {
+        year = String(new Date().getFullYear());
+      }
       var startDate = year + '-01-01';
       var endDate = year + '-12-31';
       var isSalesRole = curUser?.role === 'sales';
@@ -1229,8 +1275,47 @@
     setTimeout(() => t.remove(), 3500);
   }
 
-  function clearMonthFilter() {
+  function clearAllFilters() {
     document.getElementById('filterMonth').value = '';
+    document.getElementById('filterDateFrom').value = '';
+    document.getElementById('filterDateTo').value = '';
+    var btnOneYear = document.getElementById('btnOneYear');
+    if (btnOneYear) { btnOneYear.classList.remove('active'); btnOneYear.style.background = '#fff'; btnOneYear.style.borderColor = 'var(--border)'; btnOneYear.style.color = 'var(--navy)'; }
+    loadData();
+  }
+
+  function onFilterModeMonth() {
+    // User picked a month — clear date range and 1-year highlight
+    document.getElementById('filterDateFrom').value = '';
+    document.getElementById('filterDateTo').value = '';
+    var btnOneYear = document.getElementById('btnOneYear');
+    if (btnOneYear) { btnOneYear.classList.remove('active'); btnOneYear.style.background = '#fff'; btnOneYear.style.borderColor = 'var(--border)'; btnOneYear.style.color = 'var(--navy)'; }
+    loadData();
+  }
+
+  function onFilterModeRange() {
+    var from = document.getElementById('filterDateFrom').value;
+    var to = document.getElementById('filterDateTo').value;
+    if (from && to) {
+      // Clear month filter and 1-year highlight when using date range
+      document.getElementById('filterMonth').value = '';
+      var btnOneYear = document.getElementById('btnOneYear');
+      if (btnOneYear) { btnOneYear.classList.remove('active'); btnOneYear.style.background = '#fff'; btnOneYear.style.borderColor = 'var(--border)'; btnOneYear.style.color = 'var(--navy)'; }
+      loadData();
+    }
+  }
+
+  function setFilterOneYear() {
+    // Set date range to last 12 months from today
+    var now = new Date();
+    var toDate = now.toISOString().split('T')[0];
+    var fromDate = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate() + 1).toISOString().split('T')[0];
+    document.getElementById('filterMonth').value = '';
+    document.getElementById('filterDateFrom').value = fromDate;
+    document.getElementById('filterDateTo').value = toDate;
+    // Highlight the button
+    var btnOneYear = document.getElementById('btnOneYear');
+    if (btnOneYear) { btnOneYear.classList.add('active'); btnOneYear.style.background = 'var(--gold)'; btnOneYear.style.borderColor = 'var(--gold)'; btnOneYear.style.color = '#fff'; }
     loadData();
   }
 
