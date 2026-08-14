@@ -300,7 +300,8 @@
             <th>Nasabah</th>
             <th>Seri Obligasi</th>
             <th>Face Amount</th>
-            <th>Harga Order</th>
+            <th>Harga ke Customer</th>
+            <th>Harga ke Sales</th>
             <th>Settlement</th>
             <th>Sekuritas</th>
             <th>Sales PIC</th>
@@ -311,7 +312,7 @@
           </tr>
         </thead>
         <tbody id="orderBody">
-          <tr><td colspan="10" class="empty-state"><div class="empty-icon">⏳</div><div>Memuat data...</div></td></tr>
+          <tr><td colspan="14" class="empty-state"><div class="empty-icon">⏳</div><div>Memuat data...</div></td></tr>
         </tbody>
       </table>
     </div>
@@ -502,8 +503,8 @@
       <!-- Harga Order -->
       <div class="form-group">
         <label class="form-label">Harga Order</label>
-        <input class="form-input mono" type="text" id="fHarga" placeholder="Contoh: 99.50"/>
-        <div class="form-hint">Kosongkan untuk pakai harga jual default</div>
+        <input class="form-input mono" type="text" id="fHarga" placeholder="Contoh: 100"/>
+        <div class="form-hint" id="hargaOfferHint">Harga yang diinput ke nasabah</div>
       </div>
 
       <!-- Sales PIC -->
@@ -723,7 +724,7 @@
     document.getElementById('tableInfo').textContent = `Menampilkan ${filtered.length} dari ${orders.length} order`;
 
     if (!filtered.length) {
-      tbody.innerHTML = `<tr><td colspan="10" class="empty-state"><div class="empty-icon">📋</div><div>Belum ada order ditemukan</div></td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="14" class="empty-state"><div class="empty-icon">📋</div><div>Belum ada order ditemukan</div></td></tr>`;
       return;
     }
 
@@ -772,6 +773,7 @@
           <div class="nominal-unit">${(o.unit_amount||o.unitAmount) ? (o.unit_amount||o.unitAmount)+' unit' : (o.mata_uang||o.mataUang||'IDR')}</div>
         </td>
         <td style="font-size:.85rem;color:var(--navy);font-weight:600;">${fmtHargaOrder(o)}</td>
+        <td style="font-size:.85rem;color:var(--gray);">${fmtPrice(o)}</td>
         <td style="font-size:.8rem;color:var(--gray);">${fmtDate(o.settlement)}</td>
         <td style="font-size:.8rem;">${esc(o.sekuritas_dipakai||o.sekuritasDipakai||'—')}</td>
         <td style="font-size:.85rem;">${esc(o.sales_pic||o.salesPic||'—')}</td>
@@ -898,7 +900,15 @@
     const opt = sel.options[sel.selectedIndex];
     if (opt && opt.value) {
       const hargaField = isBeli ? opt.dataset.hargaBeliSales : opt.dataset.hargaJualSales;
-      if (hargaField) document.getElementById('fHarga').value = Number(hargaField).toFixed(2);
+      // Tampilkan hint harga offer/bid dari data obligasi
+      const offerPrice = opt.dataset.hargaBeli;
+      const bidPrice = opt.dataset.hargaJual;
+      const hint = document.getElementById('hargaOfferHint');
+      if (hint) {
+        hint.textContent = isBeli
+          ? `Harga offer dari data: ${offerPrice ? Number(offerPrice).toFixed(2).replace('.',',') : '—'}`
+          : `Harga bid dari data: ${bidPrice ? Number(bidPrice).toFixed(2).replace('.',',') : '—'}`;
+      }
     }
   }
 
@@ -1498,10 +1508,17 @@
   }
 
   function fmtHargaOrder(o) {
-    // Show harga_beli (offer price) from the order data
-    const harga = o.harga_beli || o.hargaBeli || o.harga_jual || o.hargaJual || o.harga;
-    if (!harga || harga === 0) return '—';
+    // Harga Order = harga yang diinput user (dari bookbuilding: harga_beli_sales, dari order page: harga)
+    const harga = o.harga_beli_sales || o.hargaBeliSales || o.harga;
+    if (!harga || harga === '0' || harga === 0) return '—';
     return Number(harga).toFixed(2).replace('.', ',');
+  }
+
+  function fmtPrice(o) {
+    // Harga ke Sales = harga bid (harga_jual dalam data obligasi)
+    const price = o.harga_jual || o.hargaJual;
+    if (!price || price === 0) return '—';
+    return Number(price).toFixed(2).replace('.', ',');
   }
 
   function fmtRpFull(val) {

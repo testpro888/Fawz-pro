@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <script src="config.js"></script>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Fawz Pro | Client by Portofolio</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <script>
+    const SUPABASE_URL = (window.__FAWZ_CONFIG__ || {}).supabaseUrl || '';
+    const SUPABASE_KEY = (window.__FAWZ_CONFIG__ || {}).supabaseKey || '';
+    try { window._supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); }
+    catch(e) { console.error('Supabase init:', e); }
+    window.addEventListener('DOMContentLoaded', () => {
+      if (!window._supabase && window.supabase)
+        window._supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      initPage();
+    });
+  </script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --navy:#0d0d2b; --purple:#1e1252; --gold:#f5a623; --gold-light:#ffc857;
+      --bg:#f4f5fb; --border:#e0e0ef; --text:#1a1a3a; --gray:#888;
+      --green:#27ae60; --red:#e74c3c; --blue:#2980b9; --nav-h:68px;
+    }
+    body { font-family:'Inter',sans-serif; background:var(--bg); min-height:100vh; padding-top:var(--nav-h); color:var(--text); }
+    .page-container { max-width:1300px; margin:0 auto; padding:36px 28px; }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)} }
+
+    .page-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:28px; flex-wrap:wrap; gap:16px; animation:fadeUp .4s ease both; }
+    .page-title { font-size:1.8rem; font-weight:800; color:var(--navy); }
+    .page-subtitle { font-size:.84rem; color:var(--gray); margin-top:4px; }
+    .title-underline { width:40px; height:3px; background:linear-gradient(90deg,var(--gold),var(--gold-light)); border-radius:2px; margin-top:8px; }
+
+    /* Tabs */
+    .tabs { display:flex; gap:4px; margin-bottom:24px; animation:fadeUp .4s .05s ease both; }
+    .tab-btn { padding:10px 22px; border-radius:8px; border:1.5px solid var(--border); background:#fff; font-family:'Inter',sans-serif; font-size:.84rem; font-weight:600; color:var(--gray); cursor:pointer; transition:all .2s; }
+    .tab-btn.active { background:linear-gradient(135deg,var(--gold),#e8931a); color:#fff; border-color:transparent; box-shadow:0 3px 10px rgba(245,166,35,.3); }
+    .tab-btn:hover:not(.active) { border-color:var(--gold); color:var(--gold); }
+
+    /* Search bar */
+    .search-bar { background:#fff; border-radius:12px; padding:16px 20px; display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:22px; box-shadow:0 1px 6px rgba(0,0,0,.04); animation:fadeUp .4s .1s ease both; }
+    .search-bar label { font-size:.78rem; font-weight:600; color:var(--navy); white-space:nowrap; }
+    .search-bar input { flex:1; min-width:240px; padding:10px 14px; border:1.5px solid var(--border); border-radius:8px; font-family:'Inter',sans-serif; font-size:.85rem; outline:none; transition:border .2s; }
+    .search-bar input:focus { border-color:var(--gold); }
+    .btn { display:inline-flex; align-items:center; gap:6px; padding:9px 16px; border-radius:8px; font-family:'Inter',sans-serif; font-size:.82rem; font-weight:600; cursor:pointer; border:none; transition:all .2s; }
+    .btn-primary { background:linear-gradient(135deg,var(--gold),#e8931a); color:#fff; box-shadow:0 3px 10px rgba(245,166,35,.3); }
+    .btn-primary:hover { transform:translateY(-1px); box-shadow:0 6px 18px rgba(245,166,35,.4); }
+
+    /* Section card */
+    .section-card { background:#fff; border-radius:14px; box-shadow:0 2px 12px rgba(0,0,0,.04); overflow:hidden; margin-bottom:22px; animation:fadeUp .4s .15s ease both; }
+    .section-header { padding:18px 24px 14px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #f5f5fa; }
+    .section-title { font-size:1rem; font-weight:700; color:var(--navy); }
+    .section-subtitle { font-size:.75rem; color:var(--gray); margin-top:2px; }
+
+    /* Stats row */
+    .stats-row { display:flex; gap:16px; padding:16px 24px; flex-wrap:wrap; border-bottom:1px solid #f5f5fa; }
+    .stat-card { background:#f9f9fe; border-radius:10px; padding:12px 18px; min-width:140px; }
+    .stat-label { font-size:.68rem; font-weight:600; color:var(--gray); text-transform:uppercase; letter-spacing:.5px; }
+    .stat-value { font-size:1.2rem; font-weight:700; color:var(--navy); margin-top:4px; }
+
+    /* Table */
+    .table-wrap { overflow-x:auto; padding:0 4px; }
+    table { width:100%; border-collapse:collapse; font-size:.82rem; }
+    thead th { background:#f9f9fe; padding:11px 16px; text-align:left; font-weight:600; color:var(--gray); font-size:.72rem; text-transform:uppercase; letter-spacing:.5px; border-bottom:1px solid #eee; white-space:nowrap; }
+    tbody td { padding:12px 16px; border-bottom:1px solid #f5f5fa; vertical-align:middle; }
+    tbody tr:hover { background:#fefcf7; }
+    .empty-state { text-align:center; color:var(--gray); padding:40px 20px !important; font-size:.85rem; }
+
+    /* Stock badge */
+    .stock-badge { display:inline-flex; align-items:center; gap:4px; background:linear-gradient(135deg,#1e1252,#0d0d2b); color:#fff; font-weight:700; font-size:.78rem; padding:4px 10px; border-radius:6px; }
+    .bond-badge { display:inline-flex; align-items:center; gap:4px; background:linear-gradient(135deg,var(--blue),#1a5276); color:#fff; font-weight:700; font-size:.78rem; padding:4px 10px; border-radius:6px; }
+
+    /* Responsive */
+    @media (max-width:768px) {
+      .page-container { padding:20px 14px; }
+      .tabs { flex-wrap:wrap; }
+      .stats-row { gap:10px; }
+      .stat-card { min-width:120px; flex:1; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<div id="navbar-placeholder"></div>
+<script src="navbar.js?v=3"></script>
+
+<!-- PAGE -->
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <div class="page-title">Client by Portofolio</div>
+      <div class="page-subtitle">Lihat daftar client berdasarkan saham atau obligasi yang dimiliki</div>
+      <div class="title-underline"></div>
+    </div>
+  </div>
+
+  <!-- Tabs: Saham / Obligasi -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('saham')">📈 Saham</button>
+    <button class="tab-btn" onclick="switchTab('obligasi')">📄 Obligasi</button>
+  </div>
+
+  <!-- Search -->
+  <div class="search-bar">
+    <label id="searchLabel">Cari Saham:</label>
+    <input type="text" id="searchInput" placeholder="Ketik kode saham, misal BBCA..." oninput="debounceSearch()"/>
+    <button class="btn btn-primary" onclick="doSearch()">Cari</button>
+  </div>
+
+  <!-- Stats -->
+  <div class="section-card" id="statsCard" style="display:none;">
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-label">Kode</div>
+        <div class="stat-value" id="statStock">-</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Total Client</div>
+        <div class="stat-value" id="statClients">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label" id="statTotalLabel">Total Lot</div>
+        <div class="stat-value" id="statTotal">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Total Nominal</div>
+        <div class="stat-value" id="statNominal">Rp 0</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Results Table -->
+  <div class="section-card">
+    <div class="section-header">
+      <div>
+        <div class="section-title" id="resultTitle">Hasil Pencarian</div>
+        <div class="section-subtitle" id="resultSubtitle">Pilih tab dan cari kode saham/obligasi</div>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead id="resultHead">
+          <tr>
+            <th>No</th>
+            <th>Client ID</th>
+            <th>Nama Client</th>
+            <th>Sales</th>
+            <th>Qty (Lot)</th>
+            <th>Avg Price</th>
+            <th>Nominal</th>
+          </tr>
+        </thead>
+        <tbody id="resultBody">
+          <tr><td colspan="7" class="empty-state">Ketik kode saham atau obligasi lalu klik Cari</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- All Stocks/Bonds List -->
+  <div class="section-card">
+    <div class="section-header">
+      <div>
+        <div class="section-title" id="listTitle">Daftar Semua Saham di Portofolio</div>
+        <div class="section-subtitle" id="listSubtitle">Klik salah satu untuk melihat detail client</div>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead id="listHead">
+          <tr>
+            <th>No</th>
+            <th>Kode</th>
+            <th>Jumlah Client</th>
+            <th>Total Lot</th>
+            <th>Total Nominal</th>
+          </tr>
+        </thead>
+        <tbody id="listBody">
+          <tr><td colspan="5" class="empty-state">Memuat data...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div><!-- end page-container -->
+
+<script>
+let currentTab = 'saham';
+let allPortfolio = [];
+let allCustomers = {};
+let searchTimeout = null;
+
+async function initPage() {
+  await loadAllData();
+  renderList();
+}
+
+async function loadAllData() {
+  // Get current user for role-based filtering
+  const raw = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember');
+  const curUser = raw ? JSON.parse(raw) : {};
+  const userRole = curUser.role || '';
+  const userName = (curUser.name || '').trim().toLowerCase();
+  const canSeeAll = ['admin', 'head_sales', 'head_account'].includes(userRole);
+
+  // Load all customers
+  const { data: custs, error: e1 } = await window._supabase
+    .from('customers')
+    .select('id, client_id, client_name, sales_person_name')
+    .order('client_id');
+  if (e1) console.error(e1);
+
+  let custList = custs || [];
+  // Filter by sales if not admin/head
+  if (!canSeeAll && userName) {
+    custList = custList.filter(c => (c.sales_person_name || '').toLowerCase() === userName);
+  }
+  // Map by id
+  allCustomers = {};
+  custList.forEach(c => { allCustomers[c.id] = c; });
+
+  // Load all portfolio holdings (no filter — Supabase .in() has limits)
+  const { data: porto, error: e2 } = await window._supabase
+    .from('customer_portfolio')
+    .select('*')
+    .order('stock');
+  if (e2) console.error(e2);
+
+  // Filter: only keep portfolios belonging to accessible customers & with active holdings
+  const customerIdSet = new Set(custList.map(c => c.id));
+  allPortfolio = (porto || []).filter(p =>
+    p.stock && p.stock !== '-' &&
+    customerIdSet.has(p.customer_id) &&
+    (Number(p.qty_lot) > 0 || Number(p.nominal) > 0)
+  );
+}
+
+// ══════ TAB SWITCH ══════
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tab-btn').forEach((btn, i) => {
+    btn.classList.toggle('active', (i === 0 && tab === 'saham') || (i === 1 && tab === 'obligasi'));
+  });
+
+  if (tab === 'saham') {
+    document.getElementById('searchLabel').textContent = 'Cari Saham:';
+    document.getElementById('searchInput').placeholder = 'Ketik kode saham, misal BBCA...';
+    document.getElementById('listTitle').textContent = 'Daftar Semua Saham di Portofolio';
+    document.getElementById('resultHead').innerHTML = `
+      <tr><th>No</th><th>Client ID</th><th>Nama Client</th><th>Sales</th><th>Qty (Lot)</th><th>Avg Price</th><th>Nominal</th></tr>`;
+    document.getElementById('statTotalLabel').textContent = 'Total Lot';
+  } else {
+    document.getElementById('searchLabel').textContent = 'Cari Obligasi:';
+    document.getElementById('searchInput').placeholder = 'Ketik nama obligasi, misal FR0098...';
+    document.getElementById('listTitle').textContent = 'Daftar Semua Obligasi di Portofolio';
+    document.getElementById('resultHead').innerHTML = `
+      <tr><th>No</th><th>Client ID</th><th>Nama Client</th><th>Sales</th><th>Nominal</th></tr>`;
+    document.getElementById('statTotalLabel').textContent = 'Total Nominal';
+  }
+
+  document.getElementById('searchInput').value = '';
+  document.getElementById('statsCard').style.display = 'none';
+  document.getElementById('resultBody').innerHTML = `<tr><td colspan="7" class="empty-state">Ketik kode ${tab === 'saham' ? 'saham' : 'obligasi'} lalu klik Cari</td></tr>`;
+  renderList();
+}
+
+// ══════ RENDER LIST (All stocks/bonds) ══════
+function renderList() {
+  const tbody = document.getElementById('listBody');
+  let items;
+
+  if (currentTab === 'saham') {
+    // Saham: buy_price >= 0
+    items = allPortfolio.filter(p => p.buy_price >= 0);
+  } else {
+    // Obligasi: buy_price < 0
+    items = allPortfolio.filter(p => p.buy_price < 0);
+  }
+
+  // Group by stock
+  const grouped = {};
+  items.forEach(p => {
+    const key = (p.stock || '').toUpperCase();
+    if (!grouped[key]) grouped[key] = { stock: key, clients: new Set(), totalLot: 0, totalNominal: 0 };
+    grouped[key].clients.add(p.customer_id);
+    grouped[key].totalLot += Number(p.qty_lot) || 0;
+    // Untuk obligasi, qty_lot menyimpan nominal (bukan lot)
+    if (currentTab === 'obligasi') {
+      grouped[key].totalNominal += Number(p.qty_lot) || 0;
+    } else {
+      grouped[key].totalNominal += (Number(p.qty_lot) || 0) * 100 * (Number(p.buy_price) || 0);
+    }
+  });
+
+  const sorted = Object.values(grouped).sort((a, b) => b.clients.size - a.clients.size);
+
+  if (sorted.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="5" class="empty-state">Belum ada data ${currentTab === 'saham' ? 'saham' : 'obligasi'}</td></tr>`;
+    document.getElementById('listHead').innerHTML = `<tr><th>No</th><th>Kode</th><th>Jumlah Client</th><th>${currentTab === 'saham' ? 'Total Lot' : 'Total Nominal'}</th><th>Total Nominal</th></tr>`;
+    return;
+  }
+
+  if (currentTab === 'saham') {
+    document.getElementById('listHead').innerHTML = `<tr><th>No</th><th>Kode</th><th>Jumlah Client</th><th>Total Lot</th><th>Total Nominal</th></tr>`;
+    tbody.innerHTML = sorted.map((g, i) => `
+      <tr style="cursor:pointer" onclick="searchByStock('${g.stock}')">
+        <td>${i + 1}</td>
+        <td><span class="stock-badge">${g.stock}</span></td>
+        <td><strong>${g.clients.size}</strong> client</td>
+        <td>${formatNumber(g.totalLot)} lot</td>
+        <td>${formatRp(g.totalNominal)}</td>
+      </tr>`).join('');
+  } else {
+    document.getElementById('listHead').innerHTML = `<tr><th>No</th><th>Kode</th><th>Jumlah Client</th><th>Total Nominal</th></tr>`;
+    tbody.innerHTML = sorted.map((g, i) => `
+      <tr style="cursor:pointer" onclick="searchByStock('${g.stock}')">
+        <td>${i + 1}</td>
+        <td><span class="bond-badge">${g.stock}</span></td>
+        <td><strong>${g.clients.size}</strong> client</td>
+        <td>${formatRp(g.totalNominal)}</td>
+      </tr>`).join('');
+  }
+}
+
+// ══════ SEARCH ══════
+function debounceSearch() {
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(doSearch, 400);
+}
+
+function searchByStock(code) {
+  document.getElementById('searchInput').value = code;
+  doSearch();
+  // Scroll to top
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function doSearch() {
+  const q = document.getElementById('searchInput').value.trim().toUpperCase();
+  if (!q) {
+    document.getElementById('statsCard').style.display = 'none';
+    document.getElementById('resultBody').innerHTML = `<tr><td colspan="7" class="empty-state">Ketik kode ${currentTab === 'saham' ? 'saham' : 'obligasi'} lalu klik Cari</td></tr>`;
+    document.getElementById('resultSubtitle').textContent = 'Pilih tab dan cari kode saham/obligasi';
+    return;
+  }
+
+  let items;
+  if (currentTab === 'saham') {
+    items = allPortfolio.filter(p => p.buy_price >= 0 && (p.stock || '').toUpperCase().includes(q));
+  } else {
+    items = allPortfolio.filter(p => p.buy_price < 0 && (p.stock || '').toUpperCase().includes(q));
+  }
+
+  if (items.length === 0) {
+    document.getElementById('statsCard').style.display = 'none';
+    document.getElementById('resultBody').innerHTML = `<tr><td colspan="7" class="empty-state">Tidak ditemukan client yang memiliki "${q}"</td></tr>`;
+    document.getElementById('resultSubtitle').textContent = `Tidak ada hasil untuk "${q}"`;
+    return;
+  }
+
+  // Stats
+  const uniqueClients = new Set(items.map(p => p.customer_id));
+  const totalLot = items.reduce((s, p) => s + (Number(p.qty_lot) || 0), 0);
+  // Untuk obligasi, qty_lot menyimpan nominal
+  const totalNominal = currentTab === 'saham'
+    ? items.reduce((s, p) => s + ((Number(p.qty_lot) || 0) * 100 * (Number(p.buy_price) || 0)), 0)
+    : items.reduce((s, p) => s + (Number(p.qty_lot) || 0), 0);
+
+  document.getElementById('statsCard').style.display = '';
+  document.getElementById('statStock').innerHTML = currentTab === 'saham'
+    ? `<span class="stock-badge">${q}</span>`
+    : `<span class="bond-badge">${q}</span>`;
+  document.getElementById('statClients').textContent = uniqueClients.size;
+  document.getElementById('statTotal').textContent = currentTab === 'saham' ? formatNumber(totalLot) + ' lot' : formatRp(totalNominal);
+  document.getElementById('statNominal').textContent = formatRp(totalNominal);
+  document.getElementById('resultSubtitle').textContent = `Menampilkan ${items.length} data untuk "${q}"`;
+
+  // Render table
+  const tbody = document.getElementById('resultBody');
+  if (currentTab === 'saham') {
+    items.sort((a, b) => (Number(b.qty_lot) || 0) - (Number(a.qty_lot) || 0));
+    tbody.innerHTML = items.map((p, i) => {
+      const cust = allCustomers[p.customer_id] || {};
+      const nominal = (Number(p.qty_lot) || 0) * 100 * (Number(p.buy_price) || 0);
+      return `
+      <tr>
+        <td>${i + 1}</td>
+        <td><strong>${cust.client_id || '-'}</strong></td>
+        <td>${cust.client_name || '-'}</td>
+        <td>${cust.sales_person_name || '-'}</td>
+        <td><strong>${formatNumber(p.qty_lot || 0)}</strong> lot</td>
+        <td>${formatRp(p.buy_price || 0)}</td>
+        <td>${formatRp(nominal)}</td>
+      </tr>`;
+    }).join('');
+  } else {
+    // Obligasi: qty_lot = nominal
+    items.sort((a, b) => (Number(b.qty_lot) || 0) - (Number(a.qty_lot) || 0));
+    tbody.innerHTML = items.map((p, i) => {
+      const cust = allCustomers[p.customer_id] || {};
+      return `
+      <tr>
+        <td>${i + 1}</td>
+        <td><strong>${cust.client_id || '-'}</strong></td>
+        <td>${cust.client_name || '-'}</td>
+        <td>${cust.sales_person_name || '-'}</td>
+        <td>${formatRp(p.qty_lot || 0)}</td>
+      </tr>`;
+    }).join('');
+  }
+}
+
+// ══════ HELPERS ══════
+function formatRp(n) {
+  return 'Rp ' + Number(n).toLocaleString('id-ID');
+}
+
+function formatNumber(n) {
+  return Number(n).toLocaleString('id-ID');
+}
+</script>
+</body>
+</html>

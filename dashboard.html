@@ -1036,7 +1036,7 @@
 
   <!-- Version -->
   <div class="version-bar">
-    <span class="version-text">Fawz Pro v1.9</span>
+    <span class="version-text">Fawz Pro v1.10</span>
     <button class="version-info-btn" id="changelogBtn" title="Lihat Changelog" aria-label="Lihat Changelog">
       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
     </button>
@@ -1058,7 +1058,28 @@
 
       <div class="cl-version active">
         <div class="cl-version-header">
-          <span class="cl-badge current">v1.9</span>
+          <span class="cl-badge current">v1.10</span>
+          <span class="cl-date">14 Agustus 2026</span>
+        </div>
+        <div class="cl-section-label">New Features</div>
+        <ul class="cl-list">
+          <li><strong>Portofolio</strong> — halaman baru untuk melihat portofolio saham &amp; obligasi per nasabah dengan searchable client filter.</li>
+          <li><strong>Client by Portofolio</strong> — reverse lookup untuk melihat nasabah berdasarkan kepemilikan saham/obligasi.</li>
+          <li><strong>Portofolio — Transaksi Obligasi &amp; Lain-lain</strong> — input transaksi obligasi (Buy/Sell) dan transaksi lainnya (Income/Outcome).</li>
+          <li><strong>Transaksi Saham — Filter 1 Tahun</strong> — tombol cepat untuk menampilkan data 12 bulan terakhir.</li>
+          <li><strong>Transaksi Saham — Filter Rentang Tanggal</strong> — pilih tanggal awal &amp; akhir secara custom.</li>
+        </ul>
+        <div class="cl-section-label">Bug Fixes</div>
+        <ul class="cl-list">
+          <li>Fix fetch portfolio tanpa limit .in() — semua data tampil lengkap.</li>
+          <li>Hanya tampilkan saham/obligasi yang masih aktif (holding &gt; 0) di list portofolio.</li>
+          <li>Perbaikan mobile responsive layout — spacing lebih nyaman.</li>
+        </ul>
+      </div>
+
+      <div class="cl-version">
+        <div class="cl-version-header">
+          <span class="cl-badge">v1.9</span>
           <span class="cl-date">22 Juli 2026</span>
         </div>
         <div class="cl-section-label">New Features</div>

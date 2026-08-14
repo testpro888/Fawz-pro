@@ -4,6 +4,35 @@ Semua perubahan signifikan pada project ini didokumentasikan di sini.
 
 ---
 
+## [v1.10] — 2026-08-14
+
+### New Features
+
+#### Portofolio
+- Halaman **Portofolio** baru di submenu Customer — lihat holding saham & obligasi per nasabah
+- Searchable client filter dengan pagination
+- **Client by Portofolio** — reverse lookup nasabah berdasarkan kepemilikan saham/obligasi
+- Input **Transaksi Obligasi** (Buy/Sell) dan **Transaksi Lain-lain** (Income/Outcome)
+- Buy/Sell Fee menggunakan dropdown list dengan auto-pair dan disclaimer estimasi
+- Total nominal ditampilkan di tabel portofolio
+- Filter client list berdasarkan sales name (role-based access)
+- Bond transactions tampil di tabel portofolio (di bawah stocks)
+
+#### Transaksi Saham — Filter Tambahan
+- Tombol **1 Tahun** — filter cepat untuk menampilkan data 12 bulan terakhir
+- **Filter Rentang Tanggal** — pilih tanggal awal & akhir secara custom (Dari — Sampai)
+- Filter mode saling eksklusif: pilih bulan, rentang tanggal, atau 1 tahun
+- Summary label otomatis berubah sesuai mode filter (Monthly / Range / Total Keseluruhan)
+
+### Bug Fixes
+- Fix fetch portfolio tanpa limit `.in()` — semua data tampil lengkap
+- Hanya tampilkan saham/obligasi yang masih aktif (holding > 0) di list
+- Fix obligasi nominal dari field `qty_lot`
+- Perbaikan mobile responsive layout — spacing lebih nyaman
+- Fix Harga ke Sales menampilkan bid price (harga_jual)
+
+---
+
 ## [v1.9] — 2026-07-22
 
 ### New Features

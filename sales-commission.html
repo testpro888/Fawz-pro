@@ -222,8 +222,8 @@
       <div class="title-underline"></div>
     </div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
-      <a href="commission-report.html" class="btn btn-outline btn-sm">📄 Laporan Komisi</a>
-      <button class="btn btn-outline btn-sm" onclick="exportCSV()">⬇ Export CSV</button>
+      <a href="commission-report.html" class="btn btn-outline btn-sm">Laporan Komisi</a>
+      <button class="btn btn-outline btn-sm" onclick="exportCSV()">Export CSV</button>
     </div>
   </div>
 
@@ -264,9 +264,9 @@
   <div style="margin-bottom:28px;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:12px;">
       <div>
-        <div style="font-size:1.1rem;font-weight:700;color:var(--navy);">💰 Komisi Per Sales</div>
+        <div style="font-size:1.1rem;font-weight:700;color:var(--navy);">Komisi Per Sales</div>
         <div style="font-size:.82rem;color:var(--gray);margin-top:3px;" id="commissionRateLabel">
-          Target Rp 10.000.000 · ≥target: <strong style="color:#27ae60;">12%</strong> · &lt;target: <strong style="color:#e74c3c;">5%</strong>
+          Target Rp 10.000.000 · ≥target: <strong style="color:#27ae60;">12%</strong> · &lt;target: <strong style="color:#e74c3c;">5%</strong> · Min. komisi: <strong>Rp 100.000</strong>
         </div>
       </div>
       <div style="display:flex;align-items:center;gap:10px;">
@@ -285,8 +285,12 @@
   <!-- History Komisi Per Bulan -->
   <div style="margin-bottom:28px;">
     <div style="margin-bottom:16px;">
-      <div style="font-size:1.1rem;font-weight:700;color:var(--navy);">📅 History Komisi Bulanan</div>
+      <div style="font-size:1.1rem;font-weight:700;color:var(--navy);">History Komisi Bulanan</div>
       <div style="font-size:.82rem;color:var(--gray);margin-top:3px;">Rekap komisi per sales dari Januari hingga bulan ini</div>
+      <div style="font-size:.75rem;color:var(--gray);margin-top:6px;display:flex;gap:16px;flex-wrap:wrap;">
+        <span><span style="color:#b45309;font-weight:600;">(akum)</span> = Diakumulasikan ke bulan berikutnya (min. Rp 100.000)</span>
+        <span><span style="font-weight:600;">*</span> = Termasuk akumulasi dari bulan sebelumnya</span>
+      </div>
     </div>
     <div style="background:#fff;border-radius:16px;box-shadow:0 2px 12px rgba(0,0,0,.06);overflow:hidden;">
       <div style="overflow-x:auto;">
@@ -425,6 +429,10 @@
   // Effective commission settings per-period (Req 5.1, 5.5, 5.8)
   // Populated by loadEffectiveSettings(period); keyed by sales_id (UUID)
   var effectiveSettingsMap = {}; // { [sales_id]: SettingsRecord }
+
+  // Profit Ambassador (PP) settings from referral_agents table
+  // Keyed by agent_code (lowercase), value: { fee_status, fee_below_pct, fee_target_pct, target_fee }
+  var referralAgentsMap = {};
   let sortCol    = 'tanggal';
   let sortAsc    = false;
   let curPage    = 1;
@@ -444,7 +452,7 @@
     canPay = ['head_account','treasury'].includes(curUser.role);
 
     try {
-      await Promise.all([loadPaidStatus(), loadAllData(), loadSahamFee()]);
+      await Promise.all([loadPaidStatus(), loadAllData(), loadSahamFee(), loadReferralAgents()]);
     } catch(e) {
       console.error(e);
       showToast('Gagal memuat data komisi', 'error');
@@ -612,6 +620,29 @@
     } catch(e) { console.warn('saham_transaksi:', e.message); }
   }
 
+  // ─── LOAD REFERRAL AGENTS (Profit Ambassador PP) ─────────
+  async function loadReferralAgents() {
+    try {
+      const { data, error } = await window._supabase
+        .from('referral_agents')
+        .select('agent_code, fee_status, fee_below_pct, fee_target_pct, target_fee, nama, client_name');
+      if (error) { console.warn('referral_agents:', error.message); return; }
+      referralAgentsMap = {};
+      (data || []).forEach(function(r) {
+        const code = (r.agent_code || '').toLowerCase().trim();
+        if (code) {
+          referralAgentsMap[code] = {
+            fee_status: r.fee_status || 'free',
+            fee_below_pct: r.fee_below_pct,
+            fee_target_pct: r.fee_target_pct,
+            target_fee: r.target_fee,
+            nama: r.nama || r.client_name || ''
+          };
+        }
+      });
+    } catch(e) { console.warn('loadReferralAgents:', e.message); }
+  }
+
   // ─── POPULATE FILTERS ────────────────────────────────────
   function populateFilters() {
     const salesSet = [...new Set(allRows.map(r => r.salesNama).filter(v => v && v !== '—'))].sort();
@@ -772,6 +803,9 @@
    * Resolves EffectiveSettings for a given sales name key.
    * Since saham_transaksi stores sales_name (text) not sales_id (UUID),
    * we look up by sales_name case-insensitively.
+   * For Profit Ambassadors (PP prefix), reads rates from referral_agents:
+   *   Premium → 8% (below) / 16% (on target)
+   *   Free    → 5% (below) / 12% (on target)
    * Falls back to GLOBAL_DEFAULT if no match found (Req 5.2).
    */
   function getSettingsForSalesByName(salesName) {
@@ -780,14 +814,35 @@
     }
     const CS = window.CommissionSettings;
     const key = (salesName || '').toLowerCase().trim();
+
+    // 1. Check sales_commission_settings (per-period custom settings)
     const record = Object.values(effectiveSettingsMap).find(function(r) {
       return (r.sales_name || '').toLowerCase().trim() === key;
     });
     if (record) {
       return { target_fee: record.target_fee, rate_above: record.rate_above, rate_below: record.rate_below, isDefault: false };
     }
+
+    // 2. Check referral_agents for Profit Ambassador (PP prefix)
+    const agent = referralAgentsMap[key];
+    if (agent) {
+      // Default rates based on premium/free status
+      const PP_DEFAULTS = { free: { below: 0.05, target: 0.12 }, premium: { below: 0.08, target: 0.16 } };
+      const status = agent.fee_status === 'premium' ? 'premium' : 'free';
+      const rateBelow  = agent.fee_below_pct != null ? agent.fee_below_pct / 100 : PP_DEFAULTS[status].below;
+      const rateTarget = agent.fee_target_pct != null ? agent.fee_target_pct / 100 : PP_DEFAULTS[status].target;
+      const targetFee  = agent.target_fee != null ? agent.target_fee : CS.GLOBAL_DEFAULT.target_fee;
+      return { target_fee: targetFee, rate_above: rateTarget, rate_below: rateBelow, isDefault: false };
+    }
+
+    // 3. Fallback to GLOBAL_DEFAULT
     return { ...CS.GLOBAL_DEFAULT };
   }
+
+  // ── THRESHOLD AKUMULASI KOMISI ──
+  // Jika komisi bulan tertentu < KOMISI_MIN_THRESHOLD, maka ditahan dan
+  // diakumulasikan ke bulan berikutnya sampai total kumulatif >= threshold.
+  const KOMISI_MIN_THRESHOLD = 100_000;
 
   function calcSalesCommission(filterYM) {
     // filterYM = 'YYYY-MM' atau '' (semua)
@@ -834,6 +889,91 @@
     }).sort((a, b) => b.totalFee - a.totalFee);
   }
 
+  /**
+   * Menghitung komisi per sales dengan logika akumulasi:
+   * Jika komisi bulan X < KOMISI_MIN_THRESHOLD, maka angka ditahan (carry forward)
+   * dan ditambahkan ke komisi bulan berikutnya, hingga total >= threshold baru dicairkan.
+   *
+   * @param {string} filterYM - 'YYYY-MM' bulan yang akan ditampilkan
+   * @returns {Array} Sama format seperti calcSalesCommission() tapi dengan tambahan:
+   *   - komisiAkumulasi: total komisi (termasuk carry dari bulan sebelumnya)
+   *   - komisiCarryForward: angka yang di-carry dari bulan-bulan sebelum
+   *   - carryMonths: array string bulan-bulan yang membentuk carry
+   *   - komisiBulanIni: komisi murni bulan ini saja (tanpa carry)
+   *   - isAccumulated: apakah ada akumulasi dari bulan sebelumnya
+   *   - isDisbursed: apakah total sudah >= threshold (bisa dicairkan)
+   */
+  function calcSalesCommissionWithAccumulation(filterYM) {
+    if (!filterYM) return calcSalesCommission(filterYM);
+
+    const norm = name => (name || '').toLowerCase().trim();
+    const now = new Date();
+    const year = parseInt(filterYM.split('-')[0]);
+    const month = parseInt(filterYM.split('-')[1]);
+
+    // Kumpulkan semua bulan dari Januari tahun ini sampai bulan filter
+    const monthsToCheck = [];
+    for (let m = 1; m <= month; m++) {
+      monthsToCheck.push(year + '-' + String(m).padStart(2, '0'));
+    }
+
+    // Hitung komisi per sales per bulan dari Januari
+    // salesAccum[key] = { carryForward, carryMonths }
+    const salesAccum = {};
+
+    // Iterasi bulan per bulan untuk tracking akumulasi
+    for (let mi = 0; mi < monthsToCheck.length; mi++) {
+      const ym = monthsToCheck[mi];
+      const monthResults = calcSalesCommission(ym);
+
+      monthResults.forEach(s => {
+        const key = norm(s.nama);
+        if (!salesAccum[key]) {
+          salesAccum[key] = { carryForward: 0, carryMonths: [] };
+        }
+
+        if (ym === filterYM) {
+          // Bulan yang sedang ditampilkan — simpan data lengkap
+          salesAccum[key].currentResult = s;
+        } else {
+          // Bulan sebelumnya — cek apakah perlu carry forward
+          const totalWithCarry = salesAccum[key].carryForward + s.komisi;
+          if (totalWithCarry < KOMISI_MIN_THRESHOLD) {
+            // Belum mencapai threshold, akumulasikan
+            salesAccum[key].carryForward = totalWithCarry;
+            if (s.komisi > 0) {
+              salesAccum[key].carryMonths.push({ month: ym, amount: s.komisi });
+            }
+          } else {
+            // Sudah >= threshold di bulan sebelumnya, reset carry
+            salesAccum[key].carryForward = 0;
+            salesAccum[key].carryMonths = [];
+          }
+        }
+      });
+    }
+
+    // Bangun hasil final untuk bulan yang ditampilkan
+    const results = calcSalesCommission(filterYM);
+    return results.map(s => {
+      const key = norm(s.nama);
+      const accum = salesAccum[key] || { carryForward: 0, carryMonths: [] };
+      const komisiBulanIni = s.komisi;
+      const komisiAkumulasi = komisiBulanIni + accum.carryForward;
+      const isDisbursed = komisiAkumulasi >= KOMISI_MIN_THRESHOLD;
+
+      return {
+        ...s,
+        komisiBulanIni: komisiBulanIni,
+        komisiAkumulasi: komisiAkumulasi,
+        komisiCarryForward: accum.carryForward,
+        carryMonths: accum.carryMonths,
+        isAccumulated: accum.carryForward > 0,
+        isDisbursed: isDisbursed
+      };
+    }).sort((a, b) => b.totalFee - a.totalFee);
+  }
+
   async function renderCommissionPerSales() {
     const filterYM = document.getElementById('filterBulanKomisi')?.value || '';
     const wrap     = document.getElementById('commissionPerSalesGrid');
@@ -853,7 +993,7 @@
       effectiveSettingsMap = {}; // No period = use Global_Default for all (Req 5.2)
     }
 
-    const results = calcSalesCommission(filterYM);
+    const results = calcSalesCommissionWithAccumulation(filterYM);
 
     if (!results.length) {
       wrap.innerHTML = '<div style="padding:32px;text-align:center;color:#bbb;font-size:.88rem;">Belum ada data untuk ditampilkan</div>';
@@ -866,7 +1006,7 @@
     const GD = CS ? CS.GLOBAL_DEFAULT : { target_fee: 10_000_000, rate_above: 0.12, rate_below: 0.05 };
     const labelEl = document.getElementById('commissionRateLabel');
     if (labelEl) {
-      labelEl.innerHTML = `Default: Target ${CS ? CS.formatTargetFeeDisplay(GD.target_fee) : 'Rp '+GD.target_fee.toLocaleString('id-ID')} &middot; &ge;target: <strong style="color:#27ae60;">${(GD.rate_above*100).toFixed(0)}%</strong> &middot; &lt;target: <strong style="color:#e74c3c;">${(GD.rate_below*100).toFixed(0)}%</strong>`;
+      labelEl.innerHTML = `Default: Target ${CS ? CS.formatTargetFeeDisplay(GD.target_fee) : 'Rp '+GD.target_fee.toLocaleString('id-ID')} &middot; &ge;target: <strong style="color:#27ae60;">${(GD.rate_above*100).toFixed(0)}%</strong> &middot; &lt;target: <strong style="color:#e74c3c;">${(GD.rate_below*100).toFixed(0)}%</strong> &middot; Min. komisi: <strong>Rp ${KOMISI_MIN_THRESHOLD.toLocaleString('id-ID')}</strong>`;
     }
 
     wrap.innerHTML = results.map(s => {
@@ -892,6 +1032,33 @@
         ? achievePct.toFixed(2) + '% dari target'
         : Math.min(100, (es.target_fee > 0 ? (s.totalFee / es.target_fee) * 100 : 0)).toFixed(1) + '% dari target';
 
+      // ── Akumulasi info ──
+      const MONTH_LABELS = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+      let accumHTML = '';
+      if (s.isAccumulated && s.komisiCarryForward > 0) {
+        const carryDetail = s.carryMonths.map(cm => {
+          const mIdx = parseInt(cm.month.split('-')[1]) - 1;
+          return `${MONTH_LABELS[mIdx]}: ${fmtRpFull(cm.amount)}`;
+        }).join(', ');
+
+        accumHTML = `
+        <div style="margin-top:10px;background:#f0f4ff;border:1px solid #c5d3ff;border-radius:10px;padding:10px 12px;">
+          <div style="font-size:.72rem;font-weight:700;color:#2d4abf;margin-bottom:4px;">AKUMULASI KOMISI</div>
+          <div style="font-size:.75rem;color:#555;">
+            Bulan ini: <strong>${fmtRpFull(s.komisiBulanIni)}</strong> + Akumulasi: <strong>${fmtRpFull(s.komisiCarryForward)}</strong>
+          </div>
+          <div style="font-size:.7rem;color:#888;margin-top:3px;">Sumber: ${carryDetail}</div>
+          <div style="font-size:.88rem;font-weight:800;color:#2d4abf;margin-top:6px;">Total: ${fmtRpFull(s.komisiAkumulasi)}</div>
+        </div>`;
+      } else if (s.komisiBulanIni > 0 && s.komisiBulanIni < KOMISI_MIN_THRESHOLD && !s.isAccumulated) {
+        // Bulan ini saja di bawah threshold, akan diakumulasikan
+        accumHTML = `
+        <div style="margin-top:10px;background:#f0f4ff;border:1px solid #c5d3ff;border-radius:10px;padding:10px 12px;">
+          <div style="font-size:.72rem;font-weight:700;color:#2d4abf;margin-bottom:4px;">AKUMULASI</div>
+          <div style="font-size:.75rem;color:#555;">Komisi ${fmtRpFull(s.komisiBulanIni)} akan diakumulasikan ke bulan berikutnya (min. ${fmtRpFull(KOMISI_MIN_THRESHOLD)})</div>
+        </div>`;
+      }
+
       return `
       <div style="background:#fff;border-radius:14px;padding:22px;box-shadow:0 2px 10px rgba(0,0,0,.05);border-top:4px solid ${s.hitTarget ? '#27ae60' : '#e74c3c'};">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
@@ -915,6 +1082,7 @@
             <div style="font-size:1.3rem;font-weight:800;color:${s.hitTarget ? '#27ae60' : '#e74c3c'};">${fmtRpFull(s.komisi)}</div>
           </div>
         </div>
+        ${accumHTML}
         <!-- Progress bar -->
         <div style="margin-top:12px;background:#f0f0f5;border-radius:4px;height:6px;overflow:hidden;">
           <div style="height:100%;border-radius:4px;background:${s.hitTarget ? 'linear-gradient(90deg,#27ae60,#4ede8a)' : 'linear-gradient(90deg,#e74c3c,#ff8c8c)'};width:${Math.min(100, es.target_fee > 0 ? (s.totalFee/es.target_fee)*100 : 0).toFixed(1)}%;transition:width .5s;"></div>
@@ -968,7 +1136,7 @@
     thHTML += '</tr>';
     thead.innerHTML = thHTML;
 
-    // Build rows
+    // Build rows — with accumulation logic
     let tbHTML = '';
     let colTotals = new Array(months.length).fill(0);
     let grandTotal = 0;
@@ -980,17 +1148,52 @@
       rowHTML += `<td style="padding:11px 14px;font-weight:600;font-size:.82rem;color:var(--navy);white-space:nowrap;position:sticky;left:0;background:${bg};z-index:1;">${name}</td>`;
 
       let rowTotal = 0;
+      let carryForward = 0; // akumulasi komisi yang belum mencapai threshold
+
       months.forEach((ym, mi) => {
         const result = calcSalesCommission(ym).find(s => s.nama.toLowerCase().trim() === key);
         const komisi = result ? result.komisi : 0;
-        rowTotal += komisi;
-        colTotals[mi] += komisi;
-        const color = komisi > 0 ? (result?.hitTarget ? '#27ae60' : '#e74c3c') : '#bbb';
-        rowHTML += `<td style="padding:11px 14px;text-align:right;font-size:.78rem;font-weight:${komisi>0?'600':'400'};color:${color};white-space:nowrap;">${komisi > 0 ? fmtRp(komisi) : '—'}</td>`;
+        const totalWithCarry = carryForward + komisi;
+
+        let displayVal = '';
+        let color = '#bbb';
+        let fontWeight = '400';
+        let tooltip = '';
+
+        if (totalWithCarry >= KOMISI_MIN_THRESHOLD) {
+          // Sudah mencapai threshold — tampilkan total termasuk akumulasi
+          displayVal = fmtRp(totalWithCarry);
+          color = result?.hitTarget ? '#27ae60' : '#e74c3c';
+          fontWeight = '600';
+          if (carryForward > 0) {
+            tooltip = `title="Termasuk akumulasi: ${fmtRpFull(carryForward)}"`;
+            displayVal += ' *';
+          }
+          rowTotal += totalWithCarry;
+          colTotals[mi] += totalWithCarry;
+          carryForward = 0; // reset
+        } else if (komisi > 0) {
+          // Belum mencapai threshold — diakumulasikan
+          carryForward = totalWithCarry;
+          displayVal = fmtRp(komisi);
+          color = '#b45309';
+          fontWeight = '500';
+          tooltip = `title="Diakumulasikan, total akum: ${fmtRpFull(totalWithCarry)}"`;
+          displayVal += ' (akum)';
+        } else {
+          displayVal = '—';
+        }
+
+        rowHTML += `<td ${tooltip} style="padding:11px 14px;text-align:right;font-size:.78rem;font-weight:${fontWeight};color:${color};white-space:nowrap;cursor:${tooltip?'help':'default'};">${displayVal}</td>`;
       });
 
       grandTotal += rowTotal;
-      rowHTML += `<td style="padding:11px 14px;text-align:right;font-size:.82rem;font-weight:700;color:var(--gold);white-space:nowrap;">${fmtRp(rowTotal)}</td>`;
+      // Jika masih ada akumulasi yang belum mencapai threshold
+      let totalDisplay = fmtRp(rowTotal);
+      if (carryForward > 0) {
+        totalDisplay += ` <span style="font-size:.65rem;color:#b45309;" title="Akumulasi: ${fmtRpFull(carryForward)}">(+${fmtRp(carryForward)} akum)</span>`;
+      }
+      rowHTML += `<td style="padding:11px 14px;text-align:right;font-size:.82rem;font-weight:700;color:var(--gold);white-space:nowrap;">${totalDisplay}</td>`;
       rowHTML += '</tr>';
       tbHTML += rowHTML;
     });

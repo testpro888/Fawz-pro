@@ -1,0 +1,1192 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <script src="config.js"></script>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Fawz Pro | Portofolio</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script>
+    const SUPABASE_URL = (window.__FAWZ_CONFIG__ || {}).supabaseUrl || '';
+    const SUPABASE_KEY = (window.__FAWZ_CONFIG__ || {}).supabaseKey || '';
+    try { window._supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); }
+    catch(e) { console.error('Supabase init:', e); }
+    window.addEventListener('DOMContentLoaded', () => {
+      if (!window._supabase && window.supabase)
+        window._supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      initPage();
+    });
+  </script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --navy:#0d0d2b; --purple:#1e1252; --gold:#f5a623; --gold-light:#ffc857;
+      --bg:#f4f5fb; --border:#e0e0ef; --text:#1a1a3a; --gray:#888;
+      --green:#27ae60; --red:#e74c3c; --blue:#2980b9; --nav-h:68px;
+    }
+    body { font-family:'Inter',sans-serif; background:var(--bg); min-height:100vh; padding-top:var(--nav-h); color:var(--text); }
+    .page-container { max-width:1300px; margin:0 auto; padding:36px 28px; }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)} }
+
+    .page-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:28px; flex-wrap:wrap; gap:16px; animation:fadeUp .4s ease both; }
+    .page-title { font-size:1.8rem; font-weight:800; color:var(--navy); }
+    .page-subtitle { font-size:.84rem; color:var(--gray); margin-top:4px; }
+    .title-underline { width:40px; height:3px; background:linear-gradient(90deg,var(--gold),var(--gold-light)); border-radius:2px; margin-top:8px; }
+
+    .btn { display:inline-flex; align-items:center; gap:6px; padding:9px 16px; border-radius:8px; font-family:'Inter',sans-serif; font-size:.82rem; font-weight:600; cursor:pointer; border:none; transition:all .2s; }
+    .btn-primary { background:linear-gradient(135deg,var(--gold),#e8931a); color:#fff; box-shadow:0 3px 10px rgba(245,166,35,.3); }
+    .btn-primary:hover { transform:translateY(-1px); box-shadow:0 6px 18px rgba(245,166,35,.4); }
+    .btn-outline { background:#fff; color:var(--navy); border:1.5px solid var(--border); }
+    .btn-outline:hover { border-color:var(--gold); color:var(--gold); }
+    .btn-danger { background:#fff; color:var(--red); border:1.5px solid #fdd; }
+    .btn-danger:hover { background:#fff5f5; border-color:var(--red); }
+    .btn-sm { padding:6px 12px; font-size:.75rem; }
+
+    /* Client selector with search */
+    .selector-bar { background:#fff; border-radius:12px; padding:16px 20px; display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:22px; box-shadow:0 1px 6px rgba(0,0,0,.04); animation:fadeUp .4s .05s ease both; position:relative; z-index:100; }
+    .selector-bar label { font-size:.78rem; font-weight:600; color:var(--navy); white-space:nowrap; }
+    .client-search-wrap { position:relative; flex:1; min-width:280px; z-index:100; }
+    .client-search-wrap input { width:100%; padding:10px 14px; border:1.5px solid var(--border); border-radius:8px; font-family:'Inter',sans-serif; font-size:.85rem; outline:none; transition:border .2s; }
+    .client-search-wrap input:focus { border-color:var(--gold); }
+    .client-dropdown { position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--border); border-top:none; border-radius:0 0 8px 8px; max-height:220px; overflow-y:auto; z-index:200; display:none; box-shadow:0 6px 20px rgba(0,0,0,.1); }
+    .client-dropdown.open { display:block; }
+    .client-dropdown-item { padding:10px 14px; font-size:.84rem; cursor:pointer; transition:background .1s; border-bottom:1px solid #f5f5f5; }
+    .client-dropdown-item:last-child { border-bottom:none; }
+    .client-dropdown-item:hover { background:#fffbf3; }
+    .client-dropdown-item .cid { font-weight:600; color:var(--navy); }
+    .client-dropdown-item .cname { color:var(--gray); margin-left:6px; }
+    .client-info { font-size:.82rem; color:var(--gray); }
+    .client-info strong { color:var(--navy); font-weight:600; }
+
+    /* Sections */
+    .section-card { background:#fff; border-radius:12px; box-shadow:0 1px 6px rgba(0,0,0,.04); overflow:hidden; margin-bottom:24px; animation:fadeUp .4s .1s ease both; }
+    .section-header { padding:16px 20px; border-bottom:1px solid #f0f0f5; display:flex; align-items:center; justify-content:space-between; }
+    .section-title { font-size:.95rem; font-weight:700; color:var(--navy); }
+
+    /* Table */
+    .table-wrap { overflow-x:auto; }
+    table { width:100%; border-collapse:collapse; font-size:.83rem; }
+    thead { background:#fafafa; }
+    thead th { padding:12px 14px; text-align:left; font-size:.68rem; font-weight:700; color:var(--gray); text-transform:uppercase; letter-spacing:.8px; white-space:nowrap; border-bottom:2px solid #f0f0f5; }
+    tbody tr { border-bottom:1px solid #f8f8fb; transition:background .1s; }
+    tbody tr:last-child { border-bottom:none; }
+    tbody tr:hover { background:#fafafa; }
+    tbody td { padding:11px 14px; vertical-align:middle; }
+    .empty-state { text-align:center; padding:36px 20px; color:#ccc; font-size:.85rem; }
+
+    /* Summary */
+    .summary-row { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; padding:16px 20px; border-top:1px solid #f0f0f5; background:#fafbfc; }
+    .summary-item label { font-size:.68rem; color:var(--gray); text-transform:uppercase; letter-spacing:.5px; display:block; margin-bottom:3px; }
+    .summary-item .val { font-size:1rem; font-weight:700; color:var(--navy); }
+    .summary-item input, .summary-item select { margin-top:5px; padding:7px 10px; border:1.5px solid var(--border); border-radius:6px; font-size:.82rem; width:100%; outline:none; font-family:'Inter',sans-serif; transition:border .2s; }
+    .summary-item input:focus, .summary-item select:focus { border-color:var(--gold); }
+
+    /* Form */
+    .form-row { display:grid; grid-template-columns:repeat(auto-fit, minmax(140px,1fr)); gap:10px; padding:14px 20px; }
+    .form-group { display:flex; flex-direction:column; gap:3px; }
+    .form-group label { font-size:.68rem; font-weight:600; color:var(--gray); text-transform:uppercase; letter-spacing:.5px; }
+    .form-group input, .form-group select { padding:8px 10px; border:1.5px solid var(--border); border-radius:6px; font-family:'Inter',sans-serif; font-size:.82rem; outline:none; transition:border .2s; }
+    .form-group input:focus, .form-group select:focus { border-color:var(--gold); }
+    .form-group input[readonly] { background:#f9f9f9; color:var(--gray); }
+    .form-actions { padding:10px 20px; border-top:1px solid #f0f0f5; display:flex; gap:10px; justify-content:flex-end; }
+
+    /* Badge */
+    .badge-buy { background:#e8f5e9; color:#2e7d32; display:inline-block; padding:2px 8px; border-radius:4px; font-size:.7rem; font-weight:600; }
+    .badge-sell { background:#fce4ec; color:#c62828; display:inline-block; padding:2px 8px; border-radius:4px; font-size:.7rem; font-weight:600; }
+
+    /* Pagination */
+    .table-footer { padding:12px 20px; display:flex; align-items:center; justify-content:space-between; border-top:1px solid #f0f0f5; font-size:.78rem; color:var(--gray); }
+    .pagination { display:flex; gap:3px; }
+    .pg-btn { width:28px; height:28px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:.75rem; cursor:pointer; border:1.5px solid var(--border); background:#fff; color:var(--text); transition:all .12s; }
+    .pg-btn.active { background:var(--gold); border-color:var(--gold); color:#fff; font-weight:700; }
+    .pg-btn:hover:not(.active) { border-color:var(--gold); }
+
+    /* Responsive */
+    @media(max-width:768px) {
+      .page-container { padding:24px 18px; }
+      .page-title { font-size:1.4rem; }
+      .page-subtitle { font-size:.78rem; }
+      .page-header { margin-bottom:20px; }
+
+      .selector-bar { flex-direction:column; align-items:stretch; padding:16px; gap:10px; margin-bottom:20px; }
+      .selector-bar label { font-size:.75rem; }
+      .client-search-wrap { min-width:100%; }
+      .client-search-wrap input { font-size:.88rem; padding:12px 14px; }
+      .client-info { font-size:.78rem; margin-left:0; }
+
+      .section-card { margin-bottom:20px; border-radius:10px; }
+      .section-header { padding:16px; }
+      .section-title { font-size:.9rem; }
+
+      .summary-row { grid-template-columns:1fr; gap:16px; padding:18px 16px; }
+      .summary-item .val { font-size:.95rem; }
+      .summary-item input, .summary-item select { font-size:.85rem; padding:10px 12px; margin-top:6px; }
+
+      .form-row { grid-template-columns:1fr; gap:14px; padding:16px; }
+      .form-group input, .form-group select { font-size:.85rem; padding:11px 12px; }
+      .form-group label { font-size:.72rem; margin-bottom:2px; }
+      .form-actions { padding:14px 16px; }
+
+      .table-wrap { overflow-x:auto; }
+      table { font-size:.76rem; min-width:500px; }
+      thead th { padding:10px 12px; font-size:.64rem; }
+      tbody td { padding:10px 12px; }
+      .btn-sm { padding:6px 10px; font-size:.7rem; }
+
+      .table-footer { padding:12px 16px; flex-wrap:wrap; gap:8px; font-size:.74rem; }
+      .pg-btn { width:28px; height:28px; font-size:.72rem; }
+
+      .form-actions .btn { width:100%; justify-content:center; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<div id="navbar-placeholder"></div>
+<script src="navbar.js?v=3"></script>
+
+<!-- PAGE -->
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <div class="page-title">Portofolio</div>
+      <div class="page-subtitle">Lihat dan kelola portofolio saham per nasabah</div>
+      <div class="title-underline"></div>
+    </div>
+  </div>
+
+  <!-- Client Selector with search/filter -->
+  <div class="selector-bar">
+    <label>Client:</label>
+    <div class="client-search-wrap">
+      <input type="text" id="clientSearchInput" placeholder="Ketik Client ID atau nama..." autocomplete="off" onfocus="openClientDropdown()" oninput="filterClients()"/>
+      <div class="client-dropdown" id="clientDropdown"></div>
+    </div>
+    <span class="client-info" id="clientInfo"></span>
+  </div>
+
+  <!-- CONTAINER 1: Tabel Portofolio -->
+  <div class="section-card">
+    <div class="section-header">
+      <div class="section-title">Portofolio</div>
+      <button class="btn btn-primary btn-sm" onclick="savePortfolio()">Save</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Stock</th>
+            <th>Qty (Lot)</th>
+            <th>Avg Price</th>
+            <th>Nominal</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="portfolioBody">
+          <tr><td colspan="5" class="empty-state">Pilih Client untuk melihat portofolio</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <!-- Obligasi in portfolio -->
+    <div style="border-top:1px solid #f0f0f5; padding:12px 20px 6px;">
+      <div style="font-size:.78rem; font-weight:700; color:var(--gray); text-transform:uppercase; letter-spacing:.5px; margin-bottom:8px;">Obligasi</div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Nama Bonds</th>
+            <th>Nominal</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="portfolioBondBody">
+          <tr><td colspan="3" class="empty-state">Belum ada obligasi</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="summary-row">
+      <div class="summary-item">
+        <label>Cash Balance</label>
+        <div class="val" id="cashBalanceDisplay">Rp 0</div>
+        <input type="number" id="cashBalanceInput" placeholder="0"/>
+      </div>
+      <div class="summary-item">
+        <label>Buy Fee (%)</label>
+        <div class="val" id="buyFeeDisplay">0%</div>
+        <select id="buyFeeInput" onchange="syncFeeFromBuy()">
+          <option value="0.101">0.101%</option>
+          <option value="0.111">0.111%</option>
+          <option value="0.121">0.121%</option>
+          <option value="0.131">0.131%</option>
+          <option value="0.141">0.141%</option>
+          <option value="0.151" selected>0.151%</option>
+          <option value="0.161">0.161%</option>
+          <option value="0.171">0.171%</option>
+          <option value="0.181">0.181%</option>
+          <option value="0.191">0.191%</option>
+          <option value="0.201">0.201%</option>
+          <option value="0.202">0.202%</option>
+        </select>
+      </div>
+      <div class="summary-item">
+        <label>Sell Fee (%)</label>
+        <div class="val" id="sellFeeDisplay">0%</div>
+        <select id="sellFeeInput" onchange="syncFeeFromSell()">
+          <option value="0.201">0.201%</option>
+          <option value="0.211">0.211%</option>
+          <option value="0.221">0.221%</option>
+          <option value="0.231">0.231%</option>
+          <option value="0.241">0.241%</option>
+          <option value="0.251" selected>0.251%</option>
+          <option value="0.261">0.261%</option>
+          <option value="0.271">0.271%</option>
+          <option value="0.281">0.281%</option>
+          <option value="0.291">0.291%</option>
+          <option value="0.301">0.301%</option>
+          <option value="0.302">0.302%</option>
+        </select>
+      </div>
+    </div>
+    <div style="padding:8px 20px 14px; font-size:.72rem; color:#aaa; font-style:italic;">
+      * Perhitungan fee bersifat estimasi dan dapat berbeda dengan nilai aktual yang dikenakan sekuritas.
+    </div>
+  </div>
+
+  <!-- CONTAINER 2: Input Transaksi (Saham) -->
+  <div class="section-card">
+    <div class="section-header">
+      <div class="section-title">Input Transaksi (Saham)</div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Tanggal</label>
+        <input type="date" id="txDate"/>
+      </div>
+      <div class="form-group">
+        <label>Stock</label>
+        <input type="text" id="txStock" placeholder="BBCA" style="text-transform:uppercase"/>
+      </div>
+      <div class="form-group">
+        <label>Transaksi</label>
+        <select id="txType">
+          <option value="Buy">Buy</option>
+          <option value="Sell">Sell</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Qty (Lot)</label>
+        <input type="number" id="txQty" placeholder="0" min="1" oninput="calcTxNominal()"/>
+      </div>
+      <div class="form-group">
+        <label>Price</label>
+        <input type="number" id="txPrice" placeholder="0" min="0" oninput="calcTxNominal()"/>
+      </div>
+      <div class="form-group">
+        <label>Nominal</label>
+        <input type="text" id="txNominal" readonly placeholder="Auto"/>
+      </div>
+      <div class="form-group">
+        <label>Fee</label>
+        <input type="text" id="txFee" readonly placeholder="Auto"/>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-primary" onclick="submitTransaction()">+ Tambah Transaksi</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Tanggal</th>
+            <th>Stock</th>
+            <th>Transaksi</th>
+            <th>Qty (Lot)</th>
+            <th>Price</th>
+            <th>Nominal</th>
+            <th>Fee</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="transactionBody">
+          <tr><td colspan="8" class="empty-state">Belum ada transaksi</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="table-footer">
+      <span id="txPageInfo">0 transaksi</span>
+      <div class="pagination" id="txPagination"></div>
+    </div>
+  </div>
+
+  <!-- CONTAINER 3: Input Transaksi (Obligasi) -->
+  <div class="section-card">
+    <div class="section-header">
+      <div class="section-title">Input Transaksi (Obligasi)</div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Tanggal</label>
+        <input type="date" id="bondDate"/>
+      </div>
+      <div class="form-group">
+        <label>Nama Bonds</label>
+        <input type="text" id="bondName" placeholder="FR0098"/>
+      </div>
+      <div class="form-group">
+        <label>Transaksi</label>
+        <select id="bondType">
+          <option value="Bond Buy">Buy</option>
+          <option value="Bond Sell">Sell</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Price (%)</label>
+        <input type="number" id="bondPrice" placeholder="100" step="0.01" min="0"/>
+      </div>
+      <div class="form-group">
+        <label>Nominal</label>
+        <input type="number" id="bondNominal" placeholder="0" min="0"/>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-primary" onclick="submitBondTransaction()">+ Tambah Transaksi</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Tanggal</th>
+            <th>Nama Bonds</th>
+            <th>Transaksi</th>
+            <th>Price</th>
+            <th>Nominal</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="bondTransactionBody">
+          <tr><td colspan="6" class="empty-state">Belum ada transaksi obligasi</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="table-footer">
+      <span id="bondPageInfo">0 transaksi</span>
+      <div class="pagination" id="bondPagination"></div>
+    </div>
+  </div>
+
+  <!-- CONTAINER 4: Input Transaksi (Lain-Lain) -->
+  <div class="section-card">
+    <div class="section-header">
+      <div class="section-title">Input Transaksi (Lain-Lain)</div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Tanggal</label>
+        <input type="date" id="otherDate"/>
+      </div>
+      <div class="form-group">
+        <label>Keterangan</label>
+        <input type="text" id="otherDesc" placeholder="Dividen, Transfer, dll"/>
+      </div>
+      <div class="form-group">
+        <label>Transaksi</label>
+        <select id="otherType">
+          <option value="Income">Income</option>
+          <option value="Outcome">Outcome</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Nominal</label>
+        <input type="number" id="otherNominal" placeholder="0" min="0"/>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-primary" onclick="submitOtherTransaction()">+ Tambah Transaksi</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Tanggal</th>
+            <th>Keterangan</th>
+            <th>Transaksi</th>
+            <th>Nominal</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="otherTransactionBody">
+          <tr><td colspan="5" class="empty-state">Belum ada transaksi lain-lain</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="table-footer">
+      <span id="otherPageInfo">0 transaksi</span>
+      <div class="pagination" id="otherPagination"></div>
+    </div>
+  </div>
+
+</div><!-- end page-container -->
+
+<script>
+let customers = [];
+let portfolioData = [];
+let transactionData = [];
+let selectedCustomerId = null;
+let txPage = 1;
+const TX_PER_PAGE = 10;
+
+async function initPage() {
+  await loadClients();
+  // Close dropdown on outside click
+  document.addEventListener('click', (e) => {
+    const wrap = document.querySelector('.client-search-wrap');
+    if (wrap && !wrap.contains(e.target)) closeClientDropdown();
+  });
+}
+
+// ══════ CLIENT SEARCH/FILTER ══════
+async function loadClients() {
+  // Get current user
+  const raw = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember');
+  const curUser = raw ? JSON.parse(raw) : {};
+  const userRole = curUser.role || '';
+  const userName = (curUser.name || '').trim().toLowerCase();
+
+  // Roles that can see all clients
+  const canSeeAll = ['admin', 'head_sales', 'head_account'].includes(userRole);
+
+  const { data, error } = await window._supabase
+    .from('customers')
+    .select('id, client_id, client_name, sales_person_name')
+    .order('client_id');
+  if (error) { console.error(error); return; }
+
+  let allClients = data || [];
+
+  // Filter by sales name if not admin/head
+  if (!canSeeAll && userName) {
+    allClients = allClients.filter(c => {
+      const salesPic = (c.sales_person_name || '').toLowerCase();
+      return salesPic === userName;
+    });
+  }
+
+  customers = allClients;
+}
+
+function openClientDropdown() {
+  filterClients();
+  document.getElementById('clientDropdown').classList.add('open');
+}
+
+function closeClientDropdown() {
+  document.getElementById('clientDropdown').classList.remove('open');
+}
+
+function filterClients() {
+  const q = document.getElementById('clientSearchInput').value.toLowerCase().trim();
+  const dd = document.getElementById('clientDropdown');
+  const filtered = customers.filter(c => {
+    const cid = (c.client_id || '').toLowerCase();
+    const cname = (c.client_name || '').toLowerCase();
+    return cid.includes(q) || cname.includes(q);
+  }).slice(0, 30);
+
+  if (filtered.length === 0) {
+    dd.innerHTML = '<div class="client-dropdown-item" style="color:#bbb">Tidak ditemukan</div>';
+  } else {
+    dd.innerHTML = filtered.map(c =>
+      `<div class="client-dropdown-item" onclick="selectClient('${c.id}')">
+        <span class="cid">${c.client_id || '-'}</span>
+        <span class="cname">${c.client_name || ''}</span>
+      </div>`
+    ).join('');
+  }
+  dd.classList.add('open');
+}
+
+function selectClient(id) {
+  const cust = customers.find(c => c.id === id);
+  if (!cust) return;
+  selectedCustomerId = id;
+  document.getElementById('clientSearchInput').value = `${cust.client_id} — ${cust.client_name}`;
+  document.getElementById('clientInfo').innerHTML = `<strong>${cust.client_name}</strong>`;
+  closeClientDropdown();
+  loadPortfolio();
+}
+
+// ══════ LOAD PORTFOLIO ══════
+async function loadPortfolio() {
+  if (!selectedCustomerId) {
+    document.getElementById('clientInfo').innerHTML = '';
+    document.getElementById('portfolioBody').innerHTML = '<tr><td colspan="5" class="empty-state">Pilih Client untuk melihat portofolio</td></tr>';
+    document.getElementById('transactionBody').innerHTML = '<tr><td colspan="8" class="empty-state">Belum ada transaksi</td></tr>';
+    resetSummary();
+    return;
+  }
+
+  // Load portfolio
+  const { data: porto, error: e1 } = await window._supabase
+    .from('customer_portfolio')
+    .select('*')
+    .eq('customer_id', selectedCustomerId)
+    .order('stock');
+  if (e1) console.error(e1);
+  const allPorto = porto || [];
+  // Split: bonds have buy_price = -1 as marker, or we check by naming
+  // Better: use a convention — bonds stored with buy_price = -1
+  portfolioData = allPorto.filter(p => p.buy_price >= 0);
+  bondPortfolioData = allPorto.filter(p => p.buy_price < 0);
+  renderPortfolio();
+  renderBondPortfolio();
+
+  // Load transactions (saham only: Buy/Sell)
+  const { data: txs, error: e2 } = await window._supabase
+    .from('portfolio_transactions')
+    .select('*')
+    .eq('customer_id', selectedCustomerId)
+    .in('transaction_type', ['Buy', 'Sell'])
+    .order('created_at', { ascending: false });
+  if (e2) console.error(e2);
+  transactionData = txs || [];
+  txPage = 1;
+  renderTransactions();
+
+  // Load bond & other transactions
+  await loadBondTransactions();
+  await loadOtherTransactions();
+
+  // Load summary
+  if (portfolioData.length > 0) {
+    const first = portfolioData[0];
+    document.getElementById('cashBalanceInput').value = first.cash_balance || 0;
+    document.getElementById('buyFeeInput').value = first.buy_fee || 0;
+    document.getElementById('sellFeeInput').value = first.sell_fee || 0;
+    document.getElementById('cashBalanceDisplay').textContent = formatRp(first.cash_balance || 0);
+    document.getElementById('buyFeeDisplay').textContent = (first.buy_fee || 0) + '%';
+    document.getElementById('sellFeeDisplay').textContent = (first.sell_fee || 0) + '%';
+  } else {
+    resetSummary();
+  }
+}
+
+function resetSummary() {
+  document.getElementById('cashBalanceInput').value = '';
+  document.getElementById('buyFeeInput').value = '0.151';
+  document.getElementById('sellFeeInput').value = '0.251';
+  document.getElementById('cashBalanceDisplay').textContent = 'Rp 0';
+  document.getElementById('buyFeeDisplay').textContent = '0%';
+  document.getElementById('sellFeeDisplay').textContent = '0%';
+}
+
+// ══════ RENDER PORTFOLIO TABLE ══════
+function renderPortfolio() {
+  const tbody = document.getElementById('portfolioBody');
+  if (portfolioData.length === 0 || (portfolioData.length === 1 && portfolioData[0].stock === '-')) {
+    tbody.innerHTML = '<tr><td colspan="5" class="empty-state">Belum ada data portofolio</td></tr>';
+    return;
+  }
+  const filtered = portfolioData.filter(p => p.stock !== '-');
+  let totalNominal = 0;
+  tbody.innerHTML = filtered.map(p => {
+    const avgPrice = p.buy_price || 0;
+    const nominal = p.qty_lot * 100 * avgPrice;
+    totalNominal += nominal;
+    return `
+    <tr>
+      <td><strong>${p.stock}</strong></td>
+      <td>${formatNum(p.qty_lot)}</td>
+      <td>${formatRp(avgPrice)}</td>
+      <td>${formatRp(nominal)}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="deletePortfolioRow('${p.id}')">Hapus</button></td>
+    </tr>`;
+  }).join('') + `
+    <tr style="border-top:2px solid #e0e0ef; background:#fafbfc;">
+      <td colspan="3" style="text-align:right; font-weight:700; font-size:.85rem; color:var(--navy);">Total Nominal</td>
+      <td style="font-weight:700; font-size:.85rem; color:var(--navy);">${formatRp(totalNominal)}</td>
+      <td></td>
+    </tr>`;
+}
+
+// ══════ RENDER BOND PORTFOLIO ══════
+let bondPortfolioData = [];
+
+function renderBondPortfolio() {
+  const tbody = document.getElementById('portfolioBondBody');
+  if (bondPortfolioData.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="3" class="empty-state">Belum ada obligasi</td></tr>';
+    return;
+  }
+  tbody.innerHTML = bondPortfolioData.map(b => `
+    <tr>
+      <td><strong>${b.stock}</strong></td>
+      <td>${formatRp(b.qty_lot)}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="deleteBondPortfolioRow('${b.id}')">Hapus</button></td>
+    </tr>
+  `).join('');
+}
+
+async function deleteBondPortfolioRow(id) {
+  if (!confirm('Hapus obligasi dari portofolio?')) return;
+  await window._supabase.from('customer_portfolio').delete().eq('id', id);
+  loadPortfolio();
+}
+
+// ══════ RENDER TRANSACTIONS TABLE (PAGINATED) ══════
+function renderTransactions() {
+  const tbody = document.getElementById('transactionBody');
+  const total = transactionData.length;
+  const totalPages = Math.ceil(total / TX_PER_PAGE) || 1;
+
+  if (txPage > totalPages) txPage = totalPages;
+
+  document.getElementById('txPageInfo').textContent = `${total} transaksi`;
+
+  if (total === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" class="empty-state">Belum ada transaksi</td></tr>';
+    document.getElementById('txPagination').innerHTML = '';
+    return;
+  }
+
+  const start = (txPage - 1) * TX_PER_PAGE;
+  const pageData = transactionData.slice(start, start + TX_PER_PAGE);
+
+  tbody.innerHTML = pageData.map(t => {
+    const nominal = t.qty_lot * 100 * t.price;
+    const fee = (t.buy_fee || 0) + (t.sell_fee || 0);
+    const badgeClass = t.transaction_type === 'Buy' ? 'badge-buy' : 'badge-sell';
+    const date = t.created_at ? new Date(t.created_at).toLocaleDateString('id-ID', { day:'2-digit', month:'short', year:'numeric' }) : '-';
+    return `
+    <tr>
+      <td>${date}</td>
+      <td><strong>${t.stock}</strong></td>
+      <td><span class="${badgeClass}">${t.transaction_type}</span></td>
+      <td>${formatNum(t.qty_lot)}</td>
+      <td>${formatRp(t.price)}</td>
+      <td>${formatRp(nominal)}</td>
+      <td>${formatRp(fee)}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="deleteTransaction('${t.id}')">Hapus</button></td>
+    </tr>`;
+  }).join('');
+
+  // Pagination buttons
+  let pgHtml = '';
+  for (let i = 1; i <= totalPages; i++) {
+    pgHtml += `<div class="pg-btn ${i === txPage ? 'active' : ''}" onclick="goTxPage(${i})">${i}</div>`;
+  }
+  document.getElementById('txPagination').innerHTML = pgHtml;
+}
+
+function goTxPage(p) {
+  txPage = p;
+  renderTransactions();
+}
+
+// ══════ FEE PAIRING ══════
+// Buy dan Sell fee berpasangan: Sell = Buy + 0.1
+const FEE_PAIRS = {
+  '0.101': '0.201', '0.111': '0.211', '0.121': '0.221', '0.131': '0.231',
+  '0.141': '0.241', '0.151': '0.251', '0.161': '0.261', '0.171': '0.271',
+  '0.181': '0.281', '0.191': '0.291', '0.201': '0.301', '0.202': '0.302'
+};
+const FEE_PAIRS_REVERSE = Object.fromEntries(Object.entries(FEE_PAIRS).map(([k,v]) => [v,k]));
+
+function syncFeeFromBuy() {
+  const buyVal = document.getElementById('buyFeeInput').value;
+  const sellVal = FEE_PAIRS[buyVal];
+  if (sellVal) document.getElementById('sellFeeInput').value = sellVal;
+}
+
+function syncFeeFromSell() {
+  const sellVal = document.getElementById('sellFeeInput').value;
+  const buyVal = FEE_PAIRS_REVERSE[sellVal];
+  if (buyVal) document.getElementById('buyFeeInput').value = buyVal;
+}
+
+// ══════ CALC TRANSACTION NOMINAL & FEES ══════
+function calcTxNominal() {
+  const qty = parseFloat(document.getElementById('txQty').value) || 0;
+  const price = parseFloat(document.getElementById('txPrice').value) || 0;
+  const nominal = qty * 100 * price;
+  const buyFeePercent = parseFloat(document.getElementById('buyFeeInput').value) || 0;
+  const sellFeePercent = parseFloat(document.getElementById('sellFeeInput').value) || 0;
+  const txType = document.getElementById('txType').value;
+
+  document.getElementById('txNominal').value = formatRp(nominal);
+
+  const feePercent = txType === 'Buy' ? buyFeePercent : sellFeePercent;
+  const fee = nominal * feePercent / 100;
+  document.getElementById('txFee').value = formatRp(fee);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const txTypeEl = document.getElementById('txType');
+  if (txTypeEl) txTypeEl.addEventListener('change', calcTxNominal);
+});
+
+// ══════ SUBMIT TRANSACTION ══════
+async function submitTransaction() {
+  if (!selectedCustomerId) { alert('Pilih Client terlebih dahulu'); return; }
+
+  const stock = document.getElementById('txStock').value.trim().toUpperCase();
+  const txType = document.getElementById('txType').value;
+  const qty = parseFloat(document.getElementById('txQty').value) || 0;
+  const price = parseFloat(document.getElementById('txPrice').value) || 0;
+
+  if (!stock || qty <= 0 || price <= 0) { alert('Lengkapi data transaksi'); return; }
+
+  const nominal = qty * 100 * price;
+  const buyFeePercent = parseFloat(document.getElementById('buyFeeInput').value) || 0;
+  const sellFeePercent = parseFloat(document.getElementById('sellFeeInput').value) || 0;
+  const feePercent = txType === 'Buy' ? buyFeePercent : sellFeePercent;
+  const fee = nominal * feePercent / 100;
+
+  const cust = customers.find(c => c.id === selectedCustomerId);
+  const clientIdText = cust ? cust.client_id : '';
+
+  // Validasi Sell: cek apakah ada cukup qty di portofolio
+  if (txType === 'Sell') {
+    const existing = portfolioData.find(p => p.stock === stock);
+    if (!existing || existing.qty_lot < qty) {
+      alert(`Qty tidak cukup. Portofolio ${stock}: ${existing ? existing.qty_lot : 0} lot`);
+      return;
+    }
+  }
+
+  // Insert transaksi (fee disimpan di buy_fee untuk Buy, sell_fee untuk Sell)
+  const txDate = document.getElementById('txDate').value;
+  const hasDate = !!txDate;
+  const { error } = await window._supabase
+    .from('portfolio_transactions')
+    .insert({
+      customer_id: selectedCustomerId,
+      client_id: clientIdText,
+      stock,
+      transaction_type: txType,
+      qty_lot: qty,
+      price,
+      buy_fee: txType === 'Buy' ? fee : 0,
+      sell_fee: txType === 'Sell' ? fee : 0,
+      created_at: hasDate ? new Date(txDate).toISOString() : null
+    });
+
+  if (error) { alert('Gagal menyimpan: ' + error.message); return; }
+
+  // Update portofolio (qty & avg price)
+  await updatePortfolioFromTransaction(stock, txType, qty, price, clientIdText);
+
+  // Update cash balance hanya jika ada tanggal
+  if (hasDate) {
+    let cashBalance = parseFloat(document.getElementById('cashBalanceInput').value) || 0;
+    if (txType === 'Buy') {
+      cashBalance -= (nominal + fee);
+    } else {
+      cashBalance += (nominal - fee);
+    }
+    document.getElementById('cashBalanceInput').value = cashBalance;
+    document.getElementById('cashBalanceDisplay').textContent = formatRp(cashBalance);
+    await window._supabase
+      .from('customer_portfolio')
+      .update({ cash_balance: cashBalance })
+      .eq('customer_id', selectedCustomerId);
+  }
+
+  document.getElementById('txStock').value = '';
+  document.getElementById('txQty').value = '';
+  document.getElementById('txPrice').value = '';
+  document.getElementById('txNominal').value = '';
+  document.getElementById('txFee').value = '';
+  document.getElementById('txDate').value = '';
+
+  loadPortfolio();
+}
+
+// ══════ UPDATE PORTFOLIO FROM TRANSACTION ══════
+async function updatePortfolioFromTransaction(stock, txType, qty, price, clientIdText) {
+  const cashBalance = parseFloat(document.getElementById('cashBalanceInput').value) || 0;
+  const buyFeeVal = parseFloat(document.getElementById('buyFeeInput').value) || 0;
+  const sellFeeVal = parseFloat(document.getElementById('sellFeeInput').value) || 0;
+
+  // Cari existing portfolio row untuk stock ini
+  const existing = portfolioData.find(p => p.stock === stock);
+
+  if (txType === 'Buy') {
+    if (existing) {
+      // Hitung avg price baru: (oldQty*oldAvg + newQty*newPrice) / (oldQty+newQty)
+      const oldQty = existing.qty_lot;
+      const oldAvg = existing.buy_price;
+      const newTotalQty = oldQty + qty;
+      const newAvg = (oldQty * oldAvg + qty * price) / newTotalQty;
+
+      await window._supabase
+        .from('customer_portfolio')
+        .update({ qty_lot: newTotalQty, buy_price: Math.round(newAvg * 100) / 100 })
+        .eq('id', existing.id);
+    } else {
+      // Insert row baru
+      await window._supabase.from('customer_portfolio').insert({
+        customer_id: selectedCustomerId,
+        client_id: clientIdText,
+        stock,
+        qty_lot: qty,
+        buy_price: price,
+        cash_balance: cashBalance,
+        buy_fee: buyFeeVal,
+        sell_fee: sellFeeVal
+      });
+    }
+  } else {
+    // SELL: kurangi qty
+    if (existing) {
+      const newQty = existing.qty_lot - qty;
+      if (newQty <= 0) {
+        // Hapus row dari portofolio
+        await window._supabase.from('customer_portfolio').delete().eq('id', existing.id);
+      } else {
+        await window._supabase
+          .from('customer_portfolio')
+          .update({ qty_lot: newQty })
+          .eq('id', existing.id);
+      }
+    }
+  }
+}
+
+// ══════ SAVE PORTFOLIO ══════
+async function savePortfolio() {
+  if (!selectedCustomerId) { alert('Pilih Client terlebih dahulu'); return; }
+
+  const cashBalance = parseFloat(document.getElementById('cashBalanceInput').value) || 0;
+  const buyFee = parseFloat(document.getElementById('buyFeeInput').value) || 0;
+  const sellFee = parseFloat(document.getElementById('sellFeeInput').value) || 0;
+
+  // Update semua row portofolio milik customer ini
+  if (portfolioData.length > 0) {
+    const { error } = await window._supabase
+      .from('customer_portfolio')
+      .update({ cash_balance: cashBalance, buy_fee: buyFee, sell_fee: sellFee })
+      .eq('customer_id', selectedCustomerId);
+    if (error) { alert('Gagal menyimpan: ' + error.message); return; }
+  } else {
+    // Jika belum ada row, insert satu row settings
+    const cust = customers.find(c => c.id === selectedCustomerId);
+    const { error } = await window._supabase.from('customer_portfolio').insert({
+      customer_id: selectedCustomerId,
+      client_id: cust ? cust.client_id : '',
+      stock: '-',
+      qty_lot: 0,
+      buy_price: 0,
+      cash_balance: cashBalance,
+      buy_fee: buyFee,
+      sell_fee: sellFee
+    });
+    if (error) { alert('Gagal menyimpan: ' + error.message); return; }
+  }
+
+  document.getElementById('cashBalanceDisplay').textContent = formatRp(cashBalance);
+  document.getElementById('buyFeeDisplay').textContent = buyFee + '%';
+  document.getElementById('sellFeeDisplay').textContent = sellFee + '%';
+  alert('Portofolio berhasil disimpan');
+  loadPortfolio();
+}
+
+// ══════ DELETE ══════
+async function deletePortfolioRow(id) {
+  if (!confirm('Hapus data portofolio ini?')) return;
+  await window._supabase.from('customer_portfolio').delete().eq('id', id);
+  loadPortfolio();
+}
+
+async function deleteTransaction(id) {
+  if (!confirm('Hapus transaksi ini?')) return;
+  await window._supabase.from('portfolio_transactions').delete().eq('id', id);
+  loadPortfolio();
+}
+
+async function deleteBondTransaction(id) {
+  if (!confirm('Hapus transaksi obligasi ini?')) return;
+  await window._supabase.from('portfolio_transactions').delete().eq('id', id);
+  loadBondTransactions();
+}
+
+async function deleteOtherTransaction(id) {
+  if (!confirm('Hapus transaksi ini?')) return;
+  // Update cash balance back
+  const tx = otherTransactionData.find(t => t.id === id);
+  if (tx) {
+    let cashBalance = parseFloat(document.getElementById('cashBalanceInput').value) || 0;
+    if (tx.transaction_type === 'Income') cashBalance -= (tx.price || 0);
+    else cashBalance += (tx.price || 0);
+    document.getElementById('cashBalanceInput').value = cashBalance;
+    document.getElementById('cashBalanceDisplay').textContent = formatRp(cashBalance);
+    await window._supabase.from('customer_portfolio').update({ cash_balance: cashBalance }).eq('customer_id', selectedCustomerId);
+  }
+  await window._supabase.from('portfolio_transactions').delete().eq('id', id);
+  loadOtherTransactions();
+}
+
+// ══════ BOND TRANSACTIONS ══════
+let bondTransactionData = [];
+let bondPage = 1;
+
+async function loadBondTransactions() {
+  if (!selectedCustomerId) return;
+  const { data, error } = await window._supabase
+    .from('portfolio_transactions')
+    .select('*')
+    .eq('customer_id', selectedCustomerId)
+    .in('transaction_type', ['Bond Buy', 'Bond Sell'])
+    .order('created_at', { ascending: false });
+  if (error) console.error(error);
+  bondTransactionData = data || [];
+  bondPage = 1;
+  renderBondTransactions();
+}
+
+function renderBondTransactions() {
+  const tbody = document.getElementById('bondTransactionBody');
+  const total = bondTransactionData.length;
+  const totalPages = Math.ceil(total / TX_PER_PAGE) || 1;
+  if (bondPage > totalPages) bondPage = totalPages;
+  document.getElementById('bondPageInfo').textContent = `${total} transaksi`;
+
+  if (total === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-state">Belum ada transaksi obligasi</td></tr>';
+    document.getElementById('bondPagination').innerHTML = '';
+    return;
+  }
+
+  const start = (bondPage - 1) * TX_PER_PAGE;
+  const pageData = bondTransactionData.slice(start, start + TX_PER_PAGE);
+
+  tbody.innerHTML = pageData.map(t => {
+    const date = t.created_at ? new Date(t.created_at).toLocaleDateString('id-ID', { day:'2-digit', month:'short', year:'numeric' }) : '-';
+    const txLabel = t.transaction_type === 'Bond Buy' ? 'Buy' : 'Sell';
+    const badgeClass = t.transaction_type === 'Bond Buy' ? 'badge-buy' : 'badge-sell';
+    return `
+    <tr>
+      <td>${date}</td>
+      <td><strong>${t.stock}</strong></td>
+      <td><span class="${badgeClass}">${txLabel}</span></td>
+      <td>${t.price || 0}%</td>
+      <td>${formatRp(t.qty_lot)}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="deleteBondTransaction('${t.id}')">Hapus</button></td>
+    </tr>`;
+  }).join('');
+
+  let pgHtml = '';
+  for (let i = 1; i <= totalPages; i++) {
+    pgHtml += `<div class="pg-btn ${i === bondPage ? 'active' : ''}" onclick="goBondPage(${i})">${i}</div>`;
+  }
+  document.getElementById('bondPagination').innerHTML = pgHtml;
+}
+
+function goBondPage(p) { bondPage = p; renderBondTransactions(); }
+
+async function submitBondTransaction() {
+  if (!selectedCustomerId) { alert('Pilih Client terlebih dahulu'); return; }
+
+  const bondDate = document.getElementById('bondDate').value;
+  const bondName = document.getElementById('bondName').value.trim();
+  const bondType = document.getElementById('bondType').value;
+  const bondPrice = parseFloat(document.getElementById('bondPrice').value) || 0;
+  const bondNominal = parseFloat(document.getElementById('bondNominal').value) || 0;
+
+  if (!bondName || bondNominal <= 0) { alert('Lengkapi data transaksi obligasi'); return; }
+
+  const cust = customers.find(c => c.id === selectedCustomerId);
+  const clientIdText = cust ? cust.client_id : '';
+
+  const { error } = await window._supabase
+    .from('portfolio_transactions')
+    .insert({
+      customer_id: selectedCustomerId,
+      client_id: clientIdText,
+      stock: bondName,
+      transaction_type: bondType,
+      qty_lot: bondNominal,
+      price: bondPrice,
+      buy_fee: 0,
+      sell_fee: 0,
+      created_at: bondDate ? new Date(bondDate).toISOString() : null
+    });
+
+  if (error) { alert('Gagal menyimpan: ' + error.message); return; }
+
+  // Update bond portfolio: Buy menambah, Sell mengurangi
+  await updateBondPortfolio(bondName, bondType, bondNominal, clientIdText);
+
+  // Update cash balance hanya jika ada tanggal
+  if (bondDate) {
+    let cashBalance = parseFloat(document.getElementById('cashBalanceInput').value) || 0;
+    if (bondType === 'Bond Buy') {
+      cashBalance -= bondNominal;
+    } else {
+      cashBalance += bondNominal;
+    }
+    document.getElementById('cashBalanceInput').value = cashBalance;
+    document.getElementById('cashBalanceDisplay').textContent = formatRp(cashBalance);
+    await window._supabase.from('customer_portfolio').update({ cash_balance: cashBalance }).eq('customer_id', selectedCustomerId);
+  }
+
+  document.getElementById('bondName').value = '';
+  document.getElementById('bondPrice').value = '';
+  document.getElementById('bondNominal').value = '';
+  document.getElementById('bondDate').value = '';
+
+  loadBondTransactions();
+  loadPortfolio();
+}
+
+// Update bond in portfolio table (buy_price = -1 as bond marker)
+async function updateBondPortfolio(bondName, bondType, nominal, clientIdText) {
+  const existing = bondPortfolioData.find(b => b.stock === bondName);
+
+  if (bondType === 'Bond Buy') {
+    if (existing) {
+      const newNominal = existing.qty_lot + nominal;
+      await window._supabase.from('customer_portfolio').update({ qty_lot: newNominal }).eq('id', existing.id);
+    } else {
+      await window._supabase.from('customer_portfolio').insert({
+        customer_id: selectedCustomerId,
+        client_id: clientIdText,
+        stock: bondName,
+        qty_lot: nominal,
+        buy_price: -1,
+        cash_balance: parseFloat(document.getElementById('cashBalanceInput').value) || 0,
+        buy_fee: parseFloat(document.getElementById('buyFeeInput').value) || 0,
+        sell_fee: parseFloat(document.getElementById('sellFeeInput').value) || 0
+      });
+    }
+  } else {
+    // Bond Sell: kurangi nominal
+    if (existing) {
+      const newNominal = existing.qty_lot - nominal;
+      if (newNominal <= 0) {
+        await window._supabase.from('customer_portfolio').delete().eq('id', existing.id);
+      } else {
+        await window._supabase.from('customer_portfolio').update({ qty_lot: newNominal }).eq('id', existing.id);
+      }
+    }
+  }
+}
+
+// ══════ OTHER TRANSACTIONS ══════
+let otherTransactionData = [];
+let otherPage = 1;
+
+async function loadOtherTransactions() {
+  if (!selectedCustomerId) return;
+  const { data, error } = await window._supabase
+    .from('portfolio_transactions')
+    .select('*')
+    .eq('customer_id', selectedCustomerId)
+    .in('transaction_type', ['Income', 'Outcome'])
+    .order('created_at', { ascending: false });
+  if (error) console.error(error);
+  otherTransactionData = data || [];
+  otherPage = 1;
+  renderOtherTransactions();
+}
+
+function renderOtherTransactions() {
+  const tbody = document.getElementById('otherTransactionBody');
+  const total = otherTransactionData.length;
+  const totalPages = Math.ceil(total / TX_PER_PAGE) || 1;
+  if (otherPage > totalPages) otherPage = totalPages;
+  document.getElementById('otherPageInfo').textContent = `${total} transaksi`;
+
+  if (total === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" class="empty-state">Belum ada transaksi lain-lain</td></tr>';
+    document.getElementById('otherPagination').innerHTML = '';
+    return;
+  }
+
+  const start = (otherPage - 1) * TX_PER_PAGE;
+  const pageData = otherTransactionData.slice(start, start + TX_PER_PAGE);
+
+  tbody.innerHTML = pageData.map(t => {
+    const date = t.created_at ? new Date(t.created_at).toLocaleDateString('id-ID', { day:'2-digit', month:'short', year:'numeric' }) : '-';
+    const badgeClass = t.transaction_type === 'Income' ? 'badge-buy' : 'badge-sell';
+    return `
+    <tr>
+      <td>${date}</td>
+      <td>${t.stock || '-'}</td>
+      <td><span class="${badgeClass}">${t.transaction_type}</span></td>
+      <td>${formatRp(t.price)}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="deleteOtherTransaction('${t.id}')">Hapus</button></td>
+    </tr>`;
+  }).join('');
+
+  let pgHtml = '';
+  for (let i = 1; i <= totalPages; i++) {
+    pgHtml += `<div class="pg-btn ${i === otherPage ? 'active' : ''}" onclick="goOtherPage(${i})">${i}</div>`;
+  }
+  document.getElementById('otherPagination').innerHTML = pgHtml;
+}
+
+function goOtherPage(p) { otherPage = p; renderOtherTransactions(); }
+
+async function submitOtherTransaction() {
+  if (!selectedCustomerId) { alert('Pilih Client terlebih dahulu'); return; }
+
+  const otherDate = document.getElementById('otherDate').value;
+  const desc = document.getElementById('otherDesc').value.trim();
+  const otherType = document.getElementById('otherType').value;
+  const nominal = parseFloat(document.getElementById('otherNominal').value) || 0;
+
+  if (!desc || nominal <= 0) { alert('Lengkapi data transaksi'); return; }
+
+  const cust = customers.find(c => c.id === selectedCustomerId);
+  const clientIdText = cust ? cust.client_id : '';
+
+  const { error } = await window._supabase
+    .from('portfolio_transactions')
+    .insert({
+      customer_id: selectedCustomerId,
+      client_id: clientIdText,
+      stock: desc,
+      transaction_type: otherType,
+      qty_lot: 0,
+      price: nominal,
+      buy_fee: 0,
+      sell_fee: 0,
+      created_at: otherDate ? new Date(otherDate).toISOString() : null
+    });
+
+  if (error) { alert('Gagal menyimpan: ' + error.message); return; }
+
+  // Update cash balance hanya jika ada tanggal
+  if (otherDate) {
+    let cashBalance = parseFloat(document.getElementById('cashBalanceInput').value) || 0;
+    if (otherType === 'Income') {
+      cashBalance += nominal;
+    } else {
+      cashBalance -= nominal;
+    }
+    document.getElementById('cashBalanceInput').value = cashBalance;
+    document.getElementById('cashBalanceDisplay').textContent = formatRp(cashBalance);
+    await window._supabase.from('customer_portfolio').update({ cash_balance: cashBalance }).eq('customer_id', selectedCustomerId);
+  }
+
+  document.getElementById('otherDesc').value = '';
+  document.getElementById('otherNominal').value = '';
+  document.getElementById('otherDate').value = '';
+
+  loadOtherTransactions();
+}
+
+// ══════ UTILS ══════
+function formatRp(num) {
+  return 'Rp ' + Number(num || 0).toLocaleString('id-ID');
+}
+function formatNum(num) {
+  return Number(num || 0).toLocaleString('id-ID');
+}
+</script>
+
+</body>
+</html>
