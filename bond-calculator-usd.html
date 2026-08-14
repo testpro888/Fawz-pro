@@ -4,7 +4,7 @@
   <script src="config.js"></script>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Fawz Pro | Bond Calculator IDR</title>
+  <title>Fawz Pro | Bond Calculator USD</title>
   <link rel="icon" type="image/png" href="assets/logo/fawz.png"/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap" rel="stylesheet"/>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -184,13 +184,13 @@
 
   <div class="page-header">
     <div>
-      <div class="page-title">Bond Calculator IDR</div>
-      <div class="page-subtitle">Kalkulasi harga, yield, accrued interest & jadwal kupon obligasi IDR</div>
+      <div class="page-title">Bond Calculator USD</div>
+      <div class="page-subtitle">Kalkulasi harga, yield, accrued interest & jadwal kupon obligasi USD</div>
       <div class="title-underline"></div>
     </div>
     <div class="header-actions">
       <span class="db-status loading" id="db-status-badge">Memuat data...</span>
-      <a href="bond-calculator-usd.html" class="btn btn-outline">Calculator USD</a>
+      <a href="bond-calculator.html" class="btn btn-outline">Calculator IDR</a>
       <a href="obligasi-bookbuilding.html" class="btn btn-outline">&#8592; Bookbuilding</a>
       <a href="obligasi-pasar-sekunder.html" class="btn btn-outline">Pasar Sekunder</a>
     </div>
@@ -274,9 +274,9 @@
               <div class="form-group">
                 <label class="form-label">Day Count Basis</label>
                 <select class="form-select" id="inp-basis" onchange="onInputChange()">
-                  <option value="ACT/ACT" selected>ACT / ACT</option>
+                  <option value="ACT/ACT">ACT / ACT</option>
                   <option value="ACT/365">ACT / 365</option>
-                  <option value="30/360">30 / 360</option>
+                  <option value="30/360" selected>30 / 360</option>
                   <option value="ACT/360">ACT / 360</option>
                 </select>
               </div>
@@ -344,8 +344,8 @@
             <div class="form-group" style="margin-top:10px;">
               <label class="form-label">Nominal Investasi</label>
               <div class="input-suffix">
-                <input class="form-input" id="inp-nominal" type="text" placeholder="100.000.000" oninput="formatNominal(this); onInputChange()"/>
-                <span style="right:8px;font-size:0.75rem;">Rp</span>
+                <input class="form-input" id="inp-nominal" type="text" placeholder="100,000" oninput="formatNominal(this); onInputChange()"/>
+                <span style="right:8px;font-size:0.75rem;">USD</span>
               </div>
             </div>
           </div>
@@ -455,7 +455,7 @@ async function loadBonds() {
     const { data, error } = await _sb
       .from('obligasi_products')
       .select('id,seri,name,category,kupon,kupon_freq,jatuh_tempo,last_coupon_date,next_coupon_date,harga_modal,modal_to_sales,harga_to_customer,harga_jual,harga_beli,yield,day_count_basis,tanggal_listing,tanggal_update,penerbit,rating')
-      .in('category', ['gov-idr', 'korp-idr'])
+      .in('category', ['gov-usd', 'korp-usd'])
       .order('seri', { ascending: true });
     if (error) throw error;
     allBonds = data || [];
@@ -653,9 +653,9 @@ function setVal(id, val, markFilled = false) {
 // =============================================
 function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
-function fmtIDR(n, dec=0) {
+function fmtIDR(n, dec=2) {
   if (n == null || isNaN(n)) return '—';
-  return 'Rp\u00a0' + Number(n).toLocaleString('id-ID', { minimumFractionDigits: dec, maximumFractionDigits: dec });
+  return 'USD\u00a0' + Number(n).toLocaleString('en-US', { minimumFractionDigits: dec, maximumFractionDigits: dec });
 }
 function fmtPct(n, dec=4) {
   if (n == null || isNaN(n)) return '—';
@@ -697,7 +697,7 @@ function toISO(d) {
 function formatNominal(el) {
   const v = el.value.replace(/\D/g,'');
   if (!v) { el.value = ''; return; }
-  el.value = parseInt(v).toLocaleString('id-ID');
+  el.value = parseInt(v).toLocaleString('en-US');
 }
 
 // =============================================
@@ -975,7 +975,7 @@ function __scChange(inp) {
   // Hitung harga baris 1 dan 3 (otomatis = edge ± 1)
   const prices = [top, top - 1, basePrice, bot + 1, bot];
 
-  function fmtN(n) { return 'Rp\u00a0' + Math.round(n).toLocaleString('id-ID'); }
+  function fmtN(n) { return 'USD\u00a0' + Number(n).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}); }
   function colorOf(n) { return n > 0 ? '#1a7a47' : n < 0 ? '#c0392b' : '#444'; }
 
   for (let i = 0; i < 5; i++) {
@@ -1076,7 +1076,7 @@ function calculate() {
   const basis    = document.getElementById('inp-basis').value;
   const trade    = document.getElementById('inp-trade').value;
   const settle   = document.getElementById('inp-settle').value;
-  const nominal  = parseInt(document.getElementById('inp-nominal').value.replace(/\D/g,'')) || 100000000;
+  const nominal  = parseInt(document.getElementById('inp-nominal').value.replace(/\D/g,'')) || 200000;
   const price    = parseFloat(document.getElementById('inp-price').value)   || 100;
   const ytm      = parseFloat(document.getElementById('inp-yield').value)   || coupon;
   const taxPct   = parseFloat(document.getElementById('inp-tax').value)     || 10;
