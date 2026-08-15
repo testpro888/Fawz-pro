@@ -257,7 +257,7 @@
     <div class="stat-card">
       <div class="stat-label">Total Nominal</div>
       <div class="stat-value gold" id="statNominal">—</div>
-      <div class="stat-sub">IDR</div>
+      <div class="stat-sub" id="statNominalSub">IDR</div>
     </div>
     <div class="stat-card">
       <div class="stat-label">Terverifikasi</div>
@@ -687,11 +687,20 @@
     const total    = src.length;
     const verified = src.filter(o => o.status === 'verified').length;
     const pending  = src.filter(o => o.status === 'pending').length;
-    const nominal  = src.filter(o => o.status !== 'rejected')
-                        .reduce((s,o) => s + (Number(o.nominal)||0), 0);
+
+    const nominalIDR = src.filter(o => o.status !== 'rejected' && (o.mata_uang||o.mataUang||'IDR') !== 'USD')
+                          .reduce((s,o) => s + (Number(o.nominal)||0), 0);
+    const nominalUSD = src.filter(o => o.status !== 'rejected' && (o.mata_uang||o.mataUang) === 'USD')
+                          .reduce((s,o) => s + (Number(o.nominal)||0), 0);
+
+    let nominalText = '';
+    if (nominalIDR > 0) nominalText += fmtRp(nominalIDR, 'IDR');
+    if (nominalUSD > 0) nominalText += (nominalText ? ' + ' : '') + fmtRp(nominalUSD, 'USD');
+    if (!nominalText) nominalText = 'Rp 0';
 
     document.getElementById('statTotal').textContent    = total;
-    document.getElementById('statNominal').textContent  = fmtRp(nominal);
+    document.getElementById('statNominal').textContent  = nominalText;
+    document.getElementById('statNominalSub').textContent = nominalUSD > 0 && nominalIDR > 0 ? 'IDR + USD' : (nominalUSD > 0 ? 'USD' : 'IDR');
     document.getElementById('statVerified').textContent = verified;
     document.getElementById('statPending').textContent  = pending;
   }
@@ -769,7 +778,7 @@
           <div class="order-cat">${esc(CAT_LABEL[o.category]||o.category||'')}</div>
         </td>
         <td>
-          <div class="nominal-val">${fmtRp(o.face_amount||o.faceAmount||o.nominal)}</div>
+          <div class="nominal-val">${fmtRp(o.face_amount||o.faceAmount||o.nominal, o.mata_uang||o.mataUang)}</div>
           <div class="nominal-unit">${(o.unit_amount||o.unitAmount) ? (o.unit_amount||o.unitAmount)+' unit' : (o.mata_uang||o.mataUang||'IDR')}</div>
         </td>
         <td style="font-size:.85rem;color:var(--navy);font-weight:600;">${fmtHargaOrder(o)}</td>
@@ -1041,10 +1050,11 @@
     sv('fJatuhTempo',     o.jatuhTempo);
     sv('fTanggalKuponTerakhir', o.kuponTerakhir);
     sv('fTanggalKuponBerikut',  o.kuponBerikut);
-    sv('fFaceAmount',     o.faceAmount ? Number(o.faceAmount).toLocaleString('id-ID') : '');
-    sv('fUnitAmount',     o.unitAmount ? Number(o.unitAmount).toLocaleString('id-ID') : '0');
+    const editLocale = (o.mataUang === 'USD') ? 'en-US' : 'id-ID';
+    sv('fFaceAmount',     o.faceAmount ? Number(o.faceAmount).toLocaleString(editLocale) : '');
+    sv('fUnitAmount',     o.unitAmount ? Number(o.unitAmount).toLocaleString(editLocale) : '0');
     sv('fHargaAwalBeli',  o.hargaAwalBeli);
-    sv('fDealAmount',     o.dealAmount ? Number(o.dealAmount).toLocaleString('id-ID') : '0');
+    sv('fDealAmount',     o.dealAmount ? Number(o.dealAmount).toLocaleString(editLocale) : '0');
     sv('fSettlement',     o.settlement);
     sv('fHarga',          o.harga);
     sv('fSalesPic',       o.salesPic);
@@ -1118,11 +1128,14 @@
   function onFaceAmountInput() {
     const inp = document.getElementById('fFaceAmount');
     const raw = inp.value.replace(/\D/g,'');
-    inp.value = raw ? Number(raw).toLocaleString('id-ID') : '';
+    const mataUang = (document.getElementById('fMataUang').value || '').toUpperCase();
+    const locale = mataUang === 'USD' ? 'en-US' : 'id-ID';
+    inp.value = raw ? Number(raw).toLocaleString(locale) : '';
     const num = Number(raw);
-    const unit = num > 0 ? Math.floor(num / 5000000) : 0;
-    document.getElementById('fUnitAmount').value = unit > 0 ? unit.toLocaleString('id-ID') : '0';
-    document.getElementById('fDealAmount').value = num > 0 ? num.toLocaleString('id-ID') : '0';
+    const unitDiv = mataUang === 'USD' ? 1000 : 5000000;
+    const unit = num > 0 ? Math.floor(num / unitDiv) : 0;
+    document.getElementById('fUnitAmount').value = unit > 0 ? unit.toLocaleString(locale) : '0';
+    document.getElementById('fDealAmount').value = num > 0 ? num.toLocaleString(locale) : '0';
   }
 
   // ============================================================
@@ -1182,7 +1195,10 @@
     // Validasi
     if (!seri)        { showToast('Pilih seri obligasi', 'error'); return; }
     if (!customerName){ showToast('Isi nama nasabah', 'error'); return; }
-    if (!nominalRaw || Number(nominalRaw) < 5000000) { showToast('Face Amount minimal Rp 5.000.000', 'error'); return; }
+    const mataUangVal = (document.getElementById('fMataUang').value || '').toUpperCase();
+    const minNominal = mataUangVal === 'USD' ? 1000 : 5000000;
+    const minLabel = mataUangVal === 'USD' ? 'USD 1,000' : 'Rp 5.000.000';
+    if (!nominalRaw || Number(nominalRaw) < minNominal) { showToast('Face Amount minimal ' + minLabel, 'error'); return; }
     if (!salesPic)    { showToast('Isi Sales PIC', 'error'); return; }
     if (!tanggal)     { showToast('Pilih tanggal order', 'error'); return; }
 
@@ -1323,7 +1339,7 @@
         ${di('YTM (%)', ytm != null ? Number(ytm).toFixed(4) + '%' : '—')}
         ${di('Harga Beli', hargaBeli != null ? Number(hargaBeli).toFixed(2).replace('.',',') : '—')}
         ${di('Harga Jual', hargaJual != null ? Number(hargaJual).toFixed(2).replace('.',',') : '—')}
-        ${di('Face Amount', fmtRp(faceAmount))} ${di('Unit', unitAmount ? unitAmount.toLocaleString('id-ID') : '—')}
+        ${di('Face Amount', fmtRp(faceAmount, mataUang))} ${di('Unit', unitAmount ? unitAmount.toLocaleString(mataUang==='USD'?'en-US':'id-ID') : '—')}
         ${di('Sekuritas', sekuritas)} ${di('Jatuh Tempo', fmtDate(jatuhTempo))}
         ${di('Kupon Terakhir', fmtDate(kuponTerakhir))} ${di('Kupon Berikut', fmtDate(kuponBerikut))}
         ${di('Settlement', fmtDate(settlement))} ${di('Sales PIC', salesPic)}
@@ -1499,8 +1515,14 @@
     return idr ? n.toLocaleString('id-ID',{minimumFractionDigits:2,maximumFractionDigits:4}) : n.toFixed(4);
   }
 
-  function fmtRp(val) {
+  function fmtRp(val, currency) {
     const n = Number(val)||0;
+    if (currency === 'USD') {
+      if (n >= 1e9)  return 'USD '+(n/1e9).toFixed(2)+' B';
+      if (n >= 1e6)  return 'USD '+(n/1e6).toFixed(2)+' M';
+      if (n >= 1e3)  return 'USD '+(n/1e3).toFixed(1)+' K';
+      return 'USD '+n.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+    }
     if (n >= 1e12) return 'Rp '+( n/1e12).toFixed(2)+' T';
     if (n >= 1e9)  return 'Rp '+(n/1e9).toFixed(2)+' M';
     if (n >= 1e6)  return 'Rp '+(n/1e6).toFixed(1)+' jt';
