@@ -216,6 +216,9 @@
     <!-- Columns will be rendered by JS -->
   </div>
 
+  <!-- AI RECOMMENDATION PANEL -->
+  <div id="ai-recommendation" style="display:none;margin-top:32px;"></div>
+
 </div>
 
 <!-- ===================================================
@@ -239,6 +242,9 @@ const cols = [
   { selectedBond: null, filteredBonds: [], dropFocusIdx: -1 },
   { selectedBond: null, filteredBonds: [], dropFocusIdx: -1 },
 ];
+
+// Store calculation results per column for AI comparison
+const calcResults = [null, null, null];
 
 const CAT_LABELS = {
   'gov-idr':  { label: 'Gov IDR',  cls: 'cat-gov-idr'  },
@@ -290,6 +296,9 @@ function setCurrency(cur) {
   if (sub) sub.textContent = `Bandingkan 2 atau 3 obligasi ${cur} secara berdampingan — hitungan lengkap`;
   // Clear selections when switching currency
   cols.forEach((c, i) => { c.selectedBond = null; });
+  calcResults[0] = calcResults[1] = calcResults[2] = null;
+  const aiPanel = document.getElementById('ai-recommendation');
+  if (aiPanel) aiPanel.style.display = 'none';
   applyBondsFilter();
   renderColumns();
 }
@@ -648,14 +657,20 @@ function calculateCol(idx) {
   const totalCouponToMaturity = flows.reduce((s, f) => s + f.netCoupon, 0);
 
   // Render output
-  renderOutput(idx, {
+  const result = {
     coupon, freq, maturity, settle, nominal, price, ytm, taxPct, basis,
     accruedAmt, accruedPct, totalProceed, cleanProceed,
     couponAmt, couponNet, couponNett1Y, daysToMat,
     lastCoupon: toISO(lastCoupon), nextCoupon: toISO(nextCoupon),
     flows, totalCouponToMaturity, sellPrice,
     seri: cols[idx].selectedBond?.seri || ('Obligasi ' + (idx===0?'A':idx===1?'B':'C'))
-  });
+  };
+
+  calcResults[idx] = result;
+  renderOutput(idx, result);
+
+  // Check if we can generate AI recommendation
+  generateAIRecommendation();
 }
 
 // =============================================
@@ -972,6 +987,250 @@ function generateCashflows(settle, maturity, coupon, freqPerYear, nominal, taxPc
     const nett=netCoupon+principal;
     return {period:i+1,date:cfDate,grossCoupon,tax,netCoupon,principal,nett,isMature};
   });
+}
+
+// =============================================
+// AI RECOMMENDATION ENGINE
+// =============================================
+function generateAIRecommendation() {
+  const panel = document.getElementById('ai-recommendation');
+  if (!panel) return;
+
+  // Get active results
+  const activeResults = [];
+  for (let i = 0; i < compareCount; i++) {
+    if (calcResults[i]) activeResults.push({ idx: i, ...calcResults[i] });
+  }
+
+  // Need at least 2 results to compare
+  if (activeResults.length < 2) {
+    panel.style.display = 'none';
+    return;
+  }
+
+  panel.style.display = 'block';
+
+  // ---- SCORING SYSTEM ----
+  const scores = activeResults.map(r => {
+    const label = r.idx === 0 ? 'A' : r.idx === 1 ? 'B' : 'C';
+    return { label, seri: r.seri, idx: r.idx, score: 0, reasons: [], data: r };
+  });
+
+  // 1. YTM (higher = better) — weight 30
+  const ytms = scores.map(s => s.data.ytm);
+  const maxYTM = Math.max(...ytms);
+  const minYTM = Math.min(...ytms);
+  scores.forEach(s => {
+    const ytmScore = (maxYTM - minYTM) > 0 ? ((s.data.ytm - minYTM) / (maxYTM - minYTM)) * 30 : 15;
+    s.score += ytmScore;
+    if (s.data.ytm === maxYTM && maxYTM !== minYTM) s.reasons.push({ type: 'positive', text: `YTM tertinggi (${fmtPct(s.data.ytm,3)})` });
+    if (s.data.ytm === minYTM && maxYTM !== minYTM) s.reasons.push({ type: 'negative', text: `YTM terendah (${fmtPct(s.data.ytm,3)})` });
+  });
+
+  // 2. Coupon Rate (higher = better for income) — weight 20
+  const coupons = scores.map(s => s.data.coupon);
+  const maxCoupon = Math.max(...coupons);
+  const minCoupon = Math.min(...coupons);
+  scores.forEach(s => {
+    const couponScore = (maxCoupon - minCoupon) > 0 ? ((s.data.coupon - minCoupon) / (maxCoupon - minCoupon)) * 20 : 10;
+    s.score += couponScore;
+    if (s.data.coupon === maxCoupon && maxCoupon !== minCoupon) s.reasons.push({ type: 'positive', text: `Kupon tertinggi (${s.data.coupon}% p.a.)` });
+  });
+
+  // 3. Nett Coupon per year (higher = better) — weight 15
+  const nettCoupons = scores.map(s => s.data.couponNett1Y);
+  const maxNettCoupon = Math.max(...nettCoupons);
+  scores.forEach(s => {
+    const ncScore = maxNettCoupon > 0 ? (s.data.couponNett1Y / maxNettCoupon) * 15 : 7.5;
+    s.score += ncScore;
+    if (s.data.couponNett1Y === maxNettCoupon && activeResults.length > 1 && nettCoupons.filter(x=>x===maxNettCoupon).length === 1) {
+      s.reasons.push({ type: 'positive', text: `Pendapatan kupon nett/tahun terbesar (${fmtIDR(s.data.couponNett1Y)})` });
+    }
+  });
+
+  // 4. Price discount (lower price = better value, more upside potential) — weight 15
+  const prices = scores.map(s => s.data.price);
+  const minPrice = Math.min(...prices);
+  const maxPrice = Math.max(...prices);
+  scores.forEach(s => {
+    const priceScore = (maxPrice - minPrice) > 0 ? ((maxPrice - s.data.price) / (maxPrice - minPrice)) * 15 : 7.5;
+    s.score += priceScore;
+    if (s.data.price < 100 && s.data.price === minPrice && maxPrice !== minPrice) {
+      s.reasons.push({ type: 'positive', text: `Harga beli terdiskon (${fmtNum(s.data.price,2)}% < par)` });
+    }
+    if (s.data.price > 100 && s.data.price === maxPrice && maxPrice !== minPrice) {
+      s.reasons.push({ type: 'negative', text: `Harga beli premium (${fmtNum(s.data.price,2)}% > par)` });
+    }
+  });
+
+  // 5. Hold to Maturity return p.a. (higher = better) — weight 20
+  const htmReturns = scores.map(s => {
+    const holdToMatReturn = s.data.nominal + s.data.totalCouponToMaturity;
+    const holdToMatPL = holdToMatReturn - s.data.totalProceed;
+    const holdToMatPct = (holdToMatPL / s.data.totalProceed) * 100;
+    const years = s.data.daysToMat / 365;
+    return years > 0 ? holdToMatPct / years : 0;
+  });
+  const maxHTM = Math.max(...htmReturns);
+  const minHTM = Math.min(...htmReturns);
+  scores.forEach((s, i) => {
+    const htmScore = (maxHTM - minHTM) > 0 ? ((htmReturns[i] - minHTM) / (maxHTM - minHTM)) * 20 : 10;
+    s.score += htmScore;
+    s.htmReturn = htmReturns[i];
+    if (htmReturns[i] === maxHTM && maxHTM !== minHTM) s.reasons.push({ type: 'positive', text: `Return HTM p.a. terbaik (${htmReturns[i].toFixed(2)}%)` });
+  });
+
+  // 6. Duration/Tenor consideration
+  const tenors = scores.map(s => s.data.daysToMat);
+  const minTenor = Math.min(...tenors);
+  const maxTenor = Math.max(...tenors);
+  scores.forEach(s => {
+    const years = (s.data.daysToMat / 365).toFixed(1);
+    if (s.data.daysToMat === minTenor && maxTenor !== minTenor) {
+      s.reasons.push({ type: 'info', text: `Tenor terpendek (${years} tahun) — risiko durasi lebih rendah` });
+    }
+    if (s.data.daysToMat === maxTenor && maxTenor !== minTenor) {
+      s.reasons.push({ type: 'info', text: `Tenor terpanjang (${years} tahun) — potensi volatilitas harga lebih tinggi` });
+    }
+  });
+
+  // Sort by score
+  scores.sort((a, b) => b.score - a.score);
+
+  const winner = scores[0];
+  const others = scores.slice(1);
+  const scoreDiff = scores[0].score - scores[1].score;
+
+  // Determine confidence level
+  let confidence, confidenceColor, confidenceLabel;
+  if (scoreDiff > 15) { confidence = 'tinggi'; confidenceColor = '#27ae60'; confidenceLabel = 'Rekomendasi Kuat'; }
+  else if (scoreDiff > 5) { confidence = 'sedang'; confidenceColor = '#f5a623'; confidenceLabel = 'Rekomendasi Moderat'; }
+  else { confidence = 'rendah'; confidenceColor = '#888'; confidenceLabel = 'Hampir Setara'; }
+
+  // Build recommendation text
+  let mainText = '';
+  if (scoreDiff > 5) {
+    mainText = `Berdasarkan analisis komparatif, <strong>Obligasi ${winner.label} (${esc(winner.seri)})</strong> merupakan pilihan yang lebih menarik`;
+    if (winner.reasons.filter(r => r.type === 'positive').length > 0) {
+      mainText += ' karena ' + winner.reasons.filter(r => r.type === 'positive').map(r => r.text.toLowerCase()).join(', ');
+    }
+    mainText += '.';
+  } else {
+    mainText = `Kedua obligasi memiliki profil yang <strong>hampir setara</strong>. Pemilihan bergantung pada preferensi investor terhadap tenor, likuiditas, dan strategi hold.`;
+  }
+
+  // Comparison table
+  const compCols = scores.map(s => `<th style="padding:8px 12px;text-align:center;font-size:0.72rem;font-weight:700;color:${s===winner?'#27ae60':'var(--navy)'};">
+    ${s===winner?'⭐ ':''}Obligasi ${s.label}<br/><span style="font-weight:400;color:#888;font-size:0.68rem;">${esc(s.seri)}</span>
+  </th>`).join('');
+
+  const metrics = [
+    { label: 'YTM', key: 'ytm', fmt: v => fmtPct(v, 3), better: 'high' },
+    { label: 'Coupon', key: 'coupon', fmt: v => v + '% p.a.', better: 'high' },
+    { label: 'Harga Beli', key: 'price', fmt: v => fmtNum(v, 3) + '%', better: 'low' },
+    { label: 'Kupon Nett/Tahun', key: 'couponNett1Y', fmt: v => fmtIDR(v), better: 'high' },
+    { label: 'Total Proceed', key: 'totalProceed', fmt: v => fmtIDR(v), better: 'low' },
+    { label: 'Return HTM p.a.', key: 'htmReturn', fmt: v => v.toFixed(2) + '%', better: 'high' },
+    { label: 'Tenor', key: 'daysToMat', fmt: v => (v/365).toFixed(1) + ' tahun', better: 'neutral' },
+  ];
+
+  const compRows = metrics.map(m => {
+    const vals = scores.map(s => m.key === 'htmReturn' ? s.htmReturn : s.data[m.key]);
+    const best = m.better === 'high' ? Math.max(...vals) : m.better === 'low' ? Math.min(...vals) : null;
+    const cells = scores.map((s, i) => {
+      const v = vals[i];
+      const isBest = best !== null && v === best && new Set(vals).size > 1;
+      return `<td style="padding:7px 12px;text-align:center;font-size:0.78rem;font-weight:${isBest?'700':'500'};color:${isBest?'#27ae60':'#444'};${isBest?'background:#f0fff8;':''}">
+        ${m.fmt(v)} ${isBest?'<span style="font-size:0.6rem;">✓</span>':''}
+      </td>`;
+    }).join('');
+    return `<tr><td style="padding:7px 12px;font-size:0.72rem;font-weight:600;color:#666;">${m.label}</td>${cells}</tr>`;
+  }).join('');
+
+  // Reasons list for winner
+  const reasonsHtml = winner.reasons.map(r => {
+    const icon = r.type === 'positive' ? '✅' : r.type === 'negative' ? '⚠️' : 'ℹ️';
+    return `<li style="padding:4px 0;font-size:0.78rem;color:#444;">${icon} ${r.text}</li>`;
+  }).join('');
+
+  // Others weak points
+  const othersHtml = others.map(s => {
+    const negReasons = s.reasons.filter(r => r.type === 'negative' || r.type === 'info');
+    if (!negReasons.length) return '';
+    return `<div style="margin-top:8px;">
+      <span style="font-size:0.72rem;font-weight:600;color:#888;">Obligasi ${s.label} (${esc(s.seri)}):</span>
+      <ul style="list-style:none;padding:0;margin:4px 0 0 0;">
+        ${negReasons.map(r => `<li style="padding:2px 0;font-size:0.72rem;color:#888;">${r.type==='negative'?'⚠️':'ℹ️'} ${r.text}</li>`).join('')}
+      </ul>
+    </div>`;
+  }).join('');
+
+  // Render panel
+  panel.innerHTML = `
+  <div style="background:#fff;border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,0.08);overflow:hidden;border:2px solid #e8f0ff;">
+    <!-- Header -->
+    <div style="background:linear-gradient(135deg,#667eea,#764ba2);padding:20px 24px;display:flex;align-items:center;gap:14px;">
+      <div style="width:44px;height:44px;border-radius:12px;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:1.4rem;">🤖</div>
+      <div>
+        <div style="font-size:1rem;font-weight:800;color:#fff;">Rekomendasi AI</div>
+        <div style="font-size:0.72rem;color:rgba(255,255,255,0.7);margin-top:2px;">Analisis otomatis berdasarkan YTM, kupon, harga, tenor & return</div>
+      </div>
+      <div style="margin-left:auto;text-align:right;">
+        <div style="padding:4px 12px;border-radius:20px;background:${confidenceColor};color:#fff;font-size:0.68rem;font-weight:700;">${confidenceLabel}</div>
+      </div>
+    </div>
+
+    <!-- Main Recommendation -->
+    <div style="padding:20px 24px;border-bottom:1px solid #f0f0f5;">
+      <div style="font-size:0.88rem;line-height:1.6;color:#333;">${mainText}</div>
+      ${reasonsHtml ? `<ul style="list-style:none;padding:0;margin:12px 0 0 0;">${reasonsHtml}</ul>` : ''}
+      ${othersHtml}
+    </div>
+
+    <!-- Comparison Matrix -->
+    <div style="padding:16px 24px;">
+      <div style="font-size:0.75rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:10px;">Perbandingan Metrik</div>
+      <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;">
+          <thead>
+            <tr style="border-bottom:2px solid #e8e8f5;">
+              <th style="padding:8px 12px;text-align:left;font-size:0.65rem;font-weight:700;color:#aaa;text-transform:uppercase;">Metrik</th>
+              ${compCols}
+            </tr>
+          </thead>
+          <tbody>${compRows}</tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Score Bar -->
+    <div style="padding:14px 24px;background:#f8f9ff;border-top:1px solid #f0f0f5;">
+      <div style="font-size:0.68rem;font-weight:600;color:#888;margin-bottom:8px;">Skor Keseluruhan</div>
+      <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+        ${scores.map((s, i) => {
+          const barColor = i === 0 ? '#27ae60' : i === 1 ? '#f5a623' : '#888';
+          const barWidth = (s.score / 100) * 100;
+          return `<div style="flex:1;min-width:120px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;">
+              <span style="font-size:0.72rem;font-weight:600;color:${i===0?'#27ae60':'#444'};">${i===0?'⭐ ':''}${s.label} — ${esc(s.seri)}</span>
+              <span style="font-size:0.72rem;font-weight:700;color:${barColor};">${s.score.toFixed(0)}/100</span>
+            </div>
+            <div style="height:8px;background:#e8e8f0;border-radius:4px;overflow:hidden;">
+              <div style="height:100%;width:${barWidth}%;background:${barColor};border-radius:4px;transition:width 0.5s;"></div>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+
+    <!-- Disclaimer -->
+    <div style="padding:10px 24px;background:#fffbf0;border-top:1px solid #f5e8c0;">
+      <p style="font-size:0.65rem;color:#a85e00;margin:0;line-height:1.5;">
+        ⚠️ <strong>Disclaimer:</strong> Rekomendasi ini bersifat informatif berdasarkan kalkulasi numerik semata. Bukan merupakan saran investasi.
+        Keputusan investasi harus mempertimbangkan profil risiko, likuiditas pasar, rating kredit, dan konsultasi dengan penasihat keuangan.
+      </p>
+    </div>
+  </div>`;
 }
 
 // =============================================
