@@ -197,9 +197,14 @@
     </div>
   </div>
 
-  <!-- COMPARE COUNT TOGGLE -->
+  <!-- CURRENCY & COUNT TOGGLE -->
   <div class="compare-controls">
-    <span style="font-size:0.78rem;font-weight:600;color:var(--gray);">Bandingkan:</span>
+    <span style="font-size:0.78rem;font-weight:600;color:var(--gray);">Mata Uang:</span>
+    <div class="toggle-count">
+      <label class="active" id="tog-idr" onclick="setCurrency('IDR')">🇮🇩 IDR</label>
+      <label id="tog-usd" onclick="setCurrency('USD')">🇺🇸 USD</label>
+    </div>
+    <span style="font-size:0.78rem;font-weight:600;color:var(--gray);margin-left:20px;">Bandingkan:</span>
     <div class="toggle-count">
       <label class="active" id="tog-2" onclick="setCompareCount(2)">2 Obligasi</label>
       <label id="tog-3" onclick="setCompareCount(3)">3 Obligasi</label>
@@ -226,6 +231,7 @@ const _sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let allBonds = [];
 let compareCount = 2;
+let currency = 'IDR'; // 'IDR' or 'USD'
 
 // State per column
 const cols = [
@@ -254,12 +260,38 @@ async function loadBonds() {
     if (error) throw error;
     allBonds = data || [];
     setDbStatus('ok', `${allBonds.length} obligasi`);
-    cols.forEach(c => c.filteredBonds = [...allBonds]);
-    renderAllDropdowns();
+    applyBondsFilter();
   } catch(e) {
     console.error('Load bonds error:', e);
     setDbStatus('err', 'Gagal memuat');
   }
+}
+
+function getBondsByCurrentCurrency() {
+  if (currency === 'IDR') return allBonds.filter(b => b.category === 'gov-idr' || b.category === 'korp-idr');
+  return allBonds.filter(b => b.category === 'gov-usd' || b.category === 'korp-usd');
+}
+
+function applyBondsFilter() {
+  const filtered = getBondsByCurrentCurrency();
+  cols.forEach(c => c.filteredBonds = [...filtered]);
+  renderAllDropdowns();
+}
+
+// =============================================
+// CURRENCY
+// =============================================
+function setCurrency(cur) {
+  currency = cur;
+  document.getElementById('tog-idr').classList.toggle('active', cur === 'IDR');
+  document.getElementById('tog-usd').classList.toggle('active', cur === 'USD');
+  // Update subtitle
+  const sub = document.querySelector('.page-subtitle');
+  if (sub) sub.textContent = `Bandingkan 2 atau 3 obligasi ${cur} secara berdampingan — hitungan lengkap`;
+  // Clear selections when switching currency
+  cols.forEach((c, i) => { c.selectedBond = null; });
+  applyBondsFilter();
+  renderColumns();
 }
 
 function setDbStatus(type, text) {
@@ -384,8 +416,8 @@ function renderColumnHTML(idx) {
           <div class="form-group">
             <label class="form-label">Nominal</label>
             <div class="input-suffix">
-              <input class="form-input" id="inp-nominal-${idx}" type="text" placeholder="1.000.000.000" oninput="formatNominal(this)"/>
-              <span>Rp</span>
+              <input class="form-input" id="inp-nominal-${idx}" type="text" placeholder="${currency === 'IDR' ? '1.000.000.000' : '100,000'}" oninput="formatNominal(this)"/>
+              <span>${currency === 'IDR' ? 'Rp' : 'USD'}</span>
             </div>
           </div>
           <div class="form-row">
@@ -473,10 +505,11 @@ function onBondSearch(idx, q) {
   if (clearBtn) clearBtn.classList.toggle('visible', q.length > 0);
   openDropdown(idx);
   const lq = q.toLowerCase();
+  const currencyBonds = getBondsByCurrentCurrency();
   if (!lq) {
-    cols[idx].filteredBonds = [...allBonds];
+    cols[idx].filteredBonds = [...currencyBonds];
   } else {
-    cols[idx].filteredBonds = allBonds.filter(b =>
+    cols[idx].filteredBonds = currencyBonds.filter(b =>
       (b.seri && b.seri.toLowerCase().includes(lq)) ||
       (b.name && b.name.toLowerCase().includes(lq)) ||
       (b.penerbit && b.penerbit.toLowerCase().includes(lq))
@@ -562,7 +595,7 @@ function clearBondSelection(idx) {
   if (clearBtn) clearBtn.classList.remove('visible');
   const chip = document.getElementById('bond-selected-chip-' + idx);
   if (chip) chip.classList.remove('visible');
-  cols[idx].filteredBonds = [...allBonds];
+  cols[idx].filteredBonds = [...getBondsByCurrentCurrency()];
   renderDropdown(idx);
   ['inp-coupon-','inp-maturity-','inp-price-'].forEach(id => {
     const el = document.getElementById(id + idx);
@@ -579,7 +612,7 @@ function calculateCol(idx) {
   const maturity = document.getElementById('inp-maturity-' + idx)?.value;
   const basis    = document.getElementById('inp-basis-' + idx)?.value || 'ACT/ACT';
   const nominalStr = (document.getElementById('inp-nominal-' + idx)?.value || '').replace(/\D/g,'');
-  const nominal  = parseInt(nominalStr) || 1000000000;
+  const nominal  = parseInt(nominalStr) || (currency === 'USD' ? 100000 : 1000000000);
   const price    = parseFloat(document.getElementById('inp-price-' + idx)?.value);
   const taxPct   = parseFloat(document.getElementById('inp-tax-' + idx)?.value) || 10;
   const sellPrice = parseFloat(document.getElementById('inp-sell-price-' + idx)?.value);
@@ -820,7 +853,11 @@ function renderOutput(idx, r) {
 // UTILITIES (same as bond-calculator.html)
 // =============================================
 function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-function fmtIDR(n, dec=0) { if (n==null||isNaN(n)) return '—'; return 'Rp\u00a0'+Number(n).toLocaleString('id-ID',{minimumFractionDigits:dec,maximumFractionDigits:dec}); }
+function fmtIDR(n, dec=0) {
+  if (n==null||isNaN(n)) return '—';
+  if (currency === 'USD') return 'USD\u00a0'+Number(n).toLocaleString('en-US',{minimumFractionDigits:dec,maximumFractionDigits:dec});
+  return 'Rp\u00a0'+Number(n).toLocaleString('id-ID',{minimumFractionDigits:dec,maximumFractionDigits:dec});
+}
 function fmtPct(n, dec=4) { if (n==null||isNaN(n)) return '—'; return Number(n).toFixed(dec)+'%'; }
 function fmtNum(n, dec=2) { if (n==null||isNaN(n)) return '—'; return Number(n).toLocaleString('id-ID',{minimumFractionDigits:dec,maximumFractionDigits:dec}); }
 function fmtDate(d) { if(!d)return'—'; const dt=(d instanceof Date)?d:new Date(d+(d.length===10?'T00:00:00':'')); return dt.toLocaleDateString('id-ID',{weekday:'short',day:'numeric',month:'short',year:'numeric'}); }
@@ -828,7 +865,15 @@ function fmtDateShort(d) { if(!d)return'—'; const dt=(d instanceof Date)?d:new
 function addDays(d,n) { const r=new Date(d); r.setDate(r.getDate()+n); return r; }
 function addBusinessDays(d,n) { const r=new Date(d); let added=0; while(added<n){r.setDate(r.getDate()+1); if(r.getDay()!==0&&r.getDay()!==6)added++;} return r; }
 function toISO(d) { const y=d.getFullYear(); const m=String(d.getMonth()+1).padStart(2,'0'); const day=String(d.getDate()).padStart(2,'0'); return `${y}-${m}-${day}`; }
-function formatNominal(el) { const v=el.value.replace(/\D/g,''); if(!v){el.value='';return;} el.value=parseInt(v).toLocaleString('id-ID'); }
+function formatNominal(el) {
+  const v = el.value.replace(/\D/g,'');
+  if (!v) { el.value = ''; return; }
+  if (currency === 'USD') {
+    el.value = parseInt(v).toLocaleString('en-US');
+  } else {
+    el.value = parseInt(v).toLocaleString('id-ID');
+  }
+}
 
 // =============================================
 // COUPON DATE CALC
@@ -933,6 +978,12 @@ function generateCashflows(settle, maturity, coupon, freqPerYear, nominal, taxPc
 // INIT
 // =============================================
 window.addEventListener('DOMContentLoaded', () => {
+  // Check URL param for currency pre-selection
+  const params = new URLSearchParams(window.location.search);
+  const curParam = (params.get('cur') || '').toUpperCase();
+  if (curParam === 'USD') setCurrency('USD');
+  else setCurrency('IDR');
+
   renderColumns();
   loadBonds();
 });
