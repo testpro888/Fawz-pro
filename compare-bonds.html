@@ -803,7 +803,7 @@ function renderOutput(idx, r) {
           <td>${fmtIDR(r.totalCouponToMaturity)}</td>
           <td style="font-weight:700;">${fmtIDR(holdToMatReturn)}</td>
           <td style="font-weight:700;color:${holdToMatPL>=0?'var(--green)':'var(--red)'};">${fmtIDR(holdToMatPL)}</td>
-          <td style="font-weight:700;color:${holdToMatPL>=0?'var(--green)':'var(--red)'};">${(holdToMatPct / (r.daysToMat/365)).toFixed(2)}%</td>
+          <td style="font-weight:700;color:${holdToMatPL>=0?'var(--green)':'var(--red)'};">${holdToMatReturnPct.toFixed(2)}%</td>
         </tr>
       </tbody>
     </table>
