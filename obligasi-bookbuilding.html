@@ -649,6 +649,13 @@
     const addBtn = document.getElementById('addRecCardBtn');
 
     recItems.forEach(item => {
+      // Enrich with latest tanggal_update from psData if not present
+      if (!item.tanggal_update) {
+        for (const cat of CATEGORIES) {
+          const src = psData[cat].find(p => (item.ps_id && p.id === item.ps_id) || (item.seri && p.seri === item.seri));
+          if (src && src.tanggal_update) { item.tanggal_update = src.tanggal_update; break; }
+        }
+      }
       const wrapper = buildRecCardWrapper(item);
       row.insertBefore(wrapper, addBtn);
     });
@@ -947,6 +954,7 @@
         harga_jual: s.harga_jual || s.hargaJual || null,
         harga_beli: s.harga_beli || s.hargaBeli || null,
         yield: s.yield || null,
+        tanggal_update: s.tanggal_update || s.tanggalUpdate || new Date().toISOString().slice(0,10),
         added_by: curUser?.name || '',
         added_at: new Date().toISOString(),
       };
