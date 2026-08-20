@@ -412,13 +412,15 @@
     document.getElementById('infoSession').textContent = now.toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit' });
     document.getElementById('infoDate').textContent    = now.toLocaleDateString('id-ID', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
 
-    // QR Code per sales — mapping nama (lowercase) → path URL
+    // QR Code per sales — mapping nama/username (lowercase) → path URL
     const SALES_QR_MAP = {
       'susanto': 'cuanto',
-      'rivin tandiah': 'happy-cuan'
+      'rivin tandiah': 'happy-cuan',
+      'petikprofit': 'petik-profit'
     };
     const salesNameLower = (curUser.name || '').toLowerCase().trim();
-    const qrPath = SALES_QR_MAP[salesNameLower];
+    const salesUserLower = (curUser.username || '').toLowerCase().trim();
+    const qrPath = SALES_QR_MAP[salesNameLower] || SALES_QR_MAP[salesUserLower];
     if (qrPath) {
       const qrUrl = 'https://dealer-system.site/fawz-sales/' + qrPath + '/';
       const qrSmall = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(qrUrl);
