@@ -232,7 +232,7 @@ console.log('[Fawz navbar.js] v2.5.0 loaded');
       'manageAccountsLink'     : ['head_account'],  // Kelola Akun di profile
 
       // Tools dropdown
-      'logo.html'              : ['head_account', 'admin', 'treasury', 'sales', 'head_sales'],
+      'logo.html'              : ['head_account', 'admin', 'treasury', 'head_sales'],
     };
 
     const role = user.role;
