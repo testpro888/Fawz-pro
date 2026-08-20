@@ -250,8 +250,8 @@
       <div class="hero-role-badge" id="heroRole">—</div>
       <div class="hero-username"   id="heroUsername">—</div>
     </div>
-    <div class="hero-qr" id="heroQr" onclick="openQrModal()" title="Klik untuk memperbesar QR">
-      <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://dealer-system.site/fawz-sales/cuanto/" alt="QR Code"/>
+    <div class="hero-qr" id="heroQr" onclick="openQrModal()" title="Klik untuk memperbesar QR" style="display:none;">
+      <img id="heroQrImg" src="" alt="QR Code"/>
       <div class="hero-qr-label">SCAN QR</div>
     </div>
   </div>
@@ -260,9 +260,9 @@
   <div class="qr-modal-overlay" id="qrModalOverlay" onclick="closeQrModal(event)">
     <button class="qr-modal-close" onclick="closeQrModal(event)">✕</button>
     <div class="qr-modal-content" onclick="event.stopPropagation()">
-      <img src="https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=https://dealer-system.site/fawz-sales/cuanto/" alt="QR Code Large"/>
+      <img id="qrModalImg" src="" alt="QR Code Large"/>
       <div class="qr-modal-title">Scan untuk buka link</div>
-      <div class="qr-modal-link">https://dealer-system.site/fawz-sales/cuanto/</div>
+      <div class="qr-modal-link" id="qrModalLink"></div>
     </div>
   </div>
 
@@ -411,6 +411,23 @@
     const now = new Date();
     document.getElementById('infoSession').textContent = now.toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit' });
     document.getElementById('infoDate').textContent    = now.toLocaleDateString('id-ID', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+
+    // QR Code per sales — mapping nama (lowercase) → path URL
+    const SALES_QR_MAP = {
+      'susanto': 'cuanto',
+      'rivin tandiah': 'happy-cuan'
+    };
+    const salesNameLower = (curUser.name || '').toLowerCase().trim();
+    const qrPath = SALES_QR_MAP[salesNameLower];
+    if (qrPath) {
+      const qrUrl = 'https://dealer-system.site/fawz-sales/' + qrPath + '/';
+      const qrSmall = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(qrUrl);
+      const qrLarge = 'https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=' + encodeURIComponent(qrUrl);
+      document.getElementById('heroQr').style.display = '';
+      document.getElementById('heroQrImg').src = qrSmall;
+      document.getElementById('qrModalImg').src = qrLarge;
+      document.getElementById('qrModalLink').textContent = qrUrl;
+    }
 
     // Kelola Akun hanya head_account
     if (curUser.role === 'head_account') {
