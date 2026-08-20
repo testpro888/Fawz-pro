@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <script src="config.js"></script>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Fawz Pro | Inhouse Tracker</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script>
+    const SUPABASE_URL = (window.__FAWZ_CONFIG__ || {}).supabaseUrl || '';
+    const SUPABASE_KEY = (window.__FAWZ_CONFIG__ || {}).supabaseKey || '';
+    window._supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  </script>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --navy: #0d0d2b; --gold: #f5a623; --gold-light: #ffc857;
+      --nav-h: 68px; --bg: #f4f5fb;
+    }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); min-height: 100vh; padding-top: var(--nav-h); }
+    .page-container { max-width: 1200px; margin: 0 auto; padding: 40px 32px 80px; }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
+
+    .page-header { margin-bottom: 28px; animation: fadeUp 0.4s ease both; }
+    .page-header h1 { font-size: 2rem; font-weight: 900; color: var(--navy); line-height: 1.1; margin-bottom: 6px; }
+    .page-header-underline { width: 48px; height: 3px; background: linear-gradient(90deg, var(--gold), var(--gold-light)); border-radius: 2px; margin-bottom: 8px; }
+    .page-header p { color: #888; font-size: 0.9rem; }
+
+    /* Toolbar */
+    .toolbar {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px; flex-wrap: wrap;
+      background: #fff; border-radius: 14px; padding: 16px 22px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+      margin-bottom: 22px; animation: fadeUp 0.4s 0.05s ease both;
+    }
+    .toolbar-left { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .form-input, .form-select {
+      padding: 9px 14px; border: 1.5px solid #e0e0ef; border-radius: 10px;
+      font-family: 'Inter', sans-serif; font-size: 0.88rem; color: var(--navy);
+      outline: none; transition: border 0.2s, box-shadow 0.2s; background: #fafafa;
+    }
+    .form-input:focus, .form-select:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(245,166,35,0.1); background: #fff; }
+    .btn-primary {
+      padding: 9px 22px; background: linear-gradient(135deg, var(--gold), #e8931a);
+      border: none; border-radius: 10px; cursor: pointer;
+      font-family: 'Inter', sans-serif; font-size: 0.88rem; font-weight: 600; color: #fff;
+      box-shadow: 0 4px 14px rgba(245,166,35,0.3); transition: transform 0.15s, box-shadow 0.15s;
+      display: inline-flex; align-items: center; gap: 6px;
+    }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(245,166,35,0.4); }
+    .btn-ghost {
+      padding: 9px 18px; border: 1.5px solid #e0e0ef; border-radius: 10px;
+      background: none; cursor: pointer; font-family: 'Inter', sans-serif;
+      font-size: 0.88rem; color: #666; transition: border-color 0.15s;
+    }
+    .btn-ghost:hover { border-color: #bbb; }
+
+    /* Stats */
+    .stats-row {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;
+      margin-bottom: 22px; animation: fadeUp 0.4s 0.1s ease both;
+    }
+    .stat-card {
+      background: #fff; border-radius: 14px; padding: 18px 20px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+      border-top: 3px solid transparent;
+    }
+    .stat-card.total   { border-top-color: var(--gold); }
+    .stat-card.active  { border-top-color: #3b82f6; }
+    .stat-card.closed  { border-top-color: #10b981; }
+    .stat-card.pending { border-top-color: #f59e0b; }
+    .stat-label { font-size: 0.7rem; font-weight: 700; color: #aaa; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px; }
+    .stat-num   { font-size: 2rem; font-weight: 800; color: var(--navy); line-height: 1; }
+
+    /* Table */
+    .table-panel {
+      background: #fff; border-radius: 16px; padding: 24px 28px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+      animation: fadeUp 0.4s 0.15s ease both;
+      overflow-x: auto;
+    }
+    .panel-title {
+      font-size: 0.72rem; font-weight: 700; color: #bbb;
+      text-transform: uppercase; letter-spacing: 1px;
+      margin-bottom: 14px; display: flex; align-items: center; gap: 8px;
+    }
+    .panel-title::after { content:''; flex:1; height:1px; background:#f0f0f5; }
+
+    table.data-table { width: 100%; border-collapse: collapse; }
+    table.data-table th {
+      font-size: 0.7rem; font-weight: 700; color: #bbb;
+      text-transform: uppercase; letter-spacing: 0.8px;
+      padding: 10px 12px; text-align: left; border-bottom: 1.5px solid #f0f0f5;
+      white-space: nowrap;
+    }
+    table.data-table td {
+      padding: 12px 12px; font-size: 0.86rem; color: #333;
+      border-bottom: 1px solid #f8f8fc; vertical-align: middle;
+    }
+    table.data-table tr:last-child td { border-bottom: none; }
+    table.data-table tr:hover td { background: #fffbf3; }
+
+    .status-badge {
+      font-size: 0.68rem; font-weight: 700; padding: 3px 10px;
+      border-radius: 20px; letter-spacing: 0.3px; text-transform: uppercase;
+      display: inline-block;
+    }
+    .status-active   { background: rgba(59,130,246,0.1);  color: #2563eb; }
+    .status-closed   { background: rgba(16,185,129,0.12); color: #059669; }
+    .status-pending  { background: rgba(245,158,11,0.12); color: #d97706; }
+    .status-cancelled{ background: rgba(239,68,68,0.1);   color: #dc2626; }
+
+    .empty-state {
+      text-align: center; padding: 60px 20px; color: #bbb; font-size: 0.9rem;
+    }
+    .empty-state span { font-size: 2.5rem; display: block; margin-bottom: 12px; }
+
+    .loading { text-align: center; padding: 40px; color: #aaa; font-size: 0.88rem; }
+
+    @media (max-width: 768px) {
+      .stats-row { grid-template-columns: repeat(2, 1fr); }
+      .page-container { padding: 20px 16px 60px; }
+      .toolbar { flex-direction: column; align-items: stretch; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="navbar-placeholder"></div>
+<script src="navbar.js?v=3"></script>
+
+<div class="page-container">
+
+  <!-- Header -->
+  <div class="page-header">
+    <h1>Inhouse Tracker</h1>
+    <div class="page-header-underline"></div>
+    <p>Tracking data inhouse dari Firebase Firestore</p>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <div class="toolbar-left">
+      <input class="form-input" type="text" id="searchInput" placeholder="Cari nama, kode, atau keterangan..." style="min-width:240px;" oninput="filterData()"/>
+      <select class="form-select" id="filterCollection" onchange="loadCollection()" style="min-width:180px;">
+        <option value="">-- Pilih Collection --</option>
+      </select>
+    </div>
+    <button class="btn-primary" onclick="loadCollection()">
+      🔄 Refresh
+    </button>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="stat-card total">
+      <div class="stat-label">Total Data</div>
+      <div class="stat-num" id="statTotal">0</div>
+    </div>
+    <div class="stat-card active">
+      <div class="stat-label">Active</div>
+      <div class="stat-num" id="statActive">0</div>
+    </div>
+    <div class="stat-card closed">
+      <div class="stat-label">Closed</div>
+      <div class="stat-num" id="statClosed">0</div>
+    </div>
+    <div class="stat-card pending">
+      <div class="stat-label">Pending</div>
+      <div class="stat-num" id="statPending">0</div>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="table-panel">
+    <div class="panel-title">Data Inhouse</div>
+    <div id="tableContent">
+      <div class="loading">Menghubungkan ke Firebase...</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════
+   Inhouse Tracker — Firebase Firestore
+═══════════════════════════════════════════════ */
+
+// Firebase Config
+const firebaseConfig = {
+  apiKey: "AIzaSyDHuo14lBr18NG6SN-7M4Rbj2RPJ4Wg2gE",
+  authDomain: "fawzpro-a831d.firebaseapp.com",
+  projectId: "fawzpro-a831d",
+  storageBucket: "fawzpro-a831d.firebasestorage.app",
+  messagingSenderId: "176423029682",
+  appId: "1:176423029682:web:04a77c32c228ae2a0cf2ab",
+  measurementId: "G-38RQT6VKB0"
+};
+
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+let allData = [];
+let filteredData = [];
+let currentCollection = '';
+let knownCollections = [];
+
+// Auth check
+const raw = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember');
+if (!raw) { window.location.href = 'login.html'; }
+
+/* ── INIT ── */
+async function init() {
+  await discoverCollections();
+  if (knownCollections.length > 0) {
+    currentCollection = knownCollections[0];
+    document.getElementById('filterCollection').value = currentCollection;
+    await loadCollection();
+  } else {
+    document.getElementById('tableContent').innerHTML =
+      '<div class="empty-state"><span>📂</span>Tidak ada collection ditemukan di Firebase.</div>';
+  }
+}
+
+/* ── DISCOVER COLLECTIONS ── */
+async function discoverCollections() {
+  // Firebase client SDK doesn't have listCollections,
+  // so we use a predefined list of common inhouse collections
+  // These can be customized based on what's actually in Firestore
+  const commonCollections = [
+    'inhouse_data',
+    'inhouse_tracker',
+    'inhouse_sales',
+    'clients',
+    'leads',
+    'prospects',
+    'transactions',
+    'activities'
+  ];
+
+  const sel = document.getElementById('filterCollection');
+  // Clear existing options except placeholder
+  while (sel.options.length > 1) sel.remove(1);
+
+  // Try each collection to see if it has data
+  for (const col of commonCollections) {
+    try {
+      const snapshot = await db.collection(col).limit(1).get();
+      if (!snapshot.empty) {
+        knownCollections.push(col);
+        const opt = document.createElement('option');
+        opt.value = col;
+        opt.textContent = col.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+        sel.appendChild(opt);
+      }
+    } catch(e) {
+      // Collection doesn't exist or no permission — skip
+    }
+  }
+
+  // If no predefined collection found, try a default one
+  if (knownCollections.length === 0) {
+    // Add all as options anyway so user can try
+    commonCollections.forEach(col => {
+      const opt = document.createElement('option');
+      opt.value = col;
+      opt.textContent = col.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+      sel.appendChild(opt);
+    });
+    knownCollections = commonCollections;
+  }
+}
+
+/* ── LOAD COLLECTION ── */
+async function loadCollection() {
+  const col = document.getElementById('filterCollection').value;
+  if (!col) {
+    document.getElementById('tableContent').innerHTML =
+      '<div class="empty-state"><span>📋</span>Pilih collection untuk melihat data.</div>';
+    updateStats([]);
+    return;
+  }
+
+  currentCollection = col;
+  document.getElementById('tableContent').innerHTML =
+    '<div class="loading">Memuat data dari <strong>' + escHtml(col) + '</strong>...</div>';
+
+  try {
+    const snapshot = await db.collection(col).orderBy('created_at', 'desc').limit(500).get();
+    allData = [];
+    snapshot.forEach(doc => {
+      allData.push({ id: doc.id, ...doc.data() });
+    });
+    filteredData = [...allData];
+    renderTable();
+    updateStats(filteredData);
+  } catch(e) {
+    // If orderBy fails (no index or no created_at field), try without ordering
+    try {
+      const snapshot = await db.collection(col).limit(500).get();
+      allData = [];
+      snapshot.forEach(doc => {
+        allData.push({ id: doc.id, ...doc.data() });
+      });
+      filteredData = [...allData];
+      renderTable();
+      updateStats(filteredData);
+    } catch(e2) {
+      document.getElementById('tableContent').innerHTML =
+        '<div class="empty-state"><span>⚠️</span>Gagal memuat data: ' + escHtml(e2.message) + '</div>';
+      updateStats([]);
+    }
+  }
+}
+
+/* ── RENDER TABLE ── */
+function renderTable() {
+  const container = document.getElementById('tableContent');
+
+  if (!filteredData.length) {
+    container.innerHTML = '<div class="empty-state"><span>📭</span>Tidak ada data ditemukan.</div>';
+    return;
+  }
+
+  // Detect columns from data
+  const columns = detectColumns(filteredData);
+
+  let html = '<table class="data-table"><thead><tr>';
+  html += '<th>No</th>';
+  columns.forEach(col => {
+    html += '<th>' + escHtml(formatColumnName(col)) + '</th>';
+  });
+  html += '</tr></thead><tbody>';
+
+  filteredData.forEach((row, idx) => {
+    html += '<tr>';
+    html += '<td>' + (idx + 1) + '</td>';
+    columns.forEach(col => {
+      const val = row[col];
+      html += '<td>' + formatCellValue(col, val) + '</td>';
+    });
+    html += '</tr>';
+  });
+
+  html += '</tbody></table>';
+  container.innerHTML = html;
+}
+
+/* ── DETECT COLUMNS ── */
+function detectColumns(data) {
+  const colSet = new Set();
+  const skipCols = ['id']; // skip document ID from display as separate column
+
+  data.slice(0, 20).forEach(row => {
+    Object.keys(row).forEach(key => {
+      if (!skipCols.includes(key)) colSet.add(key);
+    });
+  });
+
+  // Prioritize common columns first
+  const priority = ['name', 'nama', 'client_name', 'customer_name', 'code', 'kode',
+    'status', 'type', 'tipe', 'amount', 'nominal', 'date', 'tanggal',
+    'created_at', 'updated_at', 'notes', 'keterangan', 'description'];
+
+  const sorted = [];
+  priority.forEach(p => {
+    if (colSet.has(p)) { sorted.push(p); colSet.delete(p); }
+  });
+
+  // Add remaining columns
+  [...colSet].sort().forEach(c => sorted.push(c));
+
+  // Limit to max 8 columns for readability
+  return sorted.slice(0, 8);
+}
+
+/* ── FORMAT COLUMN NAME ── */
+function formatColumnName(col) {
+  return col.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+}
+
+/* ── FORMAT CELL VALUE ── */
+function formatCellValue(col, val) {
+  if (val === null || val === undefined) return '<span style="color:#ccc;">—</span>';
+
+  // Firestore timestamp
+  if (val && typeof val === 'object' && val.seconds) {
+    const d = new Date(val.seconds * 1000);
+    return escHtml(d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }));
+  }
+
+  // Status column
+  if (col === 'status' || col === 'Status') {
+    const s = String(val).toLowerCase();
+    let cls = 'status-pending';
+    if (s === 'active' || s === 'aktif') cls = 'status-active';
+    else if (s === 'closed' || s === 'selesai' || s === 'done') cls = 'status-closed';
+    else if (s === 'cancelled' || s === 'batal') cls = 'status-cancelled';
+    return '<span class="status-badge ' + cls + '">' + escHtml(String(val)) + '</span>';
+  }
+
+  // Number / nominal
+  if ((col.includes('nominal') || col.includes('amount') || col.includes('fee')) && typeof val === 'number') {
+    return 'Rp ' + val.toLocaleString('id-ID');
+  }
+
+  // Array
+  if (Array.isArray(val)) return escHtml(val.join(', '));
+
+  // Object
+  if (typeof val === 'object') return escHtml(JSON.stringify(val));
+
+  return escHtml(String(val));
+}
+
+/* ── FILTER ── */
+function filterData() {
+  const q = document.getElementById('searchInput').value.toLowerCase().trim();
+  if (!q) {
+    filteredData = [...allData];
+  } else {
+    filteredData = allData.filter(row => {
+      return Object.values(row).some(val => {
+        if (val === null || val === undefined) return false;
+        if (typeof val === 'object' && val.seconds) return false;
+        return String(val).toLowerCase().includes(q);
+      });
+    });
+  }
+  renderTable();
+  updateStats(filteredData);
+}
+
+/* ── UPDATE STATS ── */
+function updateStats(data) {
+  document.getElementById('statTotal').textContent = data.length;
+
+  let active = 0, closed = 0, pending = 0;
+  data.forEach(row => {
+    const s = (row.status || '').toLowerCase();
+    if (s === 'active' || s === 'aktif') active++;
+    else if (s === 'closed' || s === 'selesai' || s === 'done') closed++;
+    else if (s === 'pending' || s === 'menunggu') pending++;
+  });
+
+  document.getElementById('statActive').textContent = active;
+  document.getElementById('statClosed').textContent = closed;
+  document.getElementById('statPending').textContent = pending;
+}
+
+/* ── HELPERS ── */
+function escHtml(s) {
+  const div = document.createElement('div');
+  div.textContent = s;
+  return div.innerHTML;
+}
+
+/* ── START ── */
+init();
+</script>
+
+</body>
+</html>

@@ -202,6 +202,7 @@ console.log('[Fawz navbar.js] v2.5.0 loaded');
       'profit-ambassador.html' : ['head_account', 'admin', 'head_sales'],
       'influencer.html'        : ['head_account', 'admin', 'head_sales'],
       'influencer-fans.html'   : ['head_account', 'admin', 'head_sales'],
+      'inhouse-tracker.html'   : ['head_account', 'admin', 'treasury', 'sales', 'head_sales'],
 
       // Customer dropdown
       'customer.html'           : ['head_account', 'admin', 'treasury', 'sales', 'head_sales'],
