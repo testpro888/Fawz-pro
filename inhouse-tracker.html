@@ -337,16 +337,14 @@
               <th>#</th>
               <th>Nama</th>
               <th>Email</th>
-              <th>No. HP</th>
               <th>Kode Referral</th>
-              <th>Sekuritas</th>
               <th>Tanggal</th>
               <th>Waktu</th>
               <th>Aksi</th>
             </tr>
           </thead>
           <tbody id="leadsTableBody">
-            <tr><td colspan="9" style="padding:0;">
+            <tr><td colspan="7" style="padding:0;">
               <div style="padding:14px 16px;display:flex;flex-direction:column;gap:10px;">
                 <div class="skeleton"></div><div class="skeleton" style="width:90%"></div>
                 <div class="skeleton" style="width:95%"></div><div class="skeleton" style="width:80%"></div>
@@ -670,7 +668,7 @@ function renderLeadsPage() {
   const tbody = document.getElementById('leadsTableBody');
 
   if (!slice.length) {
-    tbody.innerHTML = '<tr><td colspan="9"><div class="empty-state"><div class="empty-icon">—</div><div style="font-size:.9rem;color:#999;font-weight:600;">Belum ada data leads</div></div></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><div class="empty-icon">—</div><div style="font-size:.9rem;color:#999;font-weight:600;">Belum ada data leads</div></div></td></tr>';
     return;
   }
 
@@ -678,18 +676,14 @@ function renderLeadsPage() {
     const no = (leadsPage - 1) * ROWS_PER_PAGE + i + 1;
     const nama = esc(r.nama || r.name || '—');
     const email = esc(r.email || '—');
-    const phone = esc(r.phone || r.hp || r.no_hp || '—');
     const referral = (r.referral || r.referral_code || '—').toUpperCase();
-    const sekuritas = esc(r.sekuritas || r.link || '—');
     const dateField = r.createdAt || r.created_at || r.clickedAt;
 
     return '<tr>' +
       '<td style="color:#bbb;font-size:.75rem;">' + no + '</td>' +
       '<td><strong>' + nama + '</strong></td>' +
       '<td style="color:#555;">' + email + '</td>' +
-      '<td style="color:#555;">' + phone + '</td>' +
       '<td><span class="referral-tag">' + esc(referral) + '</span></td>' +
-      '<td><span class="link-tag">' + sekuritas + '</span></td>' +
       '<td>' + formatDate(dateField) + '</td>' +
       '<td style="color:#888;">' + formatTime(dateField) + '</td>' +
       '<td><button class="btn-delete" onclick="deleteLead(\'' + r.id + '\')">Hapus</button></td>' +
@@ -809,14 +803,12 @@ function exportCSV() {
   } else {
     const rows = leadsFiltered.length ? leadsFiltered : leadsAll;
     if (!rows.length) { alert('Tidak ada data.'); return; }
-    const header = ['No', 'Nama', 'Email', 'No HP', 'Kode Referral', 'Sekuritas', 'Tanggal', 'Waktu'];
+    const header = ['No', 'Nama', 'Email', 'Kode Referral', 'Tanggal', 'Waktu'];
     const csv = [header.join(','), ...rows.map((r, i) => [
       i + 1,
       '"' + (r.nama || r.name || '').replace(/"/g, '""') + '"',
       r.email || '',
-      r.phone || r.hp || r.no_hp || '',
       r.referral || r.referral_code || '',
-      '"' + (r.sekuritas || r.link || '').replace(/"/g, '""') + '"',
       formatDate(r.createdAt || r.created_at || r.clickedAt),
       formatTime(r.createdAt || r.created_at || r.clickedAt)
     ].join(','))].join('\n');
