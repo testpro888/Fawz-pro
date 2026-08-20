@@ -6,11 +6,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Fawz Pro | Inhouse Tracker</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script>
     const SUPABASE_URL = (window.__FAWZ_CONFIG__ || {}).supabaseUrl || '';
     const SUPABASE_KEY = (window.__FAWZ_CONFIG__ || {}).supabaseKey || '';
-    window._supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    var supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    window._supabase = supabase;
   </script>
 
   <!-- Firebase SDK -->
@@ -21,179 +23,230 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
       --navy: #0d0d2b; --gold: #f5a623; --gold-light: #ffc857;
-      --nav-h: 68px; --bg: #f4f5fb;
+      --bg: #f4f5fb; --nav-h: 68px; --table-header: #1a1a5e;
     }
     body { font-family: 'Inter', sans-serif; background: var(--bg); min-height: 100vh; padding-top: var(--nav-h); }
-    .page-container { max-width: 1200px; margin: 0 auto; padding: 40px 32px 80px; }
+
     @keyframes fadeUp { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
 
-    .page-header { margin-bottom: 28px; animation: fadeUp 0.4s ease both; }
-    .page-header h1 { font-size: 2rem; font-weight: 900; color: var(--navy); line-height: 1.1; margin-bottom: 6px; }
-    .page-header-underline { width: 48px; height: 3px; background: linear-gradient(90deg, var(--gold), var(--gold-light)); border-radius: 2px; margin-bottom: 8px; }
-    .page-header p { color: #888; font-size: 0.9rem; }
+    .page-container { max-width: 1280px; margin: 0 auto; padding: 36px 32px; }
 
-    /* Toolbar */
-    .toolbar {
-      display: flex; align-items: center; justify-content: space-between;
-      gap: 12px; flex-wrap: wrap;
-      background: #fff; border-radius: 14px; padding: 16px 22px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.06);
-      margin-bottom: 22px; animation: fadeUp 0.4s 0.05s ease both;
+    .page-header {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      margin-bottom: 24px; flex-wrap: wrap; gap: 12px;
+      animation: fadeUp 0.4s ease both;
     }
-    .toolbar-left { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-    .form-input, .form-select {
-      padding: 9px 14px; border: 1.5px solid #e0e0ef; border-radius: 10px;
-      font-family: 'Inter', sans-serif; font-size: 0.88rem; color: var(--navy);
-      outline: none; transition: border 0.2s, box-shadow 0.2s; background: #fafafa;
-    }
-    .form-input:focus, .form-select:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(245,166,35,0.1); background: #fff; }
-    .btn-primary {
-      padding: 9px 22px; background: linear-gradient(135deg, var(--gold), #e8931a);
-      border: none; border-radius: 10px; cursor: pointer;
-      font-family: 'Inter', sans-serif; font-size: 0.88rem; font-weight: 600; color: #fff;
-      box-shadow: 0 4px 14px rgba(245,166,35,0.3); transition: transform 0.15s, box-shadow 0.15s;
-      display: inline-flex; align-items: center; gap: 6px;
-    }
-    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(245,166,35,0.4); }
-    .btn-ghost {
-      padding: 9px 18px; border: 1.5px solid #e0e0ef; border-radius: 10px;
-      background: none; cursor: pointer; font-family: 'Inter', sans-serif;
-      font-size: 0.88rem; color: #666; transition: border-color 0.15s;
-    }
-    .btn-ghost:hover { border-color: #bbb; }
+    .page-title { font-size: 1.5rem; font-weight: 700; color: var(--navy); }
+    .page-subtitle { font-size: 0.8rem; color: #999; margin-top: 2px; }
+    .title-underline { width: 40px; height: 3px; background: linear-gradient(90deg, var(--gold), var(--gold-light)); border-radius: 2px; margin-top: 8px; }
 
-    /* Stats */
-    .stats-row {
-      display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;
-      margin-bottom: 22px; animation: fadeUp 0.4s 0.1s ease both;
+    /* Summary Cards */
+    .summary-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;
+      margin-bottom: 24px; animation: fadeUp 0.4s 0.05s ease both;
     }
-    .stat-card {
-      background: #fff; border-radius: 14px; padding: 18px 20px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.06);
-      border-top: 3px solid transparent;
+    .sum-card {
+      background: linear-gradient(135deg, #1a1a5e, #0d0d2b);
+      border-radius: 16px; padding: 22px 24px; color: #fff;
+      position: relative; overflow: hidden; transition: transform 0.2s;
     }
-    .stat-card.total   { border-top-color: var(--gold); }
-    .stat-card.active  { border-top-color: #3b82f6; }
-    .stat-card.closed  { border-top-color: #10b981; }
-    .stat-card.pending { border-top-color: #f59e0b; }
-    .stat-label { font-size: 0.7rem; font-weight: 700; color: #aaa; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px; }
-    .stat-num   { font-size: 2rem; font-weight: 800; color: var(--navy); line-height: 1; }
+    .sum-card:hover { transform: translateY(-3px); }
+    .sum-card::before {
+      content: ''; position: absolute; width: 120px; height: 120px;
+      border-radius: 50%; background: rgba(255,255,255,0.05); right: -25px; top: -25px;
+    }
+    .sum-card-label { font-size: 0.7rem; font-weight: 600; color: rgba(255,255,255,0.55); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+    .sum-card-line { width: 100%; height: 2px; background: rgba(255,255,255,0.15); border-radius: 2px; margin-bottom: 14px; }
+    .sum-card-line-fill { height: 100%; border-radius: 2px; background: linear-gradient(90deg, var(--gold), var(--gold-light)); }
+    .sum-card-value { font-size: 2rem; font-weight: 700; line-height: 1; position: relative; z-index: 1; }
+
+    /* Filter */
+    .filter-bar {
+      background: #fff; border-radius: 14px; padding: 14px 20px;
+      display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px;
+      animation: fadeUp 0.4s 0.1s ease both;
+    }
+    .filter-bar input[type="text"],
+    .filter-bar input[type="date"],
+    .filter-bar select {
+      height: 36px; border: 1px solid #e0e0ee; border-radius: 8px;
+      padding: 0 12px; font-family: 'Inter', sans-serif; font-size: 0.8rem;
+      color: var(--navy); background: #fafafa; outline: none; transition: border-color 0.2s;
+    }
+    .filter-bar input:focus, .filter-bar select:focus { border-color: var(--gold); }
+    .filter-bar input[type="text"] { min-width: 200px; }
+    .filter-label { font-size: 0.72rem; color: #888; font-weight: 500; white-space: nowrap; }
+    .filter-spacer { flex: 1; }
+    .btn-reset {
+      height: 36px; padding: 0 14px; border-radius: 8px;
+      border: 1px solid #e0e0ee; background: #fff; color: #888;
+      font-family: 'Inter', sans-serif; font-size: 0.8rem; cursor: pointer;
+    }
+    .btn-reset:hover { border-color: #bbb; color: var(--navy); }
+    .btn-export {
+      height: 36px; padding: 0 14px; border-radius: 8px;
+      border: 1px solid #e0e0ee; background: #fff; color: var(--navy);
+      font-family: 'Inter', sans-serif; font-size: 0.78rem; font-weight: 500;
+      cursor: pointer; display: flex; align-items: center; gap: 6px;
+    }
+    .btn-export:hover { background: #f5f5ff; }
 
     /* Table */
-    .table-panel {
-      background: #fff; border-radius: 16px; padding: 24px 28px;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+    .table-wrapper {
+      background: #fff; border-radius: 16px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06); overflow: hidden;
       animation: fadeUp 0.4s 0.15s ease both;
-      overflow-x: auto;
     }
-    .panel-title {
-      font-size: 0.72rem; font-weight: 700; color: #bbb;
-      text-transform: uppercase; letter-spacing: 1px;
-      margin-bottom: 14px; display: flex; align-items: center; gap: 8px;
+    .table-toolbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 20px; border-bottom: 1px solid #f0f0f8;
     }
-    .panel-title::after { content:''; flex:1; height:1px; background:#f0f0f5; }
+    .table-info { font-size: 0.8rem; color: #888; }
+    .table-info span { font-weight: 600; color: var(--navy); }
 
-    table.data-table { width: 100%; border-collapse: collapse; }
-    table.data-table th {
-      font-size: 0.7rem; font-weight: 700; color: #bbb;
-      text-transform: uppercase; letter-spacing: 0.8px;
-      padding: 10px 12px; text-align: left; border-bottom: 1.5px solid #f0f0f5;
-      white-space: nowrap;
-    }
-    table.data-table td {
-      padding: 12px 12px; font-size: 0.86rem; color: #333;
-      border-bottom: 1px solid #f8f8fc; vertical-align: middle;
-    }
-    table.data-table tr:last-child td { border-bottom: none; }
-    table.data-table tr:hover td { background: #fffbf3; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+    thead tr { background: var(--table-header); }
+    thead th { padding: 13px 16px; text-align: left; font-weight: 600; color: #fff; font-size: 0.76rem; letter-spacing: 0.3px; white-space: nowrap; }
+    tbody tr { border-bottom: 1px solid #f5f5fc; transition: background 0.15s; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: #f9f9ff; }
+    tbody td { padding: 12px 16px; color: #333; vertical-align: middle; }
 
-    .status-badge {
-      font-size: 0.68rem; font-weight: 700; padding: 3px 10px;
-      border-radius: 20px; letter-spacing: 0.3px; text-transform: uppercase;
-      display: inline-block;
+    .referral-tag {
+      display: inline-block; padding: 2px 10px; border-radius: 6px;
+      font-size: 0.72rem; font-weight: 600; background: #eef0ff; color: #3d1f8a; letter-spacing: 0.5px;
     }
-    .status-active   { background: rgba(59,130,246,0.1);  color: #2563eb; }
-    .status-closed   { background: rgba(16,185,129,0.12); color: #059669; }
-    .status-pending  { background: rgba(245,158,11,0.12); color: #d97706; }
-    .status-cancelled{ background: rgba(239,68,68,0.1);   color: #dc2626; }
-
-    .empty-state {
-      text-align: center; padding: 60px 20px; color: #bbb; font-size: 0.9rem;
+    .link-tag {
+      display: inline-block; padding: 2px 10px; border-radius: 6px;
+      font-size: 0.72rem; font-weight: 600; background: #e8f5e9; color: #2e7d32;
     }
-    .empty-state span { font-size: 2.5rem; display: block; margin-bottom: 12px; }
 
-    .loading { text-align: center; padding: 40px; color: #aaa; font-size: 0.88rem; }
+    .empty-state { text-align: center; padding: 60px 20px; color: #bbb; }
+    .empty-icon { font-size: 2.5rem; margin-bottom: 12px; }
 
-    @media (max-width: 768px) {
-      .stats-row { grid-template-columns: repeat(2, 1fr); }
-      .page-container { padding: 20px 16px 60px; }
-      .toolbar { flex-direction: column; align-items: stretch; }
+    .skeleton {
+      height: 14px;
+      background: linear-gradient(90deg, #f0f0f8 25%, #e8e8f5 50%, #f0f0f8 75%);
+      background-size: 200% 100%; border-radius: 4px; animation: shimmer 1.4s infinite;
     }
+
+    .pagination { display: flex; align-items: center; justify-content: flex-end; gap: 6px; padding: 12px 20px; border-top: 1px solid #f0f0f8; }
+    .page-btn {
+      min-width: 32px; height: 32px; border-radius: 8px; border: 1px solid #e0e0ee;
+      background: #fff; color: var(--navy); font-family: 'Inter', sans-serif;
+      font-size: 0.78rem; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    }
+    .page-btn:hover { background: #f0f0ff; }
+    .page-btn.active { background: var(--navy); color: #fff; border-color: var(--navy); font-weight: 600; }
+    .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    @media (max-width: 900px) { .summary-grid { grid-template-columns: repeat(2, 1fr); } .page-container { padding: 24px 16px; } }
+    @media (max-width: 600px) { .summary-grid { grid-template-columns: 1fr 1fr; } }
   </style>
 </head>
 <body>
 
+<!-- NAVBAR -->
 <div id="navbar-placeholder"></div>
 <script src="navbar.js?v=3"></script>
 
+<!-- PAGE -->
 <div class="page-container">
 
-  <!-- Header -->
   <div class="page-header">
-    <h1>Inhouse Tracker</h1>
-    <div class="page-header-underline"></div>
-    <p>Tracking data inhouse dari Firebase Firestore</p>
+    <div>
+      <div class="page-title">Inhouse Tracker</div>
+      <div class="page-subtitle">Data klik link dari Firebase (collection: link_clicks)</div>
+      <div class="title-underline"></div>
+    </div>
+    <button class="btn-export" onclick="exportCSV()">Export CSV</button>
   </div>
 
-  <!-- Toolbar -->
-  <div class="toolbar">
-    <div class="toolbar-left">
-      <input class="form-input" type="text" id="searchInput" placeholder="Cari nama, kode, atau keterangan..." style="min-width:240px;" oninput="filterData()"/>
-      <select class="form-select" id="filterCollection" onchange="loadCollection()" style="min-width:180px;">
-        <option value="">-- Pilih Collection --</option>
-      </select>
+  <!-- Summary -->
+  <div class="summary-grid">
+    <div class="sum-card">
+      <div class="sum-card-label">Total Klik</div>
+      <div class="sum-card-line"><div class="sum-card-line-fill" style="width:100%"></div></div>
+      <div class="sum-card-value" id="statTotal">—</div>
     </div>
-    <button class="btn-primary" onclick="loadCollection()">
-      🔄 Refresh
-    </button>
+    <div class="sum-card">
+      <div class="sum-card-label">Bulan Ini</div>
+      <div class="sum-card-line"><div class="sum-card-line-fill" style="width:60%"></div></div>
+      <div class="sum-card-value" id="statMonth">—</div>
+    </div>
+    <div class="sum-card">
+      <div class="sum-card-label">Bulan Lalu</div>
+      <div class="sum-card-line"><div class="sum-card-line-fill" style="width:40%"></div></div>
+      <div class="sum-card-value" id="statLastMonth">—</div>
+    </div>
+    <div class="sum-card">
+      <div class="sum-card-label">Kode Referral Aktif</div>
+      <div class="sum-card-line"><div class="sum-card-line-fill" style="width:30%"></div></div>
+      <div class="sum-card-value" id="statReferrals">—</div>
+    </div>
   </div>
 
-  <!-- Stats -->
-  <div class="stats-row">
-    <div class="stat-card total">
-      <div class="stat-label">Total Data</div>
-      <div class="stat-num" id="statTotal">0</div>
-    </div>
-    <div class="stat-card active">
-      <div class="stat-label">Active</div>
-      <div class="stat-num" id="statActive">0</div>
-    </div>
-    <div class="stat-card closed">
-      <div class="stat-label">Closed</div>
-      <div class="stat-num" id="statClosed">0</div>
-    </div>
-    <div class="stat-card pending">
-      <div class="stat-label">Pending</div>
-      <div class="stat-num" id="statPending">0</div>
-    </div>
+  <!-- Filter -->
+  <div class="filter-bar">
+    <span class="filter-label">Cari:</span>
+    <input type="text" id="filterSearch" placeholder="Nama / Email / Referral..." oninput="applyFilter()"/>
+    <span class="filter-label">Referral:</span>
+    <select id="filterReferral" onchange="applyFilter()">
+      <option value="">Semua</option>
+    </select>
+    <span class="filter-label">Link:</span>
+    <select id="filterLink" onchange="applyFilter()">
+      <option value="">Semua</option>
+    </select>
+    <span class="filter-label">Dari:</span>
+    <input type="date" id="filterFrom" onchange="applyFilter()"/>
+    <span class="filter-label">s/d</span>
+    <input type="date" id="filterTo" onchange="applyFilter()"/>
+    <div class="filter-spacer"></div>
+    <button class="btn-reset" onclick="resetFilter()">Reset</button>
   </div>
 
   <!-- Table -->
-  <div class="table-panel">
-    <div class="panel-title">Data Inhouse</div>
-    <div id="tableContent">
-      <div class="loading">Menghubungkan ke Firebase...</div>
+  <div class="table-wrapper">
+    <div class="table-toolbar">
+      <div class="table-info">Menampilkan <span id="rowCount">0</span> data</div>
     </div>
+    <div style="overflow-x:auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Nama</th>
+            <th>Email</th>
+            <th>Kode Referral</th>
+            <th>Link</th>
+            <th>URL</th>
+            <th>Tanggal</th>
+            <th>Waktu</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          <tr><td colspan="8" style="padding:0;">
+            <div style="padding:14px 16px;display:flex;flex-direction:column;gap:10px;">
+              <div class="skeleton"></div><div class="skeleton" style="width:90%"></div>
+              <div class="skeleton" style="width:95%"></div><div class="skeleton" style="width:80%"></div>
+            </div>
+          </td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="pagination" id="pagination"></div>
   </div>
 
 </div>
 
 <script>
 /* ═══════════════════════════════════════════════
-   Inhouse Tracker — Firebase Firestore
+   Inhouse Tracker — Firebase Firestore (link_clicks)
 ═══════════════════════════════════════════════ */
 
-// Firebase Config
 const firebaseConfig = {
   apiKey: "AIzaSyDHuo14lBr18NG6SN-7M4Rbj2RPJ4Wg2gE",
   authDomain: "fawzpro-a831d.firebaseapp.com",
@@ -204,267 +257,264 @@ const firebaseConfig = {
   measurementId: "G-38RQT6VKB0"
 };
 
-// Initialize Firebase
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-let allData = [];
-let filteredData = [];
-let currentCollection = '';
-let knownCollections = [];
+const ROWS_PER_PAGE = 15;
+let currentPage = 1;
+let allRows = [];
+let filteredRows = [];
 
 // Auth check
 const raw = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember');
-if (!raw) { window.location.href = 'login.html'; }
+if (!raw) { window.location.replace('login.html'); }
 
-/* ── INIT ── */
-async function init() {
-  await discoverCollections();
-  if (knownCollections.length > 0) {
-    currentCollection = knownCollections[0];
-    document.getElementById('filterCollection').value = currentCollection;
-    await loadCollection();
-  } else {
-    document.getElementById('tableContent').innerHTML =
-      '<div class="empty-state"><span>📂</span>Tidak ada collection ditemukan di Firebase.</div>';
-  }
+/* ── DATE HELPERS ── */
+function toDate(val) {
+  if (!val) return null;
+  if (val.toDate) return val.toDate();
+  if (val.seconds) return new Date(val.seconds * 1000);
+  return new Date(val);
 }
 
-/* ── DISCOVER COLLECTIONS ── */
-async function discoverCollections() {
-  // Firebase client SDK doesn't have listCollections,
-  // so we use a predefined list of common inhouse collections
-  // These can be customized based on what's actually in Firestore
-  const commonCollections = [
-    'inhouse_data',
-    'inhouse_tracker',
-    'inhouse_sales',
-    'clients',
-    'leads',
-    'prospects',
-    'transactions',
-    'activities'
-  ];
-
-  const sel = document.getElementById('filterCollection');
-  // Clear existing options except placeholder
-  while (sel.options.length > 1) sel.remove(1);
-
-  // Try each collection to see if it has data
-  for (const col of commonCollections) {
-    try {
-      const snapshot = await db.collection(col).limit(1).get();
-      if (!snapshot.empty) {
-        knownCollections.push(col);
-        const opt = document.createElement('option');
-        opt.value = col;
-        opt.textContent = col.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-        sel.appendChild(opt);
-      }
-    } catch(e) {
-      // Collection doesn't exist or no permission — skip
-    }
-  }
-
-  // If no predefined collection found, try a default one
-  if (knownCollections.length === 0) {
-    // Add all as options anyway so user can try
-    commonCollections.forEach(col => {
-      const opt = document.createElement('option');
-      opt.value = col;
-      opt.textContent = col.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-      sel.appendChild(opt);
-    });
-    knownCollections = commonCollections;
-  }
+function formatDate(val) {
+  const d = toDate(val);
+  if (!d || isNaN(d)) return '—';
+  return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
-/* ── LOAD COLLECTION ── */
-async function loadCollection() {
-  const col = document.getElementById('filterCollection').value;
-  if (!col) {
-    document.getElementById('tableContent').innerHTML =
-      '<div class="empty-state"><span>📋</span>Pilih collection untuk melihat data.</div>';
-    updateStats([]);
-    return;
-  }
-
-  currentCollection = col;
-  document.getElementById('tableContent').innerHTML =
-    '<div class="loading">Memuat data dari <strong>' + escHtml(col) + '</strong>...</div>';
-
-  try {
-    const snapshot = await db.collection(col).orderBy('created_at', 'desc').limit(500).get();
-    allData = [];
-    snapshot.forEach(doc => {
-      allData.push({ id: doc.id, ...doc.data() });
-    });
-    filteredData = [...allData];
-    renderTable();
-    updateStats(filteredData);
-  } catch(e) {
-    // If orderBy fails (no index or no created_at field), try without ordering
-    try {
-      const snapshot = await db.collection(col).limit(500).get();
-      allData = [];
-      snapshot.forEach(doc => {
-        allData.push({ id: doc.id, ...doc.data() });
-      });
-      filteredData = [...allData];
-      renderTable();
-      updateStats(filteredData);
-    } catch(e2) {
-      document.getElementById('tableContent').innerHTML =
-        '<div class="empty-state"><span>⚠️</span>Gagal memuat data: ' + escHtml(e2.message) + '</div>';
-      updateStats([]);
-    }
-  }
+function formatTime(val) {
+  const d = toDate(val);
+  if (!d || isNaN(d)) return '—';
+  return d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
 }
 
-/* ── RENDER TABLE ── */
-function renderTable() {
-  const container = document.getElementById('tableContent');
-
-  if (!filteredData.length) {
-    container.innerHTML = '<div class="empty-state"><span>📭</span>Tidak ada data ditemukan.</div>';
-    return;
-  }
-
-  // Detect columns from data
-  const columns = detectColumns(filteredData);
-
-  let html = '<table class="data-table"><thead><tr>';
-  html += '<th>No</th>';
-  columns.forEach(col => {
-    html += '<th>' + escHtml(formatColumnName(col)) + '</th>';
-  });
-  html += '</tr></thead><tbody>';
-
-  filteredData.forEach((row, idx) => {
-    html += '<tr>';
-    html += '<td>' + (idx + 1) + '</td>';
-    columns.forEach(col => {
-      const val = row[col];
-      html += '<td>' + formatCellValue(col, val) + '</td>';
-    });
-    html += '</tr>';
-  });
-
-  html += '</tbody></table>';
-  container.innerHTML = html;
-}
-
-/* ── DETECT COLUMNS ── */
-function detectColumns(data) {
-  const colSet = new Set();
-  const skipCols = ['id']; // skip document ID from display as separate column
-
-  data.slice(0, 20).forEach(row => {
-    Object.keys(row).forEach(key => {
-      if (!skipCols.includes(key)) colSet.add(key);
-    });
-  });
-
-  // Prioritize common columns first
-  const priority = ['name', 'nama', 'client_name', 'customer_name', 'code', 'kode',
-    'status', 'type', 'tipe', 'amount', 'nominal', 'date', 'tanggal',
-    'created_at', 'updated_at', 'notes', 'keterangan', 'description'];
-
-  const sorted = [];
-  priority.forEach(p => {
-    if (colSet.has(p)) { sorted.push(p); colSet.delete(p); }
-  });
-
-  // Add remaining columns
-  [...colSet].sort().forEach(c => sorted.push(c));
-
-  // Limit to max 8 columns for readability
-  return sorted.slice(0, 8);
-}
-
-/* ── FORMAT COLUMN NAME ── */
-function formatColumnName(col) {
-  return col.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-}
-
-/* ── FORMAT CELL VALUE ── */
-function formatCellValue(col, val) {
-  if (val === null || val === undefined) return '<span style="color:#ccc;">—</span>';
-
-  // Firestore timestamp
-  if (val && typeof val === 'object' && val.seconds) {
-    const d = new Date(val.seconds * 1000);
-    return escHtml(d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }));
-  }
-
-  // Status column
-  if (col === 'status' || col === 'Status') {
-    const s = String(val).toLowerCase();
-    let cls = 'status-pending';
-    if (s === 'active' || s === 'aktif') cls = 'status-active';
-    else if (s === 'closed' || s === 'selesai' || s === 'done') cls = 'status-closed';
-    else if (s === 'cancelled' || s === 'batal') cls = 'status-cancelled';
-    return '<span class="status-badge ' + cls + '">' + escHtml(String(val)) + '</span>';
-  }
-
-  // Number / nominal
-  if ((col.includes('nominal') || col.includes('amount') || col.includes('fee')) && typeof val === 'number') {
-    return 'Rp ' + val.toLocaleString('id-ID');
-  }
-
-  // Array
-  if (Array.isArray(val)) return escHtml(val.join(', '));
-
-  // Object
-  if (typeof val === 'object') return escHtml(JSON.stringify(val));
-
-  return escHtml(String(val));
-}
-
-/* ── FILTER ── */
-function filterData() {
-  const q = document.getElementById('searchInput').value.toLowerCase().trim();
-  if (!q) {
-    filteredData = [...allData];
-  } else {
-    filteredData = allData.filter(row => {
-      return Object.values(row).some(val => {
-        if (val === null || val === undefined) return false;
-        if (typeof val === 'object' && val.seconds) return false;
-        return String(val).toLowerCase().includes(q);
-      });
-    });
-  }
-  renderTable();
-  updateStats(filteredData);
-}
-
-/* ── UPDATE STATS ── */
-function updateStats(data) {
-  document.getElementById('statTotal').textContent = data.length;
-
-  let active = 0, closed = 0, pending = 0;
-  data.forEach(row => {
-    const s = (row.status || '').toLowerCase();
-    if (s === 'active' || s === 'aktif') active++;
-    else if (s === 'closed' || s === 'selesai' || s === 'done') closed++;
-    else if (s === 'pending' || s === 'menunggu') pending++;
-  });
-
-  document.getElementById('statActive').textContent = active;
-  document.getElementById('statClosed').textContent = closed;
-  document.getElementById('statPending').textContent = pending;
-}
-
-/* ── HELPERS ── */
-function escHtml(s) {
+function esc(s) {
   const div = document.createElement('div');
   div.textContent = s;
   return div.innerHTML;
 }
 
-/* ── START ── */
-init();
+/* ── BOOT ── */
+async function boot() {
+  const _gr = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember');
+  if (!_gr) { window.location.replace('login.html'); return; }
+
+  try {
+    const snapshot = await db.collection('link_clicks').orderBy('clickedAt', 'desc').get();
+    allRows = [];
+    snapshot.forEach(doc => {
+      allRows.push({ id: doc.id, ...doc.data() });
+    });
+
+    populateFilters(allRows);
+    filteredRows = [...allRows];
+    renderTable();
+    renderSummary(allRows);
+  } catch(e) {
+    // Try without ordering if index missing
+    try {
+      const snapshot = await db.collection('link_clicks').get();
+      allRows = [];
+      snapshot.forEach(doc => {
+        allRows.push({ id: doc.id, ...doc.data() });
+      });
+      // Sort client-side
+      allRows.sort((a, b) => {
+        const da = toDate(a.clickedAt);
+        const db2 = toDate(b.clickedAt);
+        if (!da) return 1;
+        if (!db2) return -1;
+        return db2 - da;
+      });
+
+      populateFilters(allRows);
+      filteredRows = [...allRows];
+      renderTable();
+      renderSummary(allRows);
+    } catch(e2) {
+      document.getElementById('tableBody').innerHTML =
+        '<tr><td colspan="8" style="text-align:center;padding:32px;color:#e03e3e;">Gagal memuat data: ' + esc(e2.message) + '</td></tr>';
+    }
+  }
+}
+
+/* ── POPULATE FILTERS ── */
+function populateFilters(rows) {
+  const referrals = [...new Set(rows.map(r => (r.referral || '').toUpperCase()).filter(Boolean))].sort();
+  const links = [...new Set(rows.map(r => r.link || '').filter(Boolean))].sort();
+
+  const selRef = document.getElementById('filterReferral');
+  referrals.forEach(c => {
+    const o = document.createElement('option');
+    o.value = c; o.textContent = c;
+    selRef.appendChild(o);
+  });
+
+  const selLink = document.getElementById('filterLink');
+  links.forEach(c => {
+    const o = document.createElement('option');
+    o.value = c; o.textContent = c;
+    selLink.appendChild(o);
+  });
+}
+
+/* ── RENDER TABLE ── */
+function renderTable() {
+  currentPage = 1;
+  renderPage();
+  renderPagination();
+  document.getElementById('rowCount').textContent = filteredRows.length.toLocaleString('id-ID');
+}
+
+function renderPage() {
+  const start = (currentPage - 1) * ROWS_PER_PAGE;
+  const slice = filteredRows.slice(start, start + ROWS_PER_PAGE);
+  const tbody = document.getElementById('tableBody');
+
+  if (!slice.length) {
+    tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state"><div class="empty-icon">—</div><div style="font-size:.9rem;color:#999;font-weight:600;">Belum ada data</div></div></td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = slice.map((r, i) => {
+    const no = (currentPage - 1) * ROWS_PER_PAGE + i + 1;
+    const nama = esc(r.nama || r.name || '—');
+    const email = esc(r.email || '—');
+    const referral = (r.referral || '—').toUpperCase();
+    const link = esc(r.link || '—');
+    const url = r.url || '';
+    const urlDisplay = url.length > 40 ? url.substring(0, 40) + '...' : url;
+
+    return '<tr>' +
+      '<td style="color:#bbb;font-size:.75rem;">' + no + '</td>' +
+      '<td><strong>' + nama + '</strong></td>' +
+      '<td style="color:#555;">' + email + '</td>' +
+      '<td><span class="referral-tag">' + esc(referral) + '</span></td>' +
+      '<td><span class="link-tag">' + link + '</span></td>' +
+      '<td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' +
+        (url ? '<a href="' + esc(url) + '" target="_blank" rel="noopener" style="color:#3b82f6;text-decoration:none;font-size:0.78rem;">' + esc(urlDisplay) + '</a>' : '—') +
+      '</td>' +
+      '<td>' + formatDate(r.clickedAt) + '</td>' +
+      '<td style="color:#888;">' + formatTime(r.clickedAt) + '</td>' +
+    '</tr>';
+  }).join('');
+}
+
+function renderPagination() {
+  const total = Math.ceil(filteredRows.length / ROWS_PER_PAGE);
+  const pag = document.getElementById('pagination');
+  if (total <= 1) { pag.innerHTML = ''; return; }
+
+  let html = '<button class="page-btn" ' + (currentPage === 1 ? 'disabled' : '') + ' onclick="goPage(' + (currentPage - 1) + ')">&#8249;</button>';
+  for (let i = 1; i <= total; i++) {
+    if (i === 1 || i === total || Math.abs(i - currentPage) <= 1) {
+      html += '<button class="page-btn ' + (i === currentPage ? 'active' : '') + '" onclick="goPage(' + i + ')">' + i + '</button>';
+    } else if (Math.abs(i - currentPage) === 2) {
+      html += '<button class="page-btn" disabled style="border:none">…</button>';
+    }
+  }
+  html += '<button class="page-btn" ' + (currentPage === total ? 'disabled' : '') + ' onclick="goPage(' + (currentPage + 1) + ')">&#8250;</button>';
+  pag.innerHTML = html;
+}
+
+function goPage(n) {
+  currentPage = n;
+  renderPage();
+  renderPagination();
+}
+
+/* ── RENDER SUMMARY ── */
+function renderSummary(rows) {
+  const now = new Date();
+  const thisM = now.getMonth(), thisY = now.getFullYear();
+  const lastM = thisM === 0 ? 11 : thisM - 1;
+  const lastY = thisM === 0 ? thisY - 1 : thisY;
+  let thisMonth = 0, lastMonth = 0;
+  const refCodes = new Set();
+
+  rows.forEach(r => {
+    const d = toDate(r.clickedAt);
+    if (d) {
+      if (d.getMonth() === thisM && d.getFullYear() === thisY) thisMonth++;
+      if (d.getMonth() === lastM && d.getFullYear() === lastY) lastMonth++;
+    }
+    if (r.referral) refCodes.add(r.referral.toUpperCase());
+  });
+
+  document.getElementById('statTotal').textContent = rows.length.toLocaleString('id-ID');
+  document.getElementById('statMonth').textContent = thisMonth.toLocaleString('id-ID');
+  document.getElementById('statLastMonth').textContent = lastMonth.toLocaleString('id-ID');
+  document.getElementById('statReferrals').textContent = refCodes.size.toLocaleString('id-ID');
+}
+
+/* ── FILTER ── */
+function applyFilter() {
+  const search = document.getElementById('filterSearch').value.toLowerCase();
+  const referral = document.getElementById('filterReferral').value.toUpperCase();
+  const link = document.getElementById('filterLink').value;
+  const from = document.getElementById('filterFrom').value;
+  const to = document.getElementById('filterTo').value;
+
+  filteredRows = allRows.filter(r => {
+    const matchSearch = !search ||
+      (r.nama || '').toLowerCase().includes(search) ||
+      (r.name || '').toLowerCase().includes(search) ||
+      (r.email || '').toLowerCase().includes(search) ||
+      (r.referral || '').toLowerCase().includes(search);
+    const matchRef = !referral || (r.referral || '').toUpperCase() === referral;
+    const matchLink = !link || (r.link || '') === link;
+    const d = toDate(r.clickedAt);
+    const matchFrom = !from || (d && d >= new Date(from));
+    const matchTo = !to || (d && d <= new Date(to + 'T23:59:59'));
+    return matchSearch && matchRef && matchLink && matchFrom && matchTo;
+  });
+
+  renderTable();
+  renderSummary(filteredRows);
+}
+
+function resetFilter() {
+  document.getElementById('filterSearch').value = '';
+  document.getElementById('filterReferral').value = '';
+  document.getElementById('filterLink').value = '';
+  document.getElementById('filterFrom').value = '';
+  document.getElementById('filterTo').value = '';
+  filteredRows = [...allRows];
+  renderTable();
+  renderSummary(allRows);
+}
+
+/* ── EXPORT CSV ── */
+function exportCSV() {
+  const rows = filteredRows.length ? filteredRows : allRows;
+  if (!rows.length) { alert('Tidak ada data.'); return; }
+
+  const header = ['No', 'Nama', 'Email', 'Kode Referral', 'Link', 'URL', 'Tanggal', 'Waktu'];
+  const csv = [header.join(','), ...rows.map((r, i) => [
+    i + 1,
+    '"' + (r.nama || r.name || '').replace(/"/g, '""') + '"',
+    r.email || '',
+    r.referral || '',
+    '"' + (r.link || '').replace(/"/g, '""') + '"',
+    '"' + (r.url || '').replace(/"/g, '""') + '"',
+    formatDate(r.clickedAt),
+    formatTime(r.clickedAt)
+  ].join(','))].join('\n');
+
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+  a.download = 'inhouse_tracker_' + new Date().toISOString().split('T')[0] + '.csv';
+  a.click();
+}
+
+/* ── INIT ── */
+window.addEventListener('DOMContentLoaded', boot);
+
+window.goPage = goPage;
+window.applyFilter = applyFilter;
+window.resetFilter = resetFilter;
+window.exportCSV = exportCSV;
 </script>
 
 </body>
