@@ -41,6 +41,31 @@
     .page-subtitle { font-size: 0.8rem; color: #999; margin-top: 2px; }
     .title-underline { width: 40px; height: 3px; background: linear-gradient(90deg, var(--gold), var(--gold-light)); border-radius: 2px; margin-top: 8px; }
 
+    /* Tabs */
+    .tabs {
+      display: flex; gap: 4px; margin-bottom: 24px;
+      background: #fff; border-radius: 12px; padding: 6px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      width: fit-content;
+      animation: fadeUp 0.4s 0.03s ease both;
+    }
+    .tab-btn {
+      padding: 9px 22px; border-radius: 8px; border: none;
+      font-family: 'Inter', sans-serif; font-size: 0.82rem; font-weight: 500;
+      cursor: pointer; transition: all 0.2s; color: #888; background: transparent;
+      display: flex; align-items: center; gap: 7px;
+    }
+    .tab-btn.active { background: var(--navy); color: #fff; font-weight: 600; }
+    .tab-btn:not(.active):hover { background: #f0f0f8; color: var(--navy); }
+    .tab-badge {
+      font-size: 0.68rem; font-weight: 700; padding: 1px 7px;
+      border-radius: 10px; background: rgba(255,255,255,0.2);
+    }
+    .tab-btn:not(.active) .tab-badge { background: #eef0ff; color: var(--navy); }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
     /* Summary Cards */
     .summary-grid {
       display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;
@@ -92,6 +117,14 @@
       cursor: pointer; display: flex; align-items: center; gap: 6px;
     }
     .btn-export:hover { background: #f5f5ff; }
+
+    .btn-delete {
+      height: 28px; padding: 0 10px; border-radius: 6px;
+      border: 1px solid #fcc; background: #fff5f5; color: #e03e3e;
+      font-family: 'Inter', sans-serif; font-size: 0.72rem; font-weight: 500;
+      cursor: pointer; transition: all 0.15s;
+    }
+    .btn-delete:hover { background: #e03e3e; color: #fff; border-color: #e03e3e; }
 
     /* Table */
     .table-wrapper {
@@ -158,93 +191,181 @@
   <div class="page-header">
     <div>
       <div class="page-title">Inhouse Tracker</div>
-      <div class="page-subtitle">Data klik link dari Firebase (collection: link_clicks)</div>
+      <div class="page-subtitle">Tracking data link clicks dan leads dari Firebase</div>
       <div class="title-underline"></div>
     </div>
     <button class="btn-export" onclick="exportCSV()">Export CSV</button>
   </div>
 
-  <!-- Summary -->
-  <div class="summary-grid">
-    <div class="sum-card">
-      <div class="sum-card-label">Total Klik</div>
-      <div class="sum-card-line"><div class="sum-card-line-fill" style="width:100%"></div></div>
-      <div class="sum-card-value" id="statTotal">—</div>
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab-btn active" id="tab-clicks" onclick="switchTab('clicks')">
+      Link Clicks <span class="tab-badge" id="badge-clicks">0</span>
+    </button>
+    <button class="tab-btn" id="tab-leads" onclick="switchTab('leads')">
+      Leads <span class="tab-badge" id="badge-leads">0</span>
+    </button>
+  </div>
+
+  <!-- ===== TAB: LINK CLICKS ===== -->
+  <div class="tab-panel active" id="panel-clicks">
+
+    <div class="summary-grid">
+      <div class="sum-card">
+        <div class="sum-card-label">Total Klik</div>
+        <div class="sum-card-line"><div class="sum-card-line-fill" style="width:100%"></div></div>
+        <div class="sum-card-value" id="statClicksTotal">—</div>
+      </div>
+      <div class="sum-card">
+        <div class="sum-card-label">Bulan Ini</div>
+        <div class="sum-card-line"><div class="sum-card-line-fill" style="width:60%"></div></div>
+        <div class="sum-card-value" id="statClicksMonth">—</div>
+      </div>
+      <div class="sum-card">
+        <div class="sum-card-label">Bulan Lalu</div>
+        <div class="sum-card-line"><div class="sum-card-line-fill" style="width:40%"></div></div>
+        <div class="sum-card-value" id="statClicksLastMonth">—</div>
+      </div>
+      <div class="sum-card">
+        <div class="sum-card-label">Kode Referral Aktif</div>
+        <div class="sum-card-line"><div class="sum-card-line-fill" style="width:30%"></div></div>
+        <div class="sum-card-value" id="statClicksReferrals">—</div>
+      </div>
     </div>
-    <div class="sum-card">
-      <div class="sum-card-label">Bulan Ini</div>
-      <div class="sum-card-line"><div class="sum-card-line-fill" style="width:60%"></div></div>
-      <div class="sum-card-value" id="statMonth">—</div>
+
+    <div class="filter-bar">
+      <span class="filter-label">Cari:</span>
+      <input type="text" id="clicksFilterSearch" placeholder="Nama / Email / Referral..." oninput="applyClicksFilter()"/>
+      <span class="filter-label">Referral:</span>
+      <select id="clicksFilterReferral" onchange="applyClicksFilter()">
+        <option value="">Semua</option>
+      </select>
+      <span class="filter-label">Link:</span>
+      <select id="clicksFilterLink" onchange="applyClicksFilter()">
+        <option value="">Semua</option>
+      </select>
+      <span class="filter-label">Dari:</span>
+      <input type="date" id="clicksFilterFrom" onchange="applyClicksFilter()"/>
+      <span class="filter-label">s/d</span>
+      <input type="date" id="clicksFilterTo" onchange="applyClicksFilter()"/>
+      <div class="filter-spacer"></div>
+      <button class="btn-reset" onclick="resetClicksFilter()">Reset</button>
     </div>
-    <div class="sum-card">
-      <div class="sum-card-label">Bulan Lalu</div>
-      <div class="sum-card-line"><div class="sum-card-line-fill" style="width:40%"></div></div>
-      <div class="sum-card-value" id="statLastMonth">—</div>
-    </div>
-    <div class="sum-card">
-      <div class="sum-card-label">Kode Referral Aktif</div>
-      <div class="sum-card-line"><div class="sum-card-line-fill" style="width:30%"></div></div>
-      <div class="sum-card-value" id="statReferrals">—</div>
+
+    <div class="table-wrapper">
+      <div class="table-toolbar">
+        <div class="table-info">Menampilkan <span id="clicksRowCount">0</span> data</div>
+      </div>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Nama</th>
+              <th>Email</th>
+              <th>Kode Referral</th>
+              <th>Link</th>
+              <th>URL</th>
+              <th>Tanggal</th>
+              <th>Waktu</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="clicksTableBody">
+            <tr><td colspan="9" style="padding:0;">
+              <div style="padding:14px 16px;display:flex;flex-direction:column;gap:10px;">
+                <div class="skeleton"></div><div class="skeleton" style="width:90%"></div>
+                <div class="skeleton" style="width:95%"></div><div class="skeleton" style="width:80%"></div>
+              </div>
+            </td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="pagination" id="clicksPagination"></div>
     </div>
   </div>
 
-  <!-- Filter -->
-  <div class="filter-bar">
-    <span class="filter-label">Cari:</span>
-    <input type="text" id="filterSearch" placeholder="Nama / Email / Referral..." oninput="applyFilter()"/>
-    <span class="filter-label">Referral:</span>
-    <select id="filterReferral" onchange="applyFilter()">
-      <option value="">Semua</option>
-    </select>
-    <span class="filter-label">Link:</span>
-    <select id="filterLink" onchange="applyFilter()">
-      <option value="">Semua</option>
-    </select>
-    <span class="filter-label">Dari:</span>
-    <input type="date" id="filterFrom" onchange="applyFilter()"/>
-    <span class="filter-label">s/d</span>
-    <input type="date" id="filterTo" onchange="applyFilter()"/>
-    <div class="filter-spacer"></div>
-    <button class="btn-reset" onclick="resetFilter()">Reset</button>
-  </div>
+  <!-- ===== TAB: LEADS ===== -->
+  <div class="tab-panel" id="panel-leads">
 
-  <!-- Table -->
-  <div class="table-wrapper">
-    <div class="table-toolbar">
-      <div class="table-info">Menampilkan <span id="rowCount">0</span> data</div>
+    <div class="summary-grid">
+      <div class="sum-card">
+        <div class="sum-card-label">Total Leads</div>
+        <div class="sum-card-line"><div class="sum-card-line-fill" style="width:100%"></div></div>
+        <div class="sum-card-value" id="statLeadsTotal">—</div>
+      </div>
+      <div class="sum-card">
+        <div class="sum-card-label">Bulan Ini</div>
+        <div class="sum-card-line"><div class="sum-card-line-fill" style="width:60%"></div></div>
+        <div class="sum-card-value" id="statLeadsMonth">—</div>
+      </div>
+      <div class="sum-card">
+        <div class="sum-card-label">Bulan Lalu</div>
+        <div class="sum-card-line"><div class="sum-card-line-fill" style="width:40%"></div></div>
+        <div class="sum-card-value" id="statLeadsLastMonth">—</div>
+      </div>
+      <div class="sum-card">
+        <div class="sum-card-label">Kode Referral Aktif</div>
+        <div class="sum-card-line"><div class="sum-card-line-fill" style="width:30%"></div></div>
+        <div class="sum-card-value" id="statLeadsReferrals">—</div>
+      </div>
     </div>
-    <div style="overflow-x:auto;">
-      <table>
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Nama</th>
-            <th>Email</th>
-            <th>Kode Referral</th>
-            <th>Link</th>
-            <th>URL</th>
-            <th>Tanggal</th>
-            <th>Waktu</th>
-          </tr>
-        </thead>
-        <tbody id="tableBody">
-          <tr><td colspan="8" style="padding:0;">
-            <div style="padding:14px 16px;display:flex;flex-direction:column;gap:10px;">
-              <div class="skeleton"></div><div class="skeleton" style="width:90%"></div>
-              <div class="skeleton" style="width:95%"></div><div class="skeleton" style="width:80%"></div>
-            </div>
-          </td></tr>
-        </tbody>
-      </table>
+
+    <div class="filter-bar">
+      <span class="filter-label">Cari:</span>
+      <input type="text" id="leadsFilterSearch" placeholder="Nama / Email / HP / Referral..." oninput="applyLeadsFilter()"/>
+      <span class="filter-label">Referral:</span>
+      <select id="leadsFilterReferral" onchange="applyLeadsFilter()">
+        <option value="">Semua</option>
+      </select>
+      <span class="filter-label">Dari:</span>
+      <input type="date" id="leadsFilterFrom" onchange="applyLeadsFilter()"/>
+      <span class="filter-label">s/d</span>
+      <input type="date" id="leadsFilterTo" onchange="applyLeadsFilter()"/>
+      <div class="filter-spacer"></div>
+      <button class="btn-reset" onclick="resetLeadsFilter()">Reset</button>
     </div>
-    <div class="pagination" id="pagination"></div>
+
+    <div class="table-wrapper">
+      <div class="table-toolbar">
+        <div class="table-info">Menampilkan <span id="leadsRowCount">0</span> data</div>
+      </div>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Nama</th>
+              <th>Email</th>
+              <th>No. HP</th>
+              <th>Kode Referral</th>
+              <th>Sekuritas</th>
+              <th>Tanggal</th>
+              <th>Waktu</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="leadsTableBody">
+            <tr><td colspan="9" style="padding:0;">
+              <div style="padding:14px 16px;display:flex;flex-direction:column;gap:10px;">
+                <div class="skeleton"></div><div class="skeleton" style="width:90%"></div>
+                <div class="skeleton" style="width:95%"></div><div class="skeleton" style="width:80%"></div>
+              </div>
+            </td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="pagination" id="leadsPagination"></div>
+    </div>
   </div>
 
 </div>
 
 <script>
 /* ═══════════════════════════════════════════════
-   Inhouse Tracker — Firebase Firestore (link_clicks)
+   Inhouse Tracker — Firebase Firestore
+   Tab 1: link_clicks
+   Tab 2: leads
 ═══════════════════════════════════════════════ */
 
 const firebaseConfig = {
@@ -261,130 +382,132 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
 const ROWS_PER_PAGE = 15;
-let currentPage = 1;
-let allRows = [];
-let filteredRows = [];
 
 // Auth check
 const raw = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember');
 if (!raw) { window.location.replace('login.html'); }
 
-/* ── DATE HELPERS ── */
+// ===== STATE =====
+let currentTab = 'clicks';
+
+// Link Clicks state
+let clicksAll = [];
+let clicksFiltered = [];
+let clicksPage = 1;
+
+// Leads state
+let leadsAll = [];
+let leadsFiltered = [];
+let leadsPage = 1;
+
+/* ── HELPERS ── */
 function toDate(val) {
   if (!val) return null;
   if (val.toDate) return val.toDate();
   if (val.seconds) return new Date(val.seconds * 1000);
-  return new Date(val);
+  const d = new Date(val);
+  return isNaN(d) ? null : d;
 }
 
 function formatDate(val) {
   const d = toDate(val);
-  if (!d || isNaN(d)) return '—';
+  if (!d) return '—';
   return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
 function formatTime(val) {
   const d = toDate(val);
-  if (!d || isNaN(d)) return '—';
+  if (!d) return '—';
   return d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
 }
 
 function esc(s) {
   const div = document.createElement('div');
-  div.textContent = s;
+  div.textContent = String(s || '');
   return div.innerHTML;
 }
 
-/* ── BOOT ── */
-async function boot() {
-  const _gr = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember');
-  if (!_gr) { window.location.replace('login.html'); return; }
+/* ── TAB SWITCH ── */
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  document.getElementById('panel-' + tab).classList.add('active');
+}
 
+/* ═══════════════════════════════════════
+   LINK CLICKS
+═══════════════════════════════════════ */
+
+async function loadClicks() {
   try {
-    const snapshot = await db.collection('link_clicks').orderBy('clickedAt', 'desc').get();
-    allRows = [];
-    snapshot.forEach(doc => {
-      allRows.push({ id: doc.id, ...doc.data() });
+    let snapshot;
+    try {
+      snapshot = await db.collection('link_clicks').orderBy('clickedAt', 'desc').get();
+    } catch(e) {
+      snapshot = await db.collection('link_clicks').get();
+    }
+    clicksAll = [];
+    snapshot.forEach(doc => { clicksAll.push({ id: doc.id, ...doc.data() }); });
+    // Sort client-side as fallback
+    clicksAll.sort((a, b) => {
+      const da = toDate(a.clickedAt);
+      const db2 = toDate(b.clickedAt);
+      if (!da) return 1;
+      if (!db2) return -1;
+      return db2 - da;
     });
 
-    populateFilters(allRows);
-    filteredRows = [...allRows];
-    renderTable();
-    renderSummary(allRows);
+    populateClicksFilters();
+    clicksFiltered = [...clicksAll];
+    renderClicksTable();
+    renderClicksSummary(clicksAll);
+    document.getElementById('badge-clicks').textContent = clicksAll.length;
   } catch(e) {
-    // Try without ordering if index missing
-    try {
-      const snapshot = await db.collection('link_clicks').get();
-      allRows = [];
-      snapshot.forEach(doc => {
-        allRows.push({ id: doc.id, ...doc.data() });
-      });
-      // Sort client-side
-      allRows.sort((a, b) => {
-        const da = toDate(a.clickedAt);
-        const db2 = toDate(b.clickedAt);
-        if (!da) return 1;
-        if (!db2) return -1;
-        return db2 - da;
-      });
-
-      populateFilters(allRows);
-      filteredRows = [...allRows];
-      renderTable();
-      renderSummary(allRows);
-    } catch(e2) {
-      document.getElementById('tableBody').innerHTML =
-        '<tr><td colspan="8" style="text-align:center;padding:32px;color:#e03e3e;">Gagal memuat data: ' + esc(e2.message) + '</td></tr>';
-    }
+    document.getElementById('clicksTableBody').innerHTML =
+      '<tr><td colspan="9" style="text-align:center;padding:32px;color:#e03e3e;">Gagal memuat data: ' + esc(e.message) + '</td></tr>';
   }
 }
 
-/* ── POPULATE FILTERS ── */
-function populateFilters(rows) {
-  const referrals = [...new Set(rows.map(r => (r.referral || '').toUpperCase()).filter(Boolean))].sort();
-  const links = [...new Set(rows.map(r => r.link || '').filter(Boolean))].sort();
+function populateClicksFilters() {
+  const referrals = [...new Set(clicksAll.map(r => (r.referral || '').toUpperCase()).filter(Boolean))].sort();
+  const links = [...new Set(clicksAll.map(r => r.link || '').filter(Boolean))].sort();
 
-  const selRef = document.getElementById('filterReferral');
-  referrals.forEach(c => {
-    const o = document.createElement('option');
-    o.value = c; o.textContent = c;
-    selRef.appendChild(o);
-  });
+  const selRef = document.getElementById('clicksFilterReferral');
+  while (selRef.options.length > 1) selRef.remove(1);
+  referrals.forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; selRef.appendChild(o); });
 
-  const selLink = document.getElementById('filterLink');
-  links.forEach(c => {
-    const o = document.createElement('option');
-    o.value = c; o.textContent = c;
-    selLink.appendChild(o);
-  });
+  const selLink = document.getElementById('clicksFilterLink');
+  while (selLink.options.length > 1) selLink.remove(1);
+  links.forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; selLink.appendChild(o); });
 }
 
-/* ── RENDER TABLE ── */
-function renderTable() {
-  currentPage = 1;
-  renderPage();
-  renderPagination();
-  document.getElementById('rowCount').textContent = filteredRows.length.toLocaleString('id-ID');
+function renderClicksTable() {
+  clicksPage = 1;
+  renderClicksPage();
+  renderClicksPagination();
+  document.getElementById('clicksRowCount').textContent = clicksFiltered.length.toLocaleString('id-ID');
 }
 
-function renderPage() {
-  const start = (currentPage - 1) * ROWS_PER_PAGE;
-  const slice = filteredRows.slice(start, start + ROWS_PER_PAGE);
-  const tbody = document.getElementById('tableBody');
+function renderClicksPage() {
+  const start = (clicksPage - 1) * ROWS_PER_PAGE;
+  const slice = clicksFiltered.slice(start, start + ROWS_PER_PAGE);
+  const tbody = document.getElementById('clicksTableBody');
 
   if (!slice.length) {
-    tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state"><div class="empty-icon">—</div><div style="font-size:.9rem;color:#999;font-weight:600;">Belum ada data</div></div></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9"><div class="empty-state"><div class="empty-icon">—</div><div style="font-size:.9rem;color:#999;font-weight:600;">Belum ada data</div></div></td></tr>';
     return;
   }
 
   tbody.innerHTML = slice.map((r, i) => {
-    const no = (currentPage - 1) * ROWS_PER_PAGE + i + 1;
+    const no = (clicksPage - 1) * ROWS_PER_PAGE + i + 1;
     const nama = esc(r.nama || r.name || '—');
     const email = esc(r.email || '—');
     const referral = (r.referral || '—').toUpperCase();
     const link = esc(r.link || '—');
     const url = r.url || '';
-    const urlDisplay = url.length > 40 ? url.substring(0, 40) + '...' : url;
+    const urlDisplay = url.length > 35 ? url.substring(0, 35) + '...' : url;
 
     return '<tr>' +
       '<td style="color:#bbb;font-size:.75rem;">' + no + '</td>' +
@@ -392,47 +515,41 @@ function renderPage() {
       '<td style="color:#555;">' + email + '</td>' +
       '<td><span class="referral-tag">' + esc(referral) + '</span></td>' +
       '<td><span class="link-tag">' + link + '</span></td>' +
-      '<td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' +
+      '<td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' +
         (url ? '<a href="' + esc(url) + '" target="_blank" rel="noopener" style="color:#3b82f6;text-decoration:none;font-size:0.78rem;">' + esc(urlDisplay) + '</a>' : '—') +
       '</td>' +
       '<td>' + formatDate(r.clickedAt) + '</td>' +
       '<td style="color:#888;">' + formatTime(r.clickedAt) + '</td>' +
+      '<td><button class="btn-delete" onclick="deleteClick(\'' + r.id + '\')">Hapus</button></td>' +
     '</tr>';
   }).join('');
 }
 
-function renderPagination() {
-  const total = Math.ceil(filteredRows.length / ROWS_PER_PAGE);
-  const pag = document.getElementById('pagination');
+function renderClicksPagination() {
+  const total = Math.ceil(clicksFiltered.length / ROWS_PER_PAGE);
+  const pag = document.getElementById('clicksPagination');
   if (total <= 1) { pag.innerHTML = ''; return; }
-
-  let html = '<button class="page-btn" ' + (currentPage === 1 ? 'disabled' : '') + ' onclick="goPage(' + (currentPage - 1) + ')">&#8249;</button>';
+  let html = '<button class="page-btn" ' + (clicksPage === 1 ? 'disabled' : '') + ' onclick="goClicksPage(' + (clicksPage - 1) + ')">&#8249;</button>';
   for (let i = 1; i <= total; i++) {
-    if (i === 1 || i === total || Math.abs(i - currentPage) <= 1) {
-      html += '<button class="page-btn ' + (i === currentPage ? 'active' : '') + '" onclick="goPage(' + i + ')">' + i + '</button>';
-    } else if (Math.abs(i - currentPage) === 2) {
-      html += '<button class="page-btn" disabled style="border:none">…</button>';
+    if (i === 1 || i === total || Math.abs(i - clicksPage) <= 1) {
+      html += '<button class="page-btn ' + (i === clicksPage ? 'active' : '') + '" onclick="goClicksPage(' + i + ')">' + i + '</button>';
+    } else if (Math.abs(i - clicksPage) === 2) {
+      html += '<button class="page-btn" disabled style="border:none">...</button>';
     }
   }
-  html += '<button class="page-btn" ' + (currentPage === total ? 'disabled' : '') + ' onclick="goPage(' + (currentPage + 1) + ')">&#8250;</button>';
+  html += '<button class="page-btn" ' + (clicksPage === total ? 'disabled' : '') + ' onclick="goClicksPage(' + (clicksPage + 1) + ')">&#8250;</button>';
   pag.innerHTML = html;
 }
 
-function goPage(n) {
-  currentPage = n;
-  renderPage();
-  renderPagination();
-}
+function goClicksPage(n) { clicksPage = n; renderClicksPage(); renderClicksPagination(); }
 
-/* ── RENDER SUMMARY ── */
-function renderSummary(rows) {
+function renderClicksSummary(rows) {
   const now = new Date();
   const thisM = now.getMonth(), thisY = now.getFullYear();
   const lastM = thisM === 0 ? 11 : thisM - 1;
   const lastY = thisM === 0 ? thisY - 1 : thisY;
   let thisMonth = 0, lastMonth = 0;
   const refCodes = new Set();
-
   rows.forEach(r => {
     const d = toDate(r.clickedAt);
     if (d) {
@@ -441,22 +558,20 @@ function renderSummary(rows) {
     }
     if (r.referral) refCodes.add(r.referral.toUpperCase());
   });
-
-  document.getElementById('statTotal').textContent = rows.length.toLocaleString('id-ID');
-  document.getElementById('statMonth').textContent = thisMonth.toLocaleString('id-ID');
-  document.getElementById('statLastMonth').textContent = lastMonth.toLocaleString('id-ID');
-  document.getElementById('statReferrals').textContent = refCodes.size.toLocaleString('id-ID');
+  document.getElementById('statClicksTotal').textContent = rows.length.toLocaleString('id-ID');
+  document.getElementById('statClicksMonth').textContent = thisMonth.toLocaleString('id-ID');
+  document.getElementById('statClicksLastMonth').textContent = lastMonth.toLocaleString('id-ID');
+  document.getElementById('statClicksReferrals').textContent = refCodes.size.toLocaleString('id-ID');
 }
 
-/* ── FILTER ── */
-function applyFilter() {
-  const search = document.getElementById('filterSearch').value.toLowerCase();
-  const referral = document.getElementById('filterReferral').value.toUpperCase();
-  const link = document.getElementById('filterLink').value;
-  const from = document.getElementById('filterFrom').value;
-  const to = document.getElementById('filterTo').value;
+function applyClicksFilter() {
+  const search = document.getElementById('clicksFilterSearch').value.toLowerCase();
+  const referral = document.getElementById('clicksFilterReferral').value.toUpperCase();
+  const link = document.getElementById('clicksFilterLink').value;
+  const from = document.getElementById('clicksFilterFrom').value;
+  const to = document.getElementById('clicksFilterTo').value;
 
-  filteredRows = allRows.filter(r => {
+  clicksFiltered = clicksAll.filter(r => {
     const matchSearch = !search ||
       (r.nama || '').toLowerCase().includes(search) ||
       (r.name || '').toLowerCase().includes(search) ||
@@ -469,51 +584,268 @@ function applyFilter() {
     const matchTo = !to || (d && d <= new Date(to + 'T23:59:59'));
     return matchSearch && matchRef && matchLink && matchFrom && matchTo;
   });
-
-  renderTable();
-  renderSummary(filteredRows);
+  renderClicksTable();
+  renderClicksSummary(clicksFiltered);
 }
 
-function resetFilter() {
-  document.getElementById('filterSearch').value = '';
-  document.getElementById('filterReferral').value = '';
-  document.getElementById('filterLink').value = '';
-  document.getElementById('filterFrom').value = '';
-  document.getElementById('filterTo').value = '';
-  filteredRows = [...allRows];
-  renderTable();
-  renderSummary(allRows);
+function resetClicksFilter() {
+  document.getElementById('clicksFilterSearch').value = '';
+  document.getElementById('clicksFilterReferral').value = '';
+  document.getElementById('clicksFilterLink').value = '';
+  document.getElementById('clicksFilterFrom').value = '';
+  document.getElementById('clicksFilterTo').value = '';
+  clicksFiltered = [...clicksAll];
+  renderClicksTable();
+  renderClicksSummary(clicksAll);
+}
+
+async function deleteClick(docId) {
+  if (!confirm('Hapus data ini?')) return;
+  try {
+    await db.collection('link_clicks').doc(docId).delete();
+    clicksAll = clicksAll.filter(r => r.id !== docId);
+    clicksFiltered = clicksFiltered.filter(r => r.id !== docId);
+    renderClicksPage();
+    renderClicksPagination();
+    renderClicksSummary(clicksAll);
+    document.getElementById('clicksRowCount').textContent = clicksFiltered.length.toLocaleString('id-ID');
+    document.getElementById('badge-clicks').textContent = clicksAll.length;
+  } catch(e) {
+    alert('Gagal menghapus: ' + e.message);
+  }
+}
+
+/* ═══════════════════════════════════════
+   LEADS (Firebase collection: leads)
+═══════════════════════════════════════ */
+
+async function loadLeads() {
+  try {
+    let snapshot;
+    try {
+      snapshot = await db.collection('leads').orderBy('createdAt', 'desc').get();
+    } catch(e) {
+      snapshot = await db.collection('leads').get();
+    }
+    leadsAll = [];
+    snapshot.forEach(doc => { leadsAll.push({ id: doc.id, ...doc.data() }); });
+    // Sort client-side as fallback
+    leadsAll.sort((a, b) => {
+      const da = toDate(a.createdAt || a.created_at || a.clickedAt);
+      const db2 = toDate(b.createdAt || b.created_at || b.clickedAt);
+      if (!da) return 1;
+      if (!db2) return -1;
+      return db2 - da;
+    });
+
+    populateLeadsFilters();
+    leadsFiltered = [...leadsAll];
+    renderLeadsTable();
+    renderLeadsSummary(leadsAll);
+    document.getElementById('badge-leads').textContent = leadsAll.length;
+  } catch(e) {
+    document.getElementById('leadsTableBody').innerHTML =
+      '<tr><td colspan="9" style="text-align:center;padding:32px;color:#e03e3e;">Gagal memuat data: ' + esc(e.message) + '</td></tr>';
+  }
+}
+
+function populateLeadsFilters() {
+  const referrals = [...new Set(leadsAll.map(r => (r.referral || r.referral_code || '').toUpperCase()).filter(Boolean))].sort();
+
+  const selRef = document.getElementById('leadsFilterReferral');
+  while (selRef.options.length > 1) selRef.remove(1);
+  referrals.forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; selRef.appendChild(o); });
+}
+
+function renderLeadsTable() {
+  leadsPage = 1;
+  renderLeadsPage();
+  renderLeadsPagination();
+  document.getElementById('leadsRowCount').textContent = leadsFiltered.length.toLocaleString('id-ID');
+}
+
+function renderLeadsPage() {
+  const start = (leadsPage - 1) * ROWS_PER_PAGE;
+  const slice = leadsFiltered.slice(start, start + ROWS_PER_PAGE);
+  const tbody = document.getElementById('leadsTableBody');
+
+  if (!slice.length) {
+    tbody.innerHTML = '<tr><td colspan="9"><div class="empty-state"><div class="empty-icon">—</div><div style="font-size:.9rem;color:#999;font-weight:600;">Belum ada data leads</div></div></td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = slice.map((r, i) => {
+    const no = (leadsPage - 1) * ROWS_PER_PAGE + i + 1;
+    const nama = esc(r.nama || r.name || '—');
+    const email = esc(r.email || '—');
+    const phone = esc(r.phone || r.hp || r.no_hp || '—');
+    const referral = (r.referral || r.referral_code || '—').toUpperCase();
+    const sekuritas = esc(r.sekuritas || r.link || '—');
+    const dateField = r.createdAt || r.created_at || r.clickedAt;
+
+    return '<tr>' +
+      '<td style="color:#bbb;font-size:.75rem;">' + no + '</td>' +
+      '<td><strong>' + nama + '</strong></td>' +
+      '<td style="color:#555;">' + email + '</td>' +
+      '<td style="color:#555;">' + phone + '</td>' +
+      '<td><span class="referral-tag">' + esc(referral) + '</span></td>' +
+      '<td><span class="link-tag">' + sekuritas + '</span></td>' +
+      '<td>' + formatDate(dateField) + '</td>' +
+      '<td style="color:#888;">' + formatTime(dateField) + '</td>' +
+      '<td><button class="btn-delete" onclick="deleteLead(\'' + r.id + '\')">Hapus</button></td>' +
+    '</tr>';
+  }).join('');
+}
+
+function renderLeadsPagination() {
+  const total = Math.ceil(leadsFiltered.length / ROWS_PER_PAGE);
+  const pag = document.getElementById('leadsPagination');
+  if (total <= 1) { pag.innerHTML = ''; return; }
+  let html = '<button class="page-btn" ' + (leadsPage === 1 ? 'disabled' : '') + ' onclick="goLeadsPage(' + (leadsPage - 1) + ')">&#8249;</button>';
+  for (let i = 1; i <= total; i++) {
+    if (i === 1 || i === total || Math.abs(i - leadsPage) <= 1) {
+      html += '<button class="page-btn ' + (i === leadsPage ? 'active' : '') + '" onclick="goLeadsPage(' + i + ')">' + i + '</button>';
+    } else if (Math.abs(i - leadsPage) === 2) {
+      html += '<button class="page-btn" disabled style="border:none">...</button>';
+    }
+  }
+  html += '<button class="page-btn" ' + (leadsPage === total ? 'disabled' : '') + ' onclick="goLeadsPage(' + (leadsPage + 1) + ')">&#8250;</button>';
+  pag.innerHTML = html;
+}
+
+function goLeadsPage(n) { leadsPage = n; renderLeadsPage(); renderLeadsPagination(); }
+
+function renderLeadsSummary(rows) {
+  const now = new Date();
+  const thisM = now.getMonth(), thisY = now.getFullYear();
+  const lastM = thisM === 0 ? 11 : thisM - 1;
+  const lastY = thisM === 0 ? thisY - 1 : thisY;
+  let thisMonth = 0, lastMonth = 0;
+  const refCodes = new Set();
+  rows.forEach(r => {
+    const d = toDate(r.createdAt || r.created_at || r.clickedAt);
+    if (d) {
+      if (d.getMonth() === thisM && d.getFullYear() === thisY) thisMonth++;
+      if (d.getMonth() === lastM && d.getFullYear() === lastY) lastMonth++;
+    }
+    const ref = r.referral || r.referral_code || '';
+    if (ref) refCodes.add(ref.toUpperCase());
+  });
+  document.getElementById('statLeadsTotal').textContent = rows.length.toLocaleString('id-ID');
+  document.getElementById('statLeadsMonth').textContent = thisMonth.toLocaleString('id-ID');
+  document.getElementById('statLeadsLastMonth').textContent = lastMonth.toLocaleString('id-ID');
+  document.getElementById('statLeadsReferrals').textContent = refCodes.size.toLocaleString('id-ID');
+}
+
+function applyLeadsFilter() {
+  const search = document.getElementById('leadsFilterSearch').value.toLowerCase();
+  const referral = document.getElementById('leadsFilterReferral').value.toUpperCase();
+  const from = document.getElementById('leadsFilterFrom').value;
+  const to = document.getElementById('leadsFilterTo').value;
+
+  leadsFiltered = leadsAll.filter(r => {
+    const matchSearch = !search ||
+      (r.nama || '').toLowerCase().includes(search) ||
+      (r.name || '').toLowerCase().includes(search) ||
+      (r.email || '').toLowerCase().includes(search) ||
+      (r.phone || r.hp || r.no_hp || '').toLowerCase().includes(search) ||
+      (r.referral || r.referral_code || '').toLowerCase().includes(search);
+    const matchRef = !referral || (r.referral || r.referral_code || '').toUpperCase() === referral;
+    const d = toDate(r.createdAt || r.created_at || r.clickedAt);
+    const matchFrom = !from || (d && d >= new Date(from));
+    const matchTo = !to || (d && d <= new Date(to + 'T23:59:59'));
+    return matchSearch && matchRef && matchFrom && matchTo;
+  });
+  renderLeadsTable();
+  renderLeadsSummary(leadsFiltered);
+}
+
+function resetLeadsFilter() {
+  document.getElementById('leadsFilterSearch').value = '';
+  document.getElementById('leadsFilterReferral').value = '';
+  document.getElementById('leadsFilterFrom').value = '';
+  document.getElementById('leadsFilterTo').value = '';
+  leadsFiltered = [...leadsAll];
+  renderLeadsTable();
+  renderLeadsSummary(leadsAll);
+}
+
+async function deleteLead(docId) {
+  if (!confirm('Hapus data ini?')) return;
+  try {
+    await db.collection('leads').doc(docId).delete();
+    leadsAll = leadsAll.filter(r => r.id !== docId);
+    leadsFiltered = leadsFiltered.filter(r => r.id !== docId);
+    renderLeadsPage();
+    renderLeadsPagination();
+    renderLeadsSummary(leadsAll);
+    document.getElementById('leadsRowCount').textContent = leadsFiltered.length.toLocaleString('id-ID');
+    document.getElementById('badge-leads').textContent = leadsAll.length;
+  } catch(e) {
+    alert('Gagal menghapus: ' + e.message);
+  }
 }
 
 /* ── EXPORT CSV ── */
 function exportCSV() {
-  const rows = filteredRows.length ? filteredRows : allRows;
-  if (!rows.length) { alert('Tidak ada data.'); return; }
-
-  const header = ['No', 'Nama', 'Email', 'Kode Referral', 'Link', 'URL', 'Tanggal', 'Waktu'];
-  const csv = [header.join(','), ...rows.map((r, i) => [
-    i + 1,
-    '"' + (r.nama || r.name || '').replace(/"/g, '""') + '"',
-    r.email || '',
-    r.referral || '',
-    '"' + (r.link || '').replace(/"/g, '""') + '"',
-    '"' + (r.url || '').replace(/"/g, '""') + '"',
-    formatDate(r.clickedAt),
-    formatTime(r.clickedAt)
-  ].join(','))].join('\n');
-
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
-  a.download = 'inhouse_tracker_' + new Date().toISOString().split('T')[0] + '.csv';
-  a.click();
+  if (currentTab === 'clicks') {
+    const rows = clicksFiltered.length ? clicksFiltered : clicksAll;
+    if (!rows.length) { alert('Tidak ada data.'); return; }
+    const header = ['No', 'Nama', 'Email', 'Kode Referral', 'Link', 'URL', 'Tanggal', 'Waktu'];
+    const csv = [header.join(','), ...rows.map((r, i) => [
+      i + 1,
+      '"' + (r.nama || r.name || '').replace(/"/g, '""') + '"',
+      r.email || '',
+      r.referral || '',
+      '"' + (r.link || '').replace(/"/g, '""') + '"',
+      '"' + (r.url || '').replace(/"/g, '""') + '"',
+      formatDate(r.clickedAt),
+      formatTime(r.clickedAt)
+    ].join(','))].join('\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+    a.download = 'link_clicks_' + new Date().toISOString().split('T')[0] + '.csv';
+    a.click();
+  } else {
+    const rows = leadsFiltered.length ? leadsFiltered : leadsAll;
+    if (!rows.length) { alert('Tidak ada data.'); return; }
+    const header = ['No', 'Nama', 'Email', 'No HP', 'Kode Referral', 'Sekuritas', 'Tanggal', 'Waktu'];
+    const csv = [header.join(','), ...rows.map((r, i) => [
+      i + 1,
+      '"' + (r.nama || r.name || '').replace(/"/g, '""') + '"',
+      r.email || '',
+      r.phone || r.hp || r.no_hp || '',
+      r.referral || r.referral_code || '',
+      '"' + (r.sekuritas || r.link || '').replace(/"/g, '""') + '"',
+      formatDate(r.createdAt || r.created_at || r.clickedAt),
+      formatTime(r.createdAt || r.created_at || r.clickedAt)
+    ].join(','))].join('\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+    a.download = 'leads_' + new Date().toISOString().split('T')[0] + '.csv';
+    a.click();
+  }
 }
 
-/* ── INIT ── */
+/* ── BOOT ── */
+async function boot() {
+  const _gr = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember');
+  if (!_gr) { window.location.replace('login.html'); return; }
+  await Promise.all([loadClicks(), loadLeads()]);
+}
+
 window.addEventListener('DOMContentLoaded', boot);
 
-window.goPage = goPage;
-window.applyFilter = applyFilter;
-window.resetFilter = resetFilter;
+// Expose to global
+window.switchTab = switchTab;
+window.goClicksPage = goClicksPage;
+window.goLeadsPage = goLeadsPage;
+window.applyClicksFilter = applyClicksFilter;
+window.resetClicksFilter = resetClicksFilter;
+window.applyLeadsFilter = applyLeadsFilter;
+window.resetLeadsFilter = resetLeadsFilter;
+window.deleteClick = deleteClick;
+window.deleteLead = deleteLead;
 window.exportCSV = exportCSV;
 </script>
 
