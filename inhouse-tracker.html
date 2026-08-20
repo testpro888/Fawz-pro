@@ -384,6 +384,40 @@ const ROWS_PER_PAGE = 15;
 // Auth check
 const raw = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember');
 if (!raw) { window.location.replace('login.html'); }
+const curUser = JSON.parse(raw);
+
+// Mapping username sales -> kode referral yang boleh dilihat
+const SALES_REFERRAL_MAP = {
+  'susanto': ['CUANTO'],
+  'petikprofit': ['PETIK-PROFIT'],
+  'rivintandiah': ['HAPPY-CUAN']
+};
+
+// Cek akses: admin, head_sales, head_account bisa lihat semua
+// Sales yang ada di mapping hanya lihat referral-nya
+// Sales yang TIDAK ada di mapping tidak bisa lihat sama sekali
+const fullAccessRoles = ['admin', 'head_sales', 'head_account'];
+const hasFullAccess = fullAccessRoles.includes(curUser.role);
+const salesUsername = (curUser.username || '').toLowerCase();
+const isSalesWithAccess = curUser.role === 'sales' && SALES_REFERRAL_MAP[salesUsername];
+const isSalesNoAccess = curUser.role === 'sales' && !SALES_REFERRAL_MAP[salesUsername];
+
+const allowedReferrals = isSalesWithAccess
+  ? SALES_REFERRAL_MAP[salesUsername].map(c => c.toUpperCase())
+  : null;
+
+// Filter data berdasarkan referral yang diizinkan
+function filterByAccess(rows) {
+  if (hasFullAccess) return rows;
+  if (isSalesNoAccess) return []; // sales tanpa mapping tidak lihat apa-apa
+  if (allowedReferrals) {
+    return rows.filter(r => {
+      const ref = (r.referral || r.referral_code || '').toUpperCase();
+      return allowedReferrals.includes(ref);
+    });
+  }
+  return rows;
+}
 
 // ===== STATE =====
 let currentTab = 'clicks';
@@ -456,6 +490,9 @@ async function loadClicks() {
       if (!db2) return -1;
       return db2 - da;
     });
+
+    // Filter berdasarkan akses sales
+    clicksAll = filterByAccess(clicksAll);
 
     populateClicksFilters();
     clicksFiltered = [...clicksAll];
@@ -635,6 +672,9 @@ async function loadLeads() {
       if (!db2) return -1;
       return db2 - da;
     });
+
+    // Filter berdasarkan akses sales
+    leadsAll = filterByAccess(leadsAll);
 
     populateLeadsFilters();
     leadsFiltered = [...leadsAll];
