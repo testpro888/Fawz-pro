@@ -393,19 +393,30 @@ const SALES_REFERRAL_MAP = {
   'rivintandiah': ['HAPPY-CUAN']
 };
 
-// Cek apakah user adalah sales yang perlu difilter
-const isSalesRestricted = curUser.role === 'sales' && SALES_REFERRAL_MAP[(curUser.username || '').toLowerCase()];
-const allowedReferrals = isSalesRestricted
-  ? SALES_REFERRAL_MAP[(curUser.username || '').toLowerCase()].map(c => c.toUpperCase())
+// Cek akses: admin, head_sales, head_account bisa lihat semua
+// Sales yang ada di mapping hanya lihat referral-nya
+// Sales yang TIDAK ada di mapping tidak bisa lihat sama sekali
+const fullAccessRoles = ['admin', 'head_sales', 'head_account'];
+const hasFullAccess = fullAccessRoles.includes(curUser.role);
+const salesUsername = (curUser.username || '').toLowerCase();
+const isSalesWithAccess = curUser.role === 'sales' && SALES_REFERRAL_MAP[salesUsername];
+const isSalesNoAccess = curUser.role === 'sales' && !SALES_REFERRAL_MAP[salesUsername];
+
+const allowedReferrals = isSalesWithAccess
+  ? SALES_REFERRAL_MAP[salesUsername].map(c => c.toUpperCase())
   : null;
 
-// Filter data berdasarkan referral yang diizinkan (untuk sales)
+// Filter data berdasarkan referral yang diizinkan
 function filterByAccess(rows) {
-  if (!allowedReferrals) return rows;
-  return rows.filter(r => {
-    const ref = (r.referral || r.referral_code || '').toUpperCase();
-    return allowedReferrals.includes(ref);
-  });
+  if (hasFullAccess) return rows;
+  if (isSalesNoAccess) return []; // sales tanpa mapping tidak lihat apa-apa
+  if (allowedReferrals) {
+    return rows.filter(r => {
+      const ref = (r.referral || r.referral_code || '').toUpperCase();
+      return allowedReferrals.includes(ref);
+    });
+  }
+  return rows;
 }
 
 // ===== STATE =====
