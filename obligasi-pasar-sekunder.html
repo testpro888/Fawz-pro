@@ -781,6 +781,35 @@
       renderTable(cat);
     }
     showToast('Data berhasil dimuat', 'success');
+
+    // Auto-hitung & update last/next coupon untuk Gov USD yang belum terisi
+    autoUpdateCouponsGovUSD();
+  }
+
+  // Auto-update coupon dates for Gov USD bonds (6-month intervals from maturity)
+  async function autoUpdateCouponsGovUSD() {
+    const cat = 'gov-usd';
+    const rows = allData[cat] || [];
+    let updated = 0;
+    for (const row of rows) {
+      if (!row.jatuh_tempo) continue;
+      const computed = calcCouponsFromMaturity(row.jatuh_tempo, row.tanggal_update, row.kupon_freq || 2);
+      if (row.last_coupon_date === computed.last && row.next_coupon_date === computed.next) continue;
+      // Update DB silently
+      try {
+        await window._supabase
+          .from('obligasi_products')
+          .update({ last_coupon_date: computed.last, next_coupon_date: computed.next })
+          .eq('id', row.id);
+        row.last_coupon_date = computed.last;
+        row.next_coupon_date = computed.next;
+        updated++;
+      } catch(e) { /* silent */ }
+    }
+    if (updated > 0) {
+      filtered[cat] = [...allData[cat]];
+      renderTable(cat);
+    }
   }
 
   // ===== RENDER TABLE =====
@@ -805,15 +834,24 @@
       renderPagination(cat, 0); return;
     }
 
-    tbody.innerHTML = pageData.map(r => `
+    tbody.innerHTML = pageData.map(r => {
+      // Auto-compute last/next coupon from maturity if not stored in DB
+      let displayLastCoupon = r.last_coupon_date;
+      let displayNextCoupon = r.next_coupon_date;
+      if (r.jatuh_tempo && (!displayLastCoupon || !displayNextCoupon)) {
+        const computed = calcCouponsFromMaturity(r.jatuh_tempo, r.tanggal_update, r.kupon_freq || 2);
+        if (!displayLastCoupon) displayLastCoupon = computed.last;
+        if (!displayNextCoupon) displayNextCoupon = computed.next;
+      }
+      return `
       <tr>
         <td>${esc(r.seri||'—')}</td>
         ${isKorp ? `<td style="font-size:0.8rem;color:#444;max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${esc(r.penerbit||'')}">${esc(r.penerbit||'—')}</td>` : ''}
         <td>${fmtDate(r.jatuh_tempo)}</td>
         ${isKorp ? `<td><span style="background:#f0f4ff;padding:2px 8px;border-radius:6px;font-size:0.8rem;font-weight:600;color:#2d4abf;">${esc(r.rating||'—')}</span></td>` : ''}
         <td>${r.kupon != null ? fmtDecimal(r.kupon, 3) + '%' : '—'}</td>
-        <td>${fmtDate(r.last_coupon_date)}</td>
-        <td>${fmtDate(r.next_coupon_date)}</td>
+        <td>${fmtDate(displayLastCoupon)}</td>
+        <td>${fmtDate(displayNextCoupon)}</td>
         <td style="color:#27ae60;">${fmtHarga(r.harga_jual)}</td>
         <td style="color:#e74c3c;">${fmtHarga(r.harga_beli)}</td>
         <td>${r.yield != null ? fmtDecimal(r.yield, 4) + '%' : '—'}</td>
@@ -828,7 +866,7 @@
           </div>
         </td>
       </tr>
-    `).join('');
+    `;}).join('');
 
     renderPagination(cat, Math.ceil(total / PAGE_SIZE));
   }

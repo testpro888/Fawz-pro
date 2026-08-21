@@ -456,7 +456,8 @@
         <div class="aa-detail-grid">
           <div><span>Client ID: </span><b id="aaSelClientId">—</b></div>
           <div><span>No. HP: </span><b id="aaSelPhone">—</b></div>
-          <div style="grid-column:1/-1;"><span>Email: </span><b id="aaSelEmail">—</b></div>
+          <div><span>Email: </span><b id="aaSelEmail">—</b></div>
+          <div><span>Domisili: </span><b id="aaSelDomisili">—</b></div>
         </div>
       </div>
 
@@ -491,7 +492,7 @@
             <input type="number" id="aaPctTarget" value="12" min="0" max="100" step="0.5"/>
             <span class="aa-pct-suffix">%</span>
           </div>
-          <div class="aa-pct-hint">Default Free: 12% · Premium: 16%</div>
+          <div class="aa-pct-hint">Default Free: 12% · Premium: 18%</div>
         </div>
       </div>
 
@@ -621,11 +622,14 @@
    * - Update Supabase hanya jika ada perubahan
    * - Update _all in-memory langsung agar UI sinkron tanpa reload
    */
+  // Default fee percentages berdasarkan status
+  const SYNC_FEE_DEFAULTS = { free: { below: 5, target: 12 }, premium: { below: 8, target: 18 } };
+
   async function syncMemberships(agents) {
     if (!agents || agents.length === 0) return;
 
     const BATCH = 5; // concurrency limit
-    const toUpdate = []; // { id, newStatus }
+    const toUpdate = []; // { id, newStatus, needFeeSync }
 
     for (let i = 0; i < agents.length; i += BATCH) {
       const batch = agents.slice(i, i + BATCH);
@@ -634,8 +638,18 @@
           if (!r.email) return null;
           const newStatus = await checkMembership(r.email);
           if (newStatus === null) return null; // skip jika API error
-          if (newStatus !== (r.fee_status || 'free')) {
-            return { id: r.id, newStatus, oldStatus: r.fee_status };
+
+          const currentStatus = r.fee_status || 'free';
+          const statusChanged = newStatus !== currentStatus;
+
+          // Jika premium, pastikan fee = 8%/18% (auto-correct dari 16% lama)
+          const expectedFee = SYNC_FEE_DEFAULTS[newStatus];
+          const needFeeSync = newStatus === 'premium' && (
+            r.fee_below_pct !== expectedFee.below || r.fee_target_pct !== expectedFee.target
+          );
+
+          if (statusChanged || needFeeSync) {
+            return { id: r.id, newStatus, oldStatus: currentStatus, needFeeSync };
           }
           return null;
         })
@@ -652,11 +666,17 @@
 
     // Update Supabase untuk setiap yang berubah
     await Promise.all(
-      toUpdate.map(async ({ id, newStatus, oldStatus }) => {
+      toUpdate.map(async ({ id, newStatus, oldStatus, needFeeSync }) => {
         try {
+          const updateData = { fee_status: newStatus };
+          // Jika premium, otomatis set fee ke 8%/18%
+          if (newStatus === 'premium') {
+            updateData.fee_below_pct = SYNC_FEE_DEFAULTS.premium.below;
+            updateData.fee_target_pct = SYNC_FEE_DEFAULTS.premium.target;
+          }
           const { error } = await window._supabase
             .from('referral_agents')
-            .update({ fee_status: newStatus })
+            .update(updateData)
             .eq('id', id);
           if (error) {
             console.error('[Membership] Gagal update id', id, error.message);
@@ -664,8 +684,14 @@
           }
           // Update in-memory juga
           const idx = _all.findIndex(r => String(r.id) === String(id));
-          if (idx !== -1) _all[idx].fee_status = newStatus;
-          console.log('[Membership] Updated id', id, oldStatus, '→', newStatus);
+          if (idx !== -1) {
+            _all[idx].fee_status = newStatus;
+            if (newStatus === 'premium') {
+              _all[idx].fee_below_pct = SYNC_FEE_DEFAULTS.premium.below;
+              _all[idx].fee_target_pct = SYNC_FEE_DEFAULTS.premium.target;
+            }
+          }
+          console.log('[Membership] Updated id', id, oldStatus, '→', newStatus, needFeeSync ? '(fee synced to 8%/18%)' : '');
         } catch(e) {
           console.error('[Membership] Exception update id', id, e);
         }
@@ -987,7 +1013,7 @@
   // ══════════════════════════════════
   let _aaSelectedCustomer = null;
   let _aaSearchTimer = null;
-  const AA_FEE_DEFAULTS = { free: { below: 5, target: 12 }, premium: { below: 8, target: 16 } };
+  const AA_FEE_DEFAULTS = { free: { below: 5, target: 12 }, premium: { below: 8, target: 18 } };
 
   function openAddAgentModal() {
     _aaSelectedCustomer = null;
@@ -1023,7 +1049,7 @@
       try {
         const { data, error } = await window._supabase
           .from('customers')
-          .select('id, client_id, client_name, email, phone')
+          .select('id, client_id, client_name, email, phone, address')
           .or(`client_name.ilike.%${q}%,client_id.ilike.%${q}%,email.ilike.%${q}%`)
           .limit(15);
         if (error) throw error;
@@ -1035,23 +1061,65 @@
     }, 320);
   }
 
+  /**
+   * Ekstrak kota/kabupaten dari alamat lengkap.
+   * Mencoba mendeteksi pola: "Kota X", "Kabupaten X", "Kab. X", atau mengambil
+   * bagian setelah "Kec." / "Kecamatan" dari format alamat Indonesia yang umum.
+   * Jika tidak ketemu pola, ambil bagian kedua terakhir (biasanya kota) dari alamat yang dipisah koma.
+   */
+  function extractCity(address) {
+    if (!address) return '';
+    const addr = address.trim();
+
+    // Coba cari pola "Kota ..." atau "Kabupaten ..." atau "Kab. ..."
+    const kotaMatch = addr.match(/\b(Kota|Kabupaten|Kab\.?)\s+([A-Za-z\s]+)/i);
+    if (kotaMatch) {
+      // Ambil nama kota, potong jika ada koma atau kata kunci berikutnya
+      let city = kotaMatch[0].replace(/,.*$/, '').trim();
+      // Potong jika ada "Provinsi", "Prov", "Kecamatan" dll setelahnya
+      city = city.split(/\s+(Provinsi|Prov\.?|Kecamatan|Kec\.?|Kelurahan|Kel\.?)\b/i)[0].trim();
+      return city;
+    }
+
+    // Fallback: split by koma, ambil bagian yang kemungkinan kota
+    const parts = addr.split(',').map(p => p.trim()).filter(Boolean);
+    if (parts.length >= 3) {
+      // Biasanya format: Jalan..., Kelurahan/Kecamatan, Kota, Provinsi/Kodepos
+      // Ambil bagian ke-2 dari belakang
+      return parts[parts.length - 2];
+    }
+    if (parts.length === 2) {
+      return parts[1]; // ambil bagian terakhir
+    }
+
+    return addr; // fallback: return seluruh alamat
+  }
+
   function renderAaResults(list) {
     const box = document.getElementById('aaResults');
     if (!list.length) { box.innerHTML = '<div class="aa-empty-msg">Tidak ada customer yang cocok</div>'; return; }
-    box.innerHTML = list.map(c => `
+    box.innerHTML = list.map(c => {
+      const city = extractCity(c.address);
+      const cityLabel = city ? ` · 📍 ${_esc(city)}` : '';
+      return `
       <div class="aa-result-item" onclick='aaSelectCustomer(${JSON.stringify(c).replace(/'/g,"&#39;")})'>
         <div class="aa-result-name">${_esc(c.client_name || '—')}</div>
-        <div class="aa-result-meta">${_esc(c.client_id || '—')} · ${_esc(c.email || '—')} · ${_esc(c.phone || '—')}</div>
+        <div class="aa-result-meta">${_esc(c.client_id || '—')} · ${_esc(c.email || '—')} · ${_esc(c.phone || '—')}${cityLabel}</div>
       </div>
-    `).join('');
+    `}).join('');
   }
 
   function aaSelectCustomer(c) {
     _aaSelectedCustomer = c;
+    // Ekstrak kota/kabupaten dari address
+    _aaSelectedCustomer._domisili = extractCity(c.address);
+
     document.getElementById('aaSelName').textContent = c.client_name || '—';
     document.getElementById('aaSelClientId').textContent = c.client_id || '—';
     document.getElementById('aaSelPhone').textContent = c.phone || '—';
     document.getElementById('aaSelEmail').textContent = c.email || '—';
+    const domEl = document.getElementById('aaSelDomisili');
+    if (domEl) domEl.textContent = _aaSelectedCustomer._domisili || '—';
 
     // Auto-generate referral code: PP + inisial 2 kata pertama (atau huruf+0 jika 1 kata) + 2 angka random
     // Contoh: "Muhammad Razaq Arafi" → PPMR20 | "Dimas" → PPD098
@@ -1133,6 +1201,7 @@
         email: c.email || null,
         phone: c.phone || null,
         agent_code: refCode,   // kode referral BERBEDA dari client_id
+        domisili: _aaSelectedCustomer._domisili || null,
         target_fee: targetFee,
         fee_status: status,
         fee_below_pct: pctBelow,
@@ -1163,7 +1232,7 @@
   //  EDIT STATUS AGENT
   // ══════════════════════════════════
   let _esCurrentId = null;
-  const ES_FEE_DEFAULTS = { free: { below: 5, target: 12 }, premium: { below: 8, target: 16 } };
+  const ES_FEE_DEFAULTS = { free: { below: 5, target: 12 }, premium: { below: 8, target: 18 } };
 
   function openEditStatus(id) {
     const r = _all.find(x => String(x.id) === String(id));

@@ -54,8 +54,79 @@
       position: relative; z-index: 1; overflow: hidden;
     }
     .hero-avatar img { width:100%; height:100%; object-fit:cover; border-radius:50%; }
-    .hero-info { position: relative; z-index: 1; }
+    .hero-info { position: relative; z-index: 1; flex: 1; }
     .hero-name { font-size: 1.6rem; font-weight: 700; color: #fff; line-height: 1.2; margin-bottom: 4px; }
+
+    /* QR Code in profile hero */
+    .hero-qr {
+      position: relative; z-index: 1;
+      margin-left: auto;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .hero-qr:hover { transform: scale(1.05); }
+    .hero-qr img {
+      width: 72px; height: 72px;
+      border-radius: 10px;
+      border: 2px solid rgba(245,166,35,0.4);
+      background: #fff;
+      padding: 4px;
+    }
+    .hero-qr-label {
+      font-size: 0.6rem; color: rgba(255,255,255,0.5);
+      text-align: center; margin-top: 4px;
+      letter-spacing: 0.5px;
+    }
+
+    /* QR Modal Overlay */
+    .qr-modal-overlay {
+      position: fixed; inset: 0; z-index: 9999;
+      background: rgba(10, 10, 40, 0.7);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.25s;
+    }
+    .qr-modal-overlay.open {
+      opacity: 1; pointer-events: all;
+    }
+    .qr-modal-content {
+      background: #fff;
+      border-radius: 20px;
+      padding: 32px;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      transform: scale(0.85);
+      transition: transform 0.25s;
+      max-width: 340px;
+      width: 90%;
+    }
+    .qr-modal-overlay.open .qr-modal-content {
+      transform: scale(1);
+    }
+    .qr-modal-content img {
+      width: 220px; height: 220px;
+      border-radius: 12px;
+      margin-bottom: 16px;
+    }
+    .qr-modal-title {
+      font-size: 0.95rem; font-weight: 700; color: var(--navy);
+      margin-bottom: 4px;
+    }
+    .qr-modal-link {
+      font-size: 0.75rem; color: #888;
+      word-break: break-all;
+    }
+    .qr-modal-close {
+      position: absolute; top: 16px; right: 16px;
+      width: 36px; height: 36px; border-radius: 50%;
+      border: none; background: rgba(255,255,255,0.15);
+      color: #fff; font-size: 1.2rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.15s;
+    }
+    .qr-modal-close:hover { background: rgba(255,255,255,0.3); }
     .hero-role-badge {
       display: inline-block; background: rgba(245,166,35,0.2); border: 1px solid rgba(245,166,35,0.4);
       color: var(--gold); font-size: 0.72rem; font-weight: 700;
@@ -150,6 +221,7 @@
     @media (max-width: 768px) {
       .page-container { padding: 24px 16px 60px; }
       .profile-hero { flex-direction: column; text-align: center; padding: 28px 24px; }
+      .hero-qr { margin-left: 0; margin-top: 12px; }
       .info-grid, .form-grid { grid-template-columns: 1fr; }
       .danger-card { flex-direction: column; align-items: flex-start; }
     }
@@ -177,6 +249,20 @@
       <div class="hero-name"       id="heroName">—</div>
       <div class="hero-role-badge" id="heroRole">—</div>
       <div class="hero-username"   id="heroUsername">—</div>
+    </div>
+    <div class="hero-qr" id="heroQr" onclick="openQrModal()" title="Klik untuk memperbesar QR" style="display:none;">
+      <img id="heroQrImg" src="" alt="QR Code"/>
+      <div class="hero-qr-label">SCAN QR</div>
+    </div>
+  </div>
+
+  <!-- QR Modal -->
+  <div class="qr-modal-overlay" id="qrModalOverlay" onclick="closeQrModal(event)">
+    <button class="qr-modal-close" onclick="closeQrModal(event)">✕</button>
+    <div class="qr-modal-content" onclick="event.stopPropagation()">
+      <img id="qrModalImg" src="" alt="QR Code Large"/>
+      <div class="qr-modal-title">Scan untuk buka link</div>
+      <div class="qr-modal-link" id="qrModalLink"></div>
     </div>
   </div>
 
@@ -325,6 +411,25 @@
     const now = new Date();
     document.getElementById('infoSession').textContent = now.toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit' });
     document.getElementById('infoDate').textContent    = now.toLocaleDateString('id-ID', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+
+    // QR Code per sales — mapping nama/username (lowercase) → path URL
+    const SALES_QR_MAP = {
+      'susanto': 'cuanto',
+      'rivin tandiah': 'happy-cuan',
+      'petikprofit': 'petik-profit'
+    };
+    const salesNameLower = (curUser.name || '').toLowerCase().trim();
+    const salesUserLower = (curUser.username || '').toLowerCase().trim();
+    const qrPath = SALES_QR_MAP[salesNameLower] || SALES_QR_MAP[salesUserLower];
+    if (qrPath) {
+      const qrUrl = 'https://dealer-system.site/fawz-sales/' + qrPath + '/';
+      const qrSmall = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(qrUrl);
+      const qrLarge = 'https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=' + encodeURIComponent(qrUrl);
+      document.getElementById('heroQr').style.display = '';
+      document.getElementById('heroQrImg').src = qrSmall;
+      document.getElementById('qrModalImg').src = qrLarge;
+      document.getElementById('qrModalLink').textContent = qrUrl;
+    }
 
     // Kelola Akun hanya head_account
     if (curUser.role === 'head_account') {
@@ -620,6 +725,20 @@
   function esc(str) {
     return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
+
+  // ===== QR MODAL =====
+  function openQrModal() {
+    document.getElementById('qrModalOverlay').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeQrModal(e) {
+    if (e) e.stopPropagation();
+    document.getElementById('qrModalOverlay').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeQrModal();
+  });
 
   window.addEventListener('DOMContentLoaded', initProfile);
 </script>

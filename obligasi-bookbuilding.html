@@ -270,7 +270,8 @@
       <div class="title-underline"></div>
     </div>
     <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-      <a class="btn btn-outline" href="bond-calculator.html" style="text-decoration:none;">Bond Calculator</a>
+      <a class="btn btn-outline" href="bond-calculator.html" style="text-decoration:none;">Bond Calculator IDR</a>
+      <a class="btn btn-outline" href="bond-calculator-usd.html" style="text-decoration:none;">Bond Calculator USD</a>
       <a class="btn btn-outline" href="obligasi-order.html">Lihat Semua Order</a>
       <button class="btn btn-danger" onclick="openSellModal()">Sell Obligasi</button>
     </div>
@@ -648,6 +649,13 @@
     const addBtn = document.getElementById('addRecCardBtn');
 
     recItems.forEach(item => {
+      // Enrich with latest tanggal_update from psData if not present
+      if (!item.tanggal_update) {
+        for (const cat of CATEGORIES) {
+          const src = psData[cat].find(p => (item.ps_id && p.id === item.ps_id) || (item.seri && p.seri === item.seri));
+          if (src && src.tanggal_update) { item.tanggal_update = src.tanggal_update; break; }
+        }
+      }
       const wrapper = buildRecCardWrapper(item);
       row.insertBefore(wrapper, addBtn);
     });
@@ -946,6 +954,7 @@
         harga_jual: s.harga_jual || s.hargaJual || null,
         harga_beli: s.harga_beli || s.hargaBeli || null,
         yield: s.yield || null,
+        tanggal_update: s.tanggal_update || s.tanggalUpdate || new Date().toISOString().slice(0,10),
         added_by: curUser?.name || '',
         added_at: new Date().toISOString(),
       };
@@ -1070,7 +1079,8 @@
   function formatUnitInput(el) {
     let raw = el.value.replace(/[^0-9]/g, '');
     if (raw) {
-      el.value = Number(raw).toLocaleString('id-ID');
+      const isUsd = (orderObligasi && orderObligasi.category || '').endsWith('usd');
+      el.value = Number(raw).toLocaleString(isUsd ? 'en-US' : 'id-ID');
     } else {
       el.value = '';
     }
@@ -1081,7 +1091,8 @@
     // Kept for sell form compatibility
     let raw = el.value.replace(/[^0-9]/g, '');
     if (raw) {
-      el.value = Number(raw).toLocaleString('id-ID');
+      const isUsd = (sellSelectedObl && sellSelectedObl.category || '').endsWith('usd');
+      el.value = Number(raw).toLocaleString(isUsd ? 'en-US' : 'id-ID');
     } else {
       el.value = '';
     }
@@ -1168,9 +1179,9 @@
 
     // Unit = Unit Amount / 100
     const unit = unitAmount / 100;
-    document.getElementById('ordUnitCalc').value = unit.toLocaleString('id-ID');
-
     const ob = orderObligasi || {};
+    const isUsdOrder = (ob.category || '').endsWith('usd');
+    document.getElementById('ordUnitCalc').value = unit.toLocaleString(isUsdOrder ? 'en-US' : 'id-ID');
 
     // Nominal Amount = Unit Amount × (Offer input / 100) — pakai harga yang diketik user
     const offerPrice    = parseFloat(document.getElementById('ordOfferInput').value) || parseFloat(ob.harga_beli) || parseFloat(ob.hargaBeli) || 100;
@@ -1202,7 +1213,10 @@
 
     const totalNominal = nominalAmount + accruedInterest;
 
-    const fmtRp = v => 'Rp ' + Math.round(v).toLocaleString('id-ID');
+    const isUsd = (ob.category || '').endsWith('usd');
+    const fmtRp = v => isUsd
+      ? 'USD ' + Number(v).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})
+      : 'Rp ' + Math.round(v).toLocaleString('id-ID');
     document.getElementById('ordAmount').value       = fmtRp(nominalAmount);
     document.getElementById('ordAccrued').value      = fmtRp(accruedInterest);
     document.getElementById('ordTotalNominal').value = fmtRp(totalNominal);
@@ -1211,7 +1225,8 @@
   function calcUnit() {
     const amount = getAmountRaw();
     const unit = Math.floor(amount / 100);
-    document.getElementById('ordUnit').value = unit > 0 ? unit.toLocaleString('id-ID') : '';
+    const isUsd = (orderObligasi && orderObligasi.category || '').endsWith('usd');
+    document.getElementById('ordUnit').value = unit > 0 ? unit.toLocaleString(isUsd ? 'en-US' : 'id-ID') : '';
   }
 
   async function loadMyClients() {
@@ -1599,7 +1614,8 @@
 
   function formatSellAmountInput(el) {
     let raw = el.value.replace(/[^0-9]/g, '');
-    el.value = raw ? Number(raw).toLocaleString('id-ID') : '';
+    const isUsd = (sellSelectedObl && sellSelectedObl.category || '').endsWith('usd');
+    el.value = raw ? Number(raw).toLocaleString(isUsd ? 'en-US' : 'id-ID') : '';
     calcSellUnit();
   }
 
@@ -1609,7 +1625,8 @@
 
   function calcSellUnit() {
     const amount = getSellAmountRaw();
-    document.getElementById('sellUnit').value = amount >= 100 ? Math.floor(amount / 100).toLocaleString('id-ID') : '';
+    const isUsd = (sellSelectedObl && sellSelectedObl.category || '').endsWith('usd');
+    document.getElementById('sellUnit').value = amount >= 100 ? Math.floor(amount / 100).toLocaleString(isUsd ? 'en-US' : 'id-ID') : '';
     calcSellNominal();
   }
 
@@ -1625,7 +1642,8 @@
 
     // Unit = Amount / 100
     const unit = Math.floor(amount / 100);
-    document.getElementById('sellUnit').value = unit.toLocaleString('id-ID');
+    const sellIsUsdCalc = (sellSelectedObl && sellSelectedObl.category || '').endsWith('usd');
+    document.getElementById('sellUnit').value = unit.toLocaleString(sellIsUsdCalc ? 'en-US' : 'id-ID');
 
     // Pakai harga bid yang diketik user
     const bidPrice = parseFloat(document.getElementById('sellBidInput').value) || 100;
@@ -1661,7 +1679,10 @@
     const accruedInterest = calcAccruedInterest(settlementStr, lastCouponStr, nextCouponStr, couponRate, freqPerYear, amount);
 
     const totalNominal = nominalAmount + accruedInterest;
-    const fmtRp = v => 'Rp ' + Math.round(v).toLocaleString('id-ID');
+    const sellIsUsd = (sellSelectedObl && sellSelectedObl.category || '').endsWith('usd');
+    const fmtRp = v => sellIsUsd
+      ? 'USD ' + Number(v).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})
+      : 'Rp ' + Math.round(v).toLocaleString('id-ID');
     document.getElementById('sellNominalAmount').value  = fmtRp(nominalAmount);
     document.getElementById('sellAccrued').value        = fmtRp(accruedInterest);
     document.getElementById('sellTotalNominal').value   = fmtRp(totalNominal);

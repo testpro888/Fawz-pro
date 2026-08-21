@@ -187,6 +187,7 @@ console.log('[Fawz navbar.js] v2.5.0 loaded');
       // format: { navItemId atau href : [roles yang BOLEH lihat] }
       // Nav menu utama
       navSales      : ['head_account', 'admin', 'treasury', 'sales', 'head_sales'],
+      navPetikProfit: ['head_account', 'admin', 'head_sales'],
       navCustomer   : ['head_account', 'admin', 'treasury', 'sales', 'head_sales'],
       navProduct    : ['head_account', 'admin', 'treasury', 'sales', 'head_sales'],
       navRevenue    : ['head_account', 'admin', 'treasury', 'sales', 'head_sales'],
@@ -201,6 +202,7 @@ console.log('[Fawz navbar.js] v2.5.0 loaded');
       'profit-ambassador.html' : ['head_account', 'admin', 'head_sales'],
       'influencer.html'        : ['head_account', 'admin', 'head_sales'],
       'influencer-fans.html'   : ['head_account', 'admin', 'head_sales'],
+      'inhouse-tracker.html'   : ['head_account', 'admin', 'treasury', 'sales', 'head_sales'],
 
       // Customer dropdown
       'customer.html'           : ['head_account', 'admin', 'treasury', 'sales', 'head_sales'],
@@ -232,13 +234,13 @@ console.log('[Fawz navbar.js] v2.5.0 loaded');
       'manageAccountsLink'     : ['head_account'],  // Kelola Akun di profile
 
       // Tools dropdown
-      'logo.html'              : ['head_account', 'admin', 'treasury', 'sales', 'head_sales'],
+      'logo.html'              : ['head_account', 'admin', 'treasury', 'head_sales'],
     };
 
     const role = user.role;
 
     // Sembunyikan nav menu utama
-    ['navSales','navCustomer','navProduct','navRevenue','navTools'].forEach(id => {
+    ['navSales','navPetikProfit','navCustomer','navProduct','navRevenue','navTools'].forEach(id => {
       const allowed = PERMISSIONS[id];
       const el = document.getElementById(id);
       if (el && allowed && !allowed.includes(role)) el.style.display = 'none';
