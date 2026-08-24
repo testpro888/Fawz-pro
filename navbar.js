@@ -59,6 +59,53 @@ console.log('[Fawz navbar.js] v2.5.0 loaded');
     document.head.appendChild(style);
   })();
 
+  /* ── 0a2. INJECT PROFIT AMBASSADOR PENDING NOTIFICATION CSS ── */
+  (function() {
+    if (document.getElementById('fawz-pa-notif-css')) return;
+    const style = document.createElement('style');
+    style.id = 'fawz-pa-notif-css';
+    style.textContent = `
+      .nav-item.has-pa-pending > .nav-link::after {
+        content: '';
+        position: absolute;
+        bottom: 2px; left: 14px; right: 14px;
+        height: 3px;
+        border-radius: 2px;
+        background: #e74c3c;
+        animation: fawz-pa-blink 1s ease-in-out infinite;
+      }
+      .nav-item.has-pa-pending > .nav-link {
+        position: relative;
+      }
+      .dropdown-item.has-pa-pending {
+        position: relative;
+      }
+      .dropdown-item.has-pa-pending::after {
+        content: '';
+        position: absolute;
+        bottom: 4px; left: 12px; right: 12px;
+        height: 2.5px;
+        border-radius: 2px;
+        background: #e74c3c;
+        animation: fawz-pa-blink 1s ease-in-out infinite;
+      }
+      .pa-pending-badge {
+        display: inline-flex; align-items: center; justify-content: center;
+        min-width: 16px; height: 16px;
+        background: #e74c3c; color: #fff;
+        font-size: 0.6rem; font-weight: 700;
+        border-radius: 8px; padding: 0 4px;
+        margin-left: 6px;
+        animation: fawz-pa-blink 1s ease-in-out infinite;
+      }
+      @keyframes fawz-pa-blink {
+        0%, 100% { opacity: 1; }
+        50%       { opacity: 0.2; }
+      }
+    `;
+    document.head.appendChild(style);
+  })();
+
   /* ── 0b. SUPABASE INIT — strict singleton, cegah multiple GoTrueClient ── */
   (function() {
     // Guard flag — kalau sudah pernah init dari navbar.js, skip total
@@ -673,6 +720,78 @@ console.log('[Fawz navbar.js] v2.5.0 loaded');
     }
   });
 
+  /* ── 4d. PROFIT AMBASSADOR PENDING NOTIFICATION (admin only) ── */
+  function initProfitAmbassadorNotif(user) {
+    // Hanya untuk admin, head_account, head_sales
+    const allowedRoles = ['admin', 'head_account', 'head_sales'];
+    if (!allowedRoles.includes(user.role)) return;
+
+    waitForSupabase(() => {
+      checkPendingAmbassador();
+      setInterval(checkPendingAmbassador, 60000); // refresh tiap 1 menit
+    });
+  }
+
+  async function checkPendingAmbassador() {
+    if (!window._supabase) return;
+    try {
+      const { count, error } = await window._supabase
+        .from('referral_registrations')
+        .select('*', { count: 'exact', head: true })
+        .or('confirmed_status.is.null,confirmed_status.eq.pending');
+
+      if (error) return;
+
+      const navPetikProfit = document.getElementById('navPetikProfit');
+      // Cari dropdown-item Profit Ambassador di dalam navPetikProfit
+      let paItem = null;
+      if (navPetikProfit) {
+        navPetikProfit.querySelectorAll('.dropdown-item').forEach(el => {
+          if (el.getAttribute('href') === 'profit-ambassador.html') paItem = el;
+        });
+      }
+
+      if (count && count > 0) {
+        // Tambah class blinking ke Petik Profit nav-item
+        if (navPetikProfit) navPetikProfit.classList.add('has-pa-pending');
+        // Tambah class blinking ke Profit Ambassador dropdown-item
+        if (paItem) {
+          paItem.classList.add('has-pa-pending');
+          // Tambah badge angka jika belum ada
+          if (!paItem.querySelector('.pa-pending-badge')) {
+            const badge = document.createElement('span');
+            badge.className = 'pa-pending-badge';
+            badge.textContent = count > 99 ? '99+' : count;
+            paItem.appendChild(badge);
+          } else {
+            paItem.querySelector('.pa-pending-badge').textContent = count > 99 ? '99+' : count;
+          }
+        }
+
+        // Mobile drawer — cari mob-link ke profit-ambassador.html
+        document.querySelectorAll('.mob-link[href="profit-ambassador.html"]').forEach(mobEl => {
+          if (!mobEl.querySelector('.pa-pending-badge')) {
+            const badge = document.createElement('span');
+            badge.className = 'pa-pending-badge';
+            badge.textContent = count > 99 ? '99+' : count;
+            mobEl.appendChild(badge);
+          } else {
+            mobEl.querySelector('.pa-pending-badge').textContent = count > 99 ? '99+' : count;
+          }
+        });
+      } else {
+        // Hapus indicator jika tidak ada pending
+        if (navPetikProfit) navPetikProfit.classList.remove('has-pa-pending');
+        if (paItem) {
+          paItem.classList.remove('has-pa-pending');
+          const badge = paItem.querySelector('.pa-pending-badge');
+          if (badge) badge.remove();
+        }
+        document.querySelectorAll('.mob-link[href="profit-ambassador.html"] .pa-pending-badge').forEach(b => b.remove());
+      }
+    } catch(e) { /* silent */ }
+  }
+
   /* ── 4c. INFLUENCER & REFERRAL MEMBERSHIP CHECK ── */
   function initMembershipCheck(user) {
     waitForSupabase(() => {
@@ -760,6 +879,9 @@ console.log('[Fawz navbar.js] v2.5.0 loaded');
 
       // Check Influencer & Referral registration status
       if (_rawUser) initMembershipCheck(JSON.parse(_rawUser));
+
+      // Check pending Profit Ambassador registrations (admin notif)
+      if (_rawUser) initProfitAmbassadorNotif(JSON.parse(_rawUser));
 
       // Event delegation untuk drawer group accordion
       document.addEventListener('click', function(e) {
