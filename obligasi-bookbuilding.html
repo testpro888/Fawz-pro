@@ -956,7 +956,6 @@
         harga_jual: toNum(s.harga_jual || s.hargaJual),
         harga_beli: toNum(s.harga_beli || s.hargaBeli),
         yield: toNum(s.yield),
-        tanggal_update: s.tanggal_update || s.tanggalUpdate || new Date().toISOString().slice(0,10),
         added_by: curUser?.name || '',
         added_at: new Date().toISOString(),
       };
