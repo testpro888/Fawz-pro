@@ -890,7 +890,7 @@
 
   function renderPickerList() {
     const q = document.getElementById('pickerSearch').value.toLowerCase();
-    const existingIds = new Set(recItems.map(r => r.psId || r.id));
+    const existingIds = new Set(recItems.map(r => r.ps_id || r.id));
 
     let items = [];
     const cats = pickerCat === 'all' ? CATEGORIES : [pickerCat];
@@ -945,26 +945,33 @@
     btn.textContent = 'Menambahkan...'; btn.disabled = true;
     try {
       const s = pickerSelected;
+      // Parse numeric fields safely — strip non-numeric chars, return null if invalid
+      const toNum = (v) => { if (v == null || v === '') return null; const n = parseFloat(String(v).replace(/[^0-9.\-]/g,'')); return isNaN(n) ? null : n; };
       const recData = {
-        ps_id: s.id,
-        category: s.category,
-        seri: s.seri,
-        kupon: s.kupon,
+        ps_id: s.id || null,
+        category: s.category || null,
+        seri: s.seri || null,
+        kupon: toNum(s.kupon),
         jatuh_tempo: s.jatuh_tempo || s.jatuhTempo || null,
-        harga_jual: s.harga_jual || s.hargaJual || null,
-        harga_beli: s.harga_beli || s.hargaBeli || null,
-        yield: s.yield || null,
+        harga_jual: toNum(s.harga_jual || s.hargaJual),
+        harga_beli: toNum(s.harga_beli || s.hargaBeli),
+        yield: toNum(s.yield),
         tanggal_update: s.tanggal_update || s.tanggalUpdate || new Date().toISOString().slice(0,10),
         added_by: curUser?.name || '',
         added_at: new Date().toISOString(),
       };
+      console.log('[Bookbuilding] Inserting recData:', recData);
       const { data: newRow, error } = await window._supabase.from('bb_recommendations').insert(recData).select().single();
       if (error) throw error;
       recItems.push(newRow);
       renderRecCards();
       closeModal('pickerModal');
       showToast(`${s.seri} ditambahkan sebagai rekomendasi`, 'success');
-    } catch(e) { console.error(e); showToast('Gagal menambahkan rekomendasi: ' + (e.message||''), 'error'); }
+    } catch(e) {
+      console.error('[Bookbuilding] Insert bb_recommendations error:', e);
+      const msg = e?.message || e?.details || e?.hint || JSON.stringify(e);
+      showToast('Gagal menambahkan rekomendasi: ' + msg, 'error');
+    }
     finally { btn.textContent = 'Tambahkan Rekomendasi'; btn.disabled = false; }
   }
 
