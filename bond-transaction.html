@@ -1014,19 +1014,40 @@
     clearTimeout(_lookupTimer);
     if (!clientId || clientId.length < 3) { document.getElementById('f-nama').value = ''; document.getElementById('f-sales').value = ''; return; }
     _lookupTimer = setTimeout(async () => {
+      const namaEl  = document.getElementById('f-nama');
+      const salesEl = document.getElementById('f-sales');
+      const cid = clientId.trim();
       try {
-        const { data } = await getDb().from('customers')
-          .select('client_name, sales_person_name')
-          .ilike('client_id', clientId.trim())
-          .limit(1);
-        if (data && data.length > 0) {
-          document.getElementById('f-nama').value  = data[0].client_name || '';
-          document.getElementById('f-sales').value = data[0].sales_person_name || '';
-        } else {
-          document.getElementById('f-nama').value  = '';
-          document.getElementById('f-sales').value = '';
+        // Cari client_id (case-insensitive). Ambil beberapa kandidat: exact match
+        // dan partial match (mengandung teks yang diketik) agar nama tetap terisi
+        // walau Client ID belum diketik lengkap.
+        const { data, error } = await getDb().from('customers')
+          .select('client_id, client_name, sales_person_name')
+          .ilike('client_id', '%' + cid + '%')
+          .limit(10);
+
+        if (error) {
+          console.error('lookupCustomer error:', error);
+          namaEl.value  = '';
+          salesEl.value = '';
+          return;
         }
-      } catch(e) { /* silent */ }
+
+        if (data && data.length > 0) {
+          // Utamakan yang exact match (case-insensitive), jika tidak ada pakai hasil pertama.
+          const exact = data.find(d => (d.client_id || '').toLowerCase() === cid.toLowerCase());
+          const pick  = exact || data[0];
+          namaEl.value  = pick.client_name || '';
+          salesEl.value = pick.sales_person_name || '';
+        } else {
+          namaEl.value  = '';
+          salesEl.value = '';
+        }
+      } catch(e) {
+        console.error('lookupCustomer exception:', e);
+        namaEl.value  = '';
+        salesEl.value = '';
+      }
     }, 400);
   }
 
