@@ -803,16 +803,19 @@ console.log('[Fawz navbar.js] v2.5.0 loaded');
   async function checkInfluencerStatus(user) {
     if (!window._supabase) return;
     try {
-      const username = user.username || user.name || '';
-      if (!username) return;
+      // influencer_registrations tidak punya kolom "username".
+      // Cocokkan berdasarkan client_code / client_id yang dimiliki user.
+      const clientCode = user.client_code || user.client_id || '';
+      if (!clientCode) return; // staff login biasa tidak punya client_code → skip
 
       const { data, error } = await window._supabase
         .from('influencer_registrations')
         .select('id')
-        .eq('username', username)
+        .eq('client_code', clientCode)
         .limit(1);
 
-      if (!error && data && data.length > 0) {
+      if (error) { console.warn('[checkInfluencerStatus]', error.message || error); return; }
+      if (data && data.length > 0) {
         // User is registered as influencer → show Dashboard
         const link = document.getElementById('influencerMenuLink');
         const mobLink = document.getElementById('mobInfluencerLink');
@@ -825,16 +828,19 @@ console.log('[Fawz navbar.js] v2.5.0 loaded');
   async function checkReferralStatus(user) {
     if (!window._supabase) return;
     try {
-      const username = user.username || user.name || '';
-      if (!username) return;
+      // referral_agents tidak punya kolom "username".
+      // Cocokkan berdasarkan agent_code / client_id yang dimiliki user.
+      const agentCode = user.agent_code || user.client_code || user.client_id || '';
+      if (!agentCode) return; // staff login biasa tidak punya kode → skip
 
       const { data, error } = await window._supabase
         .from('referral_agents')
         .select('id')
-        .eq('username', username)
+        .or(`agent_code.eq.${agentCode},client_id.eq.${agentCode}`)
         .limit(1);
 
-      if (!error && data && data.length > 0) {
+      if (error) { console.warn('[checkReferralStatus]', error.message || error); return; }
+      if (data && data.length > 0) {
         // User is registered as referral agent → show Dashboard
         const link = document.getElementById('referralMenuLink');
         const mobLink = document.getElementById('mobReferralLink');
