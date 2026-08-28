@@ -11,12 +11,25 @@
   <script>
     const SUPABASE_URL = (window.__FAWZ_CONFIG__ || {}).supabaseUrl || '';
     const SUPABASE_KEY = (window.__FAWZ_CONFIG__ || {}).supabaseKey || '';
-    try { window._supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); }
-    catch(e) { console.error('Supabase init error:', e); }
-    window.addEventListener('DOMContentLoaded', () => {
-      if (!window._supabase && window.supabase) {
-        window._supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    // Buat SATU instance saja. Set flag __FAWZ_SB_INIT__ supaya navbar.js
+    // tidak membuat instance GoTrueClient kedua (hindari warning "Multiple GoTrueClient").
+    function ensureSupabase() {
+      if (window._supabase && typeof window._supabase.from === 'function') {
+        window.__FAWZ_SB_INIT__ = true;
+        return true;
       }
+      if (window.supabase && window.supabase.createClient) {
+        try {
+          window._supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+          window.__FAWZ_SB_INIT__ = true;
+          return true;
+        } catch(e) { console.error('Supabase init error:', e); }
+      }
+      return false;
+    }
+    ensureSupabase();
+    window.addEventListener('DOMContentLoaded', () => {
+      ensureSupabase();
       loadAll();
     });
   </script>
