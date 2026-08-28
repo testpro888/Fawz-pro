@@ -11,12 +11,25 @@
   <script>
     const SUPABASE_URL = (window.__FAWZ_CONFIG__ || {}).supabaseUrl || '';
     const SUPABASE_KEY = (window.__FAWZ_CONFIG__ || {}).supabaseKey || '';
-    try { window._supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); }
-    catch(e) { console.error('Supabase init error:', e); }
-    window.addEventListener('DOMContentLoaded', () => {
-      if (!window._supabase && window.supabase) {
-        window._supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    // Buat SATU instance saja. Set flag __FAWZ_SB_INIT__ supaya navbar.js
+    // tidak membuat instance GoTrueClient kedua (hindari warning "Multiple GoTrueClient").
+    function ensureSupabase() {
+      if (window._supabase && typeof window._supabase.from === 'function') {
+        window.__FAWZ_SB_INIT__ = true;
+        return true;
       }
+      if (window.supabase && window.supabase.createClient) {
+        try {
+          window._supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+          window.__FAWZ_SB_INIT__ = true;
+          return true;
+        } catch(e) { console.error('Supabase init error:', e); }
+      }
+      return false;
+    }
+    ensureSupabase();
+    window.addEventListener('DOMContentLoaded', () => {
+      ensureSupabase();
       loadAll();
     });
   </script>
@@ -1243,43 +1256,19 @@
       let clients = [];
 
       if (curUser && curUser.role === 'sales') {
-        // Get clients where user is sales OR tagged as referral agent
-        const { data: d1, error: e1 } = await window._supabase.from('customers')
-          .select('client_id, client_name, sales_person_name, referral_agents')
-          .eq('client_status', 'Aktif')
-          .eq('sales_person_name', curUser.name);
-        if (e1) console.warn('[loadMyClients] query d1 error:', e1.message || e1);
-
-        const { data: d2, error: e2 } = await window._supabase.from('customers')
-          .select('client_id, client_name, sales_person_name, referral_agents')
-          .eq('client_status', 'Aktif')
-          .ilike('referral_agents', '%' + curUser.name + '%');
-        if (e2) console.warn('[loadMyClients] query d2 error:', e2.message || e2);
-
-        // If both queries failed, try fallback without referral_agents filter
-        if ((!d1 || d1.length === 0) && (!d2 || d2.length === 0) && (e1 || e2)) {
-          console.warn('[loadMyClients] Both queries failed, trying fallback...');
-          const { data: fallback, error: eFb } = await window._supabase.from('customers')
-            .select('client_id, client_name, sales_person_name, referral_agents')
-            .eq('client_status', 'Aktif')
-            .or(`sales_person_name.eq.${curUser.name},referral_agents.ilike.%${curUser.name}%`);
-          if (eFb) console.warn('[loadMyClients] fallback error:', eFb.message || eFb);
-          clients = fallback || [];
-        } else {
-          // Merge and deduplicate
-          const map = new Map();
-          (d1 || []).forEach(c => map.set(c.client_id, c));
-          (d2 || []).forEach(c => map.set(c.client_id, c));
-          clients = [...map.values()];
-        }
+        // Sales (termasuk akun Petik Profit) HANYA lihat client miliknya sendiri.
+        // Filter dilakukan di sisi client (case-insensitive) supaya tahan terhadap
+        // perbedaan huruf besar/kecil/spasi antara curUser.name dan sales_person_name di DB.
+        const salesName = (curUser.name || '').trim().toLowerCase();
+        const allClients = await fetchAllActiveCustomers();
+        clients = allClients.filter(c => {
+          const pic = (c.sales_person_name || '').toLowerCase();
+          const ref = (c.referral_agents || '').toLowerCase();
+          return pic === salesName || (salesName && ref.includes(salesName));
+        });
       } else {
         // Admin/Head Account/Treasury see all
-        const { data, error } = await window._supabase.from('customers')
-          .select('client_id, client_name, sales_person_name, referral_agents')
-          .eq('client_status', 'Aktif')
-          .order('client_name', { ascending: true });
-        if (error) throw error;
-        clients = data || [];
+        clients = await fetchAllActiveCustomers();
       }
 
       clients.sort((a, b) => (a.client_name || '').localeCompare(b.client_name || ''));
@@ -1291,6 +1280,25 @@
       console.error('Load clients error:', e);
       if (searchEl) { searchEl.placeholder = 'Gagal memuat client'; searchEl.disabled = false; }
     }
+  }
+
+  // Ambil semua customer aktif dengan pagination (lewati limit default 1000)
+  async function fetchAllActiveCustomers() {
+    const PAGE = 1000;
+    let all = [], from = 0;
+    while (true) {
+      const { data, error } = await window._supabase.from('customers')
+        .select('client_id, client_name, sales_person_name, referral_agents')
+        .eq('client_status', 'Aktif')
+        .order('client_name', { ascending: true })
+        .range(from, from + PAGE - 1);
+      if (error) { console.warn('[fetchAllActiveCustomers]', error.message || error); break; }
+      const rows = data || [];
+      all = all.concat(rows);
+      if (rows.length < PAGE) break;
+      from += PAGE;
+    }
+    return all;
   }
 
   // ── Searchable client dropdown ──
@@ -1723,29 +1731,16 @@
     try {
       let clients = [];
       if (curUser && curUser.role === 'sales') {
-        const { data: d1, error: e1 } = await window._supabase.from('customers').select('client_id,client_name').eq('client_status','Aktif').eq('sales_person_name',curUser.name);
-        if (e1) console.warn('[loadSellClients] query d1 error:', e1.message || e1);
-        const { data: d2, error: e2 } = await window._supabase.from('customers').select('client_id,client_name').eq('client_status','Aktif').ilike('referral_agents','%'+curUser.name+'%');
-        if (e2) console.warn('[loadSellClients] query d2 error:', e2.message || e2);
-
-        if ((!d1 || d1.length === 0) && (!d2 || d2.length === 0) && (e1 || e2)) {
-          console.warn('[loadSellClients] Both queries failed, trying fallback...');
-          const { data: fallback, error: eFb } = await window._supabase.from('customers')
-            .select('client_id,client_name')
-            .eq('client_status','Aktif')
-            .or(`sales_person_name.eq.${curUser.name},referral_agents.ilike.%${curUser.name}%`);
-          if (eFb) console.warn('[loadSellClients] fallback error:', eFb.message || eFb);
-          clients = fallback || [];
-        } else {
-          const map = new Map();
-          (d1||[]).forEach(c=>map.set(c.client_id,c));
-          (d2||[]).forEach(c=>map.set(c.client_id,c));
-          clients = [...map.values()];
-        }
+        // Sales (termasuk Petik Profit) hanya lihat client miliknya sendiri.
+        const salesName = (curUser.name || '').trim().toLowerCase();
+        const allClients = await fetchAllActiveCustomers();
+        clients = allClients.filter(c => {
+          const pic = (c.sales_person_name || '').toLowerCase();
+          const ref = (c.referral_agents || '').toLowerCase();
+          return pic === salesName || (salesName && ref.includes(salesName));
+        });
       } else {
-        const { data, error } = await window._supabase.from('customers').select('client_id,client_name').eq('client_status','Aktif').order('client_name',{ascending:true});
-        if (error) throw error;
-        clients = data || [];
+        clients = await fetchAllActiveCustomers();
       }
       clients.sort((a,b)=>(a.client_name||'').localeCompare(b.client_name||''));
       sellClients = clients;
