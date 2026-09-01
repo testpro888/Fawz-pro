@@ -131,6 +131,14 @@
 
     .ipo-card-body { padding: 18px 20px; flex: 1; }
 
+    /* seri table pada kartu */
+    .ipo-seri-table { border: 1px solid #f0f0f8; border-radius: 10px; overflow: hidden; margin-bottom: 16px; }
+    .ipo-seri-row { display: grid; grid-template-columns: 1fr auto; gap: 12px; padding: 8px 12px; border-bottom: 1px solid #f5f5fa; }
+    .ipo-seri-row:last-child { border-bottom: none; }
+    .ipo-seri-row.head { background: #fafaff; font-size: .6rem; font-weight: 700; color: var(--gray); text-transform: uppercase; letter-spacing: .7px; }
+    .ipo-seri-row .iss-seri { font-size: .85rem; font-weight: 600; color: var(--text); }
+    .ipo-seri-row .iss-kupon { font-size: .85rem; font-weight: 700; color: var(--gold); }
+
     .ipo-fields {
       display: grid; grid-template-columns: 1fr 1fr;
       gap: 12px 16px; margin-bottom: 16px;
@@ -209,6 +217,17 @@
     .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--gold); }
     .form-textarea { resize: vertical; min-height: 72px; }
     .modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; }
+
+    /* ── SERI LIST (multi seri per IPO) ── */
+    .seri-list-head { display: grid; grid-template-columns: 1fr 120px 34px; gap: 8px; font-size: .62rem; font-weight: 700; color: var(--gray); text-transform: uppercase; letter-spacing: .7px; margin-bottom: 6px; padding: 0 2px; }
+    .seri-row { display: grid; grid-template-columns: 1fr 120px 34px; gap: 8px; margin-bottom: 8px; align-items: center; }
+    .seri-row .btn-remove-seri {
+      width: 34px; height: 38px; border: 1.5px solid #ffd0d0; background: #fff0f0;
+      color: #e74c3c; border-radius: 10px; cursor: pointer; font-size: 1rem; line-height: 1;
+      display: flex; align-items: center; justify-content: center; transition: opacity .2s;
+    }
+    .seri-row .btn-remove-seri:hover { opacity: .8; }
+    .seri-row .btn-remove-seri:disabled { opacity: .35; cursor: not-allowed; }
 
     /* ── TOAST ── */
     .toast {
@@ -292,19 +311,23 @@
   <div class="modal">
     <div class="modal-title" id="modalTitle">Tambah IPO Obligasi</div>
     <div class="form-grid">
-      <div class="form-group">
+      <div class="form-group span2">
+        <label>Nama Obligasi</label>
+        <input class="form-input" id="fNama" placeholder="cth. Obligasi Berkelanjutan BRI Tahap I"/>
+      </div>
+      <div class="form-group span2">
         <label>Seri Obligasi</label>
-        <select class="form-select" id="fSeri" onchange="onSeriChange()">
-          <option value="">— Pilih Seri —</option>
-        </select>
+        <div class="seri-list-head">
+          <span>Seri</span>
+          <span>Kupon (%)</span>
+          <span></span>
+        </div>
+        <div id="seriList"></div>
+        <button type="button" class="btn btn-outline btn-sm" id="btnAddSeri" onclick="addSeriRow()" style="margin-top:8px;">+ Tambah Seri</button>
       </div>
       <div class="form-group">
         <label>Penerbit</label>
         <input class="form-input" id="fIssuer" placeholder="cth. Bank BRI"/>
-      </div>
-      <div class="form-group">
-        <label>Kupon (%) <span style="font-size:.6rem;color:#27ae60;">(otomatis dari seri)</span></label>
-        <input class="form-input" id="fKupon" type="number" step="0.001" placeholder="0.000" style="background:#f8fff8;"/>
       </div>
       <div class="form-group">
         <label>Tenor (Tahun)</label>
@@ -373,9 +396,7 @@
 <script>
   const COL_IPO = 'ipo_obligasi';
   const IPO_BUCKET = 'ipo-attachments';
-  const BOND_CATEGORIES = ['gov-idr','gov-usd','korp-idr','korp-usd'];
   let ipoItems = [];
-  let bondsList = [];      // daftar seri dari obligasi_products (untuk dropdown)
   let pickedFile = null;   // file Lembar Minat yang dipilih di modal
   let editId    = null;
   let curUser   = null;
@@ -414,6 +435,22 @@
     return curUser && ['head_account', 'treasury', 'admin'].includes(curUser.role);
   }
 
+  // Normalisasi field seri jadi array {seri, kupon}. Mendukung data lama (string seri + kupon terpisah).
+  function getSeriArray(item) {
+    let s = item.seri;
+    if (typeof s === 'string') {
+      const str = s.trim();
+      if (str.startsWith('[')) { try { s = JSON.parse(str); } catch { s = null; } }
+      else if (str) { return [{ seri: str, kupon: item.kupon != null ? item.kupon : null }]; }
+    }
+    if (Array.isArray(s)) return s.filter(x => x && x.seri);
+    return [];
+  }
+
+  function fmtKupon(k) {
+    return (k != null && k !== '' && !isNaN(Number(k))) ? Number(k).toFixed(3) + '%' : '—';
+  }
+
   // ── NAVBAR LOADER ─────────────────────────────────────────────────────────
   // navbar.js sudah di-load via <script src> di atas — cukup baca curUser dari sessionStorage
   async function loadNavbar() {
@@ -423,43 +460,62 @@
   }
 
   // ── LOAD BONDS (untuk dropdown seri + auto kupon) ──────────────────────────
-  async function loadBonds() {
-    bondsList = [];
-    for (const cat of BOND_CATEGORIES) {
-      try {
-        const { data, error } = await window._supabase
-          .from('obligasi_products').select('*').eq('category', cat).order('seri', { ascending: true });
-        if (error) throw error;
-        (data || []).forEach(d => bondsList.push({
-          seri: d.seri,
-          kupon: d.kupon,
-          issuer: d.penerbit || d.issuer || '',
-          rating: d.rating || '',
-        }));
-      } catch (e) { /* kategori kosong / tabel belum ada */ }
+  // ── SERI LIST (multi seri: manual input Seri + Kupon) ──────────────────────
+  function seriRowHtml(seri = '', kupon = '') {
+    return `
+      <div class="seri-row">
+        <input class="form-input seri-nama" placeholder="cth. Seri A" value="${esc(seri)}"/>
+        <input class="form-input seri-kupon" type="number" step="0.001" placeholder="0.000" value="${kupon != null && kupon !== '' ? esc(kupon) : ''}"/>
+        <button type="button" class="btn-remove-seri" title="Hapus seri" onclick="removeSeriRow(this)">×</button>
+      </div>`;
+  }
+
+  function addSeriRow(seri = '', kupon = '') {
+    const list = document.getElementById('seriList');
+    list.insertAdjacentHTML('beforeend', seriRowHtml(seri, kupon));
+    updateRemoveSeriButtons();
+  }
+
+  function removeSeriRow(btn) {
+    const row = btn.closest('.seri-row');
+    if (row) row.remove();
+    // Selalu sisakan minimal 1 baris
+    if (!document.querySelectorAll('#seriList .seri-row').length) addSeriRow();
+    updateRemoveSeriButtons();
+  }
+
+  // Tombol hapus dinonaktifkan kalau cuma ada 1 seri
+  function updateRemoveSeriButtons() {
+    const rows = document.querySelectorAll('#seriList .seri-row');
+    rows.forEach(r => {
+      const b = r.querySelector('.btn-remove-seri');
+      if (b) b.disabled = rows.length <= 1;
+    });
+  }
+
+  // Isi ulang daftar seri dari array data
+  function setSeriRows(seriArr) {
+    const list = document.getElementById('seriList');
+    list.innerHTML = '';
+    if (Array.isArray(seriArr) && seriArr.length) {
+      seriArr.forEach(s => addSeriRow(s.seri || '', s.kupon != null ? s.kupon : ''));
+    } else {
+      addSeriRow();
     }
-    populateSeriDropdown();
+    updateRemoveSeriButtons();
   }
 
-  function populateSeriDropdown() {
-    const sel = document.getElementById('fSeri');
-    if (!sel) return;
-    const current = sel.value;
-    sel.innerHTML = '<option value="">— Pilih Seri —</option>' +
-      bondsList.map(b => `<option value="${esc(b.seri)}">${esc(b.seri)}</option>`).join('');
-    if (current) sel.value = current;
-  }
-
-  // Saat pilih seri: isi kupon (dan penerbit/rating kalau kosong) otomatis
-  function onSeriChange() {
-    const seri = document.getElementById('fSeri').value;
-    const b = bondsList.find(x => x.seri === seri);
-    if (!b) return;
-    if (b.kupon != null && b.kupon !== '') document.getElementById('fKupon').value = b.kupon;
-    const issuerEl = document.getElementById('fIssuer');
-    if (b.issuer && !issuerEl.value.trim()) issuerEl.value = b.issuer;
-    const ratingEl = document.getElementById('fRating');
-    if (b.rating && !ratingEl.value.trim()) ratingEl.value = b.rating;
+  // Baca daftar seri dari form → array {seri, kupon}
+  function readSeriRows() {
+    const rows = document.querySelectorAll('#seriList .seri-row');
+    const out = [];
+    rows.forEach(r => {
+      const seri = r.querySelector('.seri-nama').value.trim();
+      const kv   = r.querySelector('.seri-kupon').value;
+      const kupon = kv === '' || isNaN(parseFloat(kv)) ? null : parseFloat(kv);
+      if (seri) out.push({ seri, kupon });
+    });
+    return out;
   }
 
   // ── LOAD DATA ─────────────────────────────────────────────────────────────
@@ -505,19 +561,29 @@
     grid.innerHTML = ipoItems.map(item => {
       const st  = getStatusLabel(item.status);
       const can = canManage();
+      const seriArr = getSeriArray(item);
+      const seriRowsHtml = seriArr.length
+        ? seriArr.map(s => `
+            <div class="ipo-seri-row">
+              <span class="iss-seri">${esc(s.seri)}</span>
+              <span class="iss-kupon">${fmtKupon(s.kupon)}</span>
+            </div>`).join('')
+        : `<div class="ipo-seri-row"><span class="iss-seri" style="color:#bbb;">Belum ada seri</span><span></span></div>`;
       return `
         <div class="ipo-card">
           <div class="ipo-card-header">
             <span class="ipo-badge ${st.cls}">${st.label}</span>
-            <div class="ipo-seri">${esc(item.seri || '—')}</div>
+            <div class="ipo-seri">${esc(item.nama || '—')}</div>
             <div class="ipo-issuer">${esc(item.issuer || '—')}</div>
           </div>
           <div class="ipo-card-body">
-            <div class="ipo-fields">
-              <div class="ipo-field">
-                <label>Kupon</label>
-                <div class="fval fval-gold">${item.kupon != null ? Number(item.kupon).toFixed(3) + '%' : '—'}</div>
+            <div class="ipo-seri-table">
+              <div class="ipo-seri-row head">
+                <span>Seri</span><span>Kupon</span>
               </div>
+              ${seriRowsHtml}
+            </div>
+            <div class="ipo-fields">
               <div class="ipo-field">
                 <label>Tenor</label>
                 <div class="fval">${item.tenor != null ? item.tenor + ' Tahun' : '—'}</div>
@@ -573,12 +639,12 @@
     pickedFile = null;
     document.getElementById('modalTitle').textContent = 'Tambah IPO Obligasi';
     document.getElementById('modalSaveBtn').textContent = 'Simpan';
-    ['fSeri','fIssuer','fKupon','fTenor','fMinBeli','fTglMulai','fTglAkhir','fTglPembayaran','fRating','fKeterangan']
+    ['fNama','fIssuer','fTenor','fMinBeli','fTglMulai','fTglAkhir','fTglPembayaran','fRating','fKeterangan']
       .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
     document.getElementById('fStatus').value = 'open';
+    setSeriRows([]);
     resetFilePicker();
     document.getElementById('existingFileWrap').style.display = 'none';
-    populateSeriDropdown();
     document.getElementById('ipoModal').classList.add('open');
   }
 
@@ -590,17 +656,25 @@
     document.getElementById('modalSaveBtn').textContent = 'Perbarui';
 
     pickedFile = null;
-    populateSeriDropdown();
 
     const g = (fid, val) => { const el = document.getElementById(fid); if (el) el.value = val != null ? val : ''; };
-    g('fSeri',        item.seri);
+    g('fNama',        item.nama);
     g('fIssuer',      item.issuer);
-    g('fKupon',       item.kupon);
     g('fTenor',       item.tenor);
     g('fMinBeli',     item.min_beli);
     g('fRating',      item.rating);
     g('fKeterangan',  item.keterangan);
     g('fStatus',      item.status || 'open');
+
+    // seri list (array). Fallback ke seri/kupon lama kalau data legacy.
+    let seriArr = item.seri;
+    if (typeof seriArr === 'string') { try { seriArr = JSON.parse(seriArr); } catch { seriArr = null; } }
+    if (!Array.isArray(seriArr) || !seriArr.length) {
+      seriArr = item.seri && typeof item.seri === 'string'
+        ? [{ seri: item.seri, kupon: item.kupon != null ? item.kupon : '' }]
+        : [];
+    }
+    setSeriRows(seriArr);
 
     // date fields
     const toInput = (val) => {
@@ -650,8 +724,11 @@
 
   // ── SAVE ──────────────────────────────────────────────────────────────────
   async function saveIPO() {
-    const seri = document.getElementById('fSeri').value.trim();
-    if (!seri) { showToast('Seri obligasi wajib dipilih', 'error'); return; }
+    const nama = document.getElementById('fNama').value.trim();
+    if (!nama) { showToast('Nama obligasi wajib diisi', 'error'); return; }
+
+    const seriRows = readSeriRows();
+    if (!seriRows.length) { showToast('Minimal isi 1 seri obligasi', 'error'); return; }
 
     const btn = document.getElementById('modalSaveBtn');
     btn.disabled = true; btn.textContent = 'Menyimpan...';
@@ -662,9 +739,9 @@
     };
 
     const payload = {
-      seri:        seri.toUpperCase(),
+      nama:        nama,
+      seri:        seriRows,                 // array {seri, kupon} → kolom jsonb
       issuer:      document.getElementById('fIssuer').value.trim() || null,
-      kupon:       num('fKupon'),
       tenor:       num('fTenor'),
       min_beli:    num('fMinBeli'),
       rating:      document.getElementById('fRating').value.trim() || null,
@@ -736,7 +813,6 @@
       document.getElementById('adminActions').style.display = 'flex';
     }
 
-    await loadBonds();
     await loadIPO();
   }
 
