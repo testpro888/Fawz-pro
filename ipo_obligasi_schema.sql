@@ -90,23 +90,31 @@ insert into storage.buckets (id, name, public)
 values ('ipo-attachments', 'ipo-attachments', true)
 on conflict (id) do nothing;
 
--- Policy storage: semua user boleh baca; upload/update/hapus untuk user terautentikasi.
-drop policy if exists "ipo_attachments_read" on storage.objects;
+-- Policy storage — PENTING:
+-- Aplikasi memakai anon key (tanpa Supabase Auth), jadi request berjalan sebagai
+-- role "anon". Policy harus "to public" agar upload/download tidak ditolak RLS.
+drop policy if exists "ipo_attachments_read"   on storage.objects;
+drop policy if exists "ipo_attachments_write"  on storage.objects;
+drop policy if exists "ipo_attachments_update" on storage.objects;
+drop policy if exists "ipo_attachments_delete" on storage.objects;
+
 create policy "ipo_attachments_read"
   on storage.objects for select
+  to public
   using (bucket_id = 'ipo-attachments');
 
-drop policy if exists "ipo_attachments_write" on storage.objects;
 create policy "ipo_attachments_write"
   on storage.objects for insert
+  to public
   with check (bucket_id = 'ipo-attachments');
 
-drop policy if exists "ipo_attachments_update" on storage.objects;
 create policy "ipo_attachments_update"
   on storage.objects for update
-  using (bucket_id = 'ipo-attachments');
+  to public
+  using (bucket_id = 'ipo-attachments')
+  with check (bucket_id = 'ipo-attachments');
 
-drop policy if exists "ipo_attachments_delete" on storage.objects;
 create policy "ipo_attachments_delete"
   on storage.objects for delete
+  to public
   using (bucket_id = 'ipo-attachments');
