@@ -673,8 +673,8 @@
       row.insertBefore(wrapper, addBtn);
     });
 
-    // Hide add button if 3+ recommendations already
-    addBtn.style.display = recItems.length >= 3 ? 'none' : '';
+    // Hide add button if 4+ recommendations already
+    addBtn.style.display = recItems.length >= 4 ? 'none' : '';
 
     // Render the "other" table with non-recommended items
     renderOtherTable();
