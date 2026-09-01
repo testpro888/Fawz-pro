@@ -12,10 +12,10 @@
 create table if not exists public.ipo_obligasi (
   id                 uuid primary key default gen_random_uuid(),
   nama               text,               -- Nama Obligasi (isi manual)
-  seri               jsonb default '[]', -- Daftar seri: [{ "seri": "Seri A", "kupon": 5 }, ...]
+  seri               jsonb default '[]', -- Daftar seri: [{ "seri": "Seri A", "kupon": 5, "tenor": 3 }, ...]
   issuer             text,
   kupon              numeric,            -- legacy (kupon tunggal versi lama)
-  tenor              numeric,
+  tenor              numeric,            -- legacy (tenor tunggal versi lama; kini per-seri di dalam "seri")
   min_beli           numeric,
   rating             text,
   keterangan         text,

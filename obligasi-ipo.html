@@ -133,11 +133,13 @@
 
     /* seri table pada kartu */
     .ipo-seri-table { border: 1px solid #f0f0f8; border-radius: 10px; overflow: hidden; margin-bottom: 16px; }
-    .ipo-seri-row { display: grid; grid-template-columns: 1fr auto; gap: 12px; padding: 8px 12px; border-bottom: 1px solid #f5f5fa; }
+    .ipo-seri-row { display: grid; grid-template-columns: 1fr 72px 72px; gap: 10px; padding: 8px 12px; border-bottom: 1px solid #f5f5fa; }
     .ipo-seri-row:last-child { border-bottom: none; }
     .ipo-seri-row.head { background: #fafaff; font-size: .6rem; font-weight: 700; color: var(--gray); text-transform: uppercase; letter-spacing: .7px; }
     .ipo-seri-row .iss-seri { font-size: .85rem; font-weight: 600; color: var(--text); }
-    .ipo-seri-row .iss-kupon { font-size: .85rem; font-weight: 700; color: var(--gold); }
+    .ipo-seri-row .iss-kupon { font-size: .85rem; font-weight: 700; color: var(--gold); text-align: right; }
+    .ipo-seri-row .iss-tenor { font-size: .82rem; font-weight: 600; color: var(--text); text-align: right; }
+    .ipo-seri-row.head span:nth-child(2), .ipo-seri-row.head span:nth-child(3) { text-align: right; }
 
     .ipo-fields {
       display: grid; grid-template-columns: 1fr 1fr;
@@ -219,8 +221,8 @@
     .modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; }
 
     /* ── SERI LIST (multi seri per IPO) ── */
-    .seri-list-head { display: grid; grid-template-columns: 1fr 120px 34px; gap: 8px; font-size: .62rem; font-weight: 700; color: var(--gray); text-transform: uppercase; letter-spacing: .7px; margin-bottom: 6px; padding: 0 2px; }
-    .seri-row { display: grid; grid-template-columns: 1fr 120px 34px; gap: 8px; margin-bottom: 8px; align-items: center; }
+    .seri-list-head { display: grid; grid-template-columns: 1fr 90px 90px 34px; gap: 8px; font-size: .62rem; font-weight: 700; color: var(--gray); text-transform: uppercase; letter-spacing: .7px; margin-bottom: 6px; padding: 0 2px; }
+    .seri-row { display: grid; grid-template-columns: 1fr 90px 90px 34px; gap: 8px; margin-bottom: 8px; align-items: center; }
     .seri-row .btn-remove-seri {
       width: 34px; height: 38px; border: 1.5px solid #ffd0d0; background: #fff0f0;
       color: #e74c3c; border-radius: 10px; cursor: pointer; font-size: 1rem; line-height: 1;
@@ -320,6 +322,7 @@
         <div class="seri-list-head">
           <span>Seri</span>
           <span>Kupon (%)</span>
+          <span>Tenor (Thn)</span>
           <span></span>
         </div>
         <div id="seriList"></div>
@@ -328,10 +331,6 @@
       <div class="form-group">
         <label>Penerbit</label>
         <input class="form-input" id="fIssuer" placeholder="cth. Bank BRI"/>
-      </div>
-      <div class="form-group">
-        <label>Tenor (Tahun)</label>
-        <input class="form-input" id="fTenor" type="number" step="0.5" placeholder="cth. 5"/>
       </div>
       <div class="form-group">
         <label>Minimum Pembelian (Rp)</label>
@@ -461,18 +460,19 @@
 
   // ── LOAD BONDS (untuk dropdown seri + auto kupon) ──────────────────────────
   // ── SERI LIST (multi seri: manual input Seri + Kupon) ──────────────────────
-  function seriRowHtml(seri = '', kupon = '') {
+  function seriRowHtml(seri = '', kupon = '', tenor = '') {
     return `
       <div class="seri-row">
         <input class="form-input seri-nama" placeholder="cth. Seri A" value="${esc(seri)}"/>
         <input class="form-input seri-kupon" type="number" step="0.001" placeholder="0.000" value="${kupon != null && kupon !== '' ? esc(kupon) : ''}"/>
+        <input class="form-input seri-tenor" type="number" step="0.5" placeholder="cth. 5" value="${tenor != null && tenor !== '' ? esc(tenor) : ''}"/>
         <button type="button" class="btn-remove-seri" title="Hapus seri" onclick="removeSeriRow(this)">×</button>
       </div>`;
   }
 
-  function addSeriRow(seri = '', kupon = '') {
+  function addSeriRow(seri = '', kupon = '', tenor = '') {
     const list = document.getElementById('seriList');
-    list.insertAdjacentHTML('beforeend', seriRowHtml(seri, kupon));
+    list.insertAdjacentHTML('beforeend', seriRowHtml(seri, kupon, tenor));
     updateRemoveSeriButtons();
   }
 
@@ -498,7 +498,7 @@
     const list = document.getElementById('seriList');
     list.innerHTML = '';
     if (Array.isArray(seriArr) && seriArr.length) {
-      seriArr.forEach(s => addSeriRow(s.seri || '', s.kupon != null ? s.kupon : ''));
+      seriArr.forEach(s => addSeriRow(s.seri || '', s.kupon != null ? s.kupon : '', s.tenor != null ? s.tenor : ''));
     } else {
       addSeriRow();
     }
@@ -512,8 +512,10 @@
     rows.forEach(r => {
       const seri = r.querySelector('.seri-nama').value.trim();
       const kv   = r.querySelector('.seri-kupon').value;
+      const tv   = r.querySelector('.seri-tenor').value;
       const kupon = kv === '' || isNaN(parseFloat(kv)) ? null : parseFloat(kv);
-      if (seri) out.push({ seri, kupon });
+      const tenor = tv === '' || isNaN(parseFloat(tv)) ? null : parseFloat(tv);
+      if (seri) out.push({ seri, kupon, tenor });
     });
     return out;
   }
@@ -567,8 +569,9 @@
             <div class="ipo-seri-row">
               <span class="iss-seri">${esc(s.seri)}</span>
               <span class="iss-kupon">${fmtKupon(s.kupon)}</span>
+              <span class="iss-tenor">${s.tenor != null && s.tenor !== '' ? esc(s.tenor) + ' Thn' : '—'}</span>
             </div>`).join('')
-        : `<div class="ipo-seri-row"><span class="iss-seri" style="color:#bbb;">Belum ada seri</span><span></span></div>`;
+        : `<div class="ipo-seri-row"><span class="iss-seri" style="color:#bbb;">Belum ada seri</span><span></span><span></span></div>`;
       return `
         <div class="ipo-card">
           <div class="ipo-card-header">
@@ -579,15 +582,11 @@
           <div class="ipo-card-body">
             <div class="ipo-seri-table">
               <div class="ipo-seri-row head">
-                <span>Seri</span><span>Kupon</span>
+                <span>Seri</span><span>Kupon</span><span>Tenor</span>
               </div>
               ${seriRowsHtml}
             </div>
             <div class="ipo-fields">
-              <div class="ipo-field">
-                <label>Tenor</label>
-                <div class="fval">${item.tenor != null ? item.tenor + ' Tahun' : '—'}</div>
-              </div>
               <div class="ipo-field">
                 <label>Min. Pembelian</label>
                 <div class="fval" style="font-size:.82rem">${item.min_beli != null ? fmtRp(item.min_beli) : '—'}</div>
@@ -639,7 +638,7 @@
     pickedFile = null;
     document.getElementById('modalTitle').textContent = 'Tambah IPO Obligasi';
     document.getElementById('modalSaveBtn').textContent = 'Simpan';
-    ['fNama','fIssuer','fTenor','fMinBeli','fTglMulai','fTglAkhir','fTglPembayaran','fRating','fKeterangan']
+    ['fNama','fIssuer','fMinBeli','fTglMulai','fTglAkhir','fTglPembayaran','fRating','fKeterangan']
       .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
     document.getElementById('fStatus').value = 'open';
     setSeriRows([]);
@@ -660,7 +659,6 @@
     const g = (fid, val) => { const el = document.getElementById(fid); if (el) el.value = val != null ? val : ''; };
     g('fNama',        item.nama);
     g('fIssuer',      item.issuer);
-    g('fTenor',       item.tenor);
     g('fMinBeli',     item.min_beli);
     g('fRating',      item.rating);
     g('fKeterangan',  item.keterangan);
@@ -740,9 +738,8 @@
 
     const payload = {
       nama:        nama,
-      seri:        seriRows,                 // array {seri, kupon} → kolom jsonb
+      seri:        seriRows,                 // array {seri, kupon, tenor} → kolom jsonb
       issuer:      document.getElementById('fIssuer').value.trim() || null,
-      tenor:       num('fTenor'),
       min_beli:    num('fMinBeli'),
       rating:      document.getElementById('fRating').value.trim() || null,
       keterangan:  document.getElementById('fKeterangan').value.trim() || null,
