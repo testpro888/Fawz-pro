@@ -394,7 +394,10 @@
 
 <script>
   const COL_IPO = 'ipo_obligasi';
-  const IPO_BUCKET = 'ipo-attachments';
+  // Pakai bucket 'job-attachments' yang sudah ada & policy-nya berfungsi (dipakai Job Report).
+  // File IPO disimpan di subfolder 'ipo/' agar rapi.
+  const IPO_BUCKET = 'job-attachments';
+  const IPO_FOLDER = 'ipo';
   let ipoItems = [];
   let pickedFile = null;   // file Lembar Minat yang dipilih di modal
   let editId    = null;
@@ -769,12 +772,15 @@
           throw new Error('File maksimal 10MB.');
         }
         const safeName = pickedFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-        const path = Date.now() + '_' + safeName;
+        const path = IPO_FOLDER + '/' + Date.now() + '_' + safeName;
         const { error: upErr } = await window._supabase.storage
           .from(IPO_BUCKET).upload(path, pickedFile, { upsert: false });
         if (upErr) {
           if (/bucket not found/i.test(upErr.message || '')) {
-            throw new Error(`Bucket "${IPO_BUCKET}" belum ada. Buat bucket publik "${IPO_BUCKET}" di Supabase → Storage, lalu coba lagi.`);
+            throw new Error(`Bucket "${IPO_BUCKET}" belum ada di Supabase → Storage.`);
+          }
+          if (/row-level security/i.test(upErr.message || '')) {
+            throw new Error(`Upload ditolak (RLS). Cek policy Storage untuk bucket "${IPO_BUCKET}".`);
           }
           throw upErr;
         }
