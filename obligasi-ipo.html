@@ -389,6 +389,41 @@
   </div>
 </div>
 
+<!-- ===== MODAL PESAN IPO ===== -->
+<div class="modal-overlay" id="pesanModal">
+  <div class="modal">
+    <div class="modal-title">Pesan IPO Obligasi</div>
+    <div class="form-grid">
+      <div class="form-group span2">
+        <label>Obligasi</label>
+        <input class="form-input" id="pNama" readonly style="background:#f5f5f8;font-weight:700;"/>
+      </div>
+      <div class="form-group span2">
+        <label>Seri yang Dipilih</label>
+        <select class="form-select" id="pSeri"></select>
+      </div>
+      <div class="form-group">
+        <label>Client Code</label>
+        <input class="form-input" id="pClientCode" placeholder="cth. MB12345" autocomplete="off"
+               style="text-transform:uppercase;" oninput="onPesanClientCode(this)"/>
+        <span id="pClientStatus" style="font-size:.72rem;margin-top:4px;display:block;color:var(--gray);"></span>
+      </div>
+      <div class="form-group">
+        <label>Nama Nasabah</label>
+        <input class="form-input" id="pNamaNasabah" readonly placeholder="Otomatis dari Client Code" style="background:#f5f5f8;"/>
+      </div>
+      <div class="form-group span2">
+        <label>Nominal (Rp)</label>
+        <input class="form-input" id="pNominal" type="text" inputmode="numeric" placeholder="cth. 500.000.000" oninput="formatThousandInput(this)"/>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closePesanModal()">Batal</button>
+      <button class="btn btn-primary" id="pesanSendBtn" onclick="submitPesan()">Kirim via WhatsApp</button>
+    </div>
+  </div>
+</div>
+
 <!-- ===== TOAST ===== -->
 <div class="toast" id="toast"></div>
 
@@ -637,11 +672,12 @@
           </div>
           <div class="ipo-card-footer">
             <span class="ipo-update">Update: ${fmtDate(item.updated_at || item.created_at)}</span>
-            ${can ? `
-              <div style="display:flex;gap:8px;">
+            <div style="display:flex;gap:8px;">
+              <button class="btn btn-primary btn-sm" onclick="openPesanModal('${item.id}')">💬 Pesan</button>
+              ${can ? `
                 <button class="btn btn-outline btn-sm" onclick="openEditModal('${item.id}')">Edit</button>
-                <button class="btn btn-danger btn-sm" onclick="deleteIPO('${item.id}')">Hapus</button>
-              </div>` : ''}
+                <button class="btn btn-danger btn-sm" onclick="deleteIPO('${item.id}')">Hapus</button>` : ''}
+            </div>
           </div>
         </div>`;
     }).join('');
@@ -810,6 +846,113 @@
     }
   }
 
+  // ── PESAN IPO (WhatsApp) ────────────────────────────────────────────────
+  const WA_PESAN_NUMBER = '628116387702';
+  let pesanItem = null;
+  let _pesanCcDebounce = null;
+
+  function openPesanModal(id) {
+    const item = ipoItems.find(i => i.id === id);
+    if (!item) return;
+    pesanItem = item;
+
+    document.getElementById('pNama').value = item.nama || '—';
+
+    // Isi dropdown seri dari data item
+    const sel = document.getElementById('pSeri');
+    const seriArr = getSeriArray(item);
+    if (seriArr.length) {
+      sel.innerHTML = seriArr.map(s => {
+        const label = s.seri + (s.kupon != null && s.kupon !== '' ? ' — Kupon ' + fmtKupon(s.kupon) : '');
+        return `<option value="${esc(s.seri)}">${esc(label)}</option>`;
+      }).join('');
+      sel.disabled = false;
+    } else {
+      sel.innerHTML = `<option value="">Belum ada seri</option>`;
+      sel.disabled = true;
+    }
+
+    // Reset field input
+    document.getElementById('pClientCode').value  = '';
+    document.getElementById('pNamaNasabah').value = '';
+    document.getElementById('pNominal').value     = '';
+    document.getElementById('pClientStatus').textContent = '';
+    document.getElementById('pClientStatus').style.color = 'var(--gray)';
+
+    document.getElementById('pesanModal').classList.add('open');
+  }
+
+  function closePesanModal() {
+    document.getElementById('pesanModal').classList.remove('open');
+    pesanItem = null;
+  }
+
+  // Auto-lookup nama nasabah dari client code
+  function onPesanClientCode(input) {
+    const val = input.value.trim().toUpperCase();
+    const statusEl = document.getElementById('pClientStatus');
+    const namaEl   = document.getElementById('pNamaNasabah');
+    namaEl.value = '';
+
+    clearTimeout(_pesanCcDebounce);
+    if (!val) { statusEl.textContent = ''; return; }
+
+    statusEl.style.color = 'var(--gray)';
+    statusEl.textContent = 'Mencari nasabah...';
+
+    _pesanCcDebounce = setTimeout(async () => {
+      try {
+        const { data, error } = await window._supabase
+          .from('customers')
+          .select('client_id, client_name')
+          .ilike('client_id', val)
+          .limit(1);
+        if (error) throw error;
+        if (data && data.length > 0) {
+          namaEl.value = data[0].client_name || '';
+          statusEl.style.color = '#1a9c5b';
+          statusEl.textContent = '✓ Nasabah ditemukan';
+        } else {
+          statusEl.style.color = '#d9534f';
+          statusEl.textContent = 'Nasabah tidak ditemukan — isi nama manual jika perlu';
+          namaEl.removeAttribute('readonly');
+          namaEl.style.background = '#fff';
+        }
+      } catch (e) {
+        statusEl.style.color = '#d9534f';
+        statusEl.textContent = 'Gagal mencari nasabah';
+      }
+    }, 400);
+  }
+
+  function submitPesan() {
+    if (!pesanItem) return;
+
+    const seri        = document.getElementById('pSeri').value.trim();
+    const clientCode  = document.getElementById('pClientCode').value.trim().toUpperCase();
+    const namaNasabah = document.getElementById('pNamaNasabah').value.trim();
+    const nominalNum  = parseThousand(document.getElementById('pNominal').value);
+
+    if (!seri)        { showToast('Pilih seri obligasi', 'error'); return; }
+    if (!clientCode)  { showToast('Client Code wajib diisi', 'error'); return; }
+    if (!namaNasabah) { showToast('Nama nasabah wajib diisi', 'error'); return; }
+    if (!nominalNum)  { showToast('Nominal wajib diisi', 'error'); return; }
+
+    const nominalStr = fmtRp(nominalNum);
+
+    const pesan =
+`Halo,
+
+Saya mau pesan IPO ${pesanItem.nama || '—'} ${seri} untuk Nasabah ${namaNasabah} ${clientCode} sebesar ${nominalStr}.
+
+Terimakasih.`;
+
+    const url = 'https://wa.me/' + WA_PESAN_NUMBER + '?text=' + encodeURIComponent(pesan);
+    window.open(url, '_blank');
+    closePesanModal();
+    showToast('Membuka WhatsApp...', 'success');
+  }
+
   // ── DELETE ────────────────────────────────────────────────────────────────
   async function deleteIPO(id) {
     const item = ipoItems.find(i => i.id === id);
@@ -839,6 +982,7 @@
   // Close modal on overlay click
   document.addEventListener('click', e => {
     if (e.target.id === 'ipoModal') closeModal();
+    if (e.target.id === 'pesanModal') closePesanModal();
   });
 </script>
 
