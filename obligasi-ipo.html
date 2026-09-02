@@ -131,6 +131,16 @@
 
     .ipo-card-body { padding: 18px 20px; flex: 1; }
 
+    /* seri table pada kartu */
+    .ipo-seri-table { border: 1px solid #f0f0f8; border-radius: 10px; overflow: hidden; margin-bottom: 16px; }
+    .ipo-seri-row { display: grid; grid-template-columns: 1fr 72px 72px; gap: 10px; padding: 8px 12px; border-bottom: 1px solid #f5f5fa; }
+    .ipo-seri-row:last-child { border-bottom: none; }
+    .ipo-seri-row.head { background: #fafaff; font-size: .6rem; font-weight: 700; color: var(--gray); text-transform: uppercase; letter-spacing: .7px; }
+    .ipo-seri-row .iss-seri { font-size: .85rem; font-weight: 600; color: var(--text); }
+    .ipo-seri-row .iss-kupon { font-size: .85rem; font-weight: 700; color: var(--gold); text-align: right; }
+    .ipo-seri-row .iss-tenor { font-size: .82rem; font-weight: 600; color: var(--text); text-align: right; }
+    .ipo-seri-row.head span:nth-child(2), .ipo-seri-row.head span:nth-child(3) { text-align: right; }
+
     .ipo-fields {
       display: grid; grid-template-columns: 1fr 1fr;
       gap: 12px 16px; margin-bottom: 16px;
@@ -209,6 +219,17 @@
     .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--gold); }
     .form-textarea { resize: vertical; min-height: 72px; }
     .modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; }
+
+    /* ── SERI LIST (multi seri per IPO) ── */
+    .seri-list-head { display: grid; grid-template-columns: 1fr 90px 90px 34px; gap: 8px; font-size: .62rem; font-weight: 700; color: var(--gray); text-transform: uppercase; letter-spacing: .7px; margin-bottom: 6px; padding: 0 2px; }
+    .seri-row { display: grid; grid-template-columns: 1fr 90px 90px 34px; gap: 8px; margin-bottom: 8px; align-items: center; }
+    .seri-row .btn-remove-seri {
+      width: 34px; height: 38px; border: 1.5px solid #ffd0d0; background: #fff0f0;
+      color: #e74c3c; border-radius: 10px; cursor: pointer; font-size: 1rem; line-height: 1;
+      display: flex; align-items: center; justify-content: center; transition: opacity .2s;
+    }
+    .seri-row .btn-remove-seri:hover { opacity: .8; }
+    .seri-row .btn-remove-seri:disabled { opacity: .35; cursor: not-allowed; }
 
     /* ── TOAST ── */
     .toast {
@@ -292,29 +313,36 @@
   <div class="modal">
     <div class="modal-title" id="modalTitle">Tambah IPO Obligasi</div>
     <div class="form-grid">
-      <div class="form-group">
+      <div class="form-group span2">
+        <label>Nama Obligasi</label>
+        <input class="form-input" id="fNama" placeholder="cth. Obligasi Berkelanjutan BRI Tahap I"/>
+      </div>
+      <div class="form-group span2">
         <label>Seri Obligasi</label>
-        <input class="form-input" id="fSeri" placeholder="cth. BBRI05"/>
+        <div class="seri-list-head">
+          <span>Seri</span>
+          <span>Kupon (%)</span>
+          <span>Tenor (Thn)</span>
+          <span></span>
+        </div>
+        <div id="seriList"></div>
+        <button type="button" class="btn btn-outline btn-sm" id="btnAddSeri" onclick="addSeriRow()" style="margin-top:8px;">+ Tambah Seri</button>
       </div>
       <div class="form-group">
         <label>Penerbit</label>
         <input class="form-input" id="fIssuer" placeholder="cth. Bank BRI"/>
       </div>
       <div class="form-group">
-        <label>Kupon (%)</label>
-        <input class="form-input" id="fKupon" type="number" step="0.001" placeholder="0.000"/>
-      </div>
-      <div class="form-group">
-        <label>Tenor (Tahun)</label>
-        <input class="form-input" id="fTenor" type="number" step="0.5" placeholder="cth. 5"/>
-      </div>
-      <div class="form-group">
         <label>Minimum Pembelian (Rp)</label>
-        <input class="form-input" id="fMinBeli" type="number" step="1000000" placeholder="cth. 5000000"/>
+        <input class="form-input" id="fMinBeli" type="text" inputmode="numeric" placeholder="cth. 5.000.000" oninput="formatThousandInput(this)"/>
       </div>
       <div class="form-group">
-        <label>Target Dana (Rp Miliar)</label>
-        <input class="form-input" id="fTarget" type="number" placeholder="cth. 1000"/>
+        <label>Status</label>
+        <select class="form-select" id="fStatus">
+          <option value="open">Masa Penawaran</option>
+          <option value="coming">Segera Dibuka</option>
+          <option value="closed">Sudah Ditutup</option>
+        </select>
       </div>
       <div class="form-group">
         <label>Tanggal Mulai Penawaran</label>
@@ -325,24 +353,33 @@
         <input class="form-input" id="fTglAkhir" type="date"/>
       </div>
       <div class="form-group">
-        <label>Tanggal Jatuh Tempo</label>
-        <input class="form-input" id="fJatuhTempo" type="date"/>
+        <label>Tanggal Pembayaran</label>
+        <input class="form-input" id="fTglPembayaran" type="date"/>
       </div>
       <div class="form-group">
-        <label>Status</label>
-        <select class="form-select" id="fStatus">
-          <option value="open">Masa Penawaran</option>
-          <option value="coming">Segera Dibuka</option>
-          <option value="closed">Sudah Ditutup</option>
-        </select>
-      </div>
-      <div class="form-group span2">
         <label>Rating</label>
         <input class="form-input" id="fRating" placeholder="cth. AAA(idn) / Fitch"/>
       </div>
       <div class="form-group span2">
         <label>Keterangan</label>
         <textarea class="form-textarea" id="fKeterangan" placeholder="Deskripsi singkat atau catatan IPO..."></textarea>
+      </div>
+
+      <!-- Lembar Minat (upload oleh Bonds Dealer) -->
+      <div class="form-group span2" id="lembarMinatGroup">
+        <label>Lembar Minat</label>
+        <div style="background:#fffbf3;border:1.5px solid #f5e0a0;border-radius:10px;padding:12px 14px;font-size:.78rem;color:#7a5100;line-height:1.7;">
+          Silakan download <strong>Lembar Minat</strong>, lalu kirimkan ke <strong>Bonds Dealer</strong> melalui <strong>Job Report</strong>.
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px;">
+          <input type="file" id="fLembarMinat" style="display:none;" onchange="onFilePicked()"/>
+          <button type="button" class="btn btn-outline btn-sm" id="btnPickFile" onclick="document.getElementById('fLembarMinat').click()">📎 Pilih File Lembar Minat</button>
+          <span id="fileNameLabel" style="font-size:.78rem;color:var(--gray);"></span>
+        </div>
+        <div id="existingFileWrap" style="display:none;margin-top:8px;font-size:.78rem;">
+          File saat ini:
+          <a id="existingFileLink" href="#" target="_blank" style="color:var(--gold);font-weight:600;text-decoration:none;"></a>
+        </div>
       </div>
     </div>
     <div class="modal-footer">
@@ -352,12 +389,52 @@
   </div>
 </div>
 
+<!-- ===== MODAL PESAN IPO ===== -->
+<div class="modal-overlay" id="pesanModal">
+  <div class="modal">
+    <div class="modal-title">Pesan IPO Obligasi</div>
+    <div class="form-grid">
+      <div class="form-group span2">
+        <label>Obligasi</label>
+        <input class="form-input" id="pNama" readonly style="background:#f5f5f8;font-weight:700;"/>
+      </div>
+      <div class="form-group span2">
+        <label>Seri yang Dipilih</label>
+        <select class="form-select" id="pSeri"></select>
+      </div>
+      <div class="form-group">
+        <label>Client Code</label>
+        <input class="form-input" id="pClientCode" placeholder="cth. MB12345" autocomplete="off"
+               style="text-transform:uppercase;" oninput="onPesanClientCode(this)"/>
+        <span id="pClientStatus" style="font-size:.72rem;margin-top:4px;display:block;color:var(--gray);"></span>
+      </div>
+      <div class="form-group">
+        <label>Nama Nasabah</label>
+        <input class="form-input" id="pNamaNasabah" readonly placeholder="Otomatis dari Client Code" style="background:#f5f5f8;"/>
+      </div>
+      <div class="form-group span2">
+        <label>Nominal (Rp)</label>
+        <input class="form-input" id="pNominal" type="text" inputmode="numeric" placeholder="cth. 500.000.000" oninput="formatThousandInput(this)"/>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closePesanModal()">Batal</button>
+      <button class="btn btn-primary" id="pesanSendBtn" onclick="submitPesan()">Kirim via WhatsApp</button>
+    </div>
+  </div>
+</div>
+
 <!-- ===== TOAST ===== -->
 <div class="toast" id="toast"></div>
 
 <script>
   const COL_IPO = 'ipo_obligasi';
+  // Pakai bucket 'job-attachments' yang sudah ada & policy-nya berfungsi (dipakai Job Report).
+  // File IPO disimpan di subfolder 'ipo/' agar rapi.
+  const IPO_BUCKET = 'job-attachments';
+  const IPO_FOLDER = 'ipo';
   let ipoItems = [];
+  let pickedFile = null;   // file Lembar Minat yang dipilih di modal
   let editId    = null;
   let curUser   = null;
   const ROLE_LABELS = { head_account: 'Head Account', admin: 'Admin', sales: 'Sales', treasury: 'Bonds' };
@@ -395,12 +472,102 @@
     return curUser && ['head_account', 'treasury', 'admin'].includes(curUser.role);
   }
 
+  // Normalisasi field seri jadi array {seri, kupon}. Mendukung data lama (string seri + kupon terpisah).
+  function getSeriArray(item) {
+    let s = item.seri;
+    if (typeof s === 'string') {
+      const str = s.trim();
+      if (str.startsWith('[')) { try { s = JSON.parse(str); } catch { s = null; } }
+      else if (str) { return [{ seri: str, kupon: item.kupon != null ? item.kupon : null }]; }
+    }
+    if (Array.isArray(s)) return s.filter(x => x && x.seri);
+    return [];
+  }
+
+  function fmtKupon(k) {
+    return (k != null && k !== '' && !isNaN(Number(k))) ? Number(k).toFixed(3) + '%' : '—';
+  }
+
+  // Format input angka dengan titik ribuan saat diketik (mis. 5000000 → 5.000.000)
+  function formatThousandInput(el) {
+    const digits = el.value.replace(/\D/g, '');
+    el.value = digits ? Number(digits).toLocaleString('id-ID') : '';
+  }
+
+  // Ambil angka murni dari string ber-titik ribuan
+  function parseThousand(str) {
+    const digits = String(str || '').replace(/\D/g, '');
+    return digits ? Number(digits) : null;
+  }
+
   // ── NAVBAR LOADER ─────────────────────────────────────────────────────────
   // navbar.js sudah di-load via <script src> di atas — cukup baca curUser dari sessionStorage
   async function loadNavbar() {
     const raw = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember');
     if (!raw) { window.location.href = 'login.html'; return; }
     curUser = JSON.parse(raw);
+  }
+
+  // ── LOAD BONDS (untuk dropdown seri + auto kupon) ──────────────────────────
+  // ── SERI LIST (multi seri: manual input Seri + Kupon) ──────────────────────
+  function seriRowHtml(seri = '', kupon = '', tenor = '') {
+    return `
+      <div class="seri-row">
+        <input class="form-input seri-nama" placeholder="cth. Seri A" value="${esc(seri)}"/>
+        <input class="form-input seri-kupon" type="number" step="0.001" placeholder="0.000" value="${kupon != null && kupon !== '' ? esc(kupon) : ''}"/>
+        <input class="form-input seri-tenor" type="number" step="0.5" placeholder="cth. 5" value="${tenor != null && tenor !== '' ? esc(tenor) : ''}"/>
+        <button type="button" class="btn-remove-seri" title="Hapus seri" onclick="removeSeriRow(this)">×</button>
+      </div>`;
+  }
+
+  function addSeriRow(seri = '', kupon = '', tenor = '') {
+    const list = document.getElementById('seriList');
+    list.insertAdjacentHTML('beforeend', seriRowHtml(seri, kupon, tenor));
+    updateRemoveSeriButtons();
+  }
+
+  function removeSeriRow(btn) {
+    const row = btn.closest('.seri-row');
+    if (row) row.remove();
+    // Selalu sisakan minimal 1 baris
+    if (!document.querySelectorAll('#seriList .seri-row').length) addSeriRow();
+    updateRemoveSeriButtons();
+  }
+
+  // Tombol hapus dinonaktifkan kalau cuma ada 1 seri
+  function updateRemoveSeriButtons() {
+    const rows = document.querySelectorAll('#seriList .seri-row');
+    rows.forEach(r => {
+      const b = r.querySelector('.btn-remove-seri');
+      if (b) b.disabled = rows.length <= 1;
+    });
+  }
+
+  // Isi ulang daftar seri dari array data
+  function setSeriRows(seriArr) {
+    const list = document.getElementById('seriList');
+    list.innerHTML = '';
+    if (Array.isArray(seriArr) && seriArr.length) {
+      seriArr.forEach(s => addSeriRow(s.seri || '', s.kupon != null ? s.kupon : '', s.tenor != null ? s.tenor : ''));
+    } else {
+      addSeriRow();
+    }
+    updateRemoveSeriButtons();
+  }
+
+  // Baca daftar seri dari form → array {seri, kupon}
+  function readSeriRows() {
+    const rows = document.querySelectorAll('#seriList .seri-row');
+    const out = [];
+    rows.forEach(r => {
+      const seri = r.querySelector('.seri-nama').value.trim();
+      const kv   = r.querySelector('.seri-kupon').value;
+      const tv   = r.querySelector('.seri-tenor').value;
+      const kupon = kv === '' || isNaN(parseFloat(kv)) ? null : parseFloat(kv);
+      const tenor = tv === '' || isNaN(parseFloat(tv)) ? null : parseFloat(tv);
+      if (seri) out.push({ seri, kupon, tenor });
+    });
+    return out;
   }
 
   // ── LOAD DATA ─────────────────────────────────────────────────────────────
@@ -446,61 +613,71 @@
     grid.innerHTML = ipoItems.map(item => {
       const st  = getStatusLabel(item.status);
       const can = canManage();
+      const seriArr = getSeriArray(item);
+      const seriRowsHtml = seriArr.length
+        ? seriArr.map(s => `
+            <div class="ipo-seri-row">
+              <span class="iss-seri">${esc(s.seri)}</span>
+              <span class="iss-kupon">${fmtKupon(s.kupon)}</span>
+              <span class="iss-tenor">${s.tenor != null && s.tenor !== '' ? esc(s.tenor) + ' Thn' : '—'}</span>
+            </div>`).join('')
+        : `<div class="ipo-seri-row"><span class="iss-seri" style="color:#bbb;">Belum ada seri</span><span></span><span></span></div>`;
       return `
         <div class="ipo-card">
           <div class="ipo-card-header">
             <span class="ipo-badge ${st.cls}">${st.label}</span>
-            <div class="ipo-seri">${esc(item.seri || '—')}</div>
+            <div class="ipo-seri">${esc(item.nama || '—')}</div>
             <div class="ipo-issuer">${esc(item.issuer || '—')}</div>
           </div>
           <div class="ipo-card-body">
+            <div class="ipo-seri-table">
+              <div class="ipo-seri-row head">
+                <span>Seri</span><span>Kupon</span><span>Tenor</span>
+              </div>
+              ${seriRowsHtml}
+            </div>
             <div class="ipo-fields">
               <div class="ipo-field">
-                <label>Kupon</label>
-                <div class="fval fval-gold">${item.kupon != null ? Number(item.kupon).toFixed(3) + '%' : '—'}</div>
-              </div>
-              <div class="ipo-field">
-                <label>Tenor</label>
-                <div class="fval">${item.tenor != null ? item.tenor + ' Tahun' : '—'}</div>
-              </div>
-              <div class="ipo-field">
                 <label>Min. Pembelian</label>
-                <div class="fval" style="font-size:.82rem">${item.minBeli != null ? fmtRp(item.minBeli) : '—'}</div>
-              </div>
-              <div class="ipo-field">
-                <label>Target Dana</label>
-                <div class="fval" style="font-size:.82rem">${item.target != null ? 'Rp ' + Number(item.target).toLocaleString('id-ID') + ' M' : '—'}</div>
+                <div class="fval" style="font-size:.82rem">${item.min_beli != null ? fmtRp(item.min_beli) : '—'}</div>
               </div>
               <div class="ipo-field">
                 <label>Rating</label>
                 <div class="fval fval-green">${esc(item.rating || '—')}</div>
               </div>
               <div class="ipo-field">
-                <label>Jatuh Tempo</label>
-                <div class="fval" style="font-size:.82rem">${fmtDate(item.jatuhTempo)}</div>
+                <label>Tgl. Pembayaran</label>
+                <div class="fval" style="font-size:.82rem">${fmtDate(item.tgl_pembayaran)}</div>
               </div>
             </div>
 
             <div class="ipo-period">
               <div class="per-item">
                 <label>Mulai Penawaran</label>
-                <span>${fmtDate(item.tglMulai)}</span>
+                <span>${fmtDate(item.tgl_mulai)}</span>
               </div>
               <div class="per-item">
                 <label>Akhir Penawaran</label>
-                <span>${fmtDate(item.tglAkhir)}</span>
+                <span>${fmtDate(item.tgl_akhir)}</span>
               </div>
             </div>
 
             ${item.keterangan ? `<div class="ipo-desc">${esc(item.keterangan)}</div>` : ''}
+
+            ${item.lembar_minat_url ? `
+              <a class="btn btn-outline btn-sm" href="${esc(item.lembar_minat_url)}" target="_blank" download style="width:100%;justify-content:center;margin-top:4px;">
+                ⬇ Download Lembar Minat
+              </a>` : `
+              <div style="font-size:.72rem;color:#bbb;text-align:center;margin-top:4px;">Lembar Minat belum diunggah Bonds Dealer</div>`}
           </div>
           <div class="ipo-card-footer">
-            <span class="ipo-update">Update: ${fmtDate(item.updatedAt || item.createdAt)}</span>
-            ${can ? `
-              <div style="display:flex;gap:8px;">
+            <span class="ipo-update">Update: ${fmtDate(item.updated_at || item.created_at)}</span>
+            <div style="display:flex;gap:8px;">
+              <button class="btn btn-primary btn-sm" onclick="openPesanModal('${item.id}')">💬 Pesan</button>
+              ${can ? `
                 <button class="btn btn-outline btn-sm" onclick="openEditModal('${item.id}')">Edit</button>
-                <button class="btn btn-danger btn-sm" onclick="deleteIPO('${item.id}')">Hapus</button>
-              </div>` : ''}
+                <button class="btn btn-danger btn-sm" onclick="deleteIPO('${item.id}')">Hapus</button>` : ''}
+            </div>
           </div>
         </div>`;
     }).join('');
@@ -509,11 +686,15 @@
   // ── MODAL ─────────────────────────────────────────────────────────────────
   function openAddModal() {
     editId = null;
+    pickedFile = null;
     document.getElementById('modalTitle').textContent = 'Tambah IPO Obligasi';
     document.getElementById('modalSaveBtn').textContent = 'Simpan';
-    ['fSeri','fIssuer','fKupon','fTenor','fMinBeli','fTarget','fTglMulai','fTglAkhir','fJatuhTempo','fRating','fKeterangan']
-      .forEach(id => { document.getElementById(id).value = ''; });
+    ['fNama','fIssuer','fMinBeli','fTglMulai','fTglAkhir','fTglPembayaran','fRating','fKeterangan']
+      .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
     document.getElementById('fStatus').value = 'open';
+    setSeriRows([]);
+    resetFilePicker();
+    document.getElementById('existingFileWrap').style.display = 'none';
     document.getElementById('ipoModal').classList.add('open');
   }
 
@@ -524,16 +705,25 @@
     document.getElementById('modalTitle').textContent = 'Edit IPO Obligasi';
     document.getElementById('modalSaveBtn').textContent = 'Perbarui';
 
-    const g = (fid, val) => { document.getElementById(fid).value = val || ''; };
-    g('fSeri',       item.seri);
-    g('fIssuer',     item.issuer);
-    g('fKupon',      item.kupon);
-    g('fTenor',      item.tenor);
-    g('fMinBeli',    item.minBeli);
-    g('fTarget',     item.target);
-    g('fRating',     item.rating);
-    g('fKeterangan', item.keterangan);
-    g('fStatus',     item.status || 'open');
+    pickedFile = null;
+
+    const g = (fid, val) => { const el = document.getElementById(fid); if (el) el.value = val != null ? val : ''; };
+    g('fNama',        item.nama);
+    g('fIssuer',      item.issuer);
+    document.getElementById('fMinBeli').value = (item.min_beli != null && item.min_beli !== '') ? Number(item.min_beli).toLocaleString('id-ID') : '';
+    g('fRating',      item.rating);
+    g('fKeterangan',  item.keterangan);
+    g('fStatus',      item.status || 'open');
+
+    // seri list (array). Fallback ke seri/kupon lama kalau data legacy.
+    let seriArr = item.seri;
+    if (typeof seriArr === 'string') { try { seriArr = JSON.parse(seriArr); } catch { seriArr = null; } }
+    if (!Array.isArray(seriArr) || !seriArr.length) {
+      seriArr = item.seri && typeof item.seri === 'string'
+        ? [{ seri: item.seri, kupon: item.kupon != null ? item.kupon : '' }]
+        : [];
+    }
+    setSeriRows(seriArr);
 
     // date fields
     const toInput = (val) => {
@@ -543,11 +733,38 @@
         return d.toISOString().slice(0, 10);
       } catch { return ''; }
     };
-    document.getElementById('fTglMulai').value    = toInput(item.tglMulai);
-    document.getElementById('fTglAkhir').value    = toInput(item.tglAkhir);
-    document.getElementById('fJatuhTempo').value  = toInput(item.jatuhTempo);
+    document.getElementById('fTglMulai').value      = toInput(item.tgl_mulai);
+    document.getElementById('fTglAkhir').value      = toInput(item.tgl_akhir);
+    document.getElementById('fTglPembayaran').value = toInput(item.tgl_pembayaran);
+
+    // existing file
+    resetFilePicker();
+    const wrap = document.getElementById('existingFileWrap');
+    if (item.lembar_minat_url) {
+      const link = document.getElementById('existingFileLink');
+      link.href = item.lembar_minat_url;
+      link.textContent = item.lembar_minat_name || 'Download';
+      wrap.style.display = 'block';
+    } else {
+      wrap.style.display = 'none';
+    }
 
     document.getElementById('ipoModal').classList.add('open');
+  }
+
+  // ── FILE PICKER HELPERS ────────────────────────────────────────────────────
+  function onFilePicked() {
+    const input = document.getElementById('fLembarMinat');
+    pickedFile = input.files && input.files[0] ? input.files[0] : null;
+    document.getElementById('fileNameLabel').textContent = pickedFile ? pickedFile.name : '';
+  }
+
+  function resetFilePicker() {
+    pickedFile = null;
+    const input = document.getElementById('fLembarMinat');
+    if (input) input.value = '';
+    const lbl = document.getElementById('fileNameLabel');
+    if (lbl) lbl.textContent = '';
   }
 
   function closeModal() {
@@ -556,29 +773,58 @@
 
   // ── SAVE ──────────────────────────────────────────────────────────────────
   async function saveIPO() {
-    const seri = document.getElementById('fSeri').value.trim();
-    if (!seri) { showToast('Seri obligasi wajib diisi', 'error'); return; }
+    const nama = document.getElementById('fNama').value.trim();
+    if (!nama) { showToast('Nama obligasi wajib diisi', 'error'); return; }
+
+    const seriRows = readSeriRows();
+    if (!seriRows.length) { showToast('Minimal isi 1 seri obligasi', 'error'); return; }
 
     const btn = document.getElementById('modalSaveBtn');
     btn.disabled = true; btn.textContent = 'Menyimpan...';
 
+    const num = (id) => {
+      const v = parseFloat(document.getElementById(id).value);
+      return isNaN(v) ? null : v;
+    };
+
     const payload = {
-      seri:        seri.toUpperCase(),
-      issuer:      document.getElementById('fIssuer').value.trim(),
-      kupon:       parseFloat(document.getElementById('fKupon').value) || null,
-      tenor:       parseFloat(document.getElementById('fTenor').value) || null,
-      minBeli:     parseFloat(document.getElementById('fMinBeli').value) || null,
-      target:      parseFloat(document.getElementById('fTarget').value) || null,
-      rating:      document.getElementById('fRating').value.trim(),
-      keterangan:  document.getElementById('fKeterangan').value.trim(),
+      nama:        nama,
+      seri:        seriRows,                 // array {seri, kupon, tenor} → kolom jsonb
+      issuer:      document.getElementById('fIssuer').value.trim() || null,
+      min_beli:    parseThousand(document.getElementById('fMinBeli').value),
+      rating:      document.getElementById('fRating').value.trim() || null,
+      keterangan:  document.getElementById('fKeterangan').value.trim() || null,
       status:      document.getElementById('fStatus').value,
-      tglMulai:    document.getElementById('fTglMulai').value   || null,
-      tglAkhir:    document.getElementById('fTglAkhir').value   || null,
-      jatuhTempo:  document.getElementById('fJatuhTempo').value || null,
-      updatedAt:   new Date().toISOString(),
+      tgl_mulai:      document.getElementById('fTglMulai').value      || null,
+      tgl_akhir:      document.getElementById('fTglAkhir').value      || null,
+      tgl_pembayaran: document.getElementById('fTglPembayaran').value || null,
+      updated_at:  new Date().toISOString(),
     };
 
     try {
+      // Upload file Lembar Minat kalau ada file baru dipilih
+      if (pickedFile) {
+        if (pickedFile.size > 10 * 1024 * 1024) {
+          throw new Error('File maksimal 10MB.');
+        }
+        const safeName = pickedFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+        const path = IPO_FOLDER + '/' + Date.now() + '_' + safeName;
+        const { error: upErr } = await window._supabase.storage
+          .from(IPO_BUCKET).upload(path, pickedFile, { upsert: false });
+        if (upErr) {
+          if (/bucket not found/i.test(upErr.message || '')) {
+            throw new Error(`Bucket "${IPO_BUCKET}" belum ada di Supabase → Storage.`);
+          }
+          if (/row-level security/i.test(upErr.message || '')) {
+            throw new Error(`Upload ditolak (RLS). Cek policy Storage untuk bucket "${IPO_BUCKET}".`);
+          }
+          throw upErr;
+        }
+        const { data: urlData } = window._supabase.storage.from(IPO_BUCKET).getPublicUrl(path);
+        payload.lembar_minat_url  = urlData.publicUrl;
+        payload.lembar_minat_name = pickedFile.name;
+      }
+
       if (editId) {
         const { error } = await window._supabase.from(COL_IPO).update(payload).eq('id', editId);
         if (error) throw error;
@@ -593,11 +839,118 @@
       await loadIPO();
     } catch (e) {
       console.error(e);
-      showToast('Gagal menyimpan: ' + e.message, 'error');
+      showToast('Gagal menyimpan: ' + (e.message || e), 'error');
     } finally {
       btn.disabled = false;
       btn.textContent = editId ? 'Perbarui' : 'Simpan';
     }
+  }
+
+  // ── PESAN IPO (WhatsApp) ────────────────────────────────────────────────
+  const WA_PESAN_NUMBER = '628116387702';
+  let pesanItem = null;
+  let _pesanCcDebounce = null;
+
+  function openPesanModal(id) {
+    const item = ipoItems.find(i => i.id === id);
+    if (!item) return;
+    pesanItem = item;
+
+    document.getElementById('pNama').value = item.nama || '—';
+
+    // Isi dropdown seri dari data item
+    const sel = document.getElementById('pSeri');
+    const seriArr = getSeriArray(item);
+    if (seriArr.length) {
+      sel.innerHTML = seriArr.map(s => {
+        const label = s.seri + (s.kupon != null && s.kupon !== '' ? ' — Kupon ' + fmtKupon(s.kupon) : '');
+        return `<option value="${esc(s.seri)}">${esc(label)}</option>`;
+      }).join('');
+      sel.disabled = false;
+    } else {
+      sel.innerHTML = `<option value="">Belum ada seri</option>`;
+      sel.disabled = true;
+    }
+
+    // Reset field input
+    document.getElementById('pClientCode').value  = '';
+    document.getElementById('pNamaNasabah').value = '';
+    document.getElementById('pNominal').value     = '';
+    document.getElementById('pClientStatus').textContent = '';
+    document.getElementById('pClientStatus').style.color = 'var(--gray)';
+
+    document.getElementById('pesanModal').classList.add('open');
+  }
+
+  function closePesanModal() {
+    document.getElementById('pesanModal').classList.remove('open');
+    pesanItem = null;
+  }
+
+  // Auto-lookup nama nasabah dari client code
+  function onPesanClientCode(input) {
+    const val = input.value.trim().toUpperCase();
+    const statusEl = document.getElementById('pClientStatus');
+    const namaEl   = document.getElementById('pNamaNasabah');
+    namaEl.value = '';
+
+    clearTimeout(_pesanCcDebounce);
+    if (!val) { statusEl.textContent = ''; return; }
+
+    statusEl.style.color = 'var(--gray)';
+    statusEl.textContent = 'Mencari nasabah...';
+
+    _pesanCcDebounce = setTimeout(async () => {
+      try {
+        const { data, error } = await window._supabase
+          .from('customers')
+          .select('client_id, client_name')
+          .ilike('client_id', val)
+          .limit(1);
+        if (error) throw error;
+        if (data && data.length > 0) {
+          namaEl.value = data[0].client_name || '';
+          statusEl.style.color = '#1a9c5b';
+          statusEl.textContent = '✓ Nasabah ditemukan';
+        } else {
+          statusEl.style.color = '#d9534f';
+          statusEl.textContent = 'Nasabah tidak ditemukan — isi nama manual jika perlu';
+          namaEl.removeAttribute('readonly');
+          namaEl.style.background = '#fff';
+        }
+      } catch (e) {
+        statusEl.style.color = '#d9534f';
+        statusEl.textContent = 'Gagal mencari nasabah';
+      }
+    }, 400);
+  }
+
+  function submitPesan() {
+    if (!pesanItem) return;
+
+    const seri        = document.getElementById('pSeri').value.trim();
+    const clientCode  = document.getElementById('pClientCode').value.trim().toUpperCase();
+    const namaNasabah = document.getElementById('pNamaNasabah').value.trim();
+    const nominalNum  = parseThousand(document.getElementById('pNominal').value);
+
+    if (!seri)        { showToast('Pilih seri obligasi', 'error'); return; }
+    if (!clientCode)  { showToast('Client Code wajib diisi', 'error'); return; }
+    if (!namaNasabah) { showToast('Nama nasabah wajib diisi', 'error'); return; }
+    if (!nominalNum)  { showToast('Nominal wajib diisi', 'error'); return; }
+
+    const nominalStr = fmtRp(nominalNum);
+
+    const pesan =
+`Halo,
+
+Saya mau pesan IPO ${pesanItem.nama || '—'} ${seri} untuk Nasabah ${namaNasabah} ${clientCode} sebesar ${nominalStr}.
+
+Terimakasih.`;
+
+    const url = 'https://wa.me/' + WA_PESAN_NUMBER + '?text=' + encodeURIComponent(pesan);
+    window.open(url, '_blank');
+    closePesanModal();
+    showToast('Membuka WhatsApp...', 'success');
   }
 
   // ── DELETE ────────────────────────────────────────────────────────────────
@@ -629,6 +982,7 @@
   // Close modal on overlay click
   document.addEventListener('click', e => {
     if (e.target.id === 'ipoModal') closeModal();
+    if (e.target.id === 'pesanModal') closePesanModal();
   });
 </script>
 
