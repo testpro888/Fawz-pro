@@ -321,7 +321,7 @@
         <label>Seri Obligasi</label>
         <div class="seri-list-head">
           <span>Seri</span>
-          <span>Kupon (%)</span>
+          <span>Kupon (mis. 9%-9.5%)</span>
           <span>Tenor (Thn)</span>
           <span></span>
         </div>
@@ -485,7 +485,15 @@
   }
 
   function fmtKupon(k) {
-    return (k != null && k !== '' && !isNaN(Number(k))) ? Number(k).toFixed(3) + '%' : '—';
+    if (k == null || k === '') return '—';
+    // Data lama: angka murni → tampil 3 desimal + %
+    if (!isNaN(Number(k)) && typeof k !== 'string') return Number(k).toFixed(3) + '%';
+    const str = String(k).trim();
+    if (!str) return '—';
+    // Angka murni dalam bentuk string (mis. "9") → tambahkan %
+    if (!isNaN(Number(str))) return Number(str).toFixed(3) + '%';
+    // Range / teks bebas (mis. "9%-9.5%") → pastikan diakhiri %
+    return /%\s*$/.test(str) ? str : str + '%';
   }
 
   // Format input angka dengan titik ribuan saat diketik (mis. 5000000 → 5.000.000)
@@ -514,7 +522,7 @@
     return `
       <div class="seri-row">
         <input class="form-input seri-nama" placeholder="cth. Seri A" value="${esc(seri)}"/>
-        <input class="form-input seri-kupon" type="number" step="0.001" placeholder="0.000" value="${kupon != null && kupon !== '' ? esc(kupon) : ''}"/>
+        <input class="form-input seri-kupon" type="text" placeholder="cth. 9%-9.5%" value="${kupon != null && kupon !== '' ? esc(kupon) : ''}"/>
         <input class="form-input seri-tenor" type="number" step="0.5" placeholder="cth. 5" value="${tenor != null && tenor !== '' ? esc(tenor) : ''}"/>
         <button type="button" class="btn-remove-seri" title="Hapus seri" onclick="removeSeriRow(this)">×</button>
       </div>`;
@@ -563,7 +571,7 @@
       const seri = r.querySelector('.seri-nama').value.trim();
       const kv   = r.querySelector('.seri-kupon').value;
       const tv   = r.querySelector('.seri-tenor').value;
-      const kupon = kv === '' || isNaN(parseFloat(kv)) ? null : parseFloat(kv);
+      const kupon = kv.trim() === '' ? null : kv.trim();   // simpan string (dukung range mis. "9%-9.5%")
       const tenor = tv === '' || isNaN(parseFloat(tv)) ? null : parseFloat(tv);
       if (seri) out.push({ seri, kupon, tenor });
     });
