@@ -120,6 +120,18 @@
     .form-input.auto-calc { background:#fffbf0; color:var(--navy); font-weight:600; border-color:#ffd580; }
     select.form-input { cursor:pointer; }
 
+    /* ── Client ID autocomplete dropdown ── */
+    .autocomplete-wrap { position:relative; }
+    .ac-dropdown { position:absolute; top:calc(100% + 4px); left:0; right:0; background:#fff; border:1.5px solid var(--border); border-radius:10px; box-shadow:0 12px 30px rgba(13,13,43,.15); max-height:240px; overflow-y:auto; z-index:50; display:none; }
+    .ac-dropdown.open { display:block; }
+    .ac-item { padding:9px 12px; cursor:pointer; border-bottom:1px solid #f5f5fa; transition:background .12s; }
+    .ac-item:last-child { border-bottom:none; }
+    .ac-item:hover, .ac-item.active { background:#fffbf3; }
+    .ac-item .ac-name { font-size:.85rem; font-weight:600; color:var(--navy); }
+    .ac-item .ac-meta { font-size:.72rem; color:var(--gray); margin-top:1px; }
+    .ac-item .ac-meta .ac-cid { font-family:'Courier New',monospace; color:var(--gold); font-weight:700; }
+    .ac-empty { padding:12px; text-align:center; font-size:.8rem; color:#bbb; }
+
     .calc-summary { background:linear-gradient(135deg,#f8f4ff,#fff8f0); border:1.5px solid #e8d5ff; border-radius:12px; padding:16px 20px; margin-top:16px; }
     .calc-row { display:flex; justify-content:space-between; align-items:center; padding:4px 0; font-size:.82rem; border-bottom:1px solid rgba(0,0,0,.04); }
     .calc-row:last-child { border-bottom:none; font-weight:700; font-size:.9rem; color:var(--navy); padding-top:8px; margin-top:4px; border-top:2px solid #e0d0ff; }
@@ -328,7 +340,10 @@
       </div>
       <div class="form-group">
         <label class="form-label">Client ID <span class="req">*</span></label>
-        <input type="text" class="form-input" id="f-client-id" placeholder="Contoh: MR028N" oninput="lookupCustomer(this.value)"/>
+        <div class="autocomplete-wrap">
+          <input type="text" class="form-input" id="f-client-id" placeholder="Ketik Client ID atau nama nasabah…" autocomplete="off" oninput="lookupCustomer(this.value)" onkeydown="acKeydown(event)"/>
+          <div class="ac-dropdown" id="ac-dropdown"></div>
+        </div>
       </div>
       <div class="form-group full">
         <label class="form-label">Nama Nasabah <span style="font-size:.65rem;color:#aaa;">(otomatis dari Client ID)</span></label>
@@ -1002,6 +1017,7 @@
     document.getElementById('f-tanggal').value = new Date().toISOString().slice(0,10);
     resetCalcSummary();
     hideAddAlert();
+    closeAcDropdown();
     document.getElementById('btnSaveTx').disabled = false;
     document.getElementById('btnSaveTx').textContent = '💾 Simpan Transaksi';
     document.getElementById('addModal').classList.add('open');
@@ -1010,46 +1026,105 @@
   function closeAddModal() { document.getElementById('addModal').classList.remove('open'); }
 
   let _lookupTimer = null;
-  function lookupCustomer(clientId) {
+  let _acResults = [];     // hasil kandidat saat ini
+  let _acActive  = -1;     // index item yang di-highlight (keyboard)
+
+  function lookupCustomer(term) {
     clearTimeout(_lookupTimer);
-    if (!clientId || clientId.length < 3) { document.getElementById('f-nama').value = ''; document.getElementById('f-sales').value = ''; return; }
+    const namaEl  = document.getElementById('f-nama');
+    const salesEl = document.getElementById('f-sales');
+    const q = (term || '').trim();
+
+    // Ketikan pendek: reset & tutup dropdown
+    if (q.length < 2) { namaEl.value = ''; salesEl.value = ''; closeAcDropdown(); return; }
+
     _lookupTimer = setTimeout(async () => {
-      const namaEl  = document.getElementById('f-nama');
-      const salesEl = document.getElementById('f-sales');
-      const cid = clientId.trim();
       try {
-        // Cari client_id (case-insensitive). Ambil beberapa kandidat: exact match
-        // dan partial match (mengandung teks yang diketik) agar nama tetap terisi
-        // walau Client ID belum diketik lengkap.
+        // Cari berdasarkan Client ID ATAU nama nasabah (case-insensitive, partial).
+        const like = '%' + q + '%';
         const { data, error } = await getDb().from('customers')
           .select('client_id, client_name, sales_person_name')
-          .ilike('client_id', '%' + cid + '%')
-          .limit(10);
+          .or(`client_id.ilike.${like},client_name.ilike.${like}`)
+          .order('client_name', { ascending: true })
+          .limit(15);
 
-        if (error) {
-          console.error('lookupCustomer error:', error);
-          namaEl.value  = '';
-          salesEl.value = '';
-          return;
-        }
-
-        if (data && data.length > 0) {
-          // Utamakan yang exact match (case-insensitive), jika tidak ada pakai hasil pertama.
-          const exact = data.find(d => (d.client_id || '').toLowerCase() === cid.toLowerCase());
-          const pick  = exact || data[0];
-          namaEl.value  = pick.client_name || '';
-          salesEl.value = pick.sales_person_name || '';
-        } else {
-          namaEl.value  = '';
-          salesEl.value = '';
-        }
+        if (error) { console.error('lookupCustomer error:', error); renderAcDropdown([]); return; }
+        renderAcDropdown(data || []);
       } catch(e) {
         console.error('lookupCustomer exception:', e);
-        namaEl.value  = '';
-        salesEl.value = '';
+        renderAcDropdown([]);
       }
-    }, 400);
+    }, 300);
   }
+
+  function renderAcDropdown(rows) {
+    _acResults = rows;
+    _acActive  = -1;
+    const dd = document.getElementById('ac-dropdown');
+    if (!dd) return;
+
+    if (!rows.length) {
+      dd.innerHTML = '<div class="ac-empty">Tidak ada nasabah cocok</div>';
+      dd.classList.add('open');
+      return;
+    }
+
+    dd.innerHTML = rows.map((r, i) => `
+      <div class="ac-item" data-idx="${i}" onclick="selectCustomer(${i})">
+        <div class="ac-name">${esc(r.client_name || '—')}</div>
+        <div class="ac-meta"><span class="ac-cid">${esc(r.client_id || '—')}</span>${r.sales_person_name ? ' · Sales: ' + esc(r.sales_person_name) : ''}</div>
+      </div>
+    `).join('');
+    dd.classList.add('open');
+  }
+
+  function selectCustomer(idx) {
+    const r = _acResults[idx];
+    if (!r) return;
+    document.getElementById('f-client-id').value = r.client_id || '';
+    document.getElementById('f-nama').value      = r.client_name || '';
+    document.getElementById('f-sales').value     = r.sales_person_name || '';
+    closeAcDropdown();
+  }
+
+  function closeAcDropdown() {
+    const dd = document.getElementById('ac-dropdown');
+    if (dd) { dd.classList.remove('open'); dd.innerHTML = ''; }
+    _acResults = [];
+    _acActive  = -1;
+  }
+
+  function acKeydown(e) {
+    const dd = document.getElementById('ac-dropdown');
+    if (!dd || !dd.classList.contains('open') || !_acResults.length) return;
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      _acActive = Math.min(_acActive + 1, _acResults.length - 1);
+      highlightAcItem();
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      _acActive = Math.max(_acActive - 1, 0);
+      highlightAcItem();
+    } else if (e.key === 'Enter') {
+      if (_acActive >= 0) { e.preventDefault(); selectCustomer(_acActive); }
+    } else if (e.key === 'Escape') {
+      closeAcDropdown();
+    }
+  }
+
+  function highlightAcItem() {
+    const items = document.querySelectorAll('#ac-dropdown .ac-item');
+    items.forEach((el, i) => el.classList.toggle('active', i === _acActive));
+    const active = items[_acActive];
+    if (active) active.scrollIntoView({ block: 'nearest' });
+  }
+
+  // Tutup dropdown saat klik di luar area Client ID
+  document.addEventListener('click', (e) => {
+    const wrap = e.target.closest('.autocomplete-wrap');
+    if (!wrap) closeAcDropdown();
+  });
 
   function rp(n) {
     if (isNaN(n) || n === null) return '—';
