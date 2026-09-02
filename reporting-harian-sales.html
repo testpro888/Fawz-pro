@@ -142,7 +142,7 @@
   <div class="page-header">
     <div>
       <div class="page-title">Reporting Harian Sales</div>
-      <div class="page-subtitle">Volume & Fee per Sales berdasarkan bulan dari tanggal yang dipilih</div>
+      <div class="page-subtitle">Volume & Fee per Sales dan Referral Agent berdasarkan bulan dari tanggal yang dipilih</div>
       <div class="title-underline"></div>
     </div>
   </div>
@@ -371,6 +371,23 @@
           '<button class="copy-btn" id="copyRecapBtn" onclick="copyRecap()">Copy Recap</button>' +
         '</div>';
 
+      // ── Fetch referral agents (Profit Ambassador) ────────────────────
+      // Transaksi mereka masuk ke saham_transaksi.sales_name via nama ATAU agent_code
+      var referralAgents = [];
+      try {
+        const { data: agentData, error: agentErr } = await _sb
+          .from('referral_agents')
+          .select('nama, client_name, agent_code')
+          .order('nama', { ascending: true });
+        if (agentErr) throw agentErr;
+        referralAgents = agentData || [];
+      } catch (agErr) {
+        console.warn('Gagal memuat referral agents:', agErr.message);
+      }
+
+      // Set nama/kode sales tetap (lowercase) agar transaksi referral tidak dobel-hitung
+      const fixedSalesSet = new Set(SALES_LIST.map(function(s) { return s.toLowerCase(); }));
+
       // ── Aggregate per sales for harian report ─────────────────────────
       const salesMap = {};
       for (var i = 0; i < rows.length; i++) {
@@ -383,6 +400,27 @@
         salesMap[canonical].volume += Number(r.volume) || 0;
         salesMap[canonical].fee    += Number(r.fee)    || 0;
       }
+
+      // ── Aggregate per referral agent ──────────────────────────────────
+      // Cocokkan sales_name dengan nama, client_name, atau agent_code agen
+      const referralRows = referralAgents.map(function(ag) {
+        const nama = (ag.nama || ag.client_name || ag.agent_code || '').trim();
+        const keys = [ag.nama, ag.client_name, ag.agent_code]
+          .filter(Boolean)
+          .map(function(v) { return v.toLowerCase().trim(); });
+        var volume = 0, fee = 0;
+        for (var j = 0; j < rows.length; j++) {
+          const rn = (rows[j].sales_name || '').toLowerCase().trim();
+          if (keys.indexOf(rn) !== -1) {
+            volume += Number(rows[j].volume) || 0;
+            fee    += Number(rows[j].fee)    || 0;
+          }
+        }
+        return { nama: nama, kode: (ag.agent_code || '').trim(), volume: volume, fee: fee };
+      }).filter(function(a) {
+        // Buang agen tanpa identitas, atau yang namanya sama dengan sales tetap (hindari dobel)
+        return a.nama && !fixedSalesSet.has(a.nama.toLowerCase());
+      });
 
       // Build text report — judul pakai tanggal yang dipilih
       const lines = [];
@@ -399,6 +437,19 @@
         lines.push('Fee : '    + formatRp(fee));
         lines.push('');
       });
+
+      // ── Referral Agent section ────────────────────────────────────────
+      if (referralRows.length > 0) {
+        lines.push('=== Referral Agent ===');
+        lines.push('');
+        referralRows.forEach(function(ag, idx) {
+          const label = ag.kode ? ag.nama + ' (' + ag.kode + ')' : ag.nama;
+          lines.push((idx + 1) + '. ' + label);
+          lines.push('Volume : ' + formatRp(ag.volume));
+          lines.push('Fee : '    + formatRp(ag.fee));
+          lines.push('');
+        });
+      }
 
       const reportText = lines.join('\n').trimEnd();
 
