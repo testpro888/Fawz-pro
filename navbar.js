@@ -282,6 +282,8 @@ console.log('[Fawz navbar.js] v2.5.0 loaded');
 
       // Tools dropdown
       'logo.html'              : ['head_account', 'admin', 'treasury', 'head_sales'],
+      // Newsletter Editor — akses lebih lanjut dibatasi ke username 'bondsdealer' di bawah
+      'newsletter-editor.html' : ['head_account', 'admin', 'treasury', 'head_sales'],
     };
 
     const role = user.role;
@@ -336,6 +338,12 @@ console.log('[Fawz navbar.js] v2.5.0 loaded');
     if (username === 'husni') {
       document.querySelectorAll('.dropdown-item[href="logo.html"]').forEach(el => el.style.display = 'none');
       document.querySelectorAll('.mob-link[href="logo.html"]').forEach(el => el.style.display = 'none');
+    }
+
+    // Newsletter Editor hanya untuk user 'bondsdealer' — sembunyikan untuk semua user lain
+    if (username !== 'bondsdealer') {
+      document.querySelectorAll('.dropdown-item[href="newsletter-editor.html"]').forEach(el => el.style.display = 'none');
+      document.querySelectorAll('.mob-link[href="newsletter-editor.html"]').forEach(el => el.style.display = 'none');
     }
 
     // Active link — highlight menu sesuai halaman aktif
