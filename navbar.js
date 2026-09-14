@@ -284,6 +284,8 @@ console.log('[Fawz navbar.js] v2.5.0 loaded');
       'logo.html'              : ['head_account', 'admin', 'treasury', 'head_sales'],
       // Newsletter Editor — akses lebih lanjut dibatasi ke username 'bondsdealer' di bawah
       'newsletter-editor.html' : ['head_account', 'admin', 'treasury', 'head_sales'],
+      // Dealer Report — role 'admin' + head_account (username 'fawzheadaccount' dibatasi di bawah)
+      'dealer-report.html'     : ['admin', 'head_account'],
     };
 
     const role = user.role;
@@ -345,6 +347,32 @@ console.log('[Fawz navbar.js] v2.5.0 loaded');
       document.querySelectorAll('.dropdown-item[href="newsletter-editor.html"]').forEach(el => el.style.display = 'none');
       document.querySelectorAll('.mob-link[href="newsletter-editor.html"]').forEach(el => el.style.display = 'none');
     }
+
+    // Dealer Report — hanya role 'admin' ATAU username 'fawzheadaccount'
+    // (permission map sudah batasi ke admin + head_account; di sini persempit head_account → hanya fawzheadaccount)
+    if (role !== 'admin' && username !== 'fawzheadaccount') {
+      document.querySelectorAll('.dropdown-item[href="dealer-report.html"]').forEach(el => el.style.display = 'none');
+      document.querySelectorAll('.mob-link[href="dealer-report.html"]').forEach(el => el.style.display = 'none');
+    }
+
+    // Bersihkan lagi section/group yang jadi kosong setelah username exceptions di atas
+    document.querySelectorAll('.dropdown-section').forEach(section => {
+      const visibleItems = [...section.querySelectorAll('.dropdown-item')]
+        .filter(i => i.style.display !== 'none');
+      if (visibleItems.length === 0) section.style.display = 'none';
+    });
+    document.querySelectorAll('.nav-menu .nav-item[id]').forEach(item => {
+      const dd = item.querySelector('.dropdown');
+      if (!dd) return;
+      const visibleItems = [...dd.querySelectorAll('.dropdown-item')]
+        .filter(i => i.style.display !== 'none');
+      if (visibleItems.length === 0) item.style.display = 'none';
+    });
+    document.querySelectorAll('.drawer-group').forEach(group => {
+      const visibleLinks = [...group.querySelectorAll('.mob-link[href]')]
+        .filter(l => l.style.display !== 'none');
+      if (visibleLinks.length === 0) group.style.display = 'none';
+    });
 
     // Active link — highlight menu sesuai halaman aktif
     const currentFile = window.location.pathname.split('/').pop() || 'dashboard.html';
