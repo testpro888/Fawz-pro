@@ -1,0 +1,2419 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fixed Income Newsletter Editor</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+<!-- Supabase config + SDK singleton (window._supabase) -->
+<script src="config.js"></script>
+<!-- ── ACCESS GUARD: hanya user 'bondsdealer' yang boleh membuka halaman ini ── -->
+<script>
+(function () {
+  try {
+    var raw = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember');
+    if (!raw) { window.location.replace('login.html'); return; }
+    var u = JSON.parse(raw);
+    var uname = (u.username || u.name || '').toLowerCase().trim();
+    if (uname !== 'bondsdealer') {
+      alert('Akses ditolak: halaman ini hanya untuk user bondsdealer.');
+      window.location.replace('dashboard.html');
+    }
+  } catch (e) {
+    window.location.replace('login.html');
+  }
+})();
+</script>
+<style>
+  :root {
+    --navy: #0B1F3A;
+    --gold: #F5C800;
+    --gold-light: #FFD93D;
+    --accent: #E63946;
+    --green: #2D8C4E;
+    --red: #C0392B;
+    --gray-100: #F5F6F8;
+    --gray-200: #E8EAEE;
+    --gray-400: #9AA3B0;
+    --gray-600: #5A6475;
+    --gray-800: #2C3442;
+    --white: #FFFFFF;
+    --sidebar-w: 320px;
+    --a4-w: 794px;
+    --a4-h: 1123px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'IBM Plex Sans', sans-serif;
+    background: #1A1F2E;
+    color: var(--gray-800);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ─── TOP BAR ─── */
+  .topbar {
+    background: var(--navy);
+    border-bottom: 2px solid var(--gold);
+    padding: 0 24px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    flex-shrink: 0;
+  }
+  .topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .topbar-logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 18px;
+    font-weight: 900;
+    color: var(--gold);
+    letter-spacing: 1px;
+  }
+  .topbar-sub {
+    font-size: 11px;
+    color: var(--gray-400);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  .topbar-divider { width: 1px; height: 28px; background: rgba(255,255,255,0.15); }
+  .topbar-actions { display: flex; gap: 10px; align-items: center; }
+  .btn {
+    padding: 7px 18px;
+    border-radius: 4px;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: all 0.18s;
+  }
+  .btn-outline {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.25);
+    color: var(--gray-400);
+  }
+  .btn-outline:hover { border-color: var(--gold); color: var(--gold); }
+  .btn-primary {
+    background: var(--gold);
+    color: var(--navy);
+    font-weight: 600;
+  }
+  .btn-primary:hover { background: var(--gold-light); }
+  .btn-danger {
+    background: var(--accent);
+    color: white;
+  }
+
+  /* ─── LAYOUT ─── */
+  .workspace {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    height: calc(100vh - 56px);
+  }
+
+  /* ─── SIDEBAR ─── */
+  .sidebar {
+    width: var(--sidebar-w);
+    background: #12192B;
+    border-right: 1px solid rgba(255,255,255,0.07);
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+  }
+  .sidebar-inner {
+    overflow-y: auto;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  .sidebar-inner::-webkit-scrollbar { width: 4px; }
+  .sidebar-inner::-webkit-scrollbar-track { background: transparent; }
+  .sidebar-inner::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+  .sidebar-section {
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .sidebar-header {
+    padding: 14px 18px 10px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--gold);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    user-select: none;
+  }
+  .sidebar-header .arrow { transition: transform 0.2s; font-size: 12px; color: var(--gray-400); }
+  .sidebar-header.collapsed .arrow { transform: rotate(-90deg); }
+  .sidebar-body { padding: 4px 18px 16px; }
+  .sidebar-body.collapsed { display: none; }
+
+  .field-group { margin-bottom: 14px; }
+  .field-label {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--gray-400);
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .field-input {
+    width: 100%;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 4px;
+    padding: 7px 10px;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12px;
+    color: white;
+    transition: border-color 0.15s;
+  }
+  .field-input:focus { outline: none; border-color: var(--gold); background: rgba(200,150,30,0.06); }
+  .field-input::placeholder { color: rgba(255,255,255,0.2); }
+  textarea.field-input { resize: vertical; min-height: 70px; line-height: 1.5; }
+  select.field-input option { background: #12192B; color: white; }
+
+  .news-item-wrap {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 6px;
+    padding: 12px;
+    margin-bottom: 10px;
+  }
+  .news-item-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  .news-num {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--gold);
+    background: rgba(200,150,30,0.15);
+    padding: 2px 8px;
+    border-radius: 3px;
+  }
+  .news-size-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .news-size-row .field-group { flex: 1; margin-bottom: 0; }
+
+  .btn-sm {
+    padding: 4px 10px;
+    font-size: 11px;
+    border-radius: 3px;
+    cursor: pointer;
+    border: none;
+    font-family: 'IBM Plex Sans', sans-serif;
+  }
+  .btn-remove {
+    background: rgba(230,57,70,0.15);
+    color: var(--accent);
+    border: 1px solid rgba(230,57,70,0.25);
+  }
+  .btn-remove:hover { background: rgba(230,57,70,0.3); }
+  .btn-add {
+    width: 100%;
+    background: rgba(200,150,30,0.1);
+    border: 1px dashed rgba(200,150,30,0.3);
+    color: var(--gold);
+    padding: 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    font-family: 'IBM Plex Sans', sans-serif;
+    transition: all 0.15s;
+  }
+  .btn-add:hover { background: rgba(200,150,30,0.2); }
+
+  /* ─── CANVAS AREA ─── */
+  .canvas-area {
+    flex: 1;
+    overflow: auto;
+    background: #1A1F2E;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 32px 24px;
+  }
+  .canvas-area::-webkit-scrollbar { width: 6px; height: 6px; }
+  .canvas-area::-webkit-scrollbar-track { background: rgba(255,255,255,0.03); }
+  .canvas-area::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 3px; }
+
+  .zoom-controls {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    display: flex;
+    gap: 6px;
+    z-index: 50;
+  }
+  .zoom-btn {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: var(--navy);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: white;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+  }
+  .zoom-btn:hover { border-color: var(--gold); color: var(--gold); }
+  .zoom-label {
+    background: var(--navy);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: var(--gray-400);
+    font-size: 12px;
+    padding: 0 12px;
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+  }
+
+  /* ─── A4 NEWSLETTER ─── */
+  .a4-wrapper {
+    transform-origin: top center;
+    transition: transform 0.2s;
+  }
+
+  .a4 {
+    width: var(--a4-w);
+    min-height: var(--a4-h);
+    background: white;
+    box-shadow: 0 20px 80px rgba(0,0,0,0.6);
+    font-family: 'IBM Plex Sans', sans-serif;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Header */
+  .nl-header {
+    background: white;
+    padding: 12px 24px 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 3px solid var(--gold);
+  }
+  .nl-title-block {}
+  .nl-title {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 30px;
+    font-weight: 700;
+    color: var(--navy);
+    letter-spacing: -0.5px;
+    line-height: 1;
+  }
+  .nl-title span {
+    color: var(--gold);
+    font-weight: 300;
+  }
+  .nl-date-line {
+    font-size: 12px;
+    color: var(--gray-600);
+    margin-top: 3px;
+    letter-spacing: 0.5px;
+  }
+  .nl-logo-box {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+  }
+  /* SVG logo container */
+  .nl-logo-img { height: 44px; width: auto; display: block; }
+
+  /* Content area */
+  .nl-body {
+    display: flex;
+    flex: 1;
+    padding: 0;
+  }
+
+  /* Left column */
+  .nl-left {
+    flex: 1;
+    padding: 12px 18px 12px 24px;
+    border-right: 1px solid #E8D88A;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  /* Right column */
+  .nl-right {
+    width: 252px;
+    padding: 12px 16px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  /* Section headers */
+  .sec-header {
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--navy);
+    border-bottom: 2px solid var(--gold);
+    padding-bottom: 3px;
+    margin-bottom: 7px;
+  }
+
+  /* ── Unified section list (Global, Domestic, Forecast) ── */
+  .nl-items { list-style: none; display: flex; flex-direction: column; gap: 4px; }
+  .nl-items li {
+    font-size: 12px;
+    color: var(--gray-800);
+    line-height: 1.5;
+    position: relative;
+  }
+
+  /* bullet mode: numbered */
+  .nl-items.mode-numbered li { padding-left: 18px; }
+  .nl-items.mode-numbered li::before {
+    content: attr(data-num) '.';
+    position: absolute;
+    left: 0;
+    font-weight: 700;
+    color: var(--navy);
+    font-size: 12px;
+  }
+
+  /* bullet mode: dot */
+  .nl-items.mode-dot li { padding-left: 14px; }
+  .nl-items.mode-dot li::before {
+    content: '▪';
+    position: absolute;
+    left: 0;
+    color: var(--gold);
+    font-size: 11px;
+    top: 1px;
+  }
+
+  /* bullet mode: dash */
+  .nl-items.mode-dash li { padding-left: 14px; }
+  .nl-items.mode-dash li::before {
+    content: '—';
+    position: absolute;
+    left: 0;
+    color: var(--gray-400);
+    font-size: 11px;
+  }
+
+  /* bullet mode: none (no indent, no marker) */
+  .nl-items.mode-none li { padding-left: 0; }
+  .nl-items.mode-none li::before { content: none; }
+
+  /* forecast body text (plain paragraph, no list) */
+  .forecast-body-text {
+    font-size: 12px;
+    color: var(--gray-800);
+    line-height: 1.55;
+  }
+  .forecast-sublabel {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--green);
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .forecast-sublabel.color-green  { color: #2D8C4E; }
+  .forecast-sublabel.color-green .forecast-dot  { background: #2D8C4E; }
+  .forecast-sublabel.color-red    { color: #C0392B; }
+  .forecast-sublabel.color-red .forecast-dot    { background: #C0392B; }
+  .forecast-sublabel.color-black  { color: #1a1a1a; }
+  .forecast-sublabel.color-black .forecast-dot  { background: #1a1a1a; }
+  .forecast-sublabel.color-yellow { color: #C8961E; }
+  .forecast-sublabel.color-yellow .forecast-dot { background: #F5C800; }
+  .forecast-sublabel.color-navy   { color: #0B1F3A; }
+  .forecast-sublabel.color-navy .forecast-dot   { background: #0B1F3A; }
+  .forecast-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: currentColor;
+    flex-shrink: 0;
+  }
+
+  /* Yield movement table */
+  .yield-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 10.5px;
+  }
+  .yield-table th {
+    background: var(--gold);
+    color: var(--navy);
+    padding: 5px 7px;
+    text-align: right;
+    font-weight: 700;
+    font-size: 10px;
+    letter-spacing: 0.5px;
+  }
+  .yield-table th:first-child { text-align: left; }
+  .yield-table td {
+    padding: 4px 7px;
+    border-bottom: 1px solid var(--gray-200);
+    text-align: right;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+  }
+  .yield-table td:first-child { text-align: left; font-family: 'IBM Plex Sans', sans-serif; font-weight: 500; font-size: 10.5px; }
+  .yield-table tr:last-child td { border-bottom: none; }
+  .neg { color: var(--green); }
+  .pos { color: var(--red); }
+
+  /* Most active table */
+  .active-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 10px;
+  }
+  .active-table th {
+    background: var(--gold);
+    color: var(--navy);
+    padding: 5px 7px;
+    text-align: right;
+    font-weight: 700;
+    font-size: 10px;
+    letter-spacing: 0.5px;
+  }
+  .active-table th:first-child { text-align: left; }
+  .active-table td {
+    padding: 4px 7px;
+    border-bottom: 1px solid var(--gray-200);
+    text-align: right;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+  }
+  .active-table td:first-child { text-align: left; font-family: 'IBM Plex Sans', sans-serif; font-weight: 600; color: var(--navy); font-size: 10.5px; }
+  .active-table tr:last-child td { border-bottom: none; }
+
+  /* Bond card (right column) */
+  .bond-card {
+    border: 1px solid var(--gray-200);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 6px;
+  }
+  .bond-card-header {
+    background: var(--gold);
+    color: var(--navy);
+    padding: 6px 12px;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 1px;
+  }
+  .bond-card-body { padding: 8px 12px; }
+  .bond-row {
+    display: flex;
+    align-items: flex-start;
+    font-size: 11px;
+    padding: 2.5px 0;
+    border-bottom: 1px dashed var(--gray-200);
+  }
+  .bond-row:last-child { border-bottom: none; }
+  .bond-key { color: var(--gray-600); width: 90px; flex-shrink: 0; }
+  .bond-colon { color: var(--gold); width: 12px; flex-shrink: 0; text-align: center; }
+  .bond-val { color: var(--gray-800); font-weight: 600; flex: 1; text-align: right; }
+  .bond-comment-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--gold);
+    margin-top: 7px;
+    margin-bottom: 4px;
+  }
+  .bond-comment-text {
+    font-size: 10px;
+    color: var(--gray-600);
+    line-height: 1.5;
+    border-top: 1px dashed var(--gray-200);
+    padding-top: 5px;
+  }
+
+  /* Market Indicators table */
+  .mi-table-wrap {
+    margin-top: 8px;
+  }
+  .mi-table-title {
+    background: var(--navy);
+    color: var(--gold);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    text-align: center;
+    padding: 6px 10px;
+    border-radius: 3px 3px 0 0;
+  }
+  .mi-table {
+    width: 100%;
+    border-collapse: collapse;
+    border: 1px solid var(--gray-200);
+    border-top: none;
+  }
+  .mi-row {
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid var(--gray-200);
+    padding: 5px 10px;
+  }
+  .mi-row:last-child { border-bottom: none; }
+  .mi-row-left { flex: 1; }
+  .mi-row-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--navy);
+  }
+  .mi-row-source {
+    font-size: 9px;
+    font-style: italic;
+    color: var(--gray-400);
+    margin-top: 1px;
+  }
+  .mi-row-colon {
+    color: var(--gold);
+    font-weight: 700;
+    margin: 0 6px;
+    font-size: 11px;
+  }
+  .mi-row-val {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--navy);
+    font-family: 'IBM Plex Mono', monospace;
+    min-width: 60px;
+    text-align: right;
+  }
+
+  /* Bottom tables row */
+  .nl-bottom {
+    border-top: 1px solid #E8D88A;
+    padding: 10px 24px;
+    display: flex;
+    gap: 20px;
+  }
+  .nl-bottom > div { flex: 1; }
+
+  /* Disclaimer */
+  .nl-disclaimer {
+    border-top: 2px solid var(--gold);
+    padding: 7px 24px;
+    background: #FFFBEA;
+  }
+  .disclaimer-label {
+    font-size: 9.5px;
+    font-weight: 700;
+    color: var(--navy);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+  }
+  .disclaimer-text {
+    font-size: 9px;
+    color: var(--gray-600);
+    line-height: 1.5;
+  }
+
+  /* Section separators */
+  .nl-section { display: flex; flex-direction: column; }
+
+  /* ─── ANALYST OPINION ─── */
+  .analyst-body-text {
+    font-size: 12px;
+    color: var(--gray-800);
+    line-height: 1.55;
+  }
+  .analyst-sublabel {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--navy);
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .analyst-sublabel.color-green  { color: #2D8C4E; }
+  .analyst-sublabel.color-green .analyst-dot  { background: #2D8C4E; }
+  .analyst-sublabel.color-red    { color: #C0392B; }
+  .analyst-sublabel.color-red .analyst-dot    { background: #C0392B; }
+  .analyst-sublabel.color-black  { color: #1a1a1a; }
+  .analyst-sublabel.color-black .analyst-dot  { background: #1a1a1a; }
+  .analyst-sublabel.color-yellow { color: #C8961E; }
+  .analyst-sublabel.color-yellow .analyst-dot { background: #F5C800; }
+  .analyst-sublabel.color-navy   { color: #0B1F3A; }
+  .analyst-sublabel.color-navy .analyst-dot   { background: #0B1F3A; }
+  .analyst-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: currentColor;
+    flex-shrink: 0;
+  }
+
+  /* Global left border */
+  .global-bar {
+    display: flex;
+    gap: 0;
+  }
+  .global-stripe {
+    width: 4px;
+    background: var(--gold);
+    border-radius: 2px;
+    flex-shrink: 0;
+    margin-right: 10px;
+  }
+
+  /* number badge for global */
+  .badge-num {
+    display: inline-block;
+    background: var(--navy);
+    color: white;
+    font-size: 8px;
+    font-weight: 700;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 14px;
+    margin-right: 5px;
+    flex-shrink: 0;
+  }
+
+  /* bullet toggle row */
+  .bullet-toggle-row { display: flex; gap: 5px; flex-wrap: wrap; }
+  .bt-btn {
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-family: 'IBM Plex Sans', sans-serif;
+    cursor: pointer;
+    border: 1px solid rgba(255,255,255,0.12);
+    background: rgba(255,255,255,0.04);
+    color: var(--gray-400);
+    transition: all 0.15s;
+  }
+  .bt-btn.active {
+    background: rgba(245,200,0,0.15);
+    border-color: var(--gold);
+    color: var(--gold);
+    font-weight: 600;
+  }
+  .bt-btn:hover:not(.active) { border-color: rgba(255,255,255,0.25); color: white; }
+
+  /* color pill row */
+  .color-pill-row { display: flex; gap: 6px; flex-wrap: wrap; }
+  .color-pill {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 3px solid transparent;
+    transition: all 0.15s;
+    position: relative;
+  }
+  .color-pill.active { border-color: white; box-shadow: 0 0 0 2px rgba(255,255,255,0.4); }
+  .color-pill:hover { transform: scale(1.15); }
+  .color-pill[data-color="green"]  { background: #2D8C4E; }
+  .color-pill[data-color="red"]    { background: #C0392B; }
+  .color-pill[data-color="black"]  { background: #1a1a1a; }
+  .color-pill[data-color="yellow"] { background: #F5C800; }
+  .color-pill[data-color="navy"]   { background: #0B1F3A; }
+  [data-editable]:hover {
+    outline: 1.5px dashed rgba(200,150,30,0.4);
+    border-radius: 2px;
+    cursor: pointer;
+  }
+
+  /* ─── PAGE 2: WATCHLIST ─── */
+  .p2-header {
+    padding: 16px 36px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 3px solid var(--gold);
+  }
+  .p2-title {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--navy);
+    letter-spacing: -0.3px;
+  }
+  .p2-period-bar {
+    background: var(--navy);
+    color: white;
+    padding: 7px 36px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+  .p2-period-label { color: var(--gold); }
+  .p2-period-val   { color: white; }
+  .p2-body {
+    flex: 1;
+    padding: 0 0 8px;
+  }
+
+  /* event row */
+  .wl-row {
+    display: flex;
+    align-items: stretch;
+    min-height: 56px;
+    border-bottom: 1px solid #E8D88A;
+    font-size: 11px;
+  }
+  .wl-row.stripe-light { background: #EEF4FB; }
+  .wl-row.stripe-white { background: #FFFFFF; }
+
+  .wl-date-col {
+    width: 72px;
+    flex-shrink: 0;
+    padding: 10px 6px 10px 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-right: 1px solid #E8D88A;
+    line-height: 1.35;
+    text-align: center;
+  }
+  .wl-date-day  { font-size: 11px; font-weight: 600; color: var(--navy); }
+  .wl-date-name { font-size: 10px; color: var(--gray-600); }
+
+  .wl-country-col {
+    width: 76px;
+    flex-shrink: 0;
+    padding: 10px 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 3px;
+    border-right: 1px solid #E8D88A;
+  }
+  .wl-flag-img {
+    width: 28px;
+    height: 20px;
+    border-radius: 2px;
+    overflow: hidden;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .wl-flag-img svg { width: 28px; height: 20px; }
+  .wl-country-code {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--navy);
+    letter-spacing: 0.5px;
+  }
+
+  .wl-content-col {
+    flex: 1;
+    padding: 10px 14px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    gap: 3px;
+  }
+  .wl-headline {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--navy);
+    line-height: 1.35;
+  }
+  .wl-desc {
+    font-size: 9px;
+    color: #3a4050;
+    line-height: 1.5;
+  }
+
+  .wl-impact-col {
+    width: 62px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 10px 8px 10px 4px;
+  }
+  .wl-badge {
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.8px;
+    padding: 3px 7px;
+    border-radius: 3px;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .wl-badge.high   { background: #E63946; color: white; }
+  .wl-badge.medium { background: var(--gold); color: var(--navy); }
+  .wl-badge.low    { background: #2D8C4E; color: white; }
+
+  /* sidebar event wrap */
+  .wl-event-wrap {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 6px;
+    padding: 12px;
+    margin-bottom: 10px;
+  }
+  .wl-event-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .wl-impact-select {
+    display: flex;
+    gap: 4px;
+  }
+  .wl-impact-btn {
+    padding: 3px 8px;
+    border-radius: 3px;
+    font-size: 10px;
+    font-weight: 700;
+    cursor: pointer;
+    border: 1px solid transparent;
+    font-family: 'IBM Plex Sans', sans-serif;
+    opacity: 0.4;
+    transition: all 0.15s;
+  }
+  .wl-impact-btn.sel { opacity: 1; }
+  .wl-impact-btn.high   { background: rgba(230,57,70,0.2);  color: #E63946; border-color: #E63946; }
+  .wl-impact-btn.medium { background: rgba(245,200,0,0.2);  color: var(--gold); border-color: var(--gold); }
+  .wl-impact-btn.low    { background: rgba(45,140,78,0.2);  color: #2D8C4E; border-color: #2D8C4E; }
+  /* ─── PAGE 3: DISCLAIMER ─── */
+  .p3-header {
+    padding: 16px 36px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 3px solid var(--gold);
+  }
+  .p3-title {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--navy);
+    letter-spacing: -0.3px;
+  }
+  .p3-body {
+    flex: 1;
+    padding: 24px 36px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .p3-disclaimer-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--navy);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    border-bottom: 2px solid var(--gold);
+    padding-bottom: 6px;
+    margin-bottom: 2px;
+  }
+  .p3-disclaimer-text {
+    font-size: 10.5px;
+    color: var(--gray-800);
+    line-height: 1.75;
+    text-align: justify;
+  }
+
+  @media print {
+    @page {
+      size: A4;
+      margin: 0;
+    }
+
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+
+    body { background: white; margin: 0; padding: 0; }
+    .topbar, .sidebar, .zoom-controls { display: none !important; }
+
+    .workspace {
+      height: auto !important;
+      overflow: visible !important;
+      display: block !important;
+    }
+
+    .canvas-area {
+      padding: 0 !important;
+      margin: 0 !important;
+      background: white !important;
+      overflow: visible !important;
+      display: block !important;
+      width: 100% !important;
+    }
+
+    .a4-wrapper {
+      transform: none !important;
+      width: 100% !important;
+    }
+
+    .a4 {
+      box-shadow: none !important;
+      width: 210mm !important;
+      min-height: 297mm !important;
+      max-height: 297mm !important;
+      overflow: hidden !important;
+      page-break-after: always !important;
+      break-after: page !important;
+      margin: 0 !important;
+      display: flex !important;
+      flex-direction: column !important;
+    }
+
+    .a4:last-child {
+      page-break-after: avoid !important;
+      break-after: avoid !important;
+    }
+
+    .wl-row, .yield-table tr, .active-table tr {
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
+    }
+
+    .nl-bottom {
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
+    }
+  }
+
+  /* Range input */
+  input[type="range"] {
+    -webkit-appearance: none;
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(255,255,255,0.1);
+    cursor: pointer;
+    width: 100%;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--gold);
+  }
+
+  /* Tab */
+  .tabs { display: flex; border-bottom: 1px solid rgba(255,255,255,0.08); }
+  .tab {
+    padding: 10px 16px;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--gray-400);
+    cursor: pointer;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid transparent;
+    transition: all 0.15s;
+  }
+  .tab.active { color: var(--gold); border-bottom-color: var(--gold); }
+  .tab-panels > div { display: none; }
+  .tab-panels > div.active { display: block; }
+
+  .right-col-reorder { display: flex; flex-direction: column; gap: 8px; }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="topbar-logo">FAWZ</div>
+    <div class="topbar-divider"></div>
+    <div class="topbar-sub">Newsletter Editor</div>
+  </div>
+  <div class="topbar-actions">
+    <button class="btn btn-outline" onclick="location.href='dashboard.html'">← Dashboard</button>
+    <button class="btn btn-outline" onclick="resetAll()">↺ Reset</button>
+    <button class="btn btn-outline" onclick="printClean()">⎙ Print / PDF</button>
+    <span id="save-status" style="font-size:11px;color:var(--gray-400);"></span>
+    <button class="btn btn-primary" onclick="autoSave()">☁ Simpan</button>
+  </div>
+</div>
+
+<div class="workspace">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-inner">
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('general')">Umum</div>
+      <div class="tab" onclick="switchTab('news')">Berita</div>
+      <div class="tab" onclick="switchTab('bonds')">Obligasi</div>
+      <div class="tab" onclick="switchTab('tables')">Tabel</div>
+      <div class="tab" onclick="switchTab('watchlist')">Watchlist</div>
+    </div>
+
+    <div class="tab-panels">
+      <!-- GENERAL TAB -->
+      <div class="active" id="tab-general">
+        <div class="sidebar-section">
+          <div class="sidebar-header" onclick="toggleSection(this)">Informasi Dasar <span class="arrow">▾</span></div>
+          <div class="sidebar-body">
+            <div class="field-group">
+              <div class="field-label">Tanggal Edisi</div>
+              <input type="date" class="field-input" id="f-date" value="2026-04-06" oninput="updateDate()">
+            </div>
+          </div>
+        </div>
+        <div class="sidebar-section">
+          <div class="sidebar-header" onclick="toggleSection(this)">Disclaimer <span class="arrow">▾</span></div>
+          <div class="sidebar-body">
+            <div class="field-group">
+              <textarea class="field-input" id="f-disclaimer" rows="4" oninput="sync('f-disclaimer','nl-disclaimer-text')"></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- NEWS TAB -->
+      <div id="tab-news">
+        <div class="sidebar-section">
+          <div class="sidebar-header" onclick="toggleSection(this)">Global News <span class="arrow">▾</span></div>
+          <div class="sidebar-body">
+            <div class="field-group">
+              <div class="field-label">Format Poin</div>
+              <div class="bullet-toggle-row" id="bt-global"></div>
+            </div>
+            <div id="global-news-wrap"></div>
+            <button class="btn-add" onclick="addNewsItem('global')">+ Tambah Berita Global</button>
+          </div>
+        </div>
+        <div class="sidebar-section">
+          <div class="sidebar-header" onclick="toggleSection(this)">Domestic News <span class="arrow">▾</span></div>
+          <div class="sidebar-body">
+            <div class="field-group">
+              <div class="field-label">Format Poin</div>
+              <div class="bullet-toggle-row" id="bt-domestic"></div>
+            </div>
+            <div id="domestic-news-wrap"></div>
+            <button class="btn-add" onclick="addNewsItem('domestic')">+ Tambah Berita Domestic</button>
+          </div>
+        </div>
+        <div class="sidebar-section">
+          <div class="sidebar-header" onclick="toggleSection(this)">Market Forecast <span class="arrow">▾</span></div>
+          <div class="sidebar-body">
+            <div class="field-group">
+              <div class="field-label">Format Poin</div>
+              <div class="bullet-toggle-row" id="bt-forecast"></div>
+            </div>
+            <div class="field-group">
+              <div class="field-label">Label / Judul</div>
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:var(--gray-400);">
+                  <input type="checkbox" id="f-forecast-label-visible" onchange="toggleForecastLabel(this.checked)" style="accent-color:var(--gold);width:14px;height:14px;">
+                  Tampilkan label
+                </label>
+              </div>
+              <input type="text" class="field-input" id="f-forecast-label" oninput="syncForecastLabel()" placeholder="Opsional...">
+              <div style="margin-top:8px;">
+                <div class="field-label" style="margin-bottom:5px;">Warna Label</div>
+                <div class="color-pill-row" id="forecast-color-row"></div>
+              </div>
+            </div>
+            <div class="field-group">
+              <div class="field-label">Isi</div>
+              <textarea class="field-input" id="f-forecast-body" rows="6" oninput="syncForecastBody()"></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="sidebar-section">
+          <div class="sidebar-header" onclick="toggleSection(this)">Analyst Opinion <span class="arrow">▾</span></div>
+          <div class="sidebar-body">
+            <div class="field-group">
+              <div class="field-label">Format Poin</div>
+              <div class="bullet-toggle-row" id="bt-analyst"></div>
+            </div>
+            <div class="field-group">
+              <div class="field-label">Label / Judul</div>
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:var(--gray-400);">
+                  <input type="checkbox" id="f-analyst-label-visible" onchange="toggleAnalystLabel(this.checked)" style="accent-color:var(--gold);width:14px;height:14px;">
+                  Tampilkan label
+                </label>
+              </div>
+              <input type="text" class="field-input" id="f-analyst-label" oninput="syncAnalystLabel()" placeholder="Opsional...">
+              <div style="margin-top:8px;">
+                <div class="field-label" style="margin-bottom:5px;">Warna Label</div>
+                <div class="color-pill-row" id="analyst-color-row"></div>
+              </div>
+            </div>
+            <div class="field-group">
+              <div class="field-label">Isi</div>
+              <textarea class="field-input" id="f-analyst-body" rows="6" oninput="syncAnalystBody()"></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BONDS TAB -->
+      <div id="tab-bonds">
+        <div class="sidebar-section">
+          <div class="sidebar-header" onclick="toggleSection(this)">Rekomendasi Obligasi <span class="arrow">▾</span></div>
+          <div class="sidebar-body">
+            <div id="bonds-wrap"></div>
+            <button class="btn-add" onclick="addBond()">+ Tambah Obligasi</button>
+          </div>
+        </div>
+        <div class="sidebar-section">
+          <div class="sidebar-header" onclick="toggleSection(this)">Market Indicators <span class="arrow">▾</span></div>
+          <div class="sidebar-body">
+            <div id="mi-rows-wrap"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TABLES TAB -->
+      <div id="tab-tables">
+        <div class="sidebar-section">
+          <div class="sidebar-header" onclick="toggleSection(this)">Yield Movement <span class="arrow">▾</span></div>
+          <div class="sidebar-body">
+            <div id="yield-rows-wrap"></div>
+            <button class="btn-add" onclick="addYieldRow()">+ Tambah Baris</button>
+          </div>
+        </div>
+        <div class="sidebar-section">
+          <div class="sidebar-header" onclick="toggleSection(this)">Most Active Bonds <span class="arrow">▾</span></div>
+          <div class="sidebar-body">
+            <div id="active-rows-wrap"></div>
+            <button class="btn-add" onclick="addActiveRow()">+ Tambah Baris</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- WATCHLIST TAB -->
+      <div id="tab-watchlist">
+        <div class="sidebar-section">
+          <div class="sidebar-header" onclick="toggleSection(this)">Pengaturan Periode <span class="arrow">▾</span></div>
+          <div class="sidebar-body">
+            <div class="field-group">
+              <div class="field-label">Label Periode (e.g. "30 Mar – 2 Apr")</div>
+              <input type="text" class="field-input" id="f-wl-period" value="30 Mar – 2 Apr" oninput="syncWatchlist()">
+            </div>
+          </div>
+        </div>
+        <div class="sidebar-section">
+          <div class="sidebar-header" onclick="toggleSection(this)">Event / Berita <span class="arrow">▾</span></div>
+          <div class="sidebar-body">
+            <div id="wl-events-wrap"></div>
+            <button class="btn-add" onclick="addWlEvent()">+ Tambah Event</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    </div><!-- end .sidebar-inner -->
+  </div>
+
+  <!-- CANVAS -->
+  <div class="canvas-area">
+    <div class="a4-wrapper" id="a4-wrapper">
+      <div class="a4" id="newsletter">
+
+        <!-- NL HEADER -->
+        <div class="nl-header">
+          <div class="nl-title-block">
+            <div class="nl-title">FIXED INCOME <span>| DAILY UPDATE</span></div>
+            <div class="nl-date-line" id="nl-date-display">01 April 2026</div>
+          </div>
+          <div class="nl-logo-box">
+            <img src="assets/logo/fawz.png" class="nl-logo-img" alt="FAWZ Logo">
+          </div>
+        </div>
+
+        <!-- BODY -->
+        <div class="nl-body">
+
+          <!-- LEFT COLUMN -->
+          <div class="nl-left">
+
+            <!-- GLOBAL -->
+            <div class="nl-section">
+              <div class="sec-header">GLOBAL</div>
+              <ul class="nl-items" id="nl-global-list"></ul>
+            </div>
+
+            <!-- DOMESTIC -->
+            <div class="nl-section">
+              <div class="sec-header">DOMESTIC</div>
+              <ul class="nl-items" id="nl-domestic-list"></ul>
+            </div>
+
+            <!-- MARKET FORECAST -->
+            <div class="nl-section">
+              <div class="sec-header">MARKET FORECAST</div>
+              <div class="forecast-sublabel color-green" id="nl-forecast-sublabel">
+                <div class="forecast-dot"></div>
+                <span id="nl-forecast-label">Bond cenderung naik (bullish terbatas)</span>
+              </div>
+              <div id="nl-forecast-body-wrap">
+                <div class="forecast-body-text" id="nl-forecast-body"></div>
+              </div>
+            </div>
+
+            <!-- ANALYST OPINION -->
+            <div class="nl-section">
+              <div class="sec-header">ANALYST OPINION</div>
+              <div class="analyst-sublabel color-navy" id="nl-analyst-sublabel">
+                <div class="analyst-dot"></div>
+                <span id="nl-analyst-label"></span>
+              </div>
+              <div id="nl-analyst-body-wrap">
+                <div class="analyst-body-text" id="nl-analyst-body"></div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- RIGHT COLUMN -->
+          <div class="nl-right">
+            <div class="sec-header" style="font-size:11px;">Rekomendasi Obligasi</div>
+            <div id="nl-bonds-list"></div>
+
+            <!-- MARKET INDICATORS -->
+            <div class="mi-table-wrap">
+              <div class="mi-table-title">Market Indicators</div>
+              <div id="nl-mi-table"></div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- BOTTOM TABLES -->
+        <div class="nl-bottom">
+          <div>
+            <div class="sec-header" style="font-size:11px; margin-bottom:6px;">Yield Movement</div>
+            <table class="yield-table" id="nl-yield-table">
+              <thead>
+                <tr>
+                  <th></th>
+                  <th>Yield</th>
+                  <th>Day</th>
+                  <th>Month</th>
+                  <th>Year</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody id="nl-yield-body"></tbody>
+            </table>
+          </div>
+          <div>
+            <div class="sec-header" style="font-size:11px; margin-bottom:6px;">Most Active Bonds</div>
+            <table class="active-table" id="nl-active-table">
+              <thead>
+                <tr>
+                  <th>Code</th>
+                  <th>Coupon</th>
+                  <th>Mature</th>
+                  <th>Avg Price</th>
+                  <th>Total Vol (bio)</th>
+                </tr>
+              </thead>
+              <tbody id="nl-active-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- DISCLAIMER -->
+        <div class="nl-disclaimer">
+          <div class="disclaimer-label">Disclaimer</div>
+          <div class="disclaimer-text" id="nl-disclaimer-text">Dokumen ini bersifat konfidensial dan hanya ditujukan kepada penerima yang dimaksud. Seluruh informasi, harga, dan yield yang tercantum bersifat indikatif dan dapat berubah sewaktu-waktu sesuai kondisi pasar. Mohon konfirmasi ketersediaan dan harga terkini sebelum melakukan order.</div>
+        </div>
+
+      </div><!-- end .a4 -->
+
+      <!-- PAGE 2: BONDS MARKET WATCHLIST -->
+      <div class="a4" id="newsletter-p2" style="margin-top:32px;">
+
+        <!-- P2 HEADER -->
+        <div class="p2-header">
+          <div class="p2-title">BONDS MARKET WATCHLIST</div>
+          <img src="assets/logo/fawz.png" class="nl-logo-img" alt="FAWZ Logo">
+        </div>
+        <div class="p2-period-bar">
+          <span class="p2-period-label">THIS WEEK |</span>
+          <span class="p2-period-val" id="nl-wl-period">30 Mar – 2 Apr</span>
+        </div>
+
+        <!-- WATCHLIST TABLE -->
+        <div class="p2-body">
+          <div id="nl-wl-events"></div>
+        </div>
+
+      </div><!-- end .a4 page 2 -->
+
+      <!-- PAGE 3: DISCLAIMER -->
+      <div class="a4" id="newsletter-p3" style="margin-top:32px;">
+
+        <!-- P3 HEADER -->
+        <div class="p3-header">
+          <div class="p3-title">DISCLAIMER</div>
+          <img src="assets/logo/fawz.png" class="nl-logo-img" alt="FAWZ Logo">
+        </div>
+
+        <!-- P3 BODY -->
+        <div class="p3-body">
+          <div class="p3-disclaimer-title">Disclaimer</div>
+          <div class="p3-disclaimer-text">Laporan analisis ini diterbitkan oleh PT Fawz Finansial Indonesia dan disusun berdasarkan informasi, data, serta sumber yang dianggap dapat dipercaya pada saat laporan ini dibuat. Namun demikian, PT Fawz Finansial Indonesia tidak memberikan jaminan ataupun representasi, baik secara tersurat maupun tersirat, mengenai keakuratan, kelengkapan, ketepatan waktu, maupun keandalan dari informasi yang disajikan dalam laporan ini. Informasi, data, asumsi, maupun estimasi yang digunakan dalam laporan ini dapat berubah sewaktu-waktu tanpa pemberitahuan terlebih dahulu seiring dengan perubahan kondisi pasar, ekonomi, kebijakan pemerintah, maupun faktor lainnya yang relevan.</div>
+
+          <div class="p3-disclaimer-text">Seluruh opini, pandangan, estimasi, maupun proyeksi yang tercantum dalam laporan ini merupakan penilaian pada saat laporan ini disusun dan dapat berubah sewaktu-waktu tanpa kewajiban bagi PT Fawz Finansial Indonesia untuk memperbarui atau merevisi laporan ini. Pernyataan yang bersifat proyeksi atau forward-looking statement mengandung ketidakpastian serta berbagai asumsi yang dapat menyebabkan hasil aktual berbeda secara material dari yang diperkirakan.</div>
+
+          <div class="p3-disclaimer-text">Laporan ini disediakan semata-mata untuk tujuan informasi dan tidak dimaksudkan sebagai, serta tidak dapat ditafsirkan sebagai, penawaran, ajakan, rekomendasi, atau nasihat investasi untuk membeli, menjual, atau mempertahankan instrumen keuangan atau investasi apa pun, termasuk namun tidak terbatas pada saham, obligasi, surat utang, derivatif, maupun instrumen pasar keuangan lainnya. Informasi yang terkandung dalam laporan ini tidak mempertimbangkan tujuan investasi, kondisi keuangan, maupun kebutuhan khusus dari setiap individu atau pihak tertentu.</div>
+
+          <div class="p3-disclaimer-text">PT Fawz Finansial Indonesia menyatakan bahwa tidak memiliki kepentingan finansial maupun hubungan afiliasi dengan emiten atau instrumen keuangan yang dibahas dalam laporan ini. Informasi dan analisa yang disampaikan disusun secara independen berdasarkan sumber yang dianggap dapat dipercaya.</div>
+
+          <div class="p3-disclaimer-text">Investasi pada instrumen keuangan mengandung berbagai risiko yang terkandung di dalamnya, termasuk tidak terbatas pada risiko pasar, risiko likuiditas, risiko kredit, risiko suku bunga, risiko nilai tukar, serta risiko ekonomi, politik, dan geopolitik yang dapat mempengaruhi kinerja maupun nilai investasi. Nilai investasi dapat mengalami kenaikan maupun penurunan, dan investor berpotensi kehilangan sebagian atau seluruh modal yang diinvestasikan. Kinerja historis tidak mencerminkan dan tidak menjamin kinerja di masa yang akan datang.</div>
+
+          <div class="p3-disclaimer-text">Setiap keputusan investasi yang diambil berdasarkan informasi dalam laporan ini sepenuhnya merupakan tanggung jawab pembaca atau investor. Pembaca disarankan untuk melakukan analisis independen serta mempertimbangkan tujuan investasi, kondisi keuangan, dan profil risiko masing-masing sebelum membuat keputusan investasi, termasuk apabila diperlukan berkonsultasi dengan penasehat keuangan profesional.</div>
+
+          <div class="p3-disclaimer-text">Sejauh diperbolehkan oleh peraturan perundang-undangan yang berlaku, PT Fawz Finansial Indonesia, termasuk direksi, komisaris, karyawan, analis, maupun pihak afiliasi lainnya, tidak bertanggung jawab atas segala kerugian langsung, tidak langsung, insidental, konsekuensial, maupun kerugian lainnya yang timbul sebagai akibat dari penggunaan atau ketergantungan terhadap informasi yang terdapat dalam laporan ini.</div>
+
+          <div class="p3-disclaimer-text">Seluruh isi laporan ini merupakan milik PT Fawz Finansial Indonesia dan dilindungi oleh ketentuan hak cipta yang berlaku. Tanpa persetujuan tertulis sebelumnya dari PT Fawz Finansial Indonesia, laporan ini tidak boleh direproduksi, didistribusikan, dipublikasikan, atau digunakan kembali, baik sebagian maupun seluruhnya, untuk tujuan apa pun. Dengan menerima dan membaca laporan ini, pembaca dianggap telah memahami serta menyetujui seluruh ketentuan yang tercantum dalam disclaimer ini.</div>
+        </div>
+
+      </div><!-- end .a4 page 3 -->
+  </div><!-- end .a4-wrapper -->
+  </div><!-- end .canvas-area -->
+
+</div><!-- end .workspace -->
+
+<!-- ZOOM CONTROLS -->
+<div class="zoom-controls">
+  <button class="zoom-btn" onclick="changeZoom(-0.1)">−</button>
+  <div class="zoom-label" id="zoom-label">75%</div>
+  <button class="zoom-btn" onclick="changeZoom(0.1)">+</button>
+</div>
+
+
+
+<script>
+// ─────────────────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────────────────
+let state = {
+  date: '2026-04-06',
+  forecastLabel: 'Bond cenderung turun (bearish terbatas)',
+  forecastBody: 'Meski tensi geopolitik terkait Selat Hormuz meningkat setelah ultimatum Presiden Trump, indikasi dialog Iran–Oman sedikit meredakan risiko skenario ekstrem, sehingga tekanan kenaikan yield global berpotensi terbatas. Data NFP AS yang kuat menunjukkan ekonomi AS masih solid, mempersempit ruang penurunan suku bunga dan mendukung dolar, sehingga berpotensi menekan pasar obligasi emerging market, termasuk Indonesia. Di sisi domestik, belanja subsidi energi tambahan akan menjaga harga BBM tetap stabil, namun meningkatkan risiko fiskal. Dalam kondisi ini, obligasi tenor pendek–menengah tetap lebih menarik untuk menjaga stabilitas harga. Untuk investor konservatif, direkomendasikan akumulasi bertahap di tenor pendek–menengah, sedangkan investor agresif dapat mempertimbangkan masuk ke tenor panjang untuk potensi capital gain, tetap dengan strategi buy on weakness.',
+  disclaimer: 'Dokumen ini bersifat konfidensial dan hanya ditujukan kepada penerima yang dimaksud. Seluruh informasi, harga, dan yield yang tercantum bersifat indikatif dan dapat berubah sewaktu-waktu sesuai kondisi pasar. Mohon konfirmasi ketersediaan dan harga terkini sebelum melakukan order.',
+  globalBullet: 'dot',
+  domesticBullet: 'dot',
+  forecastBullet: 'none',
+  forecastLabelVisible: true,
+  forecastLabelColor: 'red',
+  analystLabel: '',
+  analystBody: '',
+  analystBullet: 'none',
+  analystLabelVisible: false,
+  analystLabelColor: 'navy',
+  wlPeriod: '6 - 10 Apr 2026',
+  wlEvents: [
+    { date:'06 Apr', day:'Senin',  country:'US',  headline:'ISM Service PMI', desc:'Previous: 56.1 | Consensus: 55/54 Sektor jasa adalah mesin utama ekonomi AS. Kalau naik artinya ekonomi masih kuat sehingga suku bunga berpotensi tetap tinggi lebih lama. Kalau turun berarti ekonomi mulai melambat yang dapat menurunkan tekanan inflasi.', impact:'high' },
+    { date:'07 Apr', day:'Selasa', country:'US',  headline:'Pidato Fed Goolsbee', desc:'Pidato pejabat The Fed memberi gambaran arah kebijakan ke depan, pantau apakah ia beri sinyal pemangkasan suku bunga atau tidak.', impact:'high' },
+    { date:'07 Apr', day:'Selasa', country:'US',  headline:'ADP Employment - Penambahan Tenaga Kerja Mingguan', desc:'Previous: +10K | Consensus: +10K Jika naik, menunjukkan pasar tenaga kerja masih kuat dan daya beli terjaga, sedangkan jika melemah mengindikasikan mulai ada perlambatan di pasar tenaga kerja, sehingga Fed punya alasan turunkan suku bunga lebih cepat.', impact:'high' },
+    { date:'08 Apr', day:'Rabu',   country:'US',  headline:'Pidato Fed Jefferson (Wakil Ketua Fed)', desc:'Wakil Ketua Fed adalah suara paling berpengaruh setelah Ketua. Kalau nadanya hawkish (tidak mau turunkan suku bunga), maka ini akan menekan harga obligasi', impact:'high' },
+    { date:'08 Apr', day:'Rabu',   country:'IDN', headline:'Cadangan Devisa', desc:'Previous: $151.9B | Consensus: $164B Data ini menunjukkan kemampuan BI menjaga stabilitas rupiah. Jika naik menandakan buffer terhadap gejolak global lebih besar.', impact:'medium' },
+    { date:'09 Apr', day:'Kamis',  country:'US',  headline:'FOMC Minutes - Notulen Rapat Fed', desc:'Catatan lengkap diskusi internal bank sentral AS bulan lalu. Disini kita bisa tahu, berapa anggota yang mau turunkan suku bunga, dan proyeksi kapan.', impact:'high' },
+    { date:'09 Apr', day:'Kamis',  country:'US',  headline:'Inflasi', desc:'Inflasi MoM/YoY Previous: 0.3%/2.8% | Consensus: 0.4%/2.8% Inti MoM/YoY Previous: 0.4%/3.1% | Consensus: 0.4%/3% Ini ukuran inflasi utama di AS, jika naik berarti harga-harga masih meningkat cepat dan tekanan inflasi tinggi. Sedangkan jika turun, menunjukkan inflasi mulai mereda dan kondisi harga lebih stabil', impact:'high' },
+    { date:'09 Apr', day:'Kamis',  country:'US',  headline:'GDP Growth Rate QoQ Final', desc:'Previous: 4.4% | Consensus: 0.7% GDP menunjukkan pertumbuhan ekonomi AS secara keseluruhan. Kalau direvisi naik berarti ekonomi lebih kuat dari perkiraan. Kalau direvisi turun, artinya ekonomi melemah dan ada resiko perlambatan.', impact:'medium' },
+    { date:'09 Apr', day:'Kamis',  country:'US',  headline:'Initial Jobless Claims - Klaim Tunjangan Pengangguran', desc:'Previous: 202K | Consensus: 200K Data ini menunjukkan jumlah orang yang kehilangan pekerjaan. Jika naik berarti pasar tenaga kerja melemah dan ekonomi melambat, sedangkan jika turun artinya kondisi tenaga kerja masih kuat.', impact:'high' },
+    { date:'10 Apr', day:'Jumat',  country:'JPN', headline:'PPI', desc:'MoM/YoY Previous: -0.1%/2% | Consensus: 1.1%/3.1% Data ini menunjukkan perubahan harga di tingkat produsen. Jika naik berarti biaya produksi meningkat, sedangkan jika turun berarti tekanan biaya mulai mereda.', impact:'medium' },
+    { date:'10 Apr', day:'Jumat',  country:'CHN', headline:'CPI & PPI', desc:'CPI MoM/YoY Previous: 1%/1.3% | Consensus: 0.2%/1.1% PPI YoY Previous: -0.9% | Consensus: 0.4% Kedua data ini menunjukkan kondisi harga dan permintaan di ekonomi. Jika keduanya naik, maka permintaan mulai pulih dan ekonomi menguat. Sedangkan jika tetap lemah, artinya tekanan deflasi masih ada dan permintaan belum pulih.', impact:'high' },
+    { date:'10 Apr', day:'Jumat',  country:'IDN', headline:'Keyakinan Konsumen Indonesia', desc:'Previous: 125.2 | Consensus: 120 Mengukur tingkat keyakinan masyarakat terhadap kondisi ekonomi. Jika naik berarti konsumsi dan ekonomi berpotensi menguat, sedangkan jika turun menunjukkan masyarakat lebih hati-hati dan menahan pengeluaran yang bisa menekan pertumbuhan.', impact:'medium' },
+    { date:'10 Apr', day:'Jumat',  country:'US',  headline:'CPI & Core CPI', desc:'CPI MoM/YoY Previous: 0.3%/2.4% | Consensus: 0.9%/3.4% Core CPI MoM/YoY Previous: 0.2%/2.5% | Consensus: 0.3%/2.7% Ini salah satu data paling penting minggu ini karena kenaikan harga energi global lagi mendorong inflasi naik. Jika data ini naik, maka suku bunga berpotensi tetap tinggi lebih lama, sedangkan jika data ini turun, ada ruang penurunan suku bunga ke depan.', impact:'high' },
+  ],
+  globalNews: [
+    'Harga minyak dunia kembali naik setelah Presiden Trump memberikan ultimatum kepada Iran untuk membuka Selat Hormuz sebelum Selasa atau menghadapi serangan terhadap fasilitas energinya',
+    'Iran mengindikasikan sedang berdialog dengan Oman untuk merancang kerangka pengaturan lalu lintas melalui Selat Hormuz',
+    'Data nonfarm payroll AS mencatat 178 ribu pekerja baru di Maret, naik dari bulan sebelumnya -133 ribu, yang merupakan kenaikan tertinggi sejak Desember 2024',
+  ],
+  domesticNews: [
+    'Rupiah dibuka melemah 0,006% ke Rp 17.003 per dolar AS hari ini',
+    'Menkeu Purbaya mengungkapkan pemerintah akan menggelontorkan anggaran tambahan untuk belanja subsidi energi sebanyak Rp 90-100 T pada tahun ini',
+    'Menteri ESDM Bahlil Lahadalia menegaskan bahwa hingga saat ini tidak ada perubahan harga untuk BBM bersubsidi',
+  ],
+  bonds: [
+    {
+      code: 'FR0102',
+      fields: [
+        { key: 'Kupon', val: '6,875%' },
+        { key: 'Yield', val: '6,840%' },
+        { key: 'Tenor', val: '28 tahun' },
+        { key: 'Maturity Date', val: '15 Jul 2054' },
+        { key: 'Bookbuilding', val: '1 M' },
+        { key: 'Indicative Price', val: '100,60' },
+        { key: 'Settlement Date', val: '8 April 2026' },
+      ],
+      comment: 'BUY - Durasi panjang, cenderung lebih diuntungkan saat yield turun, dan potensi capital gain lebih besar saat market rally',
+    },
+    {
+      code: 'FR0109',
+      fields: [
+        { key: 'Kupon', val: '5,875%' },
+        { key: 'Yield', val: '6,470%' },
+        { key: 'Tenor', val: '5 Tahun' },
+        { key: 'Maturity Date', val: '15 Mar 2031' },
+        { key: 'Bookbuilding', val: '1 M' },
+        { key: 'Indicative Price', val: '98,10' },
+        { key: 'Settlement Date', val: '8 April 2026' },
+      ],
+      comment: 'BUY - Tenor menengah dengan yield yang masih menarik dan jadi target utama inflow, sehingga lebih stabil dengan upside tetap ada',
+    },
+  ],
+  yieldRows: [
+    { label: 'Indonesia 10Y', yield: '6.62', day: '-0.049%', month: '0.072%',  year: '-0.439%', date: '2-Apr' },
+    { label: 'Indonesia 20Y', yield: '6.87', day: '0%',      month: '0.232%',  year: '-0.235%', date: '2-Apr' },
+    { label: 'Indonesia 30Y', yield: '6.84', day: '0%',      month: '0.093%',  year: '-0.239%', date: '2-Apr' },
+    { label: 'Indonesia 3Y',  yield: '6.38', day: '-0.239%', month: '1.237%',  year: '-0.420%', date: '2-Apr' },
+    { label: 'Indonesia 5Y',  yield: '6.46', day: '-0.024%', month: '0.552%',  year: '0.343%',  date: '2-Apr' },
+  ],
+  activeRows: [
+    { code: 'FR109',   coupon: '5.876%', mature: '15 Mar 2031', price: '97.55',  vol: '3,481.38' },
+    { code: 'FR0086',  coupon: '5.500%', mature: '15 Apr 2026', price: '100.00', vol: '2,066.15' },
+    { code: 'FR0108',  coupon: '6.500%', mature: '15 Apr 2036', price: '98.70',  vol: '464.34'   },
+    { code: 'FR0108',  coupon: '4.875%', mature: '15 MJul 2026',price: '99.90',  vol: '372.33'   },
+    { code: 'PBS003',  coupon: '6.000%', mature: '15 Jan 2027', price: '100.25', vol: '262.03'   },
+  ],
+  marketIndicators: [
+    { label: 'Credit Default Swap (CDS)', source: '', val: '0000', date: '' },
+    { label: 'Premi Forward USD/IDR',     source: '', val: '0000', date: '' },
+    { label: 'KURS USD/IDR saat ini',     source: '', val: '0000', date: '' },
+    { label: '10 Y US Yield',             source: '', val: '0000', date: '' },
+  ],
+};
+
+let zoom = 0.75;
+
+// ─────────────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────────────
+async function init() {
+  await loadSaved();
+  renderAll();
+  syncSidebar();
+  applyZoom();
+  updateSaveStatus();
+}
+
+function syncSidebar() {
+  document.getElementById('f-date').value = state.date;
+  document.getElementById('f-forecast-label').value = state.forecastLabel;
+  document.getElementById('f-forecast-body').value = state.forecastBody;
+  document.getElementById('f-disclaimer').value = state.disclaimer;
+  renderBulletToggles('global', 'bt-global');
+  renderBulletToggles('domestic', 'bt-domestic');
+  renderBulletToggles('forecast', 'bt-forecast');
+  renderBulletToggles('analyst', 'bt-analyst');
+  document.getElementById('f-forecast-label-visible').checked = state.forecastLabelVisible;
+  renderColorPills();
+  document.getElementById('f-analyst-label').value = state.analystLabel || '';
+  document.getElementById('f-analyst-body').value = state.analystBody || '';
+  document.getElementById('f-analyst-label-visible').checked = state.analystLabelVisible;
+  renderAnalystColorPills();
+  renderGlobalNewsControls();
+  renderDomesticNewsControls();
+  renderBondControls();
+  renderYieldControls();
+  renderActiveControls();
+  renderMarketIndicatorControls();
+  if (document.getElementById('f-wl-period')) {
+    document.getElementById('f-wl-period').value = state.wlPeriod || '';
+  }
+  renderWatchlistControls();
+}
+
+// ─────────────────────────────────────────────────────
+// COLOR PILLS
+// ─────────────────────────────────────────────────────
+const LABEL_COLORS = [
+  { key: 'green',  label: 'Hijau' },
+  { key: 'red',    label: 'Merah' },
+  { key: 'black',  label: 'Hitam' },
+  { key: 'yellow', label: 'Kuning' },
+  { key: 'navy',   label: 'Navy' },
+];
+function renderColorPills() {
+  const row = document.getElementById('forecast-color-row');
+  if (!row) return;
+  row.innerHTML = LABEL_COLORS.map(c => `
+    <div class="color-pill ${state.forecastLabelColor === c.key ? 'active' : ''}"
+         data-color="${c.key}" title="${c.label}"
+         onclick="setForecastLabelColor('${c.key}')"></div>
+  `).join('');
+}
+function setForecastLabelColor(color) {
+  state.forecastLabelColor = color;
+  renderColorPills();
+  renderForecast();
+}
+function toggleForecastLabel(visible) {
+  state.forecastLabelVisible = visible;
+  renderForecast();
+}
+
+// ─────────────────────────────────────────────────────
+// RENDER ALL NL
+// ─────────────────────────────────────────────────────
+function renderAll() {
+  updateDate();
+  renderGlobalNews();
+  renderDomesticNews();
+  renderForecast();
+  renderAnalyst();
+  document.getElementById('nl-disclaimer-text').textContent = state.disclaimer;
+  renderBonds();
+  renderYieldTable();
+  renderActiveTable();
+  renderMarketIndicators();
+  renderWatchlistPage();
+}
+
+// ─────────────────────────────────────────────────────
+// DATE
+// ─────────────────────────────────────────────────────
+function updateDate() {
+  const v = document.getElementById('f-date').value;
+  state.date = v;
+  const d = new Date(v + 'T00:00:00');
+  const opts = { day: '2-digit', month: 'long', year: 'numeric' };
+  document.getElementById('nl-date-display').textContent = d.toLocaleDateString('id-ID', opts);
+}
+
+// ─────────────────────────────────────────────────────
+// SYNC SINGLE FIELD
+// ─────────────────────────────────────────────────────
+function sync(fieldId, nlId) {
+  const v = document.getElementById(fieldId).value;
+  const el = document.getElementById(nlId);
+  if (el) el.textContent = v;
+  if (fieldId === 'f-disclaimer') state.disclaimer = v;
+}
+
+// ─────────────────────────────────────────────────────
+// BULLET TOGGLE
+// ─────────────────────────────────────────────────────
+const BULLET_MODES = [
+  { key: 'numbered', label: '1. 2. 3.' },
+  { key: 'dot',      label: '▪ Titik' },
+  { key: 'dash',     label: '— Dash' },
+  { key: 'none',     label: 'Tanpa Poin' },
+];
+
+function renderBulletToggles(section, wrapperId) {
+  const wrap = document.getElementById(wrapperId);
+  const current = state[section + 'Bullet'];
+  wrap.innerHTML = BULLET_MODES.map(m => `
+    <button class="bt-btn ${m.key === current ? 'active' : ''}"
+      onclick="setBullet('${section}','${m.key}')">${m.label}</button>
+  `).join('');
+}
+
+function setBullet(section, mode) {
+  state[section + 'Bullet'] = mode;
+  renderBulletToggles(section, 'bt-' + section);
+  if (section === 'global') renderGlobalNews();
+  else if (section === 'domestic') renderDomesticNews();
+  else if (section === 'forecast') renderForecast();
+  else if (section === 'analyst') renderAnalyst();
+}
+
+// ─────────────────────────────────────────────────────
+// HELPER: render nl-items list
+// ─────────────────────────────────────────────────────
+function renderItemsList(ulId, items, mode) {
+  const ul = document.getElementById(ulId);
+  ul.className = 'nl-items mode-' + mode;
+  ul.innerHTML = items.map((t, i) =>
+    `<li data-num="${i+1}">${escHtml(t)}</li>`
+  ).join('');
+}
+
+// ─────────────────────────────────────────────────────
+// GLOBAL NEWS
+// ─────────────────────────────────────────────────────
+function renderGlobalNewsControls() {
+  const wrap = document.getElementById('global-news-wrap');
+  wrap.innerHTML = '';
+  state.globalNews.forEach((text, i) => {
+    wrap.innerHTML += `
+      <div class="news-item-wrap">
+        <div class="news-item-header">
+          <span class="news-num">GLOBAL ${i+1}</span>
+          <button class="btn-sm btn-remove" onclick="removeNews('global',${i})">✕</button>
+        </div>
+        <textarea class="field-input" rows="3" oninput="updateNews('global',${i},this.value)">${escHtml(text)}</textarea>
+      </div>`;
+  });
+}
+function renderGlobalNews() {
+  renderItemsList('nl-global-list', state.globalNews, state.globalBullet);
+}
+
+// ─────────────────────────────────────────────────────
+// DOMESTIC NEWS
+// ─────────────────────────────────────────────────────
+function renderDomesticNewsControls() {
+  const wrap = document.getElementById('domestic-news-wrap');
+  wrap.innerHTML = '';
+  state.domesticNews.forEach((text, i) => {
+    wrap.innerHTML += `
+      <div class="news-item-wrap">
+        <div class="news-item-header">
+          <span class="news-num">DOM ${i+1}</span>
+          <button class="btn-sm btn-remove" onclick="removeNews('domestic',${i})">✕</button>
+        </div>
+        <textarea class="field-input" rows="2" oninput="updateNews('domestic',${i},this.value)">${escHtml(text)}</textarea>
+      </div>`;
+  });
+}
+function renderDomesticNews() {
+  renderItemsList('nl-domestic-list', state.domesticNews, state.domesticBullet);
+}
+
+// ─────────────────────────────────────────────────────
+// MARKET FORECAST
+// ─────────────────────────────────────────────────────
+function syncForecastLabel() {
+  state.forecastLabel = document.getElementById('f-forecast-label').value;
+  renderForecast();
+}
+function syncForecastBody() {
+  state.forecastBody = document.getElementById('f-forecast-body').value;
+  renderForecast();
+}
+function renderForecast() {
+  const sublabel = document.getElementById('nl-forecast-sublabel');
+  if (sublabel) {
+    const show = state.forecastLabelVisible && state.forecastLabel.trim() !== '';
+    sublabel.style.display = show ? 'flex' : 'none';
+    sublabel.className = 'forecast-sublabel color-' + state.forecastLabelColor;
+    document.getElementById('nl-forecast-label').textContent = state.forecastLabel;
+  }
+  const wrap = document.getElementById('nl-forecast-body-wrap');
+  const mode = state.forecastBullet;
+  if (mode === 'none') {
+    wrap.innerHTML = `<div class="forecast-body-text" id="nl-forecast-body">${escHtml(state.forecastBody)}</div>`;
+  } else {
+    const lines = state.forecastBody.split('\n').filter(l => l.trim() !== '');
+    if (lines.length <= 1) {
+      wrap.innerHTML = `<div class="forecast-body-text" id="nl-forecast-body">${escHtml(state.forecastBody)}</div>`;
+    } else {
+      wrap.innerHTML = `<ul class="nl-items mode-${mode}" id="nl-forecast-body">
+        ${lines.map((l,i) => `<li data-num="${i+1}">${escHtml(l)}</li>`).join('')}
+      </ul>`;
+    }
+  }
+}
+
+// ─────────────────────────────────────────────────────
+// ANALYST OPINION
+// ─────────────────────────────────────────────────────
+function syncAnalystLabel() {
+  state.analystLabel = document.getElementById('f-analyst-label').value;
+  renderAnalyst();
+}
+function syncAnalystBody() {
+  state.analystBody = document.getElementById('f-analyst-body').value;
+  renderAnalyst();
+}
+function toggleAnalystLabel(visible) {
+  state.analystLabelVisible = visible;
+  renderAnalyst();
+}
+function setAnalystLabelColor(color) {
+  state.analystLabelColor = color;
+  renderAnalystColorPills();
+  renderAnalyst();
+}
+function renderAnalystColorPills() {
+  const row = document.getElementById('analyst-color-row');
+  if (!row) return;
+  row.innerHTML = LABEL_COLORS.map(c => `
+    <div class="color-pill ${state.analystLabelColor === c.key ? 'active' : ''}"
+         data-color="${c.key}" title="${c.label}"
+         onclick="setAnalystLabelColor('${c.key}')"></div>
+  `).join('');
+}
+function renderAnalyst() {
+  const sublabel = document.getElementById('nl-analyst-sublabel');
+  if (sublabel) {
+    const show = state.analystLabelVisible && (state.analystLabel||'').trim() !== '';
+    sublabel.style.display = show ? 'flex' : 'none';
+    sublabel.className = 'analyst-sublabel color-' + (state.analystLabelColor || 'navy');
+    document.getElementById('nl-analyst-label').textContent = state.analystLabel || '';
+  }
+  const wrap = document.getElementById('nl-analyst-body-wrap');
+  if (!wrap) return;
+  const mode = state.analystBullet || 'none';
+  if (mode === 'none') {
+    wrap.innerHTML = `<div class="analyst-body-text" id="nl-analyst-body">${escHtml(state.analystBody||'')}</div>`;
+  } else {
+    const lines = (state.analystBody||'').split('\n').filter(l => l.trim() !== '');
+    if (lines.length <= 1) {
+      wrap.innerHTML = `<div class="analyst-body-text" id="nl-analyst-body">${escHtml(state.analystBody||'')}</div>`;
+    } else {
+      wrap.innerHTML = `<ul class="nl-items mode-${mode}" id="nl-analyst-body">
+        ${lines.map((l,i) => `<li data-num="${i+1}">${escHtml(l)}</li>`).join('')}
+      </ul>`;
+    }
+  }
+}
+
+function addNewsItem(type) {
+  if (type==='global') state.globalNews.push('');
+  else state.domesticNews.push('');
+  if (type==='global') { renderGlobalNewsControls(); renderGlobalNews(); }
+  else { renderDomesticNewsControls(); renderDomesticNews(); }
+}
+function removeNews(type, idx) {
+  if (type==='global') state.globalNews.splice(idx,1);
+  else state.domesticNews.splice(idx,1);
+  if (type==='global') { renderGlobalNewsControls(); renderGlobalNews(); }
+  else { renderDomesticNewsControls(); renderDomesticNews(); }
+}
+function updateNews(type, idx, val) {
+  if (type==='global') state.globalNews[idx] = val;
+  else state.domesticNews[idx] = val;
+  if (type==='global') renderGlobalNews();
+  else renderDomesticNews();
+}
+
+// ─────────────────────────────────────────────────────
+// BONDS
+// ─────────────────────────────────────────────────────
+function renderBondControls() {
+  const wrap = document.getElementById('bonds-wrap');
+  wrap.innerHTML = '';
+  state.bonds.forEach((bond, bi) => {
+    const fieldRows = bond.fields.map((f, fi) => `
+      <div style="display:flex;gap:6px;margin-bottom:5px;">
+        <input type="text" class="field-input" value="${escAttr(f.key)}" oninput="updateBondFieldKey(${bi},${fi},this.value)" style="flex:1;font-size:11px;" placeholder="Label">
+        <input type="text" class="field-input" value="${escAttr(f.val)}" oninput="updateBondFieldVal(${bi},${fi},this.value)" style="flex:1;font-size:11px;" placeholder="Value">
+      </div>`).join('');
+    wrap.innerHTML += `
+      <div class="news-item-wrap">
+        <div class="news-item-header">
+          <input type="text" class="field-input" value="${escAttr(bond.code)}" oninput="updateBondCode(${bi},this.value)" style="font-size:13px;font-weight:700;width:110px;">
+          <button class="btn-sm btn-remove" onclick="removeBond(${bi})">✕</button>
+        </div>
+        ${fieldRows}
+        <div class="field-label" style="margin-top:8px;">Comment</div>
+        <textarea class="field-input" rows="3" oninput="updateBondComment(${bi},this.value)">${escHtml(bond.comment)}</textarea>
+      </div>`;
+  });
+}
+function renderBonds() {
+  const container = document.getElementById('nl-bonds-list');
+  container.innerHTML = state.bonds.map(bond => {
+    const rows = bond.fields.map(f => `
+      <div class="bond-row">
+        <span class="bond-key">${escHtml(f.key)}</span>
+        <span class="bond-colon">:</span>
+        <span class="bond-val">${escHtml(f.val)}</span>
+      </div>`).join('');
+    return `<div class="bond-card">
+      <div class="bond-card-header">${escHtml(bond.code)}</div>
+      <div class="bond-card-body">
+        ${rows}
+        <div class="bond-comment-label">Comment</div>
+        <div class="bond-comment-text">${escHtml(bond.comment)}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+function addBond() {
+  state.bonds.push({
+    code: 'FRXXXX',
+    fields: [
+      { key: 'Kupon', val: '' },
+      { key: 'Yield', val: '' },
+      { key: 'Tenor', val: '' },
+      { key: 'Maturity Date', val: '' },
+      { key: 'Bookbuilding', val: '' },
+      { key: 'Indicative Price', val: '' },
+      { key: 'Settlement Date', val: '' },
+    ],
+    comment: '',
+  });
+  renderBondControls(); renderBonds();
+}
+function removeBond(i) { state.bonds.splice(i,1); renderBondControls(); renderBonds(); }
+function updateBondCode(i,v) { state.bonds[i].code=v; renderBonds(); }
+function updateBondComment(i,v) { state.bonds[i].comment=v; renderBonds(); }
+function updateBondFieldKey(bi,fi,v) { state.bonds[bi].fields[fi].key=v; renderBonds(); }
+function updateBondFieldVal(bi,fi,v) { state.bonds[bi].fields[fi].val=v; renderBonds(); }
+
+// ─────────────────────────────────────────────────────
+// YIELD TABLE
+// ─────────────────────────────────────────────────────
+function renderYieldControls() {
+  const wrap = document.getElementById('yield-rows-wrap');
+  wrap.innerHTML = '';
+  state.yieldRows.forEach((row, i) => {
+    wrap.innerHTML += `
+      <div class="news-item-wrap">
+        <div class="news-item-header">
+          <span class="news-num">ROW ${i+1}</span>
+          <button class="btn-sm btn-remove" onclick="removeYieldRow(${i})">✕</button>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;">
+          <div><div class="field-label">Label</div><input class="field-input" value="${escAttr(row.label)}" oninput="updateYield(${i},'label',this.value)"></div>
+          <div><div class="field-label">Yield</div><input class="field-input" value="${escAttr(row.yield)}" oninput="updateYield(${i},'yield',this.value)"></div>
+          <div><div class="field-label">Day</div><input class="field-input" value="${escAttr(row.day)}" oninput="updateYield(${i},'day',this.value)"></div>
+          <div><div class="field-label">Month</div><input class="field-input" value="${escAttr(row.month)}" oninput="updateYield(${i},'month',this.value)"></div>
+          <div><div class="field-label">Year</div><input class="field-input" value="${escAttr(row.year)}" oninput="updateYield(${i},'year',this.value)"></div>
+          <div><div class="field-label">Date</div><input class="field-input" value="${escAttr(row.date)}" oninput="updateYield(${i},'date',this.value)"></div>
+        </div>
+      </div>`;
+  });
+}
+function renderYieldTable() {
+  const tbody = document.getElementById('nl-yield-body');
+  tbody.innerHTML = state.yieldRows.map(row => {
+    const cls = v => parseFloat(v) < 0 ? 'neg' : parseFloat(v) > 0 ? 'pos' : '';
+    return `<tr>
+      <td>${escHtml(row.label)}</td>
+      <td>${escHtml(row.yield)}</td>
+      <td class="${cls(row.day)}">${escHtml(row.day)}</td>
+      <td class="${cls(row.month)}">${escHtml(row.month)}</td>
+      <td class="${cls(row.year)}">${escHtml(row.year)}</td>
+      <td>${escHtml(row.date)}</td>
+    </tr>`;
+  }).join('');
+}
+function addYieldRow() {
+  state.yieldRows.push({ label:'', yield:'', day:'', month:'', year:'', date:'' });
+  renderYieldControls(); renderYieldTable();
+}
+function removeYieldRow(i) { state.yieldRows.splice(i,1); renderYieldControls(); renderYieldTable(); }
+function updateYield(i,key,val) { state.yieldRows[i][key]=val; renderYieldTable(); }
+
+// ─────────────────────────────────────────────────────
+// ACTIVE BONDS TABLE
+// ─────────────────────────────────────────────────────
+function renderActiveControls() {
+  const wrap = document.getElementById('active-rows-wrap');
+  wrap.innerHTML = '';
+  state.activeRows.forEach((row, i) => {
+    wrap.innerHTML += `
+      <div class="news-item-wrap">
+        <div class="news-item-header">
+          <span class="news-num">ROW ${i+1}</span>
+          <button class="btn-sm btn-remove" onclick="removeActiveRow(${i})">✕</button>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;">
+          <div><div class="field-label">Code</div><input class="field-input" value="${escAttr(row.code)}" oninput="updateActive(${i},'code',this.value)"></div>
+          <div><div class="field-label">Coupon</div><input class="field-input" value="${escAttr(row.coupon)}" oninput="updateActive(${i},'coupon',this.value)"></div>
+          <div><div class="field-label">Mature</div><input class="field-input" value="${escAttr(row.mature)}" oninput="updateActive(${i},'mature',this.value)"></div>
+          <div><div class="field-label">Avg Price</div><input class="field-input" value="${escAttr(row.price)}" oninput="updateActive(${i},'price',this.value)"></div>
+          <div style="grid-column:span 2"><div class="field-label">Total Vol (bio)</div><input class="field-input" value="${escAttr(row.vol)}" oninput="updateActive(${i},'vol',this.value)"></div>
+        </div>
+      </div>`;
+  });
+}
+function renderActiveTable() {
+  const tbody = document.getElementById('nl-active-body');
+  tbody.innerHTML = state.activeRows.map(row => `<tr>
+    <td>${escHtml(row.code)}</td>
+    <td>${escHtml(row.coupon)}</td>
+    <td>${escHtml(row.mature)}</td>
+    <td>${escHtml(row.price)}</td>
+    <td>${escHtml(row.vol)}</td>
+  </tr>`).join('');
+}
+function addActiveRow() {
+  state.activeRows.push({ code:'', coupon:'', mature:'', price:'', vol:'' });
+  renderActiveControls(); renderActiveTable();
+}
+function removeActiveRow(i) { state.activeRows.splice(i,1); renderActiveControls(); renderActiveTable(); }
+function updateActive(i,key,val) { state.activeRows[i][key]=val; renderActiveTable(); }
+
+// ─────────────────────────────────────────────────────
+// MARKET INDICATORS
+// ─────────────────────────────────────────────────────
+function renderMarketIndicatorControls() {
+  const wrap = document.getElementById('mi-rows-wrap');
+  if (!wrap) return;
+  wrap.innerHTML = '';
+  (state.marketIndicators || []).forEach((row, i) => {
+    wrap.innerHTML += `
+      <div class="news-item-wrap">
+        <div class="field-label" style="font-weight:700;color:var(--gold);margin-bottom:4px;">${escHtml(row.label)}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;">
+          <div>
+            <div class="field-label">Source</div>
+            <input class="field-input" value="${escAttr(row.source)}" placeholder="e.g. IDN.com" oninput="updateMI(${i},'source',this.value)">
+          </div>
+          <div>
+            <div class="field-label">Nilai</div>
+            <input class="field-input" value="${escAttr(row.val)}" placeholder="0000" oninput="updateMI(${i},'val',this.value)">
+          </div>
+          <div style="grid-column:span 2">
+            <div class="field-label">Date</div>
+            <input class="field-input" value="${escAttr(row.date||'')}" placeholder="e.g. 7 Apr 2026" oninput="updateMI(${i},'date',this.value)">
+          </div>
+        </div>
+      </div>`;
+  });
+}
+function renderMarketIndicators() {
+  const container = document.getElementById('nl-mi-table');
+  if (!container) return;
+  container.innerHTML = (state.marketIndicators || []).map(row => `
+    <div class="mi-row">
+      <div class="mi-row-left">
+        <div class="mi-row-label">${escHtml(row.label)}</div>
+        ${row.source ? `<div class="mi-row-source">Source : ${escHtml(row.source)}</div>` : `<div class="mi-row-source">&nbsp;</div>`}
+      </div>
+      <span class="mi-row-colon">:</span>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;min-width:60px;">
+        <span class="mi-row-val">${escHtml(row.val)}</span>
+        ${row.date ? `<span class="mi-row-source">Date : ${escHtml(row.date)}</span>` : `<span class="mi-row-source">&nbsp;</span>`}
+      </div>
+    </div>`).join('');
+}
+function updateMI(i, key, val) {
+  state.marketIndicators[i][key] = val;
+  renderMarketIndicators();
+}
+
+// ─────────────────────────────────────────────────────
+// TABS
+// ─────────────────────────────────────────────────────
+function switchTab(name) {
+  const names = ['general','news','bonds','tables','watchlist'];
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    t.classList.toggle('active', names[i]===name);
+  });
+  document.querySelectorAll('.tab-panels > div').forEach((p,i) => {
+    p.classList.toggle('active', names[i]===name);
+  });
+}
+
+// ─────────────────────────────────────────────────────
+// SECTION COLLAPSE
+// ─────────────────────────────────────────────────────
+function toggleSection(header) {
+  header.classList.toggle('collapsed');
+  const body = header.nextElementSibling;
+  body.classList.toggle('collapsed');
+}
+
+// ─────────────────────────────────────────────────────
+// ZOOM
+// ─────────────────────────────────────────────────────
+function changeZoom(delta) {
+  zoom = Math.min(1.5, Math.max(0.3, zoom + delta));
+  applyZoom();
+}
+function applyZoom() {
+  document.getElementById('a4-wrapper').style.transform = `scale(${zoom})`;
+  document.getElementById('zoom-label').textContent = Math.round(zoom*100)+'%';
+}
+
+// ─────────────────────────────────────────────────────
+// SUPABASE STORAGE
+// Tabel: newsletter_drafts (slug PK, data JSONB, updated_by, updated_at)
+// Satu editor = satu baris dengan slug 'default'.
+// ─────────────────────────────────────────────────────
+const NL_TABLE = 'newsletter_drafts';
+const NL_SLUG  = 'default';
+
+// Tunggu window._supabase (di-inject oleh config.js) siap.
+function waitSb() {
+  return new Promise((resolve) => {
+    let n = 0;
+    (function check() {
+      if (window._supabase) return resolve(window._supabase);
+      if (n++ > 40) return resolve(null); // ~12 detik menyerah
+      setTimeout(check, 300);
+    })();
+  });
+}
+
+function currentUserName() {
+  try {
+    const raw = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember');
+    const u = raw ? JSON.parse(raw) : {};
+    return u.name || u.username || '—';
+  } catch (e) { return '—'; }
+}
+
+function updateSaveStatus(status) {
+  const el = document.getElementById('save-status');
+  if (!el) return;
+  if (status === 'saving') {
+    el.textContent = '● Menyimpan…'; el.style.color = '#F5C800';
+  } else if (status === 'error') {
+    el.textContent = '● Gagal simpan (lokal saja)'; el.style.color = '#E63946';
+  } else if (status === 'saved') {
+    el.textContent = '● Tersimpan (Supabase)'; el.style.color = '#2D8C4E';
+  } else {
+    el.textContent = '● Supabase'; el.style.color = '#9AA3B0';
+  }
+}
+
+async function autoSave() {
+  // Backup lokal selalu (jaring pengaman kalau koneksi bermasalah)
+  try { localStorage.setItem('fawz_newsletter_backup', JSON.stringify(state)); } catch(e) {}
+
+  updateSaveStatus('saving');
+  const sb = await waitSb();
+  if (!sb) { showToast('Supabase belum siap, tersimpan lokal saja'); updateSaveStatus('error'); return; }
+
+  try {
+    const { error } = await sb
+      .from(NL_TABLE)
+      .upsert({
+        slug: NL_SLUG,
+        data: state,
+        updated_by: currentUserName(),
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'slug' });
+    if (error) throw error;
+    showToast('✓ Tersimpan ke Supabase!');
+    updateSaveStatus('saved');
+  } catch (e) {
+    console.warn('Newsletter save error:', e);
+    showToast('Gagal simpan ke Supabase, tersimpan lokal saja');
+    updateSaveStatus('error');
+  }
+}
+
+async function loadSaved() {
+  const sb = await waitSb();
+  if (sb) {
+    try {
+      const { data, error } = await sb
+        .from(NL_TABLE)
+        .select('data')
+        .eq('slug', NL_SLUG)
+        .maybeSingle();
+      if (!error && data && data.data) {
+        state = { ...state, ...data.data };
+        return;
+      }
+    } catch (e) { console.warn('Newsletter load error:', e); }
+  }
+
+  // Fallback ke backup lokal
+  try {
+    const saved = localStorage.getItem('fawz_newsletter_backup');
+    if (saved) state = { ...state, ...JSON.parse(saved) };
+  } catch(e) {}
+}
+
+function resetAll() {
+  if (!confirm('Reset semua data ke default?')) return;
+  localStorage.removeItem('fawz_newsletter_backup');
+  location.reload();
+}
+
+function showToast(msg, bg) {
+  const t = document.createElement('div');
+  t.textContent = msg;
+  t.style.cssText = `position:fixed;bottom:70px;right:24px;background:${bg||'#2D8C4E'};color:white;padding:10px 20px;border-radius:6px;font-size:13px;z-index:999;font-family:IBM Plex Sans,sans-serif;box-shadow:0 4px 20px rgba(0,0,0,0.4);transition:opacity 0.3s;`;
+  document.body.appendChild(t);
+  setTimeout(()=>{ t.style.opacity='0'; setTimeout(()=>t.remove(),300); }, 2200);
+}
+
+// ─────────────────────────────────────────────────────
+// UTILS
+// ─────────────────────────────────────────────────────
+function escHtml(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function escAttr(s) {
+  return String(s||'').replace(/"/g,'&quot;');
+}
+
+// ─────────────────────────────────────────────────────
+// WATCHLIST (PAGE 2)
+// ─────────────────────────────────────────────────────
+const FLAG_SVG = {
+  US: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 20">
+    <rect width="28" height="20" fill="#B22234"/>
+    <rect y="1.54" width="28" height="1.54" fill="#fff"/><rect y="4.62" width="28" height="1.54" fill="#fff"/>
+    <rect y="7.69" width="28" height="1.54" fill="#fff"/><rect y="10.77" width="28" height="1.54" fill="#fff"/>
+    <rect y="13.85" width="28" height="1.54" fill="#fff"/><rect y="16.92" width="28" height="1.54" fill="#fff"/>
+    <rect width="11.2" height="10.77" fill="#3C3B6E"/>
+    <g fill="#fff" font-size="2.2" text-anchor="middle">
+      <text x="1.4" y="2.4">★</text><text x="3.73" y="2.4">★</text><text x="6.07" y="2.4">★</text><text x="8.4" y="2.4">★</text><text x="10.73" y="2.4">★</text>
+      <text x="2.57" y="4.2">★</text><text x="4.9" y="4.2">★</text><text x="7.23" y="4.2">★</text><text x="9.57" y="4.2">★</text>
+      <text x="1.4" y="6">★</text><text x="3.73" y="6">★</text><text x="6.07" y="6">★</text><text x="8.4" y="6">★</text><text x="10.73" y="6">★</text>
+      <text x="2.57" y="7.8">★</text><text x="4.9" y="7.8">★</text><text x="7.23" y="7.8">★</text><text x="9.57" y="7.8">★</text>
+      <text x="1.4" y="9.6">★</text><text x="3.73" y="9.6">★</text><text x="6.07" y="9.6">★</text><text x="8.4" y="9.6">★</text><text x="10.73" y="9.6">★</text>
+    </g>
+  </svg>`,
+  CHN: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 20">
+    <rect width="28" height="20" fill="#DE2910"/>
+    <text x="3" y="8" font-size="6" fill="#FFDE00">★</text>
+    <text x="9" y="4" font-size="3" fill="#FFDE00">★</text>
+    <text x="11" y="7" font-size="3" fill="#FFDE00">★</text>
+    <text x="11" y="11" font-size="3" fill="#FFDE00">★</text>
+    <text x="9" y="14" font-size="3" fill="#FFDE00">★</text>
+  </svg>`,
+  JPN: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 20">
+    <rect width="28" height="20" fill="#fff"/>
+    <circle cx="14" cy="10" r="5.5" fill="#BC002D"/>
+  </svg>`,
+  IDN: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 20">
+    <rect width="28" height="10" fill="#CE1126"/>
+    <rect y="10" width="28" height="10" fill="#fff"/>
+  </svg>`,
+  EUR: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 20">
+    <rect width="28" height="20" fill="#003399"/>
+    <g fill="#FFCC00" text-anchor="middle" font-size="4">
+      <text x="14" y="5.5">★</text><text x="19.5" y="7">★</text><text x="21" y="12">★</text>
+      <text x="19.5" y="17">★</text><text x="14" y="18.5">★</text><text x="8.5" y="17">★</text>
+      <text x="7" y="12">★</text><text x="8.5" y="7">★</text>
+      <text x="14" y="12">★</text>
+    </g>
+  </svg>`,
+  GBR: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 20">
+    <rect width="28" height="20" fill="#012169"/>
+    <path d="M0,0 L28,20 M28,0 L0,20" stroke="#fff" stroke-width="4"/>
+    <path d="M0,0 L28,20 M28,0 L0,20" stroke="#C8102E" stroke-width="2.5"/>
+    <rect x="11.5" width="5" height="20" fill="#fff"/>
+    <rect y="7.5" width="28" height="5" fill="#fff"/>
+    <rect x="12.5" width="3" height="20" fill="#C8102E"/>
+    <rect y="8.5" width="28" height="3" fill="#C8102E"/>
+  </svg>`,
+  AUS: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 20">
+    <rect width="28" height="20" fill="#00008B"/>
+    <rect width="14" height="10" fill="#00008B"/>
+    <path d="M0,0 L14,10 M14,0 L0,10" stroke="#fff" stroke-width="2.5"/>
+    <path d="M0,0 L14,10 M14,0 L0,10" stroke="#C8102E" stroke-width="1.5"/>
+    <rect x="5.5" width="3" height="10" fill="#fff"/>
+    <rect y="3.5" width="14" height="3" fill="#fff"/>
+    <rect x="6" width="2" height="10" fill="#C8102E"/>
+    <rect y="4" width="14" height="2" fill="#C8102E"/>
+    <g fill="#fff" font-size="3.5" text-anchor="middle">
+      <text x="21" y="8">★</text><text x="24" y="12">★</text><text x="18" y="13">★</text>
+      <text x="22" y="16">★</text><text x="25" y="6">★</text>
+    </g>
+  </svg>`,
+  KOR: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 20">
+    <rect width="28" height="20" fill="#fff"/>
+    <circle cx="14" cy="10" r="4.5" fill="#CD2E3A"/>
+    <path d="M14,5.5 A4.5,4.5 0 0,1 14,14.5" fill="#003478"/>
+    <circle cx="14" cy="7.75" r="2.25" fill="#CD2E3A"/>
+    <circle cx="14" cy="12.25" r="2.25" fill="#003478"/>
+    <g stroke="#000" stroke-width="0.8">
+      <line x1="4" y1="4" x2="7" y2="7"/><line x1="5.5" y1="2.5" x2="8.5" y2="5.5"/><line x1="2.5" y1="5.5" x2="5.5" y2="8.5"/>
+      <line x1="21" y1="13" x2="24" y2="16"/><line x1="19.5" y1="14.5" x2="22.5" y2="17.5"/><line x1="22.5" y1="11.5" x2="25.5" y2="14.5"/>
+      <line x1="21" y1="4" x2="24" y2="7"/><line x1="19.5" y1="2.5" x2="22.5" y2="5.5"/><line x1="22.5" y1="5.5" x2="25.5" y2="8.5"/>
+      <line x1="4" y1="13" x2="7" y2="16"/><line x1="5.5" y1="14.5" x2="8.5" y2="17.5"/><line x1="2.5" y1="11.5" x2="5.5" y2="14.5"/>
+    </g>
+  </svg>`,
+  IND: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 20">
+    <rect width="28" height="6.67" fill="#FF9933"/>
+    <rect y="6.67" width="28" height="6.67" fill="#fff"/>
+    <rect y="13.33" width="28" height="6.67" fill="#138808"/>
+    <circle cx="14" cy="10" r="2.8" fill="none" stroke="#000080" stroke-width="0.6"/>
+    <circle cx="14" cy="10" r="0.5" fill="#000080"/>
+  </svg>`,
+  SGP: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 20">
+    <rect width="28" height="10" fill="#EF3340"/>
+    <rect y="10" width="28" height="10" fill="#fff"/>
+    <path d="M5,5 A3.5,3.5 0 1,1 5,4.99" fill="none" stroke="#fff" stroke-width="1.5"/>
+    <circle cx="7" cy="5" r="3" fill="#EF3340"/>
+    <g fill="#fff" font-size="2.5" text-anchor="middle">
+      <text x="10" y="3.5">★</text><text x="12" y="6">★</text><text x="10" y="8.5">★</text>
+      <text x="7.5" y="7">★</text><text x="7.5" y="4">★</text>
+    </g>
+  </svg>`,
+};
+
+function getFlagSvg(code) {
+  const upper = (code||'').toUpperCase().trim();
+  return FLAG_SVG[upper] || `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 20">
+    <rect width="28" height="20" fill="#ddd"/>
+    <text x="14" y="13" font-size="8" fill="#666" text-anchor="middle" font-family="sans-serif">${upper.slice(0,3)}</text>
+  </svg>`;
+}
+
+function getCountryCode(code) {
+  return (code||'').toUpperCase().trim().slice(0,3) || '—';
+}
+
+function syncWatchlist() {
+  state.wlPeriod = document.getElementById('f-wl-period').value;
+  document.getElementById('nl-wl-period').textContent = state.wlPeriod;
+}
+
+function renderWatchlistControls() {
+  const wrap = document.getElementById('wl-events-wrap');
+  wrap.innerHTML = '';
+  (state.wlEvents || []).forEach((ev, i) => {
+    const imp = ev.impact || 'high';
+    wrap.innerHTML += `
+      <div class="wl-event-wrap">
+        <div class="wl-event-header">
+          <span class="news-num">EVENT ${i+1}</span>
+          <button class="btn-sm btn-remove" onclick="removeWlEvent(${i})">✕</button>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:6px;">
+          <div>
+            <div class="field-label">Tanggal</div>
+            <input class="field-input" value="${escAttr(ev.date||'')}" oninput="updateWlEvent(${i},'date',this.value)" placeholder="30 Mar">
+          </div>
+          <div>
+            <div class="field-label">Hari</div>
+            <input class="field-input" value="${escAttr(ev.day||'')}" oninput="updateWlEvent(${i},'day',this.value)" placeholder="Senin">
+          </div>
+        </div>
+        <div style="margin-bottom:6px;">
+          <div class="field-label">Negara (kode: US, CHN, JPN, IDN…)</div>
+          <input class="field-input" value="${escAttr(ev.country||'')}" oninput="updateWlEvent(${i},'country',this.value)" placeholder="US">
+        </div>
+        <div style="margin-bottom:6px;">
+          <div class="field-label">Headline</div>
+          <input class="field-input" value="${escAttr(ev.headline||'')}" oninput="updateWlEvent(${i},'headline',this.value)" placeholder="Judul event/berita...">
+        </div>
+        <div style="margin-bottom:6px;">
+          <div class="field-label">Deskripsi</div>
+          <textarea class="field-input" rows="3" oninput="updateWlEvent(${i},'desc',this.value)">${escHtml(ev.desc||'')}</textarea>
+        </div>
+        <div>
+          <div class="field-label">Impact</div>
+          <div class="wl-impact-select">
+            <button class="wl-impact-btn high   ${imp==='high'   ?'sel':''}" onclick="setWlImpact(${i},'high')">HIGH</button>
+            <button class="wl-impact-btn medium ${imp==='medium' ?'sel':''}" onclick="setWlImpact(${i},'medium')">MEDIUM</button>
+            <button class="wl-impact-btn low    ${imp==='low'    ?'sel':''}" onclick="setWlImpact(${i},'low')">LOW</button>
+          </div>
+        </div>
+      </div>`;
+  });
+}
+
+function renderWatchlistPage() {
+  const events = state.wlEvents || [];
+  const container = document.getElementById('nl-wl-events');
+  if (!container) return;
+
+  const periodEl = document.getElementById('nl-wl-period');
+  if (periodEl) periodEl.textContent = state.wlPeriod || '';
+
+  const d2 = document.getElementById('nl-disclaimer-text-p2');
+  if (d2) d2.textContent = state.disclaimer;
+
+  container.innerHTML = events.map((ev, i) => {
+    const stripe = i % 2 === 0 ? 'stripe-white' : 'stripe-light';
+    const code = getCountryCode(ev.country || '');
+    const flagSvg = getFlagSvg(ev.country || '');
+    const badgeCls = ev.impact || 'high';
+    const badgeLabel = { high:'HIGH', medium:'MEDIUM', low:'LOW' }[badgeCls] || 'HIGH';
+    return `
+      <div class="wl-row ${stripe}">
+        <div class="wl-date-col">
+          <span class="wl-date-day">${escHtml(ev.date||'')}</span>
+          <span class="wl-date-name">${escHtml(ev.day||'')}</span>
+        </div>
+        <div class="wl-country-col">
+          <div class="wl-flag-img">${flagSvg}</div>
+          <span class="wl-country-code">${escHtml(code)}</span>
+        </div>
+        <div class="wl-content-col">
+          <div class="wl-headline">${escHtml(ev.headline||'')}</div>
+          ${ev.desc ? `<div class="wl-desc">${escHtml(ev.desc)}</div>` : ''}
+        </div>
+        <div class="wl-impact-col">
+          <span class="wl-badge ${badgeCls}">${badgeLabel}</span>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function addWlEvent() {
+  if (!state.wlEvents) state.wlEvents = [];
+  state.wlEvents.push({ date:'', day:'', country:'US', headline:'', desc:'', impact:'high' });
+  renderWatchlistControls();
+  renderWatchlistPage();
+}
+function removeWlEvent(i) {
+  state.wlEvents.splice(i,1);
+  renderWatchlistControls();
+  renderWatchlistPage();
+}
+function updateWlEvent(i, key, val) {
+  state.wlEvents[i][key] = val;
+  renderWatchlistPage();
+}
+function setWlImpact(i, val) {
+  state.wlEvents[i].impact = val;
+  renderWatchlistControls();
+  renderWatchlistPage();
+}
+
+// ─────────────────────────────────────────────────────
+// PRINT
+// ─────────────────────────────────────────────────────
+function printClean() {
+  const pages = document.querySelectorAll('.a4');
+  let html = `<!DOCTYPE html><html><head>
+    <meta charset="UTF-8">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+    <style>
+      @page { size: A4; margin: 0; }
+      * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; box-sizing: border-box; margin: 0; padding: 0; }
+      body { background: white; font-family: 'IBM Plex Sans', sans-serif; }
+      .a4-page { width: 210mm; min-height: 297mm; max-height: 297mm; overflow: hidden; page-break-after: always; break-after: page; display: flex; flex-direction: column; }
+      .a4-page:last-child { page-break-after: avoid; break-after: avoid; }
+    </style>
+    <style>${document.querySelector('style').textContent}</style>
+  </head><body>`;
+
+  pages.forEach(page => {
+    const clone = page.cloneNode(true);
+    clone.className = 'a4-page';
+    clone.style.cssText = '';
+    clone.style.marginTop = '0';
+    html += clone.outerHTML;
+  });
+
+  html += '</body></html>';
+
+  const win = window.open('', '_blank', 'width=900,height=700');
+  win.document.write(html);
+  win.document.close();
+  win.focus();
+  setTimeout(() => { win.print(); }, 800);
+}
+
+// ─────────────────────────────────────────────────────
+// START
+// ─────────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>
