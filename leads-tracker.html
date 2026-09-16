@@ -1191,10 +1191,10 @@
     const bankRdn   = document.getElementById('inp-bank-rdn').value.trim();
     const notes     = document.getElementById('inp-notes').value.trim();
 
-    // Validasi wajib
+    // Validasi wajib — hanya Client ID
     if (!clientId) { alertEl.className = 'modal-alert error'; alertEl.textContent = 'Client ID wajib diisi.'; return; }
-    if (!nik)      { alertEl.className = 'modal-alert error'; alertEl.textContent = 'NIK wajib diisi.'; return; }
-    if (nik.length !== 16) { alertEl.className = 'modal-alert error'; alertEl.textContent = 'NIK harus 16 digit.'; return; }
+    // NIK opsional; jika diisi harus 16 digit
+    if (nik && nik.length !== 16) { alertEl.className = 'modal-alert error'; alertEl.textContent = 'NIK harus 16 digit.'; return; }
 
     const row = window._allRows.find(r => r.id === _activeLeadId);
     if (!row) { alertEl.className = 'modal-alert error'; alertEl.textContent = 'Data lead tidak ditemukan.'; return; }
@@ -1323,7 +1323,7 @@
       </div>
 
       <!-- Form data tambahan -->
-      <div class="modal-section-title">Data Tambahan (Wajib Diisi)</div>
+      <div class="modal-section-title">Data Tambahan (Hanya Client ID Wajib)</div>
       <div class="modal-form">
         <div class="form-row">
           <div class="form-group">
@@ -1331,8 +1331,8 @@
             <input type="text" id="inp-client-id" placeholder="Cth: MBK123456"/>
           </div>
           <div class="form-group">
-            <label>NIK <span class="req">*</span></label>
-            <input type="text" id="inp-nik" placeholder="16 digit NIK" maxlength="16"/>
+            <label>NIK</label>
+            <input type="text" id="inp-nik" placeholder="16 digit NIK (opsional)" maxlength="16"/>
           </div>
         </div>
         <div class="form-row">
