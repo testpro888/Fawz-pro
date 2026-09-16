@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<script src="config.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fawz Pro | Dealer Report — Migrasi Data</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+
+<!-- ── ACCESS GUARD: hanya role 'admin' ATAU username 'fawzheadaccount' ── -->
+<script>
+(function () {
+  var raw = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember');
+  if (!raw) { window.location.replace('login.html'); return; }
+  var user;
+  try { user = JSON.parse(raw); } catch (e) {
+    sessionStorage.removeItem('fawz_user');
+    window.location.replace('login.html'); return;
+  }
+  if (!user || typeof user !== 'object' || !user.name || !user.username || !user.role) {
+    sessionStorage.removeItem('fawz_user');
+    window.location.replace('login.html'); return;
+  }
+  var uname = (user.username || '').toLowerCase().trim();
+  if (user.role !== 'admin' && uname !== 'fawzheadaccount') {
+    window.location.replace('dashboard.html'); return;
+  }
+  sessionStorage.setItem('fawz_user', raw);
+})();
+</script>
+
+<style>
+:root {
+  --bg:#f5f5f0; --surface:#fff; --surface2:#f9f9f6; --border:#e4e4dc; --border-md:#d0d0c4;
+  --accent:#1a1a2e; --accent2:#2d2d4a; --green:#1a7a4a; --green-bg:#edf7f2; --green-bd:#b3dfc8;
+  --red:#c0392b; --red-bg:#fdf2f1; --red-bd:#f0b8b3; --text:#1a1a1a; --text2:#4a4a4a;
+  --muted:#9a9a8e; --muted2:#c8c8bc;
+}
+* { box-sizing:border-box; margin:0; padding:0; }
+body { background:var(--bg); color:var(--text); font-family:'DM Sans',sans-serif; font-size:14px; line-height:1.5; min-height:100vh; }
+.wrap { max-width:640px; margin:0 auto; padding:48px 20px 80px; }
+.head { display:flex; align-items:center; gap:14px; margin-bottom:8px; }
+.logo { width:38px; height:38px; background:var(--accent); border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:0.85rem; font-weight:600; color:#fff; }
+h1 { font-size:1.15rem; font-weight:600; }
+.sub { font-size:0.8rem; color:var(--muted); margin-top:2px; }
+.card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:24px 26px; margin-top:22px; }
+.card-title { font-size:0.72rem; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:var(--muted); margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid var(--border); }
+.row { display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border); font-size:0.85rem; }
+.row:last-child { border-bottom:none; }
+.row .lbl { color:var(--text2); }
+.row .val { font-family:'DM Mono',monospace; font-weight:500; }
+.pill { font-family:'DM Mono',monospace; font-size:0.7rem; padding:2px 8px; border-radius:5px; background:var(--surface2); border:1px solid var(--border); color:var(--text2); }
+.btn { display:inline-flex; align-items:center; gap:8px; padding:11px 22px; border-radius:8px; border:1px solid transparent; cursor:pointer; font-family:'DM Sans',sans-serif; font-size:0.85rem; font-weight:600; transition:all 0.15s; }
+.btn:disabled { opacity:0.5; cursor:not-allowed; }
+.btn-primary { background:var(--accent); color:#fff; border-color:var(--accent); }
+.btn-primary:hover:not(:disabled) { background:var(--accent2); }
+.btn-ghost { background:var(--surface); color:var(--text2); border-color:var(--border-md); }
+.btn-ghost:hover:not(:disabled) { background:var(--bg); }
+.btn-row { display:flex; gap:10px; margin-top:20px; flex-wrap:wrap; }
+.warn { background:#fff8e6; border:1px solid #f0d88a; color:#8a6000; border-radius:9px; padding:12px 16px; font-size:0.8rem; line-height:1.6; margin-top:22px; }
+.progress-wrap { margin-top:16px; }
+.bar { height:10px; background:var(--surface2); border:1px solid var(--border); border-radius:6px; overflow:hidden; }
+.bar-fill { height:100%; width:0%; background:var(--accent); transition:width 0.2s; }
+.bar-label { display:flex; justify-content:space-between; font-size:0.72rem; color:var(--muted); margin-top:6px; font-family:'DM Mono',monospace; }
+.log { margin-top:18px; background:#12121e; border-radius:9px; padding:14px 16px; font-family:'DM Mono',monospace; font-size:0.72rem; line-height:1.7; color:#c8c8d8; max-height:280px; overflow-y:auto; white-space:pre-wrap; }
+.log .ok { color:#5fd39a; }
+.log .err { color:#ff8a80; }
+.log .info { color:#8ab4f8; }
+.done-banner { background:var(--green-bg); border:1px solid var(--green-bd); color:var(--green); border-radius:9px; padding:14px 18px; font-size:0.85rem; font-weight:600; margin-top:18px; display:none; }
+.done-banner.show { display:block; }
+a.link { color:var(--accent); font-weight:600; text-decoration:none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="head">
+    <div class="logo">FD</div>
+    <div>
+      <h1>Migrasi Data Dealer Report</h1>
+      <div class="sub">Salin nasabah &amp; transaksi dari database lama ke database baru (sekali jalan)</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Sumber &amp; Tujuan</div>
+    <div class="row">
+      <span class="lbl">Dari (lama)</span>
+      <span class="val"><span class="pill">bupzpgudcsvymevxqkpt</span></span>
+    </div>
+    <div class="row">
+      <span class="lbl">Ke (baru)</span>
+      <span class="val"><span class="pill" id="dest-ref">—</span></span>
+    </div>
+    <div class="row">
+      <span class="lbl">Tabel</span>
+      <span class="val">nasabah → dealer_nasabah &nbsp;·&nbsp; transaksi → dealer_transaksi</span>
+    </div>
+  </div>
+
+  <div class="warn">
+    Pastikan tabel <code>dealer_nasabah</code> dan <code>dealer_transaksi</code> sudah dibuat di database baru
+    (jalankan <code>dealer_report_schema.sql</code> di Supabase SQL Editor) sebelum migrasi.
+    Migrasi memakai <strong>upsert</strong> — aman dijalankan ulang, tidak membuat duplikat.
+  </div>
+
+  <div class="card">
+    <div class="card-title">Jalankan Migrasi</div>
+    <div class="progress-wrap">
+      <div class="bar"><div class="bar-fill" id="bar-nasabah"></div></div>
+      <div class="bar-label"><span>Nasabah</span><span id="lbl-nasabah">0 / 0</span></div>
+    </div>
+    <div class="progress-wrap">
+      <div class="bar"><div class="bar-fill" id="bar-transaksi"></div></div>
+      <div class="bar-label"><span>Transaksi</span><span id="lbl-transaksi">0 / 0</span></div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary" id="btn-run" onclick="runMigration()">Mulai Migrasi</button>
+      <a class="btn btn-ghost" href="dealer-report.html">Buka Dealer Report</a>
+    </div>
+
+    <div class="done-banner" id="done-banner"></div>
+    <div class="log" id="log" style="display:none"></div>
+  </div>
+</div>
+
+<script>
+/* ── OLD (source) project ── */
+const OLD_URL = 'https://bupzpgudcsvymevxqkpt.supabase.co';
+const OLD_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ1cHpwZ3VkY3N2eW1ldnhxa3B0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ5MjM4MzIsImV4cCI6MjA5MDQ5OTgzMn0.fpX8F2KOFx48C2kbXdW5Sbl_RbwIdH3F4-1txQw29kY';
+
+/* ── NEW (destination) project — dari config.js ── */
+const NEW_URL = (window.__FAWZ_CONFIG__ || {}).supabaseUrl || '';
+const NEW_KEY = (window.__FAWZ_CONFIG__ || {}).supabaseKey || '';
+
+const PAGE = 1000;      // Supabase max rows per select
+const BATCH = 500;      // upsert batch size
+
+let oldDb, newDb;
+
+function initClients() {
+  oldDb = window.supabase.createClient(OLD_URL, OLD_KEY);
+  newDb = window.supabase.createClient(NEW_URL, NEW_KEY);
+  const m = NEW_URL.match(/https?:\/\/([^.]+)\./);
+  document.getElementById('dest-ref').textContent = m ? m[1] : NEW_URL;
+}
+
+function log(msg, cls) {
+  const el = document.getElementById('log');
+  el.style.display = 'block';
+  const line = document.createElement('div');
+  if (cls) line.className = cls;
+  line.textContent = msg;
+  el.appendChild(line);
+  el.scrollTop = el.scrollHeight;
+}
+
+function setBar(kind, done, total) {
+  const pct = total ? Math.round((done / total) * 100) : 0;
+  document.getElementById('bar-' + kind).style.width = pct + '%';
+  document.getElementById('lbl-' + kind).textContent = `${done} / ${total}`;
+}
+
+async function fetchAll(db, table) {
+  let all = [], from = 0;
+  while (true) {
+    const { data, error } = await db.from(table).select('*').order('id', { ascending: true }).range(from, from + PAGE - 1);
+    if (error) throw new Error(`Baca ${table}: ${error.message}`);
+    all = all.concat(data || []);
+    if (!data || data.length < PAGE) break;
+    from += PAGE;
+  }
+  return all;
+}
+
+async function upsertAll(db, table, rows, kind) {
+  let done = 0;
+  setBar(kind, 0, rows.length);
+  for (let i = 0; i < rows.length; i += BATCH) {
+    const chunk = rows.slice(i, i + BATCH);
+    const { error } = await db.from(table).upsert(chunk, { onConflict: 'id' });
+    if (error) throw new Error(`Tulis ${table}: ${error.message}`);
+    done += chunk.length;
+    setBar(kind, done, rows.length);
+  }
+  return done;
+}
+
+async function runMigration() {
+  const btn = document.getElementById('btn-run');
+  const banner = document.getElementById('done-banner');
+  banner.classList.remove('show');
+  btn.disabled = true;
+  btn.textContent = 'Memproses...';
+  document.getElementById('log').innerHTML = '';
+
+  try {
+    if (!NEW_URL || !NEW_KEY) throw new Error('Config database baru tidak ditemukan (config.js).');
+
+    log('▶ Membaca data dari database lama...', 'info');
+    const [nasabah, transaksi] = await Promise.all([
+      fetchAll(oldDb, 'nasabah'),
+      fetchAll(oldDb, 'transaksi')
+    ]);
+    log(`✓ Terbaca: ${nasabah.length} nasabah, ${transaksi.length} transaksi`, 'ok');
+
+    // Bersihkan field: hanya kolom yang dikenali tabel tujuan
+    const nasabahClean = nasabah.map(r => ({ id: r.id, nama: r.nama }));
+    const transaksiClean = transaksi.map(r => ({
+      id: r.id, tgl: r.tgl, cid: r.cid, nama: r.nama, kode: r.kode,
+      trx: r.trx, qty: r.qty, harga: r.harga, total: r.total
+    }));
+
+    log('▶ Menulis nasabah ke database baru...', 'info');
+    const n1 = await upsertAll(newDb, 'dealer_nasabah', nasabahClean, 'nasabah');
+    log(`✓ ${n1} nasabah tersimpan`, 'ok');
+
+    log('▶ Menulis transaksi ke database baru...', 'info');
+    const n2 = await upsertAll(newDb, 'dealer_transaksi', transaksiClean, 'transaksi');
+    log(`✓ ${n2} transaksi tersimpan`, 'ok');
+
+    banner.textContent = `✓ Migrasi selesai — ${n1} nasabah & ${n2} transaksi dipindahkan.`;
+    banner.classList.add('show');
+    log('✔ SELESAI. Silakan buka Dealer Report.', 'ok');
+    btn.textContent = 'Migrasi Selesai';
+  } catch (err) {
+    log('✗ ' + err.message, 'err');
+    log('Migrasi dihentikan. Perbaiki masalah lalu jalankan lagi (aman, memakai upsert).', 'err');
+    btn.disabled = false;
+    btn.textContent = 'Coba Lagi';
+    console.error(err);
+  }
+}
+
+/* init setelah SDK siap */
+(function waitSdk(t){
+  if (window.supabase && window.supabase.createClient) { initClients(); return; }
+  if ((t||0) > 100) { alert('Supabase SDK gagal dimuat'); return; }
+  setTimeout(() => waitSdk((t||0)+1), 100);
+})();
+</script>
+</body>
+</html>
