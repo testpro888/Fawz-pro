@@ -914,7 +914,7 @@ tbody td { padding: 10px 14px; color: var(--text); white-space: nowrap; }
         </div>
       </div>
       <div class="btn-row">
-        <button class="btn btn-primary" onclick="dvGenerate()">Generate Pesan</button>
+        <button class="btn btn-primary" id="btn-dv-generate" onclick="dvGenerate()">Generate Pesan</button>
         <button class="btn btn-ghost" onclick="dvReset()">Reset</button>
       </div>
     </div>
@@ -958,7 +958,7 @@ function waitForDb(cb, tries) {
 }
 
 /* ===== STATE ===== */
-let clients = [], orders = [], importBuffer = [];
+let clients = [], orders = [], dividends = [], importBuffer = [];
 
 /* ===== INIT ===== */
 (function() {
@@ -969,14 +969,15 @@ let clients = [], orders = [], importBuffer = [];
 async function loadAll() {
   const db = getDb();
   try {
-    const [{ data: n, error: e1 }, { data: t, error: e2 }] = await Promise.all([
+    const [{ data: n, error: e1 }, { data: t, error: e2 }, { data: d, error: e3 }] = await Promise.all([
       db.from('dealer_nasabah').select('*').order('id'),
-      db.from('dealer_transaksi').select('*').order('tgl', { ascending: false })
+      db.from('dealer_transaksi').select('*').order('tgl', { ascending: false }),
+      db.from('dealer_dividen').select('*').order('id', { ascending: false })
     ]);
-    if (e1 || e2) throw e1 || e2;
-    clients = n || []; orders = t || [];
+    if (e1 || e2 || e3) throw e1 || e2 || e3;
+    clients = n || []; orders = t || []; dividends = d || [];
     setStatus(true);
-    fillClientSelects(); renderTable(); renderClientList();
+    fillClientSelects(); renderTable(); renderClientList(); dvRenderHistory();
   } catch(err) {
     setStatus(false); toastErr('Gagal terhubung ke database'); console.error(err);
   } finally {
@@ -1777,14 +1778,7 @@ function printOsReport() {
 }
 
 /* ===== DIVIDEN ===== */
-const DV_HIST_KEY = 'dealer_dv_history';
-
-function dvGetHistory() {
-  try { return JSON.parse(localStorage.getItem(DV_HIST_KEY) || '[]'); } catch { return []; }
-}
-function dvSaveHistory(arr) {
-  localStorage.setItem(DV_HIST_KEY, JSON.stringify(arr));
-}
+function dvGetHistory() { return dividends; }
 
 function dvClientChange() {
   const cid = document.getElementById('dv-cid').value;
@@ -1808,7 +1802,8 @@ function dvFmtDate(val) {
   return `${parseInt(d)} ${months[parseInt(m)-1]} ${y}`;
 }
 
-function dvGenerate() {
+async function dvGenerate() {
+  const db    = getDb();
   const tgl   = document.getElementById('dv-tgl').value;
   const cid   = document.getElementById('dv-cid').value;
   const nama  = document.getElementById('dv-nama').value;
@@ -1848,25 +1843,39 @@ function dvGenerate() {
   const txt = lines.join('\n');
   document.getElementById('dv-preview').textContent = txt;
   document.getElementById('dv-preview-card').style.display = 'block';
-  document.getElementById('dv-preview-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
 
-  const hist = dvGetHistory();
-  hist.unshift({
-    id: Date.now(),
-    tgl, tglFmt, cid, nama, stock,
-    qty, div, amt, txt,
+  const rec = { id: Date.now(), tgl, cid, nama, stock, qty, div, amt, txt };
+
+  const btn = document.getElementById('btn-dv-generate');
+  if (btn) btn.disabled = true;
+  const { error } = await db.from('dealer_dividen').insert(rec);
+  if (btn) btn.disabled = false;
+  if (error) { console.error(error); return toastErr('Gagal menyimpan dividen'); }
+
+  // simpan snapshot tampilan (tglFmt & savedAt) di memori supaya riwayat rapi
+  dividends.unshift({
+    ...rec,
+    tglFmt,
     savedAt: new Date().toLocaleString('id-ID', {
       day:'2-digit', month:'short', year:'numeric',
       hour:'2-digit', minute:'2-digit'
     })
   });
-  dvSaveHistory(hist);
   dvRenderHistory();
   toast('Pesan berhasil di-generate dan disimpan!');
 }
 
 function dvRenderHistory() {
-  const hist  = dvGetHistory();
+  const hist  = dvGetHistory().map(item => ({
+    ...item,
+    tglFmt: item.tglFmt || dvFmtDate(item.tgl),
+    savedAt: item.savedAt || (item.created_at
+      ? new Date(item.created_at).toLocaleString('id-ID', {
+          day:'2-digit', month:'short', year:'numeric',
+          hour:'2-digit', minute:'2-digit'
+        })
+      : '—')
+  }));
   const list  = document.getElementById('dv-hist-list');
   const count = document.getElementById('dv-hist-count');
   const btnClear = document.getElementById('btn-dv-clear');
@@ -1911,16 +1920,24 @@ function dvCopyItem(id) {
     .catch(() => toast('Gagal menyalin'));
 }
 
-function dvDeleteItem(id) {
-  const hist = dvGetHistory().filter(x => x.id !== id);
-  dvSaveHistory(hist);
+async function dvDeleteItem(id) {
+  const db = getDb();
+  const { error } = await db.from('dealer_dividen').delete().eq('id', id);
+  if (error) { console.error(error); return toastErr('Gagal menghapus dividen'); }
+  dividends = dividends.filter(x => x.id !== id);
   dvRenderHistory();
   toast('Data dihapus');
 }
 
-function dvClearAll() {
+async function dvClearAll() {
   if (!confirm('Hapus semua riwayat dividen?')) return;
-  dvSaveHistory([]);
+  const db  = getDb();
+  const ids = dividends.map(x => x.id);
+  if (ids.length) {
+    const { error } = await db.from('dealer_dividen').delete().in('id', ids);
+    if (error) { console.error(error); return toastErr('Gagal menghapus riwayat'); }
+  }
+  dividends = [];
   dvRenderHistory();
   toast('Semua riwayat dihapus');
 }

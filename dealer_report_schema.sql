@@ -70,3 +70,41 @@ CREATE POLICY "Allow anon update dealer_transaksi"
   ON dealer_transaksi FOR UPDATE TO anon USING (true) WITH CHECK (true);
 CREATE POLICY "Allow anon delete dealer_transaksi"
   ON dealer_transaksi FOR DELETE TO anon USING (true);
+
+-- ── DIVIDEN ──
+-- Menyimpan laporan dividen yang diinput di tab "Dividen".
+-- id memakai epoch millis (Date.now()) yang digenerate di client.
+CREATE TABLE IF NOT EXISTS dealer_dividen (
+  id          BIGINT PRIMARY KEY,        -- Date.now() dari client
+  tgl         DATE        NOT NULL,       -- tanggal dividen (YYYY-MM-DD)
+  cid         TEXT        NOT NULL,       -- Client ID (relasi ke dealer_nasabah.id)
+  nama        TEXT,                       -- snapshot nama nasabah
+  stock       TEXT        NOT NULL,       -- kode saham (mis. BBCA)
+  qty         NUMERIC     NOT NULL,       -- jumlah lembar
+  div         NUMERIC     NOT NULL,       -- dividen per lembar (Rp)
+  amt         NUMERIC     NOT NULL,       -- qty * div (Rp)
+  txt         TEXT,                       -- snapshot pesan WhatsApp
+  created_at  TIMESTAMPTZ DEFAULT NOW(),
+  CONSTRAINT dealer_dividen_cid_fkey
+    FOREIGN KEY (cid) REFERENCES dealer_nasabah (id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_dealer_dividen_tgl ON dealer_dividen (tgl);
+CREATE INDEX IF NOT EXISTS idx_dealer_dividen_cid ON dealer_dividen (cid);
+
+-- ── RLS (anon read/write, mirror tabel lain) ──
+ALTER TABLE dealer_dividen ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Allow anon read dealer_dividen"   ON dealer_dividen;
+DROP POLICY IF EXISTS "Allow anon insert dealer_dividen" ON dealer_dividen;
+DROP POLICY IF EXISTS "Allow anon update dealer_dividen" ON dealer_dividen;
+DROP POLICY IF EXISTS "Allow anon delete dealer_dividen" ON dealer_dividen;
+
+CREATE POLICY "Allow anon read dealer_dividen"
+  ON dealer_dividen FOR SELECT TO anon USING (true);
+CREATE POLICY "Allow anon insert dealer_dividen"
+  ON dealer_dividen FOR INSERT TO anon WITH CHECK (true);
+CREATE POLICY "Allow anon update dealer_dividen"
+  ON dealer_dividen FOR UPDATE TO anon USING (true) WITH CHECK (true);
+CREATE POLICY "Allow anon delete dealer_dividen"
+  ON dealer_dividen FOR DELETE TO anon USING (true);
