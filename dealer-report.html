@@ -1848,7 +1848,6 @@ function dvGenerate() {
   const txt = lines.join('\n');
   document.getElementById('dv-preview').textContent = txt;
   document.getElementById('dv-preview-card').style.display = 'block';
-  document.getElementById('dv-preview-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
 
   const hist = dvGetHistory();
   hist.unshift({
