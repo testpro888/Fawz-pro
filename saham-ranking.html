@@ -76,6 +76,14 @@
       if (user.role === 'sales') { window.location.replace('dashboard.html'); return; }
       if (!['head_account', 'admin', 'head_sales', 'treasury'].includes(user.role)) { window.location.replace('dashboard.html'); return; }
       sessionStorage.setItem('fawz_user', raw);
+
+      // ── EXPORT RESTRICTION: admin tidak bisa download CSV ──
+      if (user.role === 'admin') {
+        document.addEventListener('DOMContentLoaded', function() {
+          document.querySelectorAll('button.btn-download').forEach(el => el.style.display = 'none');
+        });
+        window.downloadTableCSV = function() { alert('Akses ditolak: Anda tidak memiliki akses untuk download data.'); };
+      }
     })();
   </script>
 </head>
