@@ -872,6 +872,12 @@
     const _gu = JSON.parse(_gr);
     if (!['head_account', 'admin', 'head_sales'].includes(_gu.role)) { window.location.replace('dashboard.html'); return; }
 
+    // ── EXPORT RESTRICTION: admin tidak bisa export ──
+    if (_gu.role === 'admin') {
+      document.querySelectorAll('button[onclick="exportLeadsCSV()"]').forEach(el => el.style.display = 'none');
+      window.exportLeadsCSV = function() { alert('Akses ditolak: Anda tidak memiliki akses untuk export data.'); };
+    }
+
     try {
       // ── Load dari referral_registrations ──
       const { data: refRows, error: refErr } = await window._supabase

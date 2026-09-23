@@ -257,6 +257,13 @@ async function boot() {
   const _u = JSON.parse(raw);
   if (!['head_account','admin','head_sales'].includes(_u.role)) { window.location.replace('dashboard.html'); return; }
 
+  // ── EXPORT RESTRICTION: admin tidak bisa export ──
+  if (_u.role === 'admin') {
+    document.querySelectorAll('#printControls button[onclick="exportPDF()"]').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('button[onclick="exportPDF()"]').forEach(el => el.style.display = 'none');
+    window.exportPDF = async function() { alert('Akses ditolak: Anda tidak memiliki akses untuk export data.'); };
+  }
+
   await loadSalesList();
   populateYearMonthFilters();
   document.getElementById('loadingWrap').style.display = 'none';

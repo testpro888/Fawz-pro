@@ -464,6 +464,12 @@
     sessionStorage.setItem('fawz_user', raw);
     curUser = JSON.parse(raw);
 
+    // ── EXPORT RESTRICTION: admin tidak bisa export ──
+    if (curUser.role === 'admin') {
+      document.querySelectorAll('button[onclick="exportCSV()"]').forEach(el => el.style.display = 'none');
+      window.exportCSV = function() { showToast('Anda tidak memiliki akses untuk export data.', 'error'); };
+    }
+
     // Sales Name selalu auto-fill dari user yang login
     const nameEl = document.getElementById('fSalesName');
     nameEl.value = curUser.name || '';

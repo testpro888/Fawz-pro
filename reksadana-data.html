@@ -421,6 +421,12 @@
     const canEdit = ['head_account','admin','treasury'].includes(curUser?.role);
     if (!canEdit) { document.getElementById('btnAdd').style.display = 'none'; }
 
+    // ── EXPORT RESTRICTION: admin tidak bisa export ──
+    if (curUser.role === 'admin') {
+      document.querySelectorAll('button[onclick="exportCSV()"]').forEach(el => el.style.display = 'none');
+      window.exportCSV = function() { showToast('Anda tidak memiliki akses untuk export data.', 'error'); };
+    }
+
     loadData();
   }
 
