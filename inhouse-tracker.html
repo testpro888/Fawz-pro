@@ -386,6 +386,14 @@ const raw = sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_us
 if (!raw) { window.location.replace('login.html'); }
 const curUser = JSON.parse(raw);
 
+// ── EXPORT RESTRICTION: admin tidak bisa export ──
+if (curUser.role === 'admin') {
+  document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('button[onclick="exportCSV()"]').forEach(el => el.style.display = 'none');
+  });
+  window.exportCSV = function() { alert('Akses ditolak: Anda tidak memiliki akses untuk export data.'); };
+}
+
 // Mapping username sales -> kode referral yang boleh dilihat
 const SALES_REFERRAL_MAP = {
   'susanto': ['CUANTO'],

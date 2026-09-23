@@ -588,6 +588,12 @@
     if (!raw) { window.location.replace('login.html'); return; }
     curUser = JSON.parse(raw);
 
+    // ── EXPORT RESTRICTION: admin tidak bisa export ──
+    if (curUser.role === 'admin') {
+      document.querySelectorAll('button[onclick="exportCSV()"]').forEach(el => el.style.display = 'none');
+      window.exportCSV = function() { showToast('Anda tidak memiliki akses untuk export data.', 'error'); };
+    }
+
     // Baca query param (dari tombol Order di bookbuilding)
     const params = new URLSearchParams(window.location.search);
     filterSeri = params.get('seri') || '';
