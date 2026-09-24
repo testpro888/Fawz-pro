@@ -400,6 +400,12 @@
     const _gu = JSON.parse(raw);
     if (!['head_account', 'admin'].includes(_gu.role)) { window.location.replace('dashboard.html'); return; }
 
+    // ── EXPORT RESTRICTION: admin tidak bisa export ──
+    if (_gu.role === 'admin') {
+      document.querySelectorAll('button[onclick="exportCSV()"]').forEach(el => el.style.display = 'none');
+      window.exportCSV = function() { showToast('Anda tidak memiliki akses untuk export data.', 'error'); };
+    }
+
     try {
       await Promise.all([loadPaidStatus(), loadAllData()]);
     } catch(e) {

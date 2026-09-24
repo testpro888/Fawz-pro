@@ -705,7 +705,19 @@
       const user = JSON.parse(raw);
       sessionStorage.setItem('fawz_user', raw);
       if (user.role === 'sales') applySalesRestrictions();
+      if (user.role === 'admin') applyAdminRestrictions();
     } catch(e) { window.location.href = 'login.html'; }
+  }
+
+  function applyAdminRestrictions() {
+    // Sembunyikan semua tombol import/export (data-sales-hide juga mencakupnya)
+    document.querySelectorAll('[data-sales-hide]').forEach(el => el.style.display = 'none');
+    // Override fungsi export dan import sebagai defense-in-depth
+    window.exportCSV = function() { showToast('Anda tidak memiliki akses untuk export data.', 'error'); };
+    window.exportAllCSV = function() { showToast('Anda tidak memiliki akses untuk export data.', 'error'); };
+    window.openUploadModalFor = function() { showToast('Anda tidak memiliki akses untuk import data.', 'error'); };
+    window.openUploadModal = function() { showToast('Anda tidak memiliki akses untuk import data.', 'error'); };
+    window.importCSV = function() { return; };
   }
 
   function applySalesRestrictions() {

@@ -502,6 +502,14 @@
       // ── ROLE GUARD ──
       const _gu = JSON.parse(raw);
       if (!['head_account','admin','head_sales'].includes(_gu.role)) { window.location.replace('dashboard.html'); return; }
+
+      // ── EXPORT RESTRICTION: admin tidak bisa export ──
+      if (_gu.role === 'admin') {
+        document.addEventListener('DOMContentLoaded', function() {
+          document.querySelectorAll('button[onclick="exportCSV()"]').forEach(el => el.style.display = 'none');
+        });
+        window.exportCSV = function() { alert('Akses ditolak: Anda tidak memiliki akses untuk export data.'); };
+      }
     })();
   </script>
 </head>

@@ -370,6 +370,12 @@
       window.location.replace('dashboard.html'); return;
     }
 
+    // ── EXPORT RESTRICTION: admin tidak bisa export ──
+    if (role === 'admin') {
+      document.querySelectorAll('button[onclick="exportCSV()"]').forEach(el => el.style.display = 'none');
+      window.exportCSV = function() { showToast('Anda tidak memiliki akses untuk export data.', 'error'); };
+    }
+
     // Update subtitle jika sales
     if (role === 'sales') {
       document.getElementById('pageSubtitle').textContent =
