@@ -4,7 +4,7 @@
   <script src="config.js"></script>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Fawz Pro | Laporan Komisi Sales</title>
+  <title>Sales Petik Profit | Laporan Komisi Sales</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -20,9 +20,9 @@
   <style>
     *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
     :root {
-      --navy:#0d0d2b; --gold:#f5a623; --gold-light:#ffc857;
+      --navy:#1b4332; --gold:#f5a623; --gold-light:#ffd43b;
       --bg:#f4f5fb; --white:#fff; --border:#e0e0ef; --text:#1a1a3a;
-      --gray:#888; --green:#27ae60; --indigo:#4f46e5; --nav-h:68px;
+      --gray:#888; --green:#27ae60; --indigo:#1b4332; --nav-h:68px;
     }
     body { font-family:'Poppins',sans-serif; background:var(--bg); min-height:100vh; padding-top:var(--nav-h); color:var(--text); }
     .page-container { max-width:1100px; margin:0 auto; padding:36px 28px; }
@@ -30,7 +30,7 @@
     .page-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:28px; flex-wrap:wrap; gap:16px; }
     .page-title { font-size:2rem; font-weight:700; color:var(--navy); }
     .page-subtitle { font-size:.88rem; color:var(--gray); margin-top:4px; }
-    .title-underline { width:48px; height:3px; background:linear-gradient(90deg,var(--indigo),#818cf8); border-radius:2px; margin-top:8px; }
+    .title-underline { width:48px; height:3px; background:linear-gradient(90deg,var(--indigo),#52b788); border-radius:2px; margin-top:8px; }
     .btn { display:inline-flex; align-items:center; gap:7px; padding:11px 20px; border-radius:10px; font-family:'Poppins',sans-serif; font-size:.875rem; font-weight:600; cursor:pointer; transition:all .2s; border:none; white-space:nowrap; }
     .btn-primary { background:var(--indigo); color:#fff; }
     .btn-primary:hover { background:#3730a3; }
@@ -879,7 +879,7 @@ function drawBarChart(canvasId, data, labels, label, highlightIdx) {
   if (chartInstances[canvasId]) { chartInstances[canvasId].destroy(); }
 
   const colors = data.map((_, i) =>
-    i === highlightIdx ? '#f5a623' : (data[i] > 0 ? '#0d0d2b' : '#e8e8f5')
+    i === highlightIdx ? '#f5a623' : (data[i] > 0 ? '#1b4332' : '#e8e8f5')
   );
 
   chartInstances[canvasId] = new Chart(ctx, {
