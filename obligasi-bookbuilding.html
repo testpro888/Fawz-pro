@@ -4,7 +4,7 @@
   <script src="config.js"></script>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Fawz Pro | Bookbuilding Obligasi</title>
+  <title>Sales Petik Profit | Bookbuilding Obligasi</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -37,7 +37,7 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --navy: #0d0d2b; --purple: #1e1252; --gold: #f5a623; --gold-light: #ffc857;
+      --navy: #1b4332; --purple: #14532d; --gold: #f5a623; --gold-light: #ffd43b;
       --bg: #f4f5fb; --white: #fff; --border: #e0e0ef; --text: #1a1a3a; --gray: #888;
       --nav-h: 68px;
     }
@@ -76,7 +76,7 @@
 
     .rec-card {
       flex: 1; min-width: 280px; max-width: 340px;
-      background: linear-gradient(135deg, #0d0d2b 0%, #1e1252 100%);
+      background: linear-gradient(135deg, #1b4332 0%, #14532d 100%);
       border-radius: 20px; padding: 24px 22px;
       box-shadow: 0 8px 32px rgba(13,13,43,.22), 0 0 0 1px rgba(245,166,35,.15);
       position: relative; overflow: hidden; color: #fff;
@@ -1315,7 +1315,7 @@
         onmousedown="selectClientItem('${esc(c.client_id)}','${esc(c.client_name.replace(/'/g,"\\'"))}')"
         onmouseover="clientDropFocusIdx=${i};highlightClientItem()"
         style="padding:9px 14px;cursor:pointer;font-size:0.83rem;border-bottom:1px solid #f5f5fa;display:flex;gap:8px;align-items:baseline;">
-        <span style="font-family:monospace;font-weight:700;color:#0d0d2b;flex-shrink:0;">${esc(c.client_id)}</span>
+        <span style="font-family:monospace;font-weight:700;color:#1b4332;flex-shrink:0;">${esc(c.client_id)}</span>
         <span style="color:#555;">${esc(c.client_name)}</span>
       </div>`
     ).join('');
