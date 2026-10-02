@@ -7,7 +7,6 @@
 <title>Sales Petik Profit | Dealer Report</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 
 <!-- ── ACCESS GUARD: hanya role 'admin' ATAU username 'fawzheadaccount' ── -->
 <script>
@@ -956,12 +955,11 @@ tbody td { padding: 10px 14px; color: var(--text); white-space: nowrap; }
 <div class="toast" id="toast"></div>
 
 <script>
-/* ===== SUPABASE (via config.js singleton) ===== */
-function getDb() { return window._supabase; }
+/* ===== API (PHP backend via config.js window._api) ===== */
 function waitForDb(cb, tries) {
   tries = tries || 0;
-  if (window._supabase) { cb(); return; }
-  if (tries > 100) { setStatus(false); toastErr('Supabase gagal dimuat'); document.getElementById('loading-overlay').style.display='none'; return; }
+  if (window._api) { cb(); return; }
+  if (tries > 100) { setStatus(false); toastErr('API gagal dimuat'); document.getElementById('loading-overlay').style.display='none'; return; }
   setTimeout(function(){ waitForDb(cb, tries+1); }, 100);
 }
 
@@ -975,15 +973,13 @@ let clients = [], orders = [], dividends = [], importBuffer = [];
 })();
 
 async function loadAll() {
-  const db = getDb();
   try {
-    const [{ data: n, error: e1 }, { data: t, error: e2 }, { data: d, error: e3 }] = await Promise.all([
-      db.from('dealer_nasabah').select('*').order('id'),
-      db.from('dealer_transaksi').select('*').order('tgl', { ascending: false }),
-      db.from('dealer_dividen').select('*').order('id', { ascending: false })
+    const [n, t, d] = await Promise.all([
+      _api.get('dealer.php', { table: 'nasabah' }),
+      _api.get('dealer.php', { table: 'transaksi' }),
+      _api.get('dealer.php', { table: 'dividen' })
     ]);
-    if (e1 || e2 || e3) throw e1 || e2 || e3;
-    clients = n || []; orders = t || []; dividends = d || [];
+    clients = n.data || []; orders = t.data || []; dividends = d.data || [];
     setStatus(true);
     fillClientSelects(); renderTable(); renderClientList(); dvRenderHistory();
   } catch(err) {
@@ -1119,13 +1115,13 @@ comboSetup('dv-cid', 'dv-cid-input', 'dv-cid-list');
 
 /* ===== CLIENT CRUD ===== */
 async function addClient() {
-  const db = getDb();
   const id   = document.getElementById('cl-id').value.trim().toUpperCase();
   const nama = document.getElementById('cl-nama').value.trim();
   if (!id || !nama) return toast('Isi Client ID dan Nama!');
   if (clients.find(c => c.id === id)) return toast('Client ID sudah ada!');
-  const { error } = await db.from('dealer_nasabah').insert({ id, nama });
-  if (error) return toastErr('Gagal menyimpan nasabah');
+  try {
+    await _api.post('dealer.php', { id, nama }, { table: 'nasabah' });
+  } catch(err) { console.error(err); return toastErr('Gagal menyimpan nasabah'); }
   clients.push({ id, nama });
   document.getElementById('cl-id').value = '';
   document.getElementById('cl-nama').value = '';
@@ -1134,10 +1130,10 @@ async function addClient() {
 }
 
 async function deleteClient(id) {
-  const db = getDb();
   if (!confirm('Hapus nasabah ini? Semua transaksinya juga akan terhapus.')) return;
-  const { error } = await db.from('dealer_nasabah').delete().eq('id', id);
-  if (error) return toastErr('Gagal menghapus nasabah');
+  try {
+    await _api.delete('dealer.php', { table: 'nasabah', id });
+  } catch(err) { console.error(err); return toastErr('Gagal menghapus nasabah'); }
   clients = clients.filter(c => c.id !== id);
   orders  = orders.filter(o => o.cid !== id);
   fillClientSelects(); renderClientList(); renderTable();
@@ -1205,11 +1201,11 @@ function showImportPreview() {
 }
 
 async function confirmImport() {
-  const db = getDb();
   const toInsert = importBuffer.filter(r => !clients.find(c => c.id === r.id));
   if (!toInsert.length) { cancelImport(); return toast('Tidak ada nasabah baru untuk diimport'); }
-  const { error } = await db.from('dealer_nasabah').insert(toInsert);
-  if (error) return toastErr('Gagal import ke database');
+  try {
+    await _api.post('dealer.php', toInsert, { table: 'nasabah', bulk: 1 });
+  } catch(err) { console.error(err); return toastErr('Gagal import ke database'); }
   clients.push(...toInsert);
   fillClientSelects(); renderClientList(); cancelImport();
   toast(`${toInsert.length} nasabah berhasil diimport`);
@@ -1252,7 +1248,6 @@ function resetForm(full) {
 }
 
 async function saveOrder() {
-  const db = getDb();
   const tgl  = document.getElementById('inp-tgl').value;
   const cid  = document.getElementById('inp-cid').value;
   const nama = document.getElementById('inp-nama').value;
@@ -1266,9 +1261,10 @@ async function saveOrder() {
   const rec   = { id, tgl, cid, nama, kode, trx, qty, harga, total };
   const btn   = document.getElementById('btn-save-order');
   btn.disabled = true;
-  const { error } = await db.from('dealer_transaksi').insert(rec);
+  try {
+    await _api.post('dealer.php', rec, { table: 'transaksi' });
+  } catch(err) { btn.disabled = false; console.error(err); return toastErr('Gagal menyimpan order'); }
   btn.disabled = false;
-  if (error) return toastErr('Gagal menyimpan order');
   orders.unshift(rec); resetForm(); renderTable();
   toast('Order berhasil disimpan');
 }
@@ -1302,12 +1298,12 @@ function renderTable() {
 function toggleAll(cb) { document.querySelectorAll('.row-chk').forEach(c => c.checked=cb.checked); }
 
 async function deleteSelected() {
-  const db = getDb();
   const ids = [...document.querySelectorAll('.row-chk:checked')].map(c=>Number(c.dataset.id));
   if (!ids.length) return toast('Pilih baris yang ingin dihapus!');
   if (!confirm(`Hapus ${ids.length} transaksi?`)) return;
-  const { error } = await db.from('dealer_transaksi').delete().in('id', ids);
-  if (error) return toastErr('Gagal menghapus transaksi');
+  try {
+    await _api.delete('dealer.php', { table: 'transaksi', ids: ids.join(',') });
+  } catch(err) { console.error(err); return toastErr('Gagal menghapus transaksi'); }
   orders = orders.filter(o=>!ids.includes(o.id)); renderTable();
   toast(`${ids.length} data dihapus`);
 }
@@ -1358,7 +1354,6 @@ function calcEditTotal() {
 }
 
 async function updateOrder() {
-  const db = getDb();
   const tgl  = document.getElementById('edit-tgl').value;
   const cid  = document.getElementById('edit-cid').value;
   const nama = document.getElementById('edit-nama').value;
@@ -1373,9 +1368,10 @@ async function updateOrder() {
 
   const btn = document.getElementById('btn-update-order');
   btn.disabled = true;
-  const { error } = await db.from('dealer_transaksi').update(rec).eq('id', editingId);
+  try {
+    await _api.put('dealer.php', rec, { table: 'transaksi', id: editingId });
+  } catch(err) { btn.disabled = false; console.error(err); return toastErr('Gagal memperbarui transaksi'); }
   btn.disabled = false;
-  if (error) return toastErr('Gagal memperbarui transaksi');
 
   const idx = orders.findIndex(x => x.id === editingId);
   if (idx !== -1) orders[idx] = { ...orders[idx], ...rec };
@@ -1811,7 +1807,6 @@ function dvFmtDate(val) {
 }
 
 async function dvGenerate() {
-  const db    = getDb();
   const tgl   = document.getElementById('dv-tgl').value;
   const cid   = document.getElementById('dv-cid').value;
   const nama  = document.getElementById('dv-nama').value;
@@ -1856,9 +1851,10 @@ async function dvGenerate() {
 
   const btn = document.getElementById('btn-dv-generate');
   if (btn) btn.disabled = true;
-  const { error } = await db.from('dealer_dividen').insert(rec);
+  try {
+    await _api.post('dealer.php', rec, { table: 'dividen' });
+  } catch(err) { if (btn) btn.disabled = false; console.error(err); return toastErr('Gagal menyimpan dividen'); }
   if (btn) btn.disabled = false;
-  if (error) { console.error(error); return toastErr('Gagal menyimpan dividen'); }
 
   // simpan snapshot tampilan (tglFmt & savedAt) di memori supaya riwayat rapi
   dividends.unshift({
@@ -1929,9 +1925,9 @@ function dvCopyItem(id) {
 }
 
 async function dvDeleteItem(id) {
-  const db = getDb();
-  const { error } = await db.from('dealer_dividen').delete().eq('id', id);
-  if (error) { console.error(error); return toastErr('Gagal menghapus dividen'); }
+  try {
+    await _api.delete('dealer.php', { table: 'dividen', id });
+  } catch(err) { console.error(err); return toastErr('Gagal menghapus dividen'); }
   dividends = dividends.filter(x => x.id !== id);
   dvRenderHistory();
   toast('Data dihapus');
@@ -1939,11 +1935,11 @@ async function dvDeleteItem(id) {
 
 async function dvClearAll() {
   if (!confirm('Hapus semua riwayat dividen?')) return;
-  const db  = getDb();
   const ids = dividends.map(x => x.id);
   if (ids.length) {
-    const { error } = await db.from('dealer_dividen').delete().in('id', ids);
-    if (error) { console.error(error); return toastErr('Gagal menghapus riwayat'); }
+    try {
+      await _api.delete('dealer.php', { table: 'dividen', ids: ids.join(',') });
+    } catch(err) { console.error(err); return toastErr('Gagal menghapus riwayat'); }
   }
   dividends = [];
   dvRenderHistory();

@@ -598,3 +598,51 @@ CREATE TABLE IF NOT EXISTS `session_tokens` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 SET FOREIGN_KEY_CHECKS = 1;
+
+-- =============================================================
+-- 32. DEALER NASABAH (dealer-report: kelola nasabah)
+-- =============================================================
+CREATE TABLE IF NOT EXISTS `dealer_nasabah` (
+  `id`         VARCHAR(50)  NOT NULL PRIMARY KEY,
+  `nama`       VARCHAR(200) NOT NULL,
+  `created_at` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =============================================================
+-- 33. DEALER TRANSAKSI (dealer-report: input order)
+--     id = epoch ms dari client (Date.now()), bukan auto-increment
+-- =============================================================
+CREATE TABLE IF NOT EXISTS `dealer_transaksi` (
+  `id`         BIGINT       NOT NULL PRIMARY KEY,
+  `tgl`        DATE         NULL,
+  `cid`        VARCHAR(50)  NULL,
+  `nama`       VARCHAR(200) NULL,
+  `kode`       VARCHAR(20)  NULL,
+  `trx`        ENUM('BUY','SELL') NULL,
+  `qty`        DECIMAL(20,4) NOT NULL DEFAULT 0,
+  `harga`      DECIMAL(20,2) NOT NULL DEFAULT 0,
+  `total`      DECIMAL(24,2) NOT NULL DEFAULT 0,
+  `created_at` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_tgl (`tgl`),
+  INDEX idx_cid (`cid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =============================================================
+-- 34. DEALER DIVIDEN (dealer-report: riwayat dividen)
+--     id = epoch ms dari client (Date.now()), bukan auto-increment
+-- =============================================================
+CREATE TABLE IF NOT EXISTS `dealer_dividen` (
+  `id`         BIGINT       NOT NULL PRIMARY KEY,
+  `tgl`        DATE         NULL,
+  `cid`        VARCHAR(50)  NULL,
+  `nama`       VARCHAR(200) NULL,
+  `stock`      VARCHAR(20)  NULL,
+  `qty`        DECIMAL(20,4) NOT NULL DEFAULT 0,
+  `div`        DECIMAL(20,4) NOT NULL DEFAULT 0,
+  `amt`        DECIMAL(24,2) NOT NULL DEFAULT 0,
+  `txt`        TEXT         NULL,
+  `created_at` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_cid (`cid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
