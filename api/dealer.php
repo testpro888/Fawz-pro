@@ -182,8 +182,69 @@ switch ($table) {
         break;
     }
 
+    // ── OUTSTANDING ───────────────────────────────────────
+    case 'outstanding': {
+        if ($m === 'GET') {
+            $rows = $pdo->query(
+                'SELECT id, nama, limit_diajukan, asset, outstanding, tgl, status, porto_list
+                 FROM dealer_outstanding ORDER BY id'
+            )->fetchAll();
+            jsonList($rows);
+        }
+
+        // POST: tambah baris baru (client baru di outstanding)
+        if ($m === 'POST') {
+            $b  = getBody();
+            $id = trim((string)($b['id'] ?? ''));
+            if ($id === '') jsonError('id (client_id) wajib diisi');
+            $nama           = trim((string)($b['nama']           ?? ''));
+            $limit_diajukan = (int)($b['limit_diajukan'] ?? 0);
+            $pdo->prepare(
+                'INSERT INTO dealer_outstanding (id, nama, limit_diajukan)
+                 VALUES (?, ?, ?)
+                 ON DUPLICATE KEY UPDATE nama = VALUES(nama), limit_diajukan = VALUES(limit_diajukan)'
+            )->execute([$id, $nama, $limit_diajukan]);
+            jsonOk(['id' => $id], 201);
+        }
+
+        // PUT: update satu baris (asset, outstanding, tgl, status, porto_list, nama, limit_diajukan)
+        if ($m === 'PUT') {
+            $id = trim((string)($_GET['id'] ?? ''));
+            if ($id === '') jsonError('id wajib diisi');
+            $b = getBody();
+            $allowed = ['nama','limit_diajukan','asset','outstanding','tgl','status','porto_list'];
+            $sets = []; $vals = [];
+            foreach ($allowed as $f) {
+                if (array_key_exists($f, $b)) {
+                    $sets[] = "`$f` = ?";
+                    $v = $b[$f];
+                    if ($f === 'porto_list' && is_string($v)) {
+                        // simpan uppercase, rapikan spasi
+                        $v = strtoupper(preg_replace('/\s+/', '', $v));
+                        $v = implode(', ', array_filter(array_map('trim', explode(',', $v))));
+                    }
+                    $vals[] = ($v === '' || $v === null) ? null : $v;
+                }
+            }
+            if (empty($sets)) jsonError('Tidak ada data yang diubah');
+            $vals[] = $id;
+            $pdo->prepare('UPDATE dealer_outstanding SET ' . implode(',', $sets) . ' WHERE id = ?')
+                ->execute($vals);
+            jsonOk(['id' => $id]);
+        }
+
+        // DELETE: hapus satu client dari outstanding
+        if ($m === 'DELETE') {
+            $id = trim((string)($_GET['id'] ?? ''));
+            if ($id === '') jsonError('id wajib diisi');
+            $pdo->prepare('DELETE FROM dealer_outstanding WHERE id = ?')->execute([$id]);
+            jsonOk(['deleted' => $id]);
+        }
+        break;
+    }
+
     default:
-        jsonError('table tidak dikenal (nasabah|transaksi|dividen)', 400);
+        jsonError('table tidak dikenal (nasabah|transaksi|dividen|outstanding)', 400);
 }
 
 jsonError('Endpoint tidak ditemukan', 404);

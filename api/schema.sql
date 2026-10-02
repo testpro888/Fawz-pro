@@ -646,3 +646,20 @@ CREATE TABLE IF NOT EXISTS `dealer_dividen` (
   `created_at` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   INDEX idx_cid (`cid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =============================================================
+-- 35. DEALER OUTSTANDING
+--     id = client_id (string PK, diisi manual)
+-- =============================================================
+CREATE TABLE IF NOT EXISTS `dealer_outstanding` (
+  `id`             VARCHAR(50)   NOT NULL PRIMARY KEY,
+  `nama`           VARCHAR(200)  NOT NULL DEFAULT '',
+  `limit_diajukan` BIGINT        NOT NULL DEFAULT 0,
+  `asset`          DECIMAL(24,2) NOT NULL DEFAULT 0,
+  `outstanding`    DECIMAL(24,2) NOT NULL DEFAULT 0,
+  `tgl`            DATE          NULL,
+  `status`         VARCHAR(20)   NOT NULL DEFAULT 'Kosong',
+  `porto_list`     TEXT          NULL,
+  `created_at`     DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at`     DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
