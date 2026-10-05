@@ -189,7 +189,7 @@ if ($m === 'GET') {
 
     $whereStr = implode(' AND ', $where);
     $page     = max(1, (int)($_GET['page'] ?? 1));
-    $perPage  = min(500, max(10, (int)($_GET['per_page'] ?? 50)));
+    $perPage  = min(100000, max(10, (int)($_GET['per_page'] ?? 50)));
     $offset   = ($page - 1) * $perPage;
 
     $total = $pdo->prepare("SELECT COUNT(*) FROM customers WHERE $whereStr");
