@@ -835,7 +835,7 @@
   }
 
   function openEditModal(id) {
-    const c = allCustomers.find(x => x.id === id);
+    const c = allCustomers.find(x => x.id == id);
     if (!c) return;
     document.getElementById('formModalTitle').textContent = 'Edit Customer';
     document.getElementById('editDocId').value = id;
@@ -847,7 +847,7 @@
 
   // ===== DETAIL VIEW =====
   function openDetailModal(id) {
-    const c = allCustomers.find(x => x.id === id);
+    const c = allCustomers.find(x => x.id == id);
     if (!c) return;
     document.getElementById('detailModalTitle').textContent = c.clientName || '—';
     document.getElementById('detailEditBtn').onclick = () => {
