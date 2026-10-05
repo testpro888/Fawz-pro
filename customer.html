@@ -560,6 +560,65 @@
     return mapped;
   }
 
+  // ===== AUTO-GENERATE FAWZ ID =====
+  // Fawz ID: F + 6 digit. Tidak unik — customer dengan base Client ID sama
+  // (mis. RW028Y & RW028N dianggap orang yang sama) berbagi Fawz ID yang sama.
+  function generateFawzId(existingIds) {
+    let id;
+    do {
+      const num = Math.floor(100000 + Math.random() * 900000); // 6 digit
+      id = 'F' + num;
+    } while (existingIds.has(id));
+    return id;
+  }
+
+  // Base Client ID: buang suffix Y/N di akhir (RW028Y → RW028, RW028N → RW028)
+  function getClientIdBase(clientID) {
+    if (!clientID) return '';
+    const upper = clientID.toUpperCase().trim();
+    const lastChar = upper.slice(-1);
+    return (lastChar === 'Y' || lastChar === 'N') ? upper.slice(0, -1) : upper;
+  }
+
+  async function autoGenerateFawzIds() {
+    // Hanya role yang boleh menulis (admin/head_account) yang generate,
+    // supaya tidak memicu 403 berulang untuk role lain.
+    const role = (window._curUser && window._curUser.role) || '';
+    if (role !== 'admin' && role !== 'head_account') return;
+
+    const toUpdate = allCustomers.filter(c => !c.fawzId && c.clientName);
+    if (toUpdate.length === 0) return;
+
+    // Kumpulkan fawzId yang sudah ada + map base Client ID → fawzId
+    const existingIds = new Set(allCustomers.filter(c => c.fawzId).map(c => c.fawzId));
+    const baseToFawzId = {};
+    for (const c of allCustomers) {
+      if (c.fawzId && c.clientID) {
+        const base = getClientIdBase(c.clientID);
+        if (base && !baseToFawzId[base]) baseToFawzId[base] = c.fawzId;
+      }
+    }
+
+    for (const c of toUpdate) {
+      const base = getClientIdBase(c.clientID);
+      let newId;
+      if (base && baseToFawzId[base]) {
+        newId = baseToFawzId[base];           // samakan dengan sibling Y/N
+      } else {
+        newId = generateFawzId(existingIds);
+        existingIds.add(newId);
+        if (base) baseToFawzId[base] = newId;
+      }
+      c.fawzId = newId;
+      try {
+        await window._api.put('customers.php', { fawz_id: newId }, { id: c.id });
+      } catch (e) {
+        console.warn('Gagal simpan Fawz ID untuk', c.id, e);
+      }
+    }
+    applyFilters();
+  }
+
   async function loadCustomers() {
     try {
       const cu = window._curUser || JSON.parse(sessionStorage.getItem('fawz_user') || localStorage.getItem('fawz_user_remember') || '{}');
@@ -573,6 +632,9 @@
 
       applyFilters(); updateStats(); populateFilters();
       showToast('Data berhasil dimuat', 'success');
+
+      // Generate Fawz ID untuk customer yang belum punya (jalan di background)
+      autoGenerateFawzIds();
     } catch (e) {
       console.error(e);
       showToast('Gagal memuat data.', 'error');

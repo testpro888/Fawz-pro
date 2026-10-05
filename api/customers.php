@@ -85,7 +85,7 @@ if ($m === 'POST' && isset($_GET['import'])) {
     // Normalisasi header
     $headers = array_map(fn($h) => strtolower(trim($h)), $headers);
 
-    $allowed = ['client_id','client_name','ktp_number','birth_date','npwp','email','phone',
+    $allowed = ['fawz_id','client_id','client_name','ktp_number','birth_date','npwp','email','phone',
                 'occupation','company_name','nature_of_business','position','address',
                 'ksei_single_id','ksei_sub_account_no','kpei_sub_account_no',
                 'stp_ksei_sub_account_no','stp_kpei_sub_account_no',
@@ -217,7 +217,7 @@ if ($m === 'POST') {
     $b = getBody();
     if (empty($b['client_name'])) jsonError('client_name wajib diisi');
 
-    $fields = ['client_id','client_name','ktp_number','birth_date','npwp','email','phone',
+    $fields = ['fawz_id','client_id','client_name','ktp_number','birth_date','npwp','email','phone',
                'occupation','company_name','nature_of_business','position','address',
                'ksei_single_id','ksei_sub_account_no','kpei_sub_account_no',
                'stp_ksei_sub_account_no','stp_kpei_sub_account_no',
@@ -255,7 +255,7 @@ if ($m === 'POST') {
 // ── UPDATE ────────────────────────────────────────────────
 if ($m === 'PUT' && $id) {
     $b = getBody();
-    $fields = ['client_id','client_name','ktp_number','birth_date','npwp','email','phone',
+    $fields = ['fawz_id','client_id','client_name','ktp_number','birth_date','npwp','email','phone',
                'occupation','company_name','nature_of_business','position','address',
                'ksei_single_id','ksei_sub_account_no','kpei_sub_account_no',
                'stp_ksei_sub_account_no','stp_kpei_sub_account_no',

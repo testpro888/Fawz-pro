@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS `accounts` (
 -- =============================================================
 CREATE TABLE IF NOT EXISTS `customers` (
   `id`                        INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `fawz_id`                   VARCHAR(20)  NULL,
   `client_id`                 VARCHAR(50)  NULL UNIQUE,
   `client_name`               VARCHAR(200) NOT NULL,
   `ktp_number`                VARCHAR(50)  NULL,
@@ -71,7 +72,8 @@ CREATE TABLE IF NOT EXISTS `customers` (
   INDEX idx_client_status (`client_status`),
   INDEX idx_sales_person_id (`sales_person_id`),
   INDEX idx_client_name (`client_name`),
-  INDEX idx_birth_date (`birth_date`)
+  INDEX idx_birth_date (`birth_date`),
+  INDEX idx_fawz_id (`fawz_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =============================================================
