@@ -29,13 +29,14 @@ CREATE TABLE IF NOT EXISTS `accounts` (
 -- =============================================================
 CREATE TABLE IF NOT EXISTS `customers` (
   `id`                        INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `fawz_id`                   VARCHAR(20)  NULL,
   `client_id`                 VARCHAR(50)  NULL UNIQUE,
   `client_name`               VARCHAR(200) NOT NULL,
-  `ktp_number`                VARCHAR(30)  NULL,
+  `ktp_number`                VARCHAR(50)  NULL,
   `birth_date`                DATE         NULL,
-  `npwp`                      VARCHAR(30)  NULL,
-  `email`                     VARCHAR(150) NULL,
-  `phone`                     VARCHAR(30)  NULL,
+  `npwp`                      VARCHAR(50)  NULL,
+  `email`                     VARCHAR(255) NULL,
+  `phone`                     VARCHAR(100) NULL,
   `occupation`                VARCHAR(100) NULL,
   `company_name`              VARCHAR(200) NULL,
   `nature_of_business`        VARCHAR(200) NULL,
@@ -57,29 +58,26 @@ CREATE TABLE IF NOT EXISTS `customers` (
   `created_date`              DATE         NULL,
   `active_date`               DATE         NULL,
   `closed_date`               DATE         NULL,
+  -- Data sekuritas & rekening (1 customer = 1 sekuritas)
+  `sekuritas_name`            VARCHAR(100) NULL DEFAULT 'Maybank',
+  `rdn_bank_name`             VARCHAR(100) NULL,
+  `rdn_account_no`            VARCHAR(50)  NULL,
+  `sec_client_id`             VARCHAR(50)  NULL,
+  `sid`                       VARCHAR(50)  NULL,
+  `personal_bank_name`        VARCHAR(100) NULL,
+  `personal_account_no`       VARCHAR(50)  NULL,
+  `personal_account_name`     VARCHAR(150) NULL,
   `created_at`                DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at`                DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   INDEX idx_client_status (`client_status`),
   INDEX idx_sales_person_id (`sales_person_id`),
   INDEX idx_client_name (`client_name`),
-  INDEX idx_birth_date (`birth_date`)
+  INDEX idx_birth_date (`birth_date`),
+  INDEX idx_fawz_id (`fawz_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =============================================================
--- 3. CUSTOMER SECURITIES
--- =============================================================
-CREATE TABLE IF NOT EXISTS `customer_securities` (
-  `id`          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  `customer_id` INT UNSIGNED NOT NULL,
-  `client_id`   VARCHAR(50)  NULL,
-  `sekuritas`   VARCHAR(100) NULL,
-  `no_rdn`      VARCHAR(50)  NULL,
-  `created_at`  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  INDEX idx_customer_id (`customer_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- =============================================================
--- 4. SALES
+-- 3. SALES
 -- =============================================================
 CREATE TABLE IF NOT EXISTS `sales` (
   `id`            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,

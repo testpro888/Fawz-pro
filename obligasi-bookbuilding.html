@@ -1284,19 +1284,20 @@
 
   // Ambil semua customer aktif dengan pagination (lewati limit default 1000)
   async function fetchAllActiveCustomers() {
-    const PAGE = 1000;
-    let all = [], from = 0;
+    const PAGE = 500; // cap per_page di customers.php
+    let all = [], page = 1;
     while (true) {
-      const { data, error } = await window._supabase.from('customers')
-        .select('client_id, client_name, sales_person_name, referral_agents')
-        .eq('client_status', 'Aktif')
-        .order('client_name', { ascending: true })
-        .range(from, from + PAGE - 1);
-      if (error) { console.warn('[fetchAllActiveCustomers]', error.message || error); break; }
-      const rows = data || [];
-      all = all.concat(rows);
-      if (rows.length < PAGE) break;
-      from += PAGE;
+      try {
+        const res  = await window._api.get('customers.php', { status: 'Aktif', page, per_page: PAGE });
+        const rows = res.data || [];
+        all = all.concat(rows);
+        const total = res.total || 0;
+        if (rows.length < PAGE || all.length >= total) break;
+        page++;
+      } catch(e) {
+        console.warn('[fetchAllActiveCustomers]', e.message || e);
+        break;
+      }
     }
     return all;
   }
@@ -1399,20 +1400,16 @@
     }
 
     try {
-      // Get customer UUID first
-      const { data: custData } = await window._supabase.from('customers').select('id').eq('client_id', clientId).single();
-      if (!custData) { sekSelect.innerHTML = '<option value="">-- Client tidak ditemukan --</option>'; return; }
-
-      // Get securities for this customer
-      const { data: secData, error } = await window._supabase.from('customer_securities').select('sekuritas_name').eq('customer_id', custData.id);
-      if (error) throw error;
+      // Securities ikut dimuat di objek client (customers.php -> securities[]).
+      const secData = (client && Array.isArray(client.securities)) ? client.securities : [];
 
       sekSelect.innerHTML = '<option value="">-- Pilih Sekuritas --</option>';
-      if (secData && secData.length > 0) {
-        secData.forEach(s => {
+      const names = [...new Set(secData.map(s => s.sekuritas_name).filter(Boolean))];
+      if (names.length > 0) {
+        names.forEach(name => {
           const opt = document.createElement('option');
-          opt.value = s.sekuritas_name;
-          opt.textContent = s.sekuritas_name;
+          opt.value = name;
+          opt.textContent = name;
           sekSelect.appendChild(opt);
         });
       } else {
@@ -1768,16 +1765,15 @@
     if (!clientId) { sekSelect.innerHTML = '<option value="">-- Pilih Client dulu --</option>'; return; }
 
     try {
-      const { data: custData } = await window._supabase.from('customers').select('id').eq('client_id', clientId).single();
-      if (!custData) { sekSelect.innerHTML = '<option value="">-- Tidak ditemukan --</option>'; return; }
-      const { data: secData } = await window._supabase.from('customer_securities').select('sekuritas_name').eq('customer_id', custData.id);
+      const secData = (client && Array.isArray(client.securities)) ? client.securities : [];
       sekSelect.innerHTML = '<option value="">-- Pilih Sekuritas --</option>';
-      (secData || []).forEach(s => {
+      const names = [...new Set(secData.map(s => s.sekuritas_name).filter(Boolean))];
+      names.forEach(name => {
         const opt = document.createElement('option');
-        opt.value = s.sekuritas_name; opt.textContent = s.sekuritas_name;
+        opt.value = name; opt.textContent = name;
         sekSelect.appendChild(opt);
       });
-      if (!secData || !secData.length) sekSelect.innerHTML = '<option value="">-- Tidak ada sekuritas terdaftar --</option>';
+      if (!names.length) sekSelect.innerHTML = '<option value="">-- Tidak ada sekuritas terdaftar --</option>';
     } catch(e) { sekSelect.innerHTML = '<option value="">-- Gagal memuat --</option>'; }
   }
 

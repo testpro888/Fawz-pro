@@ -17,6 +17,45 @@ $user = requireAuth();
 $pdo  = getDB();
 $m    = method();
 
+// ── Securities ────────────────────────────────────────────
+// 1 customer = 1 sekuritas; disimpan sebagai kolom langsung di tabel customers.
+const SEC_FIELDS = ['sekuritas_name','rdn_bank_name','rdn_account_no','sec_client_id',
+                    'sid','personal_bank_name','personal_account_no','personal_account_name'];
+
+// Bentuk ulang row customer -> tambah field 'securities' array (kompat frontend).
+// Frontend (mapCustomerRow) membaca r.securities sebagai array berisi 1 objek.
+function attachSecurities(array $row): array {
+    $hasData = false;
+    foreach (SEC_FIELDS as $f) {
+        if ($f === 'sekuritas_name') continue;
+        if (!empty($row[$f])) { $hasData = true; break; }
+    }
+    if ($hasData || !empty($row['sekuritas_name'])) {
+        $sec = [];
+        foreach (SEC_FIELDS as $f) $sec[$f] = $row[$f] ?? null;
+        $sec['sort_order'] = 0;
+        $row['securities'] = [$sec];
+    } else {
+        $row['securities'] = [];
+    }
+    return $row;
+}
+
+// Ambil nilai securities[0] dari body (frontend kirim nested array) -> map flat.
+function securitiesFromBody(array $b): array {
+    $src = [];
+    if (isset($b['securities']) && is_array($b['securities']) && isset($b['securities'][0]) && is_array($b['securities'][0])) {
+        $src = $b['securities'][0];
+    }
+    $out = [];
+    foreach (SEC_FIELDS as $f) {
+        if (array_key_exists($f, $src)) {
+            $out[$f] = ($src[$f] === '' ? null : $src[$f]);
+        }
+    }
+    return $out;
+}
+
 // ── EXPORT CSV ────────────────────────────────────────────
 if ($m === 'GET' && isset($_GET['export'])) {
     $rows = $pdo->query('SELECT * FROM customers ORDER BY client_name')->fetchAll();
@@ -46,32 +85,43 @@ if ($m === 'POST' && isset($_GET['import'])) {
     // Normalisasi header
     $headers = array_map(fn($h) => strtolower(trim($h)), $headers);
 
-    $allowed = ['client_id','client_name','ktp_number','birth_date','npwp','email','phone',
+    $allowed = ['fawz_id','client_id','client_name','ktp_number','birth_date','npwp','email','phone',
                 'occupation','company_name','nature_of_business','position','address',
                 'ksei_single_id','ksei_sub_account_no','kpei_sub_account_no',
                 'stp_ksei_sub_account_no','stp_kpei_sub_account_no',
                 'sales_person_name','referral_agents','office_name','department_id',
-                'client_status','client_status_description','created_date','active_date','closed_date'];
+                'client_status','client_status_description','created_date','active_date','closed_date',
+                // kolom securities (1 customer = 1 sekuritas), ikut langsung ke tabel customers
+                'sekuritas_name','rdn_bank_name','rdn_account_no','sec_client_id','sid',
+                'personal_bank_name','personal_account_no','personal_account_name'];
 
-    $cols    = array_intersect($headers, $allowed);
+    $cols    = array_values(array_intersect($allowed, $headers));
     $colList = implode(',', array_map(fn($c) => "`$c`", $cols));
     $phList  = implode(',', array_fill(0, count($cols), '?'));
 
-    $stmt    = $pdo->prepare(
-        "INSERT INTO customers ($colList) VALUES ($phList)
-         ON DUPLICATE KEY UPDATE client_name = VALUES(client_name)"
+    // Semua kolom customer diupdate saat client_id duplikat (bukan hanya client_name)
+    $updateCols = array_filter($cols, fn($c) => $c !== 'client_id');
+    $updateSet  = implode(',', array_map(fn($c) => "`$c` = VALUES(`$c`)", $updateCols));
+
+    $stmt = $pdo->prepare(
+        "INSERT INTO customers ($colList) VALUES ($phList)" .
+        ($updateSet ? " ON DUPLICATE KEY UPDATE $updateSet" : '')
     );
+
+    // Helper: ambil nilai sel berdasar nama kolom
+    $cellOf = function(array $row, string $col) use ($headers) {
+        $idx = array_search($col, $headers);
+        if ($idx === false || !isset($row[$idx])) return null;
+        $v = trim($row[$idx]);
+        return $v === '' ? null : $v;
+    };
 
     $imported = 0;
     $errors   = [];
     while (($row = fgetcsv($handle)) !== false) {
         try {
             $vals = [];
-            foreach ($cols as $col) {
-                $idx    = array_search($col, $headers);
-                $val    = ($idx !== false && isset($row[$idx])) ? trim($row[$idx]) : null;
-                $vals[] = ($val === '' ? null : $val);
-            }
+            foreach ($cols as $col) $vals[] = $cellOf($row, $col);
             $stmt->execute($vals);
             $imported++;
         } catch (Exception $e) {
@@ -102,7 +152,7 @@ if ($m === 'GET' && $id) {
     $stmt->execute([$id]);
     $row = $stmt->fetch();
     if (!$row) jsonError('Customer tidak ditemukan', 404);
-    jsonOk($row);
+    jsonOk(attachSecurities($row));
 }
 
 // ── LIST ──────────────────────────────────────────────────
@@ -139,7 +189,7 @@ if ($m === 'GET') {
 
     $whereStr = implode(' AND ', $where);
     $page     = max(1, (int)($_GET['page'] ?? 1));
-    $perPage  = min(500, max(10, (int)($_GET['per_page'] ?? 50)));
+    $perPage  = min(100000, max(10, (int)($_GET['per_page'] ?? 50)));
     $offset   = ($page - 1) * $perPage;
 
     $total = $pdo->prepare("SELECT COUNT(*) FROM customers WHERE $whereStr");
@@ -153,6 +203,12 @@ if ($m === 'GET') {
     $stmt->execute($params);
     $rows = $stmt->fetchAll();
 
+    // Lampirkan securities dari kolom customer sendiri
+    foreach ($rows as &$r) {
+        $r = attachSecurities($r);
+    }
+    unset($r);
+
     jsonList($rows, $totalCount);
 }
 
@@ -161,7 +217,7 @@ if ($m === 'POST') {
     $b = getBody();
     if (empty($b['client_name'])) jsonError('client_name wajib diisi');
 
-    $fields = ['client_id','client_name','ktp_number','birth_date','npwp','email','phone',
+    $fields = ['fawz_id','client_id','client_name','ktp_number','birth_date','npwp','email','phone',
                'occupation','company_name','nature_of_business','position','address',
                'ksei_single_id','ksei_sub_account_no','kpei_sub_account_no',
                'stp_ksei_sub_account_no','stp_kpei_sub_account_no',
@@ -178,22 +234,28 @@ if ($m === 'POST') {
         }
     }
 
+    // Securities (nested array dari frontend) -> jadi kolom langsung
+    foreach (securitiesFromBody($b) as $f => $v) {
+        $cols[] = "`$f`";
+        $vals[] = $v;
+    }
+
     $stmt = $pdo->prepare(
         'INSERT INTO customers (' . implode(',', $cols) . ') VALUES (' .
         implode(',', array_fill(0, count($cols), '?')) . ')'
     );
     $stmt->execute($vals);
-    $newId = $pdo->lastInsertId();
+    $newId = (int)$pdo->lastInsertId();
 
     $row = $pdo->prepare('SELECT * FROM customers WHERE id = ?');
     $row->execute([$newId]);
-    jsonOk($row->fetch(), 201);
+    jsonOk(attachSecurities($row->fetch()), 201);
 }
 
 // ── UPDATE ────────────────────────────────────────────────
 if ($m === 'PUT' && $id) {
     $b = getBody();
-    $fields = ['client_id','client_name','ktp_number','birth_date','npwp','email','phone',
+    $fields = ['fawz_id','client_id','client_name','ktp_number','birth_date','npwp','email','phone',
                'occupation','company_name','nature_of_business','position','address',
                'ksei_single_id','ksei_sub_account_no','kpei_sub_account_no',
                'stp_ksei_sub_account_no','stp_kpei_sub_account_no',
@@ -209,14 +271,22 @@ if ($m === 'PUT' && $id) {
             $vals[] = ($b[$f] === '' ? null : $b[$f]);
         }
     }
+
+    // Securities (nested array dari frontend) -> jadi kolom langsung
+    if (isset($b['securities']) && is_array($b['securities'])) {
+        foreach (securitiesFromBody($b) as $f => $v) {
+            $sets[] = "`$f` = ?";
+            $vals[] = $v;
+        }
+    }
+
     if (empty($sets)) jsonError('Tidak ada data yang diupdate');
     $vals[] = $id;
-
     $pdo->prepare('UPDATE customers SET ' . implode(',', $sets) . ' WHERE id = ?')->execute($vals);
 
     $row = $pdo->prepare('SELECT * FROM customers WHERE id = ?');
     $row->execute([$id]);
-    jsonOk($row->fetch());
+    jsonOk(attachSecurities($row->fetch()));
 }
 
 // ── DELETE ────────────────────────────────────────────────
