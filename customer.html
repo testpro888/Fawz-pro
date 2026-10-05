@@ -6,13 +6,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Sales Petik Profit | Data Customer</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-  <script>
-    const SUPABASE_URL = (window.__FAWZ_CONFIG__ || {}).supabaseUrl || '';
-    const SUPABASE_KEY = (window.__FAWZ_CONFIG__ || {}).supabaseKey || '';
-    const _sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-    window._supabase = _sb;
-  </script>
 
   <script>
     window.addEventListener('DOMContentLoaded', () => {
@@ -1322,26 +1315,21 @@
     return null;
   }
 
-  // Helper: upsert satu baris ke customer_securities dari data CSV row
-  // Hanya dijalankan kalau ada data rekening (SavingsID atau BankAccountNo)
-  async function upsertSecuritiesFromRow(customerId, row) {
-    const hasData = row.savingsID || row.bankAccountNo || row.bankAccountID || row.savingsBankID;
-    if (!customerId || !hasData) return;
-    // Hapus securities lama untuk customer ini (1 row per import = replace)
-    await window._supabase.from('customer_securities').delete().eq('customer_id', customerId);
-    // Tentukan sekuritas name: coba dari SavingsBankID lalu BankAccountID, fallback Maybank Sekuritas
-    // Di CSV tidak ada kolom nama sekuritas eksplisit — gunakan 'Maybank Sekuritas' sebagai default
-    const secRow = {
-      customer_id:          customerId,
-      sekuritas_name:       'Maybank Sekuritas',
-      rdn_bank_name:        row.savingsBankID  || null,  // SavingsBankID = Bank RDN (e.g. "BCA", "BNIIS")
-      rdn_account_no:       row.savingsID      || null,  // SavingsID = No Rekening RDN
-      personal_bank_name:   row.bankAccountID  || null,  // BankAccountID = Nama Bank rekening pribadi
-      personal_account_no:  row.bankAccountNo  || null,  // BankAccountNo = No Rekening
-      personal_account_name: row.bankAccountName || null, // BankAccountName = Nama di rekening
-      sort_order:           0,
-    };
-    await window._supabase.from('customer_securities').insert(secRow);
+  // Kolom yang didukung endpoint import (api/customers.php -> $allowed)
+  const IMPORT_COLUMNS = [
+    'client_id','client_name','birth_date','ktp_number','npwp','email','phone',
+    'occupation','company_name','nature_of_business','position','address',
+    'ksei_single_id','ksei_sub_account_no','kpei_sub_account_no',
+    'stp_ksei_sub_account_no','stp_kpei_sub_account_no',
+    'sales_person_name','office_name',
+    'client_status','client_status_description','active_date','closed_date'
+  ];
+
+  // Escape satu nilai agar aman sebagai field CSV
+  function csvEscape(val) {
+    if (val === null || val === undefined) return '';
+    const s = String(val);
+    return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
   }
 
   async function importCSV() {
@@ -1349,132 +1337,58 @@
     const btn = document.getElementById('uploadSaveBtn');
     btn.textContent = 'Mengimport...'; btn.disabled = true;
     try {
-      let success = 0, errors = [];
-
-      // Pisahkan rows yang punya client_id (upsert) dan yang tidak (insert)
-      const rowsWithId = [], rowsWithoutId = [];
+      // Petakan csvRows (header broker PascalCase) ke kolom snake_case yang
+      // dikenali endpoint PHP, lalu bangun ulang CSV ternormalisasi.
+      const normalized = [];
       for (const row of csvRows) {
-        const supaRow = {
-          client_id:                 row.clientID || null,
-          client_name:               row.clientName || null,
-          birth_date:                parseDateField(row.cifInvestorBirthDate),
-          ktp_number:                row.cifInvestorKTPNumber || null,
-          npwp:                      row.npwp || null,
-          email:                     row.email || null,
-          phone:                     row.phone || null,
-          occupation:                row.cifInvestorOccupation || null,
-          company_name:              row.cifCompanyName || null,
-          nature_of_business:        row.cifInvestorNatureOfBusiness || null,
-          position:                  row.cifInvestorPosition || null,
-          address:                   row.address || null,
-          ksei_single_id:            row.kseiSingleID || null,
-          ksei_sub_account_no:       row.kseiSubAccountNo || null,
-          kpei_sub_account_no:       row.kpeiSubAccountNo || null,
-          stp_ksei_sub_account_no:   row.stpKSEISubAccountNo || null,
-          stp_kpei_sub_account_no:   row.stpKPEISubAccountNo || null,
-          sales_person_name:         row.salesPersonName || null,
-          office_name:               row.officeName || null,
+        const r = {
+          client_id:                 row.clientID || '',
+          client_name:               row.clientName || '',
+          birth_date:                parseDateField(row.cifInvestorBirthDate) || '',
+          ktp_number:                row.cifInvestorKTPNumber || '',
+          npwp:                      row.npwp || '',
+          email:                     row.email || '',
+          phone:                     row.phone || '',
+          occupation:                row.cifInvestorOccupation || '',
+          company_name:              row.cifCompanyName || '',
+          nature_of_business:        row.cifInvestorNatureOfBusiness || '',
+          position:                  row.cifInvestorPosition || '',
+          address:                   row.address || '',
+          ksei_single_id:            row.kseiSingleID || '',
+          ksei_sub_account_no:       row.kseiSubAccountNo || '',
+          kpei_sub_account_no:       row.kpeiSubAccountNo || '',
+          stp_ksei_sub_account_no:   row.stpKSEISubAccountNo || '',
+          stp_kpei_sub_account_no:   row.stpKPEISubAccountNo || '',
+          sales_person_name:         row.salesPersonName || '',
+          office_name:               row.officeName || '',
           client_status:             row.clientStatus || 'Aktif',
-          client_status_description: row.clientStatusDescription || null,
-          active_date:               parseDateField(row.activeDate),
-          closed_date:               parseDateField(row.closedDate),
+          client_status_description: row.clientStatusDescription || '',
+          active_date:               parseDateField(row.activeDate) || '',
+          closed_date:               parseDateField(row.closedDate) || '',
         };
-        Object.keys(supaRow).forEach(k => { if (supaRow[k] === null || supaRow[k] === '') delete supaRow[k]; });
-        if (!supaRow.client_name) continue;
-        if (supaRow.client_id) rowsWithId.push({ supaRow, row });
-        else rowsWithoutId.push({ supaRow, row });
+        if (!r.client_name) continue;
+        normalized.push(r);
       }
 
-      const BATCH = 50;
-
-      // Batch rows dengan client_id: update jika sudah ada, insert jika belum
-      for (let i = 0; i < rowsWithId.length; i += BATCH) {
-        const batch = rowsWithId.slice(i, i + BATCH);
-        btn.textContent = `Mengimport... (${Math.min(i + BATCH, rowsWithId.length)}/${rowsWithId.length})`;
-
-        for (const item of batch) {
-          const rowData = { ...item.supaRow };
-          const clientId = rowData.client_id;
-          delete rowData.client_id;
-
-          // Cek apakah client_id sudah ada di DB
-          const { data: existing } = await window._supabase
-            .from('customers')
-            .select('id')
-            .eq('client_id', clientId)
-            .maybeSingle();
-
-          if (existing) {
-            const { error: updErr } = await window._supabase
-              .from('customers')
-              .update(rowData)
-              .eq('client_id', clientId);
-            if (updErr) { errors.push(`Update ${clientId}: ${updErr.message}`); console.error('Update err:', updErr); }
-            else {
-              await upsertSecuritiesFromRow(existing.id, item.row);
-              success++;
-            }
-          } else {
-            const insertRow = { ...rowData, client_id: clientId };
-            const { data: inserted, error: insErr } = await window._supabase
-              .from('customers')
-              .insert(insertRow)
-              .select('id')
-              .single();
-            if (insErr) {
-              if (insErr.code === '23505') {
-                // Race condition — coba ambil id lalu upsert securities
-                const { data: rc } = await window._supabase.from('customers').select('id').eq('client_id', clientId).maybeSingle();
-                if (rc) await upsertSecuritiesFromRow(rc.id, item.row);
-                success++;
-              } else { errors.push(`Insert ${clientId}: ${insErr.message}`); console.error('Insert err:', insErr); }
-            } else {
-              await upsertSecuritiesFromRow(inserted.id, item.row);
-              success++;
-            }
-          }
-        }
+      if (!normalized.length) {
+        showToast('Tidak ada baris valid untuk diimport', 'error');
+        return;
       }
 
-      // Rows tanpa client_id: cek berdasarkan ktp_number atau email agar tidak duplikat
-      for (let i = 0; i < rowsWithoutId.length; i++) {
-        const item = rowsWithoutId[i];
-        if (i % BATCH === 0) btn.textContent = `Mengimport... (${i}/${rowsWithoutId.length})`;
-
-        const supaRow = item.supaRow;
-        let existingRow = null;
-
-        if (supaRow.ktp_number) {
-          const { data } = await window._supabase
-            .from('customers').select('id').eq('ktp_number', supaRow.ktp_number).maybeSingle();
-          existingRow = data;
-        }
-        if (!existingRow && supaRow.email) {
-          const { data } = await window._supabase
-            .from('customers').select('id').eq('email', supaRow.email).maybeSingle();
-          existingRow = data;
-        }
-
-        if (existingRow) {
-          const { error: updErr } = await window._supabase
-            .from('customers').update(supaRow).eq('id', existingRow.id);
-          if (updErr) { errors.push(`Update (no clientID): ${updErr.message}`); console.error('Update err:', updErr); }
-          else {
-            await upsertSecuritiesFromRow(existingRow.id, item.row);
-            success++;
-          }
-        } else {
-          const { data: inserted, error: insErr } = await window._supabase
-            .from('customers').insert(supaRow).select('id').single();
-          if (insErr) {
-            if (insErr.code === '23505') { success++; }
-            else { errors.push(`Insert: ${insErr.message}`); console.error('Insert error detail:', insErr); }
-          } else {
-            await upsertSecuritiesFromRow(inserted.id, item.row);
-            success++;
-          }
-        }
+      // Susun CSV: header + rows
+      const lines = [IMPORT_COLUMNS.join(',')];
+      for (const r of normalized) {
+        lines.push(IMPORT_COLUMNS.map(c => csvEscape(r[c])).join(','));
       }
+      const csvBlob = new Blob([lines.join('\n')], { type: 'text/csv' });
+      const file = new File([csvBlob], 'customers_import.csv', { type: 'text/csv' });
+
+      btn.textContent = `Mengimport ${normalized.length} data...`;
+
+      // Kirim ke endpoint PHP: POST /api/customers.php?import=csv
+      const res = await window._api.upload('customers.php', file, { import: 'csv' });
+      const imported = (res.data && res.data.imported) ?? res.imported ?? 0;
+      const errors   = (res.data && res.data.errors)   ?? res.errors   ?? [];
 
       // Reload data dari server supaya tampilan up-to-date
       await loadCustomers();
@@ -1482,17 +1396,16 @@
 
       if (errors.length > 0) {
         console.warn('Import errors:', errors);
-        // Tampilkan error detail di modal sebelum tutup
         const errMsg = errors.slice(0, 3).join('\n');
-        if (success === 0) {
+        if (imported === 0) {
           alert(`❌ Import gagal:\n\n${errMsg}\n\nCek Console (F12) untuk detail lengkap.`);
         } else {
-          showToast(`⚠️ ${success} berhasil, ${errors.length} gagal — cek Console (F12)`, 'error');
+          showToast(`⚠️ ${imported} berhasil, ${errors.length} gagal — cek Console (F12)`, 'error');
           document.getElementById('uploadModal').classList.remove('open');
         }
       } else {
         document.getElementById('uploadModal').classList.remove('open');
-        if (success > 0) showToast(`✅ ${success} customer berhasil diimport`, 'success');
+        if (imported > 0) showToast(`✅ ${imported} customer berhasil diimport`, 'success');
         else showToast('Tidak ada data yang diimport', 'error');
       }
     } catch (e) { console.error(e); showToast('Gagal import: ' + e.message, 'error'); }
