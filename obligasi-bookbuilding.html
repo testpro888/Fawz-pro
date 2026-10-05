@@ -1400,15 +1400,8 @@
     }
 
     try {
-      // Securities sudah ikut dimuat di objek client (customers.php -> securities[]).
-      let secData = (client && Array.isArray(client.securities)) ? client.securities : null;
-
-      // Fallback: kalau belum ada (mis. client lama), ambil via API by customer_id.
-      if (!secData && client && client.id) {
-        const res = await window._api.get('customer_securities.php', { customer_id: client.id });
-        secData = res.data || [];
-      }
-      secData = secData || [];
+      // Securities ikut dimuat di objek client (customers.php -> securities[]).
+      const secData = (client && Array.isArray(client.securities)) ? client.securities : [];
 
       sekSelect.innerHTML = '<option value="">-- Pilih Sekuritas --</option>';
       const names = [...new Set(secData.map(s => s.sekuritas_name).filter(Boolean))];
@@ -1772,12 +1765,7 @@
     if (!clientId) { sekSelect.innerHTML = '<option value="">-- Pilih Client dulu --</option>'; return; }
 
     try {
-      let secData = (client && Array.isArray(client.securities)) ? client.securities : null;
-      if (!secData && client && client.id) {
-        const res = await window._api.get('customer_securities.php', { customer_id: client.id });
-        secData = res.data || [];
-      }
-      secData = secData || [];
+      const secData = (client && Array.isArray(client.securities)) ? client.securities : [];
       sekSelect.innerHTML = '<option value="">-- Pilih Sekuritas --</option>';
       const names = [...new Set(secData.map(s => s.sekuritas_name).filter(Boolean))];
       names.forEach(name => {
