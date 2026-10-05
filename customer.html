@@ -1315,14 +1315,17 @@
     return null;
   }
 
-  // Kolom yang didukung endpoint import (api/customers.php -> $allowed)
+  // Kolom yang didukung endpoint import (api/customers.php -> $allowed + securities)
   const IMPORT_COLUMNS = [
     'client_id','client_name','birth_date','ktp_number','npwp','email','phone',
     'occupation','company_name','nature_of_business','position','address',
     'ksei_single_id','ksei_sub_account_no','kpei_sub_account_no',
     'stp_ksei_sub_account_no','stp_kpei_sub_account_no',
     'sales_person_name','office_name',
-    'client_status','client_status_description','active_date','closed_date'
+    'client_status','client_status_description','active_date','closed_date',
+    // securities (RDN & rekening pribadi)
+    'sekuritas_name','rdn_bank_name','rdn_account_no',
+    'personal_bank_name','personal_account_no','personal_account_name'
   ];
 
   // Escape satu nilai agar aman sebagai field CSV
@@ -1365,8 +1368,21 @@
           client_status_description: row.clientStatusDescription || '',
           active_date:               parseDateField(row.activeDate) || '',
           closed_date:               parseDateField(row.closedDate) || '',
+          // securities dari field rekening CSV broker
+          sekuritas_name:            'Maybank',
+          rdn_bank_name:             row.savingsBankID || '',   // SavingsBankID = Bank RDN
+          rdn_account_no:            row.savingsID || '',        // SavingsID = No Rekening RDN
+          personal_bank_name:        row.bankAccountID || '',    // BankAccountID = Bank rekening pribadi
+          personal_account_no:       row.bankAccountNo || '',    // BankAccountNo = No Rekening pribadi
+          personal_account_name:     row.bankAccountName || '',  // BankAccountName = Nama di rekening
         };
         if (!r.client_name) continue;
+        // Jika tidak ada data rekening sama sekali, kosongkan sekuritas_name
+        // supaya PHP tidak membuat row securities kosong.
+        if (!r.rdn_account_no && !r.rdn_bank_name &&
+            !r.personal_account_no && !r.personal_bank_name && !r.personal_account_name) {
+          r.sekuritas_name = '';
+        }
         normalized.push(r);
       }
 
