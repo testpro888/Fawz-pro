@@ -17,6 +17,59 @@ $user = requireAuth();
 $pdo  = getDB();
 $m    = method();
 
+// ── Securities helpers ────────────────────────────────────
+const SEC_FIELDS = ['sekuritas_name','rdn_bank_name','rdn_account_no','sec_client_id',
+                    'sid','personal_bank_name','personal_account_no',
+                    'personal_account_name','sort_order'];
+
+// Ambil securities untuk satu set customer_id -> map [customer_id => [rows]]
+function fetchSecuritiesFor(PDO $pdo, array $customerIds): array {
+    $customerIds = array_values(array_filter(array_map('intval', $customerIds)));
+    if (empty($customerIds)) return [];
+    $ph   = implode(',', array_fill(0, count($customerIds), '?'));
+    $stmt = $pdo->prepare(
+        "SELECT * FROM customer_securities WHERE customer_id IN ($ph) ORDER BY sort_order ASC, id ASC"
+    );
+    $stmt->execute($customerIds);
+    $map = [];
+    foreach ($stmt->fetchAll() as $r) {
+        $map[(int)$r['customer_id']][] = $r;
+    }
+    return $map;
+}
+
+// Ganti seluruh securities milik satu customer (replace strategy)
+function replaceSecurities(PDO $pdo, int $customerId, array $securities): void {
+    $pdo->prepare('DELETE FROM customer_securities WHERE customer_id = ?')->execute([$customerId]);
+    if (empty($securities)) return;
+
+    $cols = array_merge(['customer_id'], SEC_FIELDS);
+    $ins  = $pdo->prepare(
+        'INSERT INTO customer_securities (' . implode(',', array_map(fn($c) => "`$c`", $cols)) . ') VALUES (' .
+        implode(',', array_fill(0, count($cols), '?')) . ')'
+    );
+    $i = 0;
+    foreach ($securities as $s) {
+        if (!is_array($s)) continue;
+        // Lewati baris securities yang benar-benar kosong
+        $hasData = false;
+        foreach (SEC_FIELDS as $f) {
+            if ($f === 'sekuritas_name' || $f === 'sort_order') continue;
+            if (!empty($s[$f])) { $hasData = true; break; }
+        }
+        if (!$hasData && empty($s['sekuritas_name'])) continue;
+
+        $vals = [$customerId];
+        foreach (SEC_FIELDS as $f) {
+            if ($f === 'sort_order') { $vals[] = $s[$f] ?? $i; continue; }
+            $v = $s[$f] ?? null;
+            $vals[] = ($v === '' ? null : $v);
+        }
+        $ins->execute($vals);
+        $i++;
+    }
+}
+
 // ── EXPORT CSV ────────────────────────────────────────────
 if ($m === 'GET' && isset($_GET['export'])) {
     $rows = $pdo->query('SELECT * FROM customers ORDER BY client_name')->fetchAll();
@@ -53,26 +106,61 @@ if ($m === 'POST' && isset($_GET['import'])) {
                 'sales_person_name','referral_agents','office_name','department_id',
                 'client_status','client_status_description','created_date','active_date','closed_date'];
 
-    $cols    = array_intersect($headers, $allowed);
+    // Kolom securities yang bisa ikut di CSV (header snake_case dari frontend)
+    $secCsvCols = ['sekuritas_name','rdn_bank_name','rdn_account_no','sec_client_id','sid',
+                   'personal_bank_name','personal_account_no','personal_account_name'];
+
+    $cols    = array_values(array_intersect($allowed, $headers));
     $colList = implode(',', array_map(fn($c) => "`$c`", $cols));
     $phList  = implode(',', array_fill(0, count($cols), '?'));
 
-    $stmt    = $pdo->prepare(
-        "INSERT INTO customers ($colList) VALUES ($phList)
-         ON DUPLICATE KEY UPDATE client_name = VALUES(client_name)"
+    // Semua kolom customer diupdate saat client_id duplikat (bukan hanya client_name)
+    $updateCols = array_filter($cols, fn($c) => $c !== 'client_id');
+    $updateSet  = implode(',', array_map(fn($c) => "`$c` = VALUES(`$c`)", $updateCols));
+
+    $stmt = $pdo->prepare(
+        "INSERT INTO customers ($colList) VALUES ($phList)" .
+        ($updateSet ? " ON DUPLICATE KEY UPDATE $updateSet" : '')
     );
+
+    // Helper: ambil nilai sel berdasar nama kolom
+    $cellOf = function(array $row, string $col) use ($headers) {
+        $idx = array_search($col, $headers);
+        if ($idx === false || !isset($row[$idx])) return null;
+        $v = trim($row[$idx]);
+        return $v === '' ? null : $v;
+    };
 
     $imported = 0;
     $errors   = [];
     while (($row = fgetcsv($handle)) !== false) {
         try {
             $vals = [];
-            foreach ($cols as $col) {
-                $idx    = array_search($col, $headers);
-                $val    = ($idx !== false && isset($row[$idx])) ? trim($row[$idx]) : null;
-                $vals[] = ($val === '' ? null : $val);
-            }
+            foreach ($cols as $col) $vals[] = $cellOf($row, $col);
             $stmt->execute($vals);
+
+            // Tentukan customer id (insert baru atau update existing)
+            $customerId = (int)$pdo->lastInsertId();
+            $clientId   = $cellOf($row, 'client_id');
+            if ((!$customerId || $customerId === 0) && $clientId) {
+                $q = $pdo->prepare('SELECT id FROM customers WHERE client_id = ? LIMIT 1');
+                $q->execute([$clientId]);
+                $customerId = (int)$q->fetchColumn();
+            }
+
+            // Securities: kumpulkan kalau ada kolomnya
+            if ($customerId) {
+                $sec = [];
+                foreach ($secCsvCols as $sc) {
+                    if (in_array($sc, $headers)) $sec[$sc] = $cellOf($row, $sc);
+                }
+                $hasSec = false;
+                foreach ($sec as $k => $v) {
+                    if ($k !== 'sekuritas_name' && $v) { $hasSec = true; break; }
+                }
+                if ($hasSec) replaceSecurities($pdo, $customerId, [$sec]);
+            }
+
             $imported++;
         } catch (Exception $e) {
             $errors[] = $e->getMessage();
@@ -102,6 +190,8 @@ if ($m === 'GET' && $id) {
     $stmt->execute([$id]);
     $row = $stmt->fetch();
     if (!$row) jsonError('Customer tidak ditemukan', 404);
+    $secMap = fetchSecuritiesFor($pdo, [$row['id']]);
+    $row['securities'] = $secMap[(int)$row['id']] ?? [];
     jsonOk($row);
 }
 
@@ -153,6 +243,13 @@ if ($m === 'GET') {
     $stmt->execute($params);
     $rows = $stmt->fetchAll();
 
+    // Lampirkan securities (satu query untuk semua baris di halaman ini)
+    $secMap = fetchSecuritiesFor($pdo, array_column($rows, 'id'));
+    foreach ($rows as &$r) {
+        $r['securities'] = $secMap[(int)$r['id']] ?? [];
+    }
+    unset($r);
+
     jsonList($rows, $totalCount);
 }
 
@@ -183,11 +280,19 @@ if ($m === 'POST') {
         implode(',', array_fill(0, count($cols), '?')) . ')'
     );
     $stmt->execute($vals);
-    $newId = $pdo->lastInsertId();
+    $newId = (int)$pdo->lastInsertId();
+
+    // Securities (nested array) jika dikirim
+    if (isset($b['securities']) && is_array($b['securities'])) {
+        replaceSecurities($pdo, $newId, $b['securities']);
+    }
 
     $row = $pdo->prepare('SELECT * FROM customers WHERE id = ?');
     $row->execute([$newId]);
-    jsonOk($row->fetch(), 201);
+    $out = $row->fetch();
+    $secMap = fetchSecuritiesFor($pdo, [$newId]);
+    $out['securities'] = $secMap[$newId] ?? [];
+    jsonOk($out, 201);
 }
 
 // ── UPDATE ────────────────────────────────────────────────
@@ -209,14 +314,26 @@ if ($m === 'PUT' && $id) {
             $vals[] = ($b[$f] === '' ? null : $b[$f]);
         }
     }
-    if (empty($sets)) jsonError('Tidak ada data yang diupdate');
-    $vals[] = $id;
 
-    $pdo->prepare('UPDATE customers SET ' . implode(',', $sets) . ' WHERE id = ?')->execute($vals);
+    $hasSecurities = isset($b['securities']) && is_array($b['securities']);
+    if (empty($sets) && !$hasSecurities) jsonError('Tidak ada data yang diupdate');
+
+    if (!empty($sets)) {
+        $vals[] = $id;
+        $pdo->prepare('UPDATE customers SET ' . implode(',', $sets) . ' WHERE id = ?')->execute($vals);
+    }
+
+    // Securities (nested array): ganti seluruhnya jika dikirim
+    if ($hasSecurities) {
+        replaceSecurities($pdo, $id, $b['securities']);
+    }
 
     $row = $pdo->prepare('SELECT * FROM customers WHERE id = ?');
     $row->execute([$id]);
-    jsonOk($row->fetch());
+    $out = $row->fetch();
+    $secMap = fetchSecuritiesFor($pdo, [$id]);
+    $out['securities'] = $secMap[(int)$id] ?? [];
+    jsonOk($out);
 }
 
 // ── DELETE ────────────────────────────────────────────────
